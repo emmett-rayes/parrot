@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <option name="separateProdTestSources" value="true" />
+    <profile name="sbt 1" modules="Parrot" />
+    <profile name="sbt 2" modules="Parrot.main,Parrot.test">
+      <option name="deprecationWarnings" value="true" />
+      <option name="uncheckedWarnings" value="true" />
+      <option name="featureWarnings" value="true" />
+      <parameters>
+        <parameter value="-Wnonunit-statement" />
+        <parameter value="-Wsafe-init" />
+        <parameter value="-Wunused:all" />
+        <parameter value="-Wvalue-discard" />
+        <parameter value="-Yexplicit-nulls" />
+        <parameter value="-explain" />
+        <parameter value="-explain-types" />
+        <parameter value="-language:experimental.genericNumberLiterals" />
+        <parameter value="-language:experimental.modularity" />
+        <parameter value="-language:experimental.pureFunctions" />
+        <parameter value="-language:experimental.relaxedLambdaSyntax" />
+        <parameter value="-preview" />
+        <parameter value="-source:future" />
+      </parameters>
+    </profile>
+  </component>
+</project>
