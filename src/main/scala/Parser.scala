@@ -50,4 +50,9 @@ given ParserIsParserAlgebra: Parser is ParserAlgebra {
   def failure[A, B]: Parser[A, B] = {
     PromonoidPlus[Parser].zero
   }
+
+  extension [A, B](self: Parser[A, B])
+    def andThen[C](other: Parser[B, C]): Parser[A, C] = {
+      self.combine(other)
+    }
 }
