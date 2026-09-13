@@ -59,4 +59,17 @@ object Kleisli {
         a => self(a).plus(other(a))
       }
   }
+
+  /** Every monad *M* induces a strong profunctor *K*, where
+    *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
+    *   - *first*(*k*) = (*a*,*c*) ↦ *M*(⟨*id*,*c*⟩)(*k*(*a*)) is the strength
+    */
+  given KleisliIsStrongProfunctor: [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is StrongProfunctor {
+    export P.dimap
+
+    extension [A, B](self: A => M[B])
+      def first[C]: ((A, C)) => M[(B, C)] = {
+        (a, c) => self(a).map((_, c))
+      }
+  }
 }
