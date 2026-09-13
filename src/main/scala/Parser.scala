@@ -29,6 +29,8 @@ object Parser {
 
 /** The canonical parser implementation is a parser algebra. */
 given ParserIsParserAlgebra: Parser is ParserAlgebra {
+  import Kleisli.given
+  import StateT.given
 
   import scala.util.{Failure, Success}
 
@@ -39,5 +41,9 @@ given ParserIsParserAlgebra: Parser is ParserAlgebra {
         then Success((expected, input.drop(expected.length)))
         else Failure(Exception(s"expected $expected at this position"))
       }
+  }
+
+  def success[A, B](result: B): Parser[A, B] = {
+    Promonad[Parser].unit(_ => result)
   }
 }
