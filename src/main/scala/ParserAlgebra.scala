@@ -13,6 +13,18 @@ trait ParserAlgebra {
 
   /** A parser that always fails. */
   def failure[A, B]: P[A, B]
+
+  extension [A, B](self: P[A, B])
+    /** A parser that sequences `self` with `other`, passing the result of `self` as input to `other` on the remaining
+      * input.
+      */
+    def andThen[C](other: P[B, C]): P[A, C]
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[andThen]]. */
+    def >>[C](other: P[B, C]): P[A, C] = {
+      self.andThen(other)
+    }
 }
 
 object ParserAlgebra {
