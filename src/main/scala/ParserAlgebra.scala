@@ -11,6 +11,8 @@ trait ParserAlgebra {
   /** A parser that always succeeds with the given result. */
   def success[A, B](result: B): P[A, B]
 
+  /** A parser that always fails. */
+  def failure[A, B]: P[A, B]
 }
 
 object ParserAlgebra {
