@@ -49,3 +49,28 @@ trait Monad extends Functor {
       self.map(f).flatten
     }
 }
+
+object Monad {
+  import scala.util.Try
+
+  /** `Try` is a monad *M*, where
+    *   - *M*[*A*] = *A* + *E* are the elements
+    *   - *η*(*a*) = *ι*₁(*a*) is the unit
+    *   - *μ* = [*id*,*ι*₂] is the multiplication
+    *
+    * Here *E* is the type of failures, i.e. `Throwable` and *ι*₁ and *ι*₂ are the injections into `Try`, i.e. `Success`
+    * and `Failure`.
+    */
+  given TryIsMonad: (F: Try is Functor) => Try is Monad {
+    export F.map
+
+    def unit[A](a: A): Try[A] = {
+      scala.util.Success(a)
+    }
+
+    extension [A](self: Try[Try[A]])
+      def flatten: Try[A] = {
+        self.flatten
+      }
+  }
+}
