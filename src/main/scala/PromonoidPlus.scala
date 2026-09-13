@@ -42,3 +42,11 @@ trait PromonoidPlus extends Profunctor {
       self.plus(other)
     }
 }
+
+object PromonoidPlus {
+
+  /** Summons the `PromonoidPlus` instance of `P`. */
+  def apply[P[_, _]: PromonoidPlus]: P is PromonoidPlus = {
+    summon
+  }
+}
