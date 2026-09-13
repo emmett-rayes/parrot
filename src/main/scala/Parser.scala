@@ -46,4 +46,8 @@ given ParserIsParserAlgebra: Parser is ParserAlgebra {
   def success[A, B](result: B): Parser[A, B] = {
     Promonad[Parser].unit(_ => result)
   }
+
+  def failure[A, B]: Parser[A, B] = {
+    PromonoidPlus[Parser].zero
+  }
 }
