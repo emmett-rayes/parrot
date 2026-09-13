@@ -12,3 +12,17 @@ import scala.util.Try
   *   - *P*(*f*,*g*) = *f* ; - ; ((*g* × *id*) + *id*) is the morphism part
   */
 type Parser = Kleisli[StateT[String, Try]]
+
+object Parser {
+  extension [A, B](self: Parser[A, B])
+    /** Runs a parser on a given state and semantic input. */
+    def run(a: A, input: String): Try[(result: B, state: String)] = {
+      self(a)(input)
+    }
+
+  extension [B](self: Parser[Unit, B])
+    /** Runs a parser on a given state. */
+    def run(input: String): Try[(result: B, state: String)] = {
+      self(())(input)
+    }
+}
