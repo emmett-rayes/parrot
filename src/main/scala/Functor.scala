@@ -21,3 +21,20 @@ trait Functor {
       */
     def map[B](f: A => B): F[B]
 }
+
+object Functor {
+  import scala.util.Try
+
+  /** `Try` is a functor *F*, where
+    *   - *F*[*A*] = *A* + *E* is the object part
+    *   - *F*(*f*) = *f* + *id* is the morphism part
+    *
+    * Here *E* is the the type of failures, i.e. `Throwable`.
+    */
+  given TryIsFunctor: Try is Functor {
+    extension [A](self: Try[A])
+      def map[B](f: A => B): Try[B] = {
+        self.map(f)
+      }
+  }
+}
