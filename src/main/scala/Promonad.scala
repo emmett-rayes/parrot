@@ -77,4 +77,23 @@ object Promonad {
         other.combine(self)
       }
   }
+
+  /** Every strong promonad induces a monoidal profunctor, where
+    *   - *unit* = *η*(*id*) is the unit element
+    *   - *p* ⊗ *q* = *first*(*p*) ; *second*(*q*) is the tensor product
+    *
+    * Here *η* and ; are the unit and the multiplication of *P*.
+    */
+  given PromonadIsMonoidalProfunctor: [P[_, _]: Promonad] => (F: P is StrongProfunctor) => P is MonoidalProfunctor {
+    export F.dimap
+
+    def unit: P[Unit, Unit] = {
+      P.unit(identity)
+    }
+
+    extension [A, B](self: P[A, B])
+      def tensor[C, D](other: P[C, D]): P[(A, C), (B, D)] = {
+        self.first.combine(other.second)
+      }
+  }
 }
