@@ -57,6 +57,11 @@ trait Promonad extends Profunctor {
 
 object Promonad {
 
+  /** Summons the `Promonad` instance of `P`. */
+  def apply[P[_, _]: Promonad]: P is Promonad = {
+    summon
+  }
+
   /** Every promonad induces a category, where
     *   - *A* ~> *B* = *P*[*A*,*B*] are the hom-sets
     *   - *id* = *η*(*id*) is the identity morphism
