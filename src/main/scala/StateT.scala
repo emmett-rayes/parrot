@@ -44,4 +44,24 @@ object StateT {
         s => self(s).map((result, state) => (f(result), state))
       }
   }
+
+  /** Every monoid *M* induces a monoid *T*, where
+    *   - *T*[*A*] = *S* → *M*[*A* × *S*] are the elements
+    *   - 0 = *s* ↦ 0' is the unit element
+    *   - *t* + *u* = *s* ↦ *t*(*s*) +' *u*(*s*) is the monoid operation
+    *
+    * Here 0' and +' are the unit element and the monoid operation of *M*.
+    */
+  given StateTIsMonoidPlus: [S, M[_]: MonoidPlus] => (F: StateT[S, M] is Functor) => StateT[S, M] is MonoidPlus {
+    export F.map
+
+    def zero[A]: StateT[S, M][A] = {
+      _ => M.zero
+    }
+
+    extension [A](self: StateT[S, M][A])
+      def plus(other: StateT[S, M][A]): StateT[S, M][A] = {
+        s => self(s).plus(other(s))
+      }
+  }
 }
