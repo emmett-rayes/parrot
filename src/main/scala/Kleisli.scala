@@ -20,4 +20,23 @@ object Kleisli {
         c => self(f(c)).map(g)
       }
   }
+
+  /** Every monad *M* induces a promonad *K*, where
+    *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
+    *   - *η*(*f*) = *f* ; *η*' is the unit
+    *   - *μ*(*p*,*q*) = *p* ; *M*(*q*) ; *μ*' is the multiplication
+    *
+    * Here *η*' and *μ*' are the unit and the multiplication of *M*.
+    */
+  given KleisliIsPromonad: [M[_]: Monad] => Kleisli[M] is Promonad {
+
+    def unit[A, B](f: A => B): A => M[B] = {
+      a => M.unit(f(a))
+    }
+
+    extension [A, B](self: A => M[B])
+      def combine[C](other: B => M[C]): A => M[C] = {
+        x => self(x).flatMap(other)
+      }
+  }
 }
