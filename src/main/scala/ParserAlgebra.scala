@@ -7,6 +7,10 @@ trait ParserAlgebra {
 
   /** A parser that consumes a literal at the start of the input. */
   def literal(expected: String): P[Unit, expected.type]
+
+  /** A parser that always succeeds with the given result. */
+  def success[A, B](result: B): P[A, B]
+
 }
 
 object ParserAlgebra {
