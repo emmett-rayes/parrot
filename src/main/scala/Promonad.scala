@@ -54,3 +54,22 @@ trait Promonad extends Profunctor {
       self.combine(other)
     }
 }
+
+object Promonad {
+
+  /** Every promonad induces a category, where
+    *   - *A* ~> *B* = *P*[*A*,*B*] are the hom-sets
+    *   - *id* = *η*(*id*) is the identity morphism
+    *   - *g* ∘ *f* = *μ*(*f*,*g*) is composition
+    */
+  given PromonadIsCategory: [P[_, _]: Promonad] => P is Category {
+    def id[A]: A ~> A = {
+      P.unit(identity)
+    }
+
+    extension [B, C](self: B ~> C)
+      def compose[A](other: A ~> B): A ~> C = {
+        other.combine(self)
+      }
+  }
+}
