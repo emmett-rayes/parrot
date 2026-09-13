@@ -26,3 +26,18 @@ object Parser {
       self(())(input)
     }
 }
+
+/** The canonical parser implementation is a parser algebra. */
+given ParserIsParserAlgebra: Parser is ParserAlgebra {
+
+  import scala.util.{Failure, Success}
+
+  def literal(expected: String): Parser[Unit, expected.type] = {
+    _ => input =>
+      {
+        if input.startsWith(expected)
+        then Success((expected, input.drop(expected.length)))
+        else Failure(Exception(s"expected $expected at this position"))
+      }
+  }
+}
