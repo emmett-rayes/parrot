@@ -36,7 +36,27 @@ object Kleisli {
 
     extension [A, B](self: A => M[B])
       def combine[C](other: B => M[C]): A => M[C] = {
-        x => self(x).flatMap(other)
+        a => self(a).flatMap(other)
+      }
+  }
+
+  /** Every monoid *M* induces a promonoid *K*, where
+    *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
+    *   - 0 = *a* ↦ 0' is the unit element
+    *   - *p* + *q* = *a* ↦ *p*(*a*) +' *q*(*a*) is the monoid operation
+    *
+    * Here 0' and +' are the unit element and the monoid operation of *M*.
+    */
+  given KleisliIsPromonoidPlus: [M[_]: MonoidPlus] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is PromonoidPlus {
+    export P.dimap
+
+    def zero[A, B]: A => M[B] = {
+      _ => M.zero
+    }
+
+    extension [A, B](self: A => M[B])
+      def plus(other: A => M[B]): A => M[B] = {
+        a => self(a).plus(other(a))
       }
   }
 }
