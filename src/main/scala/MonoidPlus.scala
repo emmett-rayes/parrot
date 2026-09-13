@@ -35,3 +35,30 @@ trait MonoidPlus extends Functor {
       self.plus(other)
     }
 }
+
+object MonoidPlus {
+  import scala.util.Try
+
+  /** `Try` is a monoid *M*, where
+    *   - *M*[*A*] = *A* + *E* are the elements
+    *   - 0 = *ι*₂(*e*) is the unit element, for an arbitrary failure *e*
+    *   - *ι*₁(*a*) + *y* = *ι*₁(*a*) and *ι*₂(*e*) + *y* = *y* is the monoid operation
+    *
+    * Here *E* is the type of failures, i.e. `Throwable`, and *ι*₁ and *ι*₂ are the injections into `Try`, i.e.
+    * `Success` and `Failure`.
+    */
+  given TryIsMonoidPlus: (F: Try is Functor) => Try is MonoidPlus {
+    import scala.util.Failure
+
+    export F.map
+
+    def zero[A]: Try[A] = {
+      Failure[A](Exception())
+    }
+
+    extension [A](self: Try[A])
+      override def plus(other: Try[A]): Try[A] = {
+        self.orElse(other)
+      }
+  }
+}
