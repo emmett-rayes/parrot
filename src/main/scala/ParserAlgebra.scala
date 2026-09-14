@@ -15,6 +15,18 @@ trait ParserAlgebra {
   def failure[A, B]: P[A, B]
 
   extension [A, B](self: P[A, B])
+    /** A parser that succeeds if `self` succeeds but without consuming any input. */
+    def lookahead: P[A, Unit]
+
+  extension [A, B](self: P[A, B])
+    /** A parser that succeeds if `self` fails, and fails if `self` succeeds. */
+    def not: P[A, Unit] = {
+      self.lookahead
+        .either(success(()))
+        .andThen(failure.merge(success(())))
+    }
+
+  extension [A, B](self: P[A, B])
     /** A parser that sequences `self` with `other`, passing the result of `self` as input to `other` on the remaining
       * input.
       */
@@ -46,6 +58,18 @@ trait ParserAlgebra {
     /** A parser that dispatches between `self` and `other` based on the input, merging to a common result. */
     def merge[C](other: P[C, B]): P[Either[A, C], B] = {
       self.branch(other).rmap(_.merge)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[lookahead]]. */
+    def unary_~ : P[A, Unit] = {
+      self.lookahead
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[not]]. */
+    def unary_! : P[A, Unit] = {
+      self.not
     }
 
   extension [A, B](self: P[A, B])
