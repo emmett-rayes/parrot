@@ -1,13 +1,13 @@
 package parrot
 
-/** A costrong endoprofunctor over **Type**.
+/** A cocartesian strong endoprofunctor over **Type**.
   *
   * Represents a profunctor *P*: **Type**^*op* × **Type** → **Type** equipped with a cotensorial costrength with respect
   * to the coproduct + on **Type**, where
   *   - *left*: *P*[*A*,*B*] → *P*[*A* + *C*, *B* + *C*] is the left costrength
   *   - *right*: *P*[*C*,*D*] → *P*[*A* + *C*, *A* + *D*] is the right costrength
   */
-trait CoStrongProfunctor extends Profunctor {
+trait CocartesianStrongProfunctor extends Profunctor {
   type Self[_, _]
   type P = Self
 
@@ -31,10 +31,10 @@ trait CoStrongProfunctor extends Profunctor {
     }
 }
 
-object CoStrongProfunctor {
+object CocartesianStrongProfunctor {
 
-  /** Summons the `CoStrongProfunctor` instance of `P`. */
-  def apply[P[_, _]: CoStrongProfunctor]: P is CoStrongProfunctor = {
+  /** Summons the `CocartesianStrongProfunctor` instance of `P`. */
+  def apply[P[_, _]: CocartesianStrongProfunctor]: P is CocartesianStrongProfunctor = {
     summon
   }
 }

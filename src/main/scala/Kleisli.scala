@@ -74,14 +74,14 @@ object Kleisli {
       }
   }
 
-  /** Every monad *M* induces a costrong profunctor *K*, where
+  /** Every monad *M* induces a cocartesian strong profunctor *K*, where
     *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
     *   - *left*(*k*) = *Left*(*a*) ↦ *M*(*Left*)(*k*(*a*)), *Right*(*c*) ↦ *η*'(*Right*(*c*)) is the costrength
     *
     * Here *η*' is the unit of *M*.
     */
-  given KleisliIsCoStrongProfunctor
-    : [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is CoStrongProfunctor {
+  given KleisliIsCocartesianStrongProfunctor
+    : [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is CocartesianStrongProfunctor {
     export P.dimap
 
     extension [A, B](self: A => M[B])

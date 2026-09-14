@@ -15,7 +15,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   import Promonad.given
   import StateT.given
 
-  private val CSP  = CoStrongProfunctor[Parser]
+  private val CSP  = CocartesianStrongProfunctor[Parser]
   private val Cat  = Category[Parser]
   private val MP   = CartesianMonoidalProfunctor[Parser]
   private val PA   = ParserAlgebra[Parser]
@@ -173,7 +173,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   }
 
   // =========================================================================
-  // StrongProfunctor and CoStrongProfunctor Laws on Parser
+  // CartesianStrongProfunctor and CocartesianStrongProfunctor Laws on Parser
   // =========================================================================
 
   test("CartesianStrongProfunctor: Parser unitality") {
@@ -200,7 +200,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     }
   }
 
-  test("CoStrongProfunctor: Parser unitality") {
+  test("CocartesianStrongProfunctor: Parser unitality") {
     val p                                    = PA.literal("a")
     val f: Unit => Either[Unit, Nothing]     = Left(_)
     val g: Either[String, Nothing] => String = _.merge
@@ -210,7 +210,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     }
   }
 
-  test("CoStrongProfunctor: Parser associativity") {
+  test("CocartesianStrongProfunctor: Parser associativity") {
     val p = PA.literal("a")
 
     val f: Either[Unit, Either[String, Int]] => Either[Either[Unit, String], Int] = {
