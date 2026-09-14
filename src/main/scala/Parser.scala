@@ -55,6 +55,12 @@ object Parser {
     }
 
     extension [A, B](self: Parser[A, B])
+      def lookahead: Parser[A, Unit] = {
+        given Parser is RestrictionPromonad = summon // to assist type inference
+        self.restrict.rmap(_ => ())
+      }
+
+    extension [A, B](self: Parser[A, B])
       def andThen[C](other: Parser[B, C]): Parser[A, C] = {
         self.combine(other)
       }
