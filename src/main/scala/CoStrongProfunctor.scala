@@ -2,8 +2,8 @@ package parrot
 
 /** A costrong endoprofunctor over **Type**.
   *
-  * Represents a profunctor *P*: **Type**^*op* × **Type** → **Type** equipped with a cotensorial costrength with respect to
-  * the coproduct + on **Type**, where
+  * Represents a profunctor *P*: **Type**^*op* × **Type** → **Type** equipped with a cotensorial costrength with respect
+  * to the coproduct + on **Type**, where
   *   - *left*: *P*[*A*,*B*] → *P*[*A* + *C*, *B* + *C*] is the left costrength
   *   - *right*: *P*[*C*,*D*] → *P*[*A* + *C*, *A* + *D*] is the right costrength
   */
@@ -15,12 +15,12 @@ trait CoStrongProfunctor extends Profunctor {
     /** Maps an element in *P*[*A*,*B*] to an element in *P*[*A* + *C*, *B* + *C*].
       *
       * Unitality:
-      *   - identity: *P*(ρ, ρ⁻¹) ∘ *left* = *id*
+      *   - identity: *P*(ρ⁻¹, ρ) ∘ *left* = *id*
       *     - `self.left[Nothing].dimap(Left(_), _.merge) == self`
       *
       * Associativity:
-      *   - *P*(α, α⁻¹) ∘ *left* ∘ *left* = *left*
-      *     - `self.left[C].left[D].dimap({ case Left(Left(a)) => Left(a); case Left(Right(c)) => Right(Left(c)); case Right(d) => Right(Right(d)) }, { case Left(b) => Left(Left(b)); case Right(Left(c)) => Left(Right(c)); case Right(Right(d)) => Right(d) }) == self.left[Either[C, D]]`
+      *   - *P*(α⁻¹, α) ∘ *left* ∘ *left* = *left*
+      *     - `self.left[C].left[D].dimap({ case Left(a) => Left(Left(a)); case Right(Left(c)) => Left(Right(c)); case Right(Right(d)) => Right(d) }, { case Left(Left(b)) => Left(b); case Left(Right(c)) => Right(Left(c)); case Right(d) => Right(Right(d)) }) == self.left[Either[C, D]]`
       */
     def left[C]: P[Either[A, C], Either[B, C]]
 
