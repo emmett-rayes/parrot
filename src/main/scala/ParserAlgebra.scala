@@ -2,7 +2,7 @@ package parrot
 
 /** An algebra of parsers. */
 trait ParserAlgebra {
-  type Self[_, _]
+  type Self[_, _]: Profunctor
   type P = Self
 
   /** A parser that consumes a literal at the start of the input. */
@@ -27,15 +27,37 @@ trait ParserAlgebra {
     def zip[C, D](other: P[C, D]): P[(A, C), (B, D)]
 
   extension [A, B](self: P[A, B])
-    /** Alias for [[zip]]. */
-    def **[C, D](other: P[C, D]): P[(A, C), (B, D)] = {
-      self.zip(other)
+    /** A parser that dispatches between `self` and `other` based on the input. */
+    def branch[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]]
+
+  extension [A, B](self: P[A, B])
+    /** A parser that dispatches between `self` and `other` based on the input, merging to a common result. */
+    def merge[C](other: P[C, B]): P[Either[A, C], B] = {
+      self.branch(other).rmap(_.merge)
     }
 
   extension [A, B](self: P[A, B])
     /** Alias for [[andThen]]. */
     def >>[C](other: P[B, C]): P[A, C] = {
       self.andThen(other)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[zip]]. */
+    def **[C, D](other: P[C, D]): P[(A, C), (B, D)] = {
+      self.zip(other)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[branch]]. */
+    def ++[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = {
+      self.branch(other)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[merge]]. */
+    def ||[C](other: P[C, B]): P[Either[A, C], B] = {
+      self.merge(other)
     }
 }
 
