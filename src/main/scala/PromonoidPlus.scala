@@ -11,7 +11,7 @@ package parrot
   *   - zero: *P*(*f*,*g*)(0) = 0
   *     - `zero.dimap(f, g) == zero`
   *   - plus: *P*(*f*,*g*)(*x* + *y*) = *P*(*f*,*g*)(*x*) + *P*(*f*,*g*)(*y*)
-  *     - `x.plus(y).dimap(f, g) == x.dimap(f, g).plus(y.dimap(f, g))`
+  *     - `(x <+> y).dimap(f, g) == x.dimap(f, g) <+> y.dimap(f, g)`
   */
 trait PromonoidPlus extends Profunctor {
   type Self[_, _]
@@ -21,9 +21,9 @@ trait PromonoidPlus extends Profunctor {
     *
     * Unitality:
     *   - left identity: 0 + *x* = *x*
-    *     - `zero.plus(x) == x`
+    *     - `zero <+> x == x`
     *   - right identity: *x* + 0 = *x*
-    *     - `x.plus(zero) == x`
+    *     - `x <+> zero == x`
     */
   def zero[A, B]: P[A, B]
 
@@ -32,7 +32,7 @@ trait PromonoidPlus extends Profunctor {
       *
       * Associativity:
       *   - (*x* + *y*) + *z* = *x* + (*y* + *z*)
-      *     - `self.plus(other1).plus(other2) == self.plus(other1.plus(other2))`
+      *     - `(self <+> other1) <+> other2 == self <+> (other1 <+> other2)`
       */
     def plus(other: P[A, B]): P[A, B]
 

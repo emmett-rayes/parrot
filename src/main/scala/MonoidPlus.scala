@@ -14,9 +14,9 @@ trait MonoidPlus extends Functor {
     *
     * Unitality:
     *   - left identity: 0 + *x* = *x*
-    *     - `zero.plus(x) == x`
+    *     - `zero + x == x`
     *   - right identity: *x* + 0 = *x*
-    *     - `x.plus(zero) == x`
+    *     - `x + zero == x`
     */
   def zero[A]: M[A]
 
@@ -25,7 +25,7 @@ trait MonoidPlus extends Functor {
       *
       * Associativity:
       *   - (*x* + *y*) + *z* = *x* + (*y* + *z*)
-      *     - `self.plus(other1).plus(other2) == self.plus(other1.plus(other2))`
+      *     - `(self + other1) + other2 == self + (other1 + other2)`
       */
     def plus(other: M[A]): M[A]
 

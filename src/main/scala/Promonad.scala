@@ -22,9 +22,9 @@ trait Promonad extends Profunctor {
     *
     * Unitality:
     *   - left identity: *μ*(*η*(*id*),*p*) = *p*
-    *     - `unit(identity).combine(p) == p`
+    *     - `unit(identity) >>> p == p`
     *   - right identity: *μ*(*p*,*η*(*id*)) = *p*
-    *     - `p.combine(unit(identity)) == p`
+    *     - `p >>> unit(identity) == p`
     */
   def unit[A, B](f: A => B): P[A, B]
 
@@ -35,11 +35,11 @@ trait Promonad extends Profunctor {
       *
       * Naturality:
       *   - *P*(*h*,*k*)(*μ*(*p*,*q*)) = *μ*(*P*(*h*,*id*)(*p*),*P*(*id*,*k*)(*q*))
-      *     - `self.combine(other).dimap(h, k) == self.lmap(h).combine(other.rmap(k))`
+      *     - `(self >>> other).dimap(h, k) == self.lmap(h) >>> other.rmap(k)`
       *
       * Associativity:
       *   - *μ*(*μ*(*p*,*q*),*r*) = *μ*(*p*,*μ*(*q*,*r*))
-      *     - `self.combine(other1).combine(other2) == self.combine(other1.combine(other2))`
+      *     - `(self >>> other1) >>> other2 == self >>> (other1 >>> other2)`
       */
     def combine[C](other: P[B, C]): P[A, C]
 
@@ -80,11 +80,12 @@ object Promonad {
 
   /** Every cartesian strong promonad induces a cartesian monoidal profunctor, where
     *   - *unit* = *η*(*id*) is the unit element
-    *   - *p* ⊗ *q* = *first*(*p*) ; *second*(*q*) is the tensor product
+    *   - *p* ⊗ *q* = *second*(*q*) ∘ *first*(*p*) is the tensor product
     *
-    * Here *η* and ; are the unit and the multiplication of *P*.
+    * Here *η* is the unit of *P* and ∘ is the composition of the category induced by *P*.
     */
-  given PromonadIsCartesianMonoidalProfunctor: [P[_, _]: Promonad] => (F: P is CartesianStrongProfunctor) => P is CartesianMonoidalProfunctor {
+  given PromonadIsCartesianMonoidalProfunctor
+    : [P[_, _]: Promonad] => (F: P is CartesianStrongProfunctor) => P is CartesianMonoidalProfunctor {
     export F.dimap
 
     def unit: P[Unit, Unit] = {
@@ -99,9 +100,9 @@ object Promonad {
 
   /** Every cocartesian strong promonad induces a cocartesian monoidal profunctor, where
     *   - *empty* = *η*(*id*) is the unit element
-    *   - *p* ⊕ *q* = *left*(*p*) ; *right*(*q*) is the sum
+    *   - *p* ⊕ *q* = *right*(*q*) ∘ *left*(*p*) is the sum
     *
-    * Here *η* and ; are the unit and the multiplication of *P*.
+    * Here *η* is the unit of *P* and ∘ is the composition of the category induced by *P*.
     */
   given PromonadIsCocartesianMonoidalProfunctor
     : [P[_, _]: Promonad] => (F: P is CocartesianStrongProfunctor) => P is CocartesianMonoidalProfunctor {

@@ -59,7 +59,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("Category: Parser left identity") {
     val p = PA.literal("abc")
     forAll { (st: String) =>
-      val lhs = Cat.id[Unit].andThen(p)
+      val lhs = Cat.id[String].compose(p)
       assert(lhs.run(st) === p.run(st))
     }
   }
@@ -67,7 +67,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("Category: Parser right identity") {
     val p = PA.literal("abc")
     forAll { (st: String) =>
-      val lhs = p.andThen(Cat.id[String])
+      val lhs = p.compose(Cat.id[Unit])
       assert(lhs.run(st) === p.run(st))
     }
   }
@@ -77,8 +77,8 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val p2: Parser[String, String] = PA.literal("b").lmap((_: String) => ())
     val p3: Parser[String, String] = PA.literal("c").lmap((_: String) => ())
     forAll { (st: String) =>
-      val lhs = p1.andThen(p2).andThen(p3)
-      val rhs = p1.andThen(p2.andThen(p3))
+      val lhs = p3.compose(p2).compose(p1)
+      val rhs = p3.compose(p2.compose(p1))
       assert(lhs.run(st) === rhs.run(st))
     }
   }
@@ -245,9 +245,9 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("CartesianMonoidalProfunctor: Parser left identity") {
     val p   = PA.literal("x")
-    val lhs = MP.unit.tensor(p).dimap(
-      (_: Unit) => ((), ()),
-      { case ((), b) => b },
+    val lhs = (MP.unit *** p).dimap(
+      (a: Unit) => ((), a),
+      (_, b: String) => b,
     )
     forAll { (st: String) =>
       assert(lhs.run(st) === p.run(st))
@@ -256,9 +256,9 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("CartesianMonoidalProfunctor: Parser right identity") {
     val p   = PA.literal("x")
-    val lhs = p.tensor(MP.unit).dimap(
-      (_: Unit) => ((), ()),
-      { case (b, ()) => b },
+    val lhs = (p *** MP.unit).dimap(
+      (a: Unit) => (a, ()),
+      (b: String, _) => b,
     )
     forAll { (st: String) =>
       assert(lhs.run(st) === p.run(st))
@@ -270,13 +270,11 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val p2 = PA.literal("2")
     val p3 = PA.literal("3")
 
-    val f: ((Unit, (Unit, Unit))) => ((Unit, Unit), Unit) =
-      in => ((in._1, in._2._1), in._2._2)
-    val g: (((String, String), String)) => (String, (String, String)) =
-      out => (out._1._1, (out._1._2, out._2))
-
-    val lhs = p1.tensor(p2).tensor(p3).dimap(f, g)
-    val rhs = p1.tensor(p2.tensor(p3))
+    val lhs = ((p1 *** p2) *** p3).dimap(
+      (in: (Unit, (Unit, Unit))) => ((in._1, in._2._1), in._2._2),
+      (out: ((String, String), String)) => (out._1._1, (out._1._2, out._2)),
+    )
+    val rhs = p1 *** (p2 *** p3)
 
     forAll { (st: String) =>
       val input: (Unit, (Unit, Unit)) = ((), ((), ()))
@@ -288,30 +286,11 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   // RestrictionPromonad Laws on Parser
   // =========================================================================
 
-  test("RestrictionPromonad: Parser idempotence law") {
-    val p                       = PA.literal("test")
-    val lhs: Parser[Unit, Unit] = p.restrict.restrict
-    val rhs: Parser[Unit, Unit] = p.restrict
-    forAll { (st: String) =>
-      assert(lhs.run(st) === rhs.run(st))
-    }
-  }
-
-  test("RestrictionPromonad: Parser left absorption law") {
+  test("RestrictionPromonad: Parser restriction law") {
     val p                         = PA.literal("test")
     val lhs: Parser[Unit, String] = p.restrict >>> p
     forAll { (st: String) =>
       assert(lhs.run(st) === p.run(st))
-    }
-  }
-
-  test("RestrictionPromonad: Parser lax naturality law (up to failure equivalence)") {
-    val p: Parser[Unit, String]   = PA.literal("a")
-    val q: Parser[String, String] = PA.literal("b").lmap((_: String) => ())
-    forAll { (st: String) =>
-      val lhs: Parser[Unit, String] = p >>> q.restrict
-      val rhs: Parser[Unit, String] = (p >>> q).restrict >>> p
-      assert(lhs.run(st) =~= rhs.run(st))
     }
   }
 
@@ -321,6 +300,26 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     forAll { (st: String) =>
       val lhs: Parser[Unit, Unit] = p.restrict >>> q.restrict
       val rhs: Parser[Unit, Unit] = q.restrict >>> p.restrict
+      assert(lhs.run(st) =~= rhs.run(st))
+    }
+  }
+
+  test("RestrictionPromonad: Parser absorption law (up to failure equivalence)") {
+    val p: Parser[Unit, String] = PA.literal("a")
+    val q: Parser[Unit, String] = PA.literal("b")
+    forAll { (st: String) =>
+      val lhs: Parser[Unit, Unit] = (p.restrict >>> q).restrict
+      val rhs: Parser[Unit, Unit] = p.restrict >>> q.restrict
+      assert(lhs.run(st) =~= rhs.run(st))
+    }
+  }
+
+  test("RestrictionPromonad: Parser lax naturality law (up to failure equivalence)") {
+    val p: Parser[Unit, String]   = PA.literal("a")
+    val q: Parser[String, String] = PA.literal("b").lmap((_: String) => ())
+    forAll { (st: String) =>
+      val lhs: Parser[Unit, String] = p >>> q.restrict
+      val rhs: Parser[Unit, String] = (p >>> q).restrict >>> p
       assert(lhs.run(st) =~= rhs.run(st))
     }
   }

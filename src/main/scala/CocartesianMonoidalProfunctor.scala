@@ -15,9 +15,9 @@ trait CocartesianMonoidalProfunctor extends Profunctor {
     *
     * Unitality:
     *   - left identity: *P*(λ⁻¹, λ) ∘ (*empty* ⊕ *p*) = *p*
-    *     - `empty.sum(p).dimap(Right(_), _.merge) == p`
+    *     - `(empty +++ p).dimap(Right(_), _.merge) == p`
     *   - right identity: *P*(ρ⁻¹, ρ) ∘ (*p* ⊕ *empty*) = *p*
-    *     - `p.sum(empty).dimap(Left(_), _.merge) == p`
+    *     - `(p +++ empty).dimap(Left(_), _.merge) == p`
     */
   def empty: P[Nothing, Nothing]
 
@@ -27,6 +27,7 @@ trait CocartesianMonoidalProfunctor extends Profunctor {
       *
       * Associativity:
       *   - *P*(α⁻¹, α) ∘ ((*p* ⊕ *q*) ⊕ *r*) = *p* ⊕ (*q* ⊕ *r*)
+      *     - `((self +++ other1) +++ other2).dimap({ case Left(Left(a)) => Left(a); case Left(Right(c)) => Right(Left(c)); case Right(e) => Right(Right(e)) }, { case Left(b) => Left(Left(b)); case Right(Left(d)) => Left(Right(d)); case Right(Right(f)) => Right(f) }) == self +++ (other1 +++ other2)`
       */
     def sum[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]]
 

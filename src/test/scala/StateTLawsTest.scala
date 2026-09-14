@@ -15,8 +15,9 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   private val RM = StateT.StateTIsRestrictionMonad[String, Try]
   private val MP = StateT.StateTIsMonoidPlus[String, Try]
 
+  import M.{flatMap, flatten}
   import MP.+
-  import RM.{flatMap, restrict}
+  import RM.restrict
 
   // --- Observational Equivalence Helpers ---
 
@@ -41,12 +42,19 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   // Monad Laws on StateT
   // =========================================================================
 
+  test("StateT: Monad unit naturality") {
+    val f: Int => String = _.toString
+    forAll { (st: String) =>
+      assert(M.unit(42).map(f)(st) === M.unit(f(42))(st))
+    }
+  }
+
   test("StateT: Monad left unitality") {
-    val f: Int => StateT[String, Try][String] = {
-      x => state => Success((result = x.toString, state = state))
+    val s: StateT[String, Try][Int] = {
+      state => Success((result = 42, state = state))
     }
     forAll { (st: String) =>
-      assert(M.unit(42).flatMap(f)(st) === f(42)(st))
+      assert(M.unit(s).flatten(st) === s(st))
     }
   }
 
@@ -55,7 +63,29 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       state => Success((result = 42, state = state))
     }
     forAll { (st: String) =>
-      assert(s.flatMap(M.unit)(st) === s(st))
+      assert(s.map(M.unit).flatten(st) === s(st))
+    }
+  }
+
+  test("StateT: Monad flatten naturality") {
+    val s: StateT[String, Try][Int] = {
+      state => Success((result = 42, state = state))
+    }
+    val m: StateT[String, Try][StateT[String, Try][Int]] = M.unit(s)
+    val f: Int => String                                = _.toString
+    forAll { (st: String) =>
+      assert(m.flatten.map(f)(st) === m.map(_.map(f)).flatten(st))
+    }
+  }
+
+  test("StateT: Monad associativity") {
+    val s: StateT[String, Try][Int] = {
+      state => Success((result = 42, state = state))
+    }
+    val m: StateT[String, Try][StateT[String, Try][StateT[String, Try][Int]]] =
+      M.unit(M.unit(s))
+    forAll { (st: String) =>
+      assert(m.flatten.flatten(st) === m.map(_.flatten).flatten(st))
     }
   }
 
@@ -81,6 +111,15 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     }
   }
 
+  test("StateT: MonoidPlus associativity") {
+    val s1: StateT[String, Try][Int] = state => Success((result = 1, state = state))
+    val s2: StateT[String, Try][Int] = state => Success((result = 2, state = state))
+    val s3: StateT[String, Try][Int] = state => Success((result = 3, state = state))
+    forAll { (st: String) =>
+      assert(((s1 + s2) + s3)(st) === (s1 + (s2 + s3))(st))
+    }
+  }
+
   // =========================================================================
   // RestrictionMonad Laws on StateT
   // =========================================================================
@@ -91,6 +130,12 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     }
     forAll { (st: String) =>
       assert(s.restrict.restrict(st) === s.restrict(st))
+    }
+  }
+
+  test("StateT: RestrictionMonad unitality") {
+    forAll { (st: String) =>
+      assert(RM.unit(42).restrict(st) === RM.unit(())(st))
     }
   }
 

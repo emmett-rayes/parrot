@@ -13,22 +13,22 @@ trait RestrictionPromonad extends Promonad {
     /** Maps an element *p* in *P*[*A*, *B*] to an element *p̅* in *P*[*A*, *A*].
       *
       * Restriction:
-      *   - *p̅* ; *p* = *p*
-      *     - `self.restrict.combine(self) == self`
+      *   - *p* ∘ *p̅* = *p*
+      *     - `self.restrict >>> self == self`
       *
       * Commutativity:
-      *   - *p̅* ; *q̅* = *q̅* ; *p̅*
-      *     - `self.restrict.combine(other.restrict) == other.restrict.combine(self.restrict)`
+      *   - *q̅* ∘ *p̅* = *p̅* ∘ *q̅*
+      *     - `self.restrict >>> other.restrict == other.restrict >>> self.restrict`
       *
       * Absorption:
-      *   - *(p̅ ; q)̅* = *p̅* ; *q̅*
-      *     - `self.restrict.combine(other).restrict == self.restrict.combine(other.restrict)`
+      *   - *(q ∘ p̅)̅* = *q̅* ∘ *p̅*
+      *     - `(self.restrict >>> other).restrict == self.restrict >>> other.restrict`
       *
       * Lax Naturality:
-      *   - *p* ; *q̅* = *(p ; q)̅* ; *p*
-      *     - `self.combine(other.restrict) == self.combine(other).restrict.combine(self)`
+      *   - *q̅* ∘ *p* = *p* ∘ *(q ∘ p)̅*
+      *     - `self >>> other.restrict == (self >>> other).restrict >>> self`
       *
-      * Here ; is the multiplication of *P*.
+      * Here ∘ is the composition of the category induced by *P*.
       */
     def restrict: P[A, A]
 }

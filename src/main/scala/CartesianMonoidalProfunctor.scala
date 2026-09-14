@@ -15,9 +15,9 @@ trait CartesianMonoidalProfunctor extends Profunctor {
     *
     * Unitality:
     *   - left identity: *P*(λ⁻¹, λ) ∘ (*unit* ⊗ *p*) = *p*
-    *     - `unit.tensor(p).dimap(a => ((), a), (_, b) => b) == p`
+    *     - `(unit *** p).dimap(a => ((), a), (_, b) => b) == p`
     *   - right identity: *P*(ρ⁻¹, ρ) ∘ (*p* ⊗ *unit*) = *p*
-    *     - `p.tensor(unit).dimap(a => (a, ()), (b, _) => b) == p`
+    *     - `(p *** unit).dimap(a => (a, ()), (b, _) => b) == p`
     */
   def unit: P[Unit, Unit]
 
@@ -27,7 +27,7 @@ trait CartesianMonoidalProfunctor extends Profunctor {
       *
       * Associativity:
       *   - *P*(α⁻¹, α) ∘ ((*p* ⊗ *q*) ⊗ *r*) = *p* ⊗ (*q* ⊗ *r*)
-      *     - `self.tensor(other1).tensor(other2).dimap((a, (c, e)) => ((a, c), e), ((b, d), f) => (b, (d, f))) == self.tensor(other1.tensor(other2))`
+      *     - `((self *** other1) *** other2).dimap((a, (c, e)) => ((a, c), e), ((b, d), f) => (b, (d, f))) == self *** (other1 *** other2)`
       */
     def tensor[C, D](other: P[C, D]): P[(A, C), (B, D)]
 

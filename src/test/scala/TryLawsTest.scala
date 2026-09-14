@@ -67,30 +67,32 @@ class TryLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("Monad: Try unit naturality law") {
     forAll { (a: Int) =>
       val f: Int => String = x => (x * 2).toString
-      assert(M.unit(f(a)) === M.unit(a).map(f))
+      assert(M.unit(a).map(f) === M.unit(f(a)))
     }
   }
 
   test("Monad: Try left unitality law") {
-    forAll { (a: Int) =>
-      val f: Int => Try[String] = {
-        x => if x % 2 == 0 then Success(x.toString) else Failure(new Exception("odd"))
-      }
-      assert(M.unit(a).flatMap(f) === f(a))
+    forAll { (t: Try[Int]) =>
+      assert(M.unit(t).flatten === t)
     }
   }
 
   test("Monad: Try right unitality law") {
     forAll { (t: Try[Int]) =>
-      assert(t.flatMap(M.unit) === t)
+      assert(t.map(M.unit).flatten === t)
+    }
+  }
+
+  test("Monad: Try flatten naturality law") {
+    forAll { (t: Try[Try[Int]]) =>
+      val f: Int => String = _.toString
+      assert(t.flatten.map(f) === t.map(_.map(f)).flatten)
     }
   }
 
   test("Monad: Try associativity law") {
-    forAll { (t: Try[Int]) =>
-      val f: Int => Try[String] = x => Success((x + 1).toString)
-      val g: String => Try[Int] = s => Success(s.length)
-      assert(t.flatMap(f).flatMap(g) === t.flatMap(a => f(a).flatMap(g)))
+    forAll { (t: Try[Try[Try[Int]]]) =>
+      assert(t.flatten.flatten === t.map(_.flatten).flatten)
     }
   }
 
