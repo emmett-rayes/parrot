@@ -39,6 +39,11 @@ trait MonoidPlus extends Functor {
 object MonoidPlus {
   import scala.util.Try
 
+  /** Summons the `MonoidPlus` instance of `M`. */
+  def apply[M[_]: MonoidPlus]: M is MonoidPlus = {
+    summon
+  }
+
   /** `Try` is a monoid *M*, where
     *   - *M*[*A*] = *A* + *E* are the elements
     *   - 0 = *ι*₂(*e*) is the unit element, for an arbitrary failure *e*
