@@ -38,3 +38,11 @@ trait Category {
       other.compose(self)
     }
 }
+
+object Category {
+
+  /** Summons the `Category` instance of `~>`. */
+  def apply[~>[_, _]: Category]: ~> is Category = {
+    summon
+  }
+}
