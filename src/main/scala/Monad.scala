@@ -53,6 +53,11 @@ trait Monad extends Functor {
 object Monad {
   import scala.util.Try
 
+  /** Summons the `Monad` instance of `M`. */
+  def apply[M[_]: Monad]: M is Monad = {
+    summon
+  }
+
   /** `Try` is a monad *M*, where
     *   - *M*[*A*] = *A* + *E* are the elements
     *   - *η*(*a*) = *ι*₁(*a*) is the unit
