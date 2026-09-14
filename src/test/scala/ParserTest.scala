@@ -61,6 +61,42 @@ class ParserTest extends AnyFunSuite {
     assert(parser.run("").isFailure)
   }
 
+  test("lookahead succeeds without consuming input if the underlying parser succeeds") {
+    val parser = ~P.literal("hello")
+    assert(parser.run("hello world") == Success((result = (), state = "hello world")))
+  }
+
+  test("lookahead fails if the underlying parser fails") {
+    val parser = ~P.literal("hello")
+    assert(parser.run("goodbye").isFailure)
+  }
+
+  test("lookahead followed by the parser consumes the input normally (bar(p) >> p == p)") {
+    val p      = P.literal("hello")
+    val parser = ~p >> p
+    assert(parser.run("hello world") == Success((result = "hello", state = " world")))
+  }
+
+  test("not succeeds without consuming input if the underlying parser fails") {
+    val parser = !P.literal("hello")
+    assert(parser.run("goodbye") == Success((result = (), state = "goodbye")))
+  }
+
+  test("not fails if the underlying parser succeeds") {
+    val parser = !P.literal("hello")
+    assert(parser.run("hello world").isFailure)
+  }
+
+  test("not guards subsequent parser execution when the prefix does not match") {
+    val parser = !P.literal("hello") >> P.literal("world")
+    assert(parser.run("world") == Success((result = "world", state = "")))
+  }
+
+  test("not blocks subsequent parser execution when the prefix matches") {
+    val parser = !P.literal("hello") >> P.literal("world")
+    assert(parser.run("hello world").isFailure)
+  }
+
   test("andThen sequences two successful parsers") {
     val p1     = P.literal("hello")
     val p2     = P.success[String, Int](42)
