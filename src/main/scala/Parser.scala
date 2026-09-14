@@ -78,7 +78,7 @@ object Parser {
 
     extension [A, B](self: Parser[A, B])
       def branch[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = {
-        given Parser is CoMonoidalProfunctor = summon // to assist type inference
+        given Parser is CocartesianMonoidalProfunctor = summon // to assist type inference
         self.sum(other)
       }
   }

@@ -97,14 +97,14 @@ object Promonad {
       }
   }
 
-  /** Every costrong promonad induces a comonoidal profunctor, where
+  /** Every cocartesian strong promonad induces a cocartesian monoidal profunctor, where
     *   - *empty* = *η*(*id*) is the unit element
     *   - *p* ⊕ *q* = *left*(*p*) ; *right*(*q*) is the sum
     *
     * Here *η* and ; are the unit and the multiplication of *P*.
     */
-  given PromonadIsCoMonoidalProfunctor
-    : [P[_, _]: Promonad] => (F: P is CoStrongProfunctor) => P is CoMonoidalProfunctor {
+  given PromonadIsCocartesianMonoidalProfunctor
+    : [P[_, _]: Promonad] => (F: P is CocartesianStrongProfunctor) => P is CocartesianMonoidalProfunctor {
     export F.dimap
 
     def empty: P[Nothing, Nothing] = {

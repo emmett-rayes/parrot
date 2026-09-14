@@ -1,13 +1,13 @@
 package parrot
 
-/** A comonoidal endoprofunctor over **Type**.
+/** A cocartesian monoidal endoprofunctor over **Type**.
   *
   * Represents a profunctor *P*: **Type**^*op* × **Type** → **Type** equipped with a monoidal structure with respect to
   * the coproduct + on **Type**, where
   *   - *empty*: *P*[Nothing, Nothing] is the unit element
   *   - ⊕: *P*[*A*,*B*] × *P*[*C*,*D*] → *P*[*A* + *C*, *B* + *D*] is the sum
   */
-trait CoMonoidalProfunctor extends Profunctor {
+trait CocartesianMonoidalProfunctor extends Profunctor {
   type Self[_, _]
   type P = Self
 
@@ -37,10 +37,10 @@ trait CoMonoidalProfunctor extends Profunctor {
     }
 }
 
-object CoMonoidalProfunctor {
+object CocartesianMonoidalProfunctor {
 
-  /** Summons the `CoMonoidalProfunctor` instance of `P`. */
-  def apply[P[_, _]: CoMonoidalProfunctor]: P is CoMonoidalProfunctor = {
+  /** Summons the `CocartesianMonoidalProfunctor` instance of `P`. */
+  def apply[P[_, _]: CocartesianMonoidalProfunctor]: P is CocartesianMonoidalProfunctor = {
     summon
   }
 }
