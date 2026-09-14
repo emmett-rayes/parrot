@@ -15,12 +15,12 @@ trait StrongProfunctor extends Profunctor {
     /** Maps an element in *P*[*A*,*B*] to an element in *P*[*A* × *C*, *B* × *C*].
       *
       * Unitality:
-      *   - identity: *P*(ρ, ρ⁻¹) ∘ *first* = *id*
+      *   - identity: *P*(ρ⁻¹, ρ) ∘ *first* = *id*
       *     - `self.first[Unit].dimap(a => (a, ()), (b, _) => b) == self`
       *
       * Associativity:
-      *   - *P*(α, α⁻¹) ∘ *first* ∘ *first* = *first*
-      *     - `self.first[C].first[D].dimap(((a, c), d) => (a, (c, d)), (b, (c, d)) => ((b, c), d)) == self.first[(C, D)]`
+      *   - *P*(α⁻¹, α) ∘ *first* ∘ *first* = *first*
+      *     - `self.first[C].first[D].dimap((a, (c, d)) => ((a, c), d), ((b, c), d) => (b, (c, d))) == self.first[(C, D)]`
       */
     def first[C]: P[(A, C), (B, C)]
 
