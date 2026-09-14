@@ -25,6 +25,11 @@ trait Functor {
 object Functor {
   import scala.util.Try
 
+  /** Summons the `Functor` instance of `F`. */
+  def apply[F[_]: Functor]: F is Functor = {
+    summon
+  }
+
   /** `Try` is a functor *F*, where
     *   - *F*[*A*] = *A* + *E* is the object part
     *   - *F*(*f*) = *f* + *id* is the morphism part
