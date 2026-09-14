@@ -90,6 +90,48 @@ class ParserTest extends AnyFunSuite {
     assert(parser.run("hello world").isFailure)
   }
 
+  test("orElse succeeds with the first parser if it succeeds") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1 +> p2
+    assert(parser.run("hello world") == Success((result = "hello", state = " world")))
+  }
+
+  test("orElse falls back to the second parser if the first parser fails") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1 +> p2
+    assert(parser.run("world hello") == Success((result = "world", state = " hello")))
+  }
+
+  test("orElse fails if both parsers fail") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1 +> p2
+    assert(parser.run("goodbye").isFailure)
+  }
+
+  test("either dispatches to the first parser yielding Left") {
+    val p1     = P.literal("hello")
+    val p2     = P.success[Unit, Int](42)
+    val parser = p1 |> p2
+    assert(parser.run("hello world") == Success((result = Left("hello"), state = " world")))
+  }
+
+  test("either falls back to the second parser yielding Right if the first fails") {
+    val p1     = P.literal("hello")
+    val p2     = P.success[Unit, Int](42)
+    val parser = p1 |> p2
+    assert(parser.run("world hello") == Success((result = Right(42), state = "world hello")))
+  }
+
+  test("either fails if both parsers fail") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1 |> p2
+    assert(parser.run("goodbye").isFailure)
+  }
+
   test("zip sequences two successful parsers pairing results") {
     val p1     = P.literal("hello")
     val p2     = P.literal(" world")
