@@ -44,7 +44,7 @@ object MonoidPlus {
     summon
   }
 
-  /** `Try` is a monoid *M*, where
+  /** `Try` is a monoid *M* (up to failure equivalence), where
     *   - *M*[*A*] = *A* + *E* are the elements
     *   - 0 = *ι*₂(*e*) is the unit element, for an arbitrary failure *e*
     *   - *ι*₁(*a*) + *y* = *ι*₁(*a*) and *ι*₂(*e*) + *y* = *y* is the monoid operation
