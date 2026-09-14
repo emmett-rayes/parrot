@@ -34,9 +34,25 @@ trait RestrictionMonad extends Monad {
 }
 
 object RestrictionMonad {
+  import scala.util.Try
 
   /** Summons the `RestrictionMonad` instance of `M`. */
   def apply[M[_]: RestrictionMonad]: M is RestrictionMonad = {
     summon
+  }
+
+  /** `Try` is a restriction monad *M*, where
+    *   - *M*[*A*] = *A* + *E* are the elements
+    *   - *m̄* = *M*(_ ↦ ())(*m*) is the restriction operation
+    *
+    * Here *E* is the type of failures, i.e. `Throwable`.
+    */
+  given TryIsRestrictionMonad: (M: Try is Monad) => Try is RestrictionMonad {
+    export M.{map, unit, flatten}
+
+    extension [A](self: Try[A])
+      def restrict: Try[Unit] = {
+        self.map(_ => ())
+      }
   }
 }
