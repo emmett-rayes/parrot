@@ -72,4 +72,20 @@ object Kleisli {
         (a, c) => self(a).map((_, c))
       }
   }
+
+  /** Every monad *M* induces a costrong profunctor *K*, where
+    *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
+    *   - *left*(*k*) = *Left*(*a*) ↦ *M*(*Left*)(*k*(*a*)), *Right*(*c*) ↦ *η*'(*Right*(*c*)) is the costrength
+    *
+    * Here *η*' is the unit of *M*.
+    */
+  given KleisliIsCoStrongProfunctor: [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is CoStrongProfunctor {
+    export P.dimap
+
+    extension [A, B](self: A => M[B])
+      def left[C]: Either[A, C] => M[Either[B, C]] = {
+        case Left(a)  => self(a).map(Left(_))
+        case Right(c) => M.unit(Right(c))
+      }
+  }
 }
