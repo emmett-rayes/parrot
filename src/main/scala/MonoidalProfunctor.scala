@@ -27,7 +27,7 @@ trait MonoidalProfunctor extends Profunctor {
       *
       * Associativity:
       *   - *P*(α⁻¹, α) ∘ ((*p* ⊗ *q*) ⊗ *r*) = *p* ⊗ (*q* ⊗ *r*)
-      *     - `self.tensor(other1).tensor(other2).dimap(((a, c), e) => (a, (c, e)), (b, (d, f)) => ((b, d), f)) == self.tensor(other1.tensor(other2))`
+      *     - `self.tensor(other1).tensor(other2).dimap((a, (c, e)) => ((a, c), e), ((b, d), f) => (b, (d, f))) == self.tensor(other1.tensor(other2))`
       */
     def tensor[C, D](other: P[C, D]): P[(A, C), (B, D)]
 
