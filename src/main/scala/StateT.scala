@@ -64,4 +64,20 @@ object StateT {
         s => self(s).plus(other(s))
       }
   }
+
+  /** Every restriction monad *M* with state *S* induces a restriction monad *T*, where
+    *   - *T*[*A*] = *S* → *M*[*A* × *S*] are the elements
+    *   - *t̄* = *s* ↦ *M*(_ ↦ ⟨(),*s*⟩)(*t*(*s*)̄') is the restriction operation
+    *
+    * Here *m̄'* is the restriction operation of *M*.
+    */
+  given StateTIsRestrictionMonad
+    : [S, M[_]: RestrictionMonad] => (T: StateT[S, M] is Monad) => StateT[S, M] is RestrictionMonad {
+    export T.{map, unit, flatten}
+
+    extension [A](self: StateT[S, M][A])
+      def restrict: StateT[S, M][Unit] = {
+        state => self(state).restrict.map(_ => ((), state))
+      }
+  }
 }
