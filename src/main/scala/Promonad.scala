@@ -103,7 +103,8 @@ object Promonad {
     *
     * Here *η* and ; are the unit and the multiplication of *P*.
     */
-  given PromonadIsCoMonoidalProfunctor: [P[_, _]: Promonad] => (F: P is CoStrongProfunctor) => P is CoMonoidalProfunctor {
+  given PromonadIsCoMonoidalProfunctor
+    : [P[_, _]: Promonad] => (F: P is CoStrongProfunctor) => P is CoMonoidalProfunctor {
     export F.dimap
 
     def empty: P[Nothing, Nothing] = {
