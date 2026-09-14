@@ -1,13 +1,13 @@
 package parrot
 
-/** A strong endoprofunctor over **Type**.
+/** A cartesian strong endoprofunctor over **Type**.
   *
   * Represents a profunctor *P*: **Type**^*op* × **Type** → **Type** equipped with a tensorial strength with respect to
   * the cartesian product × on **Type**, where
   *   - *first*: *P*[*A*,*B*] → *P*[*A* × *C*, *B* × *C*] is the left strength
   *   - *second*: *P*[*C*,*D*] → *P*[*A* × *C*, *A* × *D*] is the right strength
   */
-trait StrongProfunctor extends Profunctor {
+trait CartesianStrongProfunctor extends Profunctor {
   type Self[_, _]
   type P = Self
 
@@ -31,10 +31,10 @@ trait StrongProfunctor extends Profunctor {
     }
 }
 
-object StrongProfunctor {
+object CartesianStrongProfunctor {
 
-  /** Summons the `StrongProfunctor` instance of `P`. */
-  def apply[P[_, _]: StrongProfunctor]: P is StrongProfunctor = {
+  /** Summons the `CartesianStrongProfunctor` instance of `P`. */
+  def apply[P[_, _]: CartesianStrongProfunctor]: P is CartesianStrongProfunctor = {
     summon
   }
 }

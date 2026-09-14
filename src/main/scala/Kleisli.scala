@@ -60,11 +60,12 @@ object Kleisli {
       }
   }
 
-  /** Every monad *M* induces a strong profunctor *K*, where
+  /** Every monad *M* induces a cartesian strong profunctor *K*, where
     *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
     *   - *first*(*k*) = (*a*,*c*) ↦ *M*(⟨*id*,*c*⟩)(*k*(*a*)) is the strength
     */
-  given KleisliIsStrongProfunctor: [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is StrongProfunctor {
+  given KleisliIsCartesianStrongProfunctor
+    : [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is CartesianStrongProfunctor {
     export P.dimap
 
     extension [A, B](self: A => M[B])
