@@ -33,3 +33,11 @@ trait Profunctor {
       self.dimap(identity[A], g)
     }
 }
+
+object Profunctor {
+
+  /** Summons the `Profunctor` instance of `P`. */
+  def apply[P[_, _]: Profunctor]: P is Profunctor = {
+    summon
+  }
+}
