@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import scala.util.Success
 
 class ParserTest extends AnyFunSuite {
-  import Parser.run
+  import Parser.{run, given}
 
   private val P = ParserAlgebra[Parser]
 
