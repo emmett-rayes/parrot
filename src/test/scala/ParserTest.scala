@@ -117,4 +117,60 @@ class ParserTest extends AnyFunSuite {
     val parser = p1 ** p2
     assert(parser.run(((), ()), "hello world").isFailure)
   }
+
+  test("branch dispatches to the first parser on Left input") {
+    val p1     = P.literal("hello")
+    val p2     = P.success[Unit, Int](42)
+    val parser = p1 ++ p2
+    assert(parser.run(Left(()), "hello world") == Success((result = Left("hello"), state = " world")))
+  }
+
+  test("branch dispatches to the second parser on Right input") {
+    val p1     = P.literal("hello")
+    val p2     = P.success[Unit, Int](42)
+    val parser = p1 ++ p2
+    assert(parser.run(Right(()), "hello world") == Success((result = Right(42), state = "hello world")))
+  }
+
+  test("branch fails if the first branch fails on Left input") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1 ++ p2
+    assert(parser.run(Left(()), "goodbye").isFailure)
+  }
+
+  test("branch fails if the second branch fails on Right input") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1 ++ p2
+    assert(parser.run(Right(()), "goodbye").isFailure)
+  }
+
+  test("merge dispatches to the first parser on Left input") {
+    val p1     = P.literal("0x") >> P.success[String, Int](16)
+    val p2     = P.success[Unit, Int](10)
+    val parser = p1 || p2
+    assert(parser.run(Left(()), "0xabc") == Success((result = 16, state = "abc")))
+  }
+
+  test("merge dispatches to the second parser on Right input") {
+    val p1     = P.literal("0x") >> P.success[String, Int](16)
+    val p2     = P.success[Unit, Int](10)
+    val parser = p1 || p2
+    assert(parser.run(Right(()), "abc") == Success((result = 10, state = "abc")))
+  }
+
+  test("merge fails if the first branch fails on Left input") {
+    val p1     = P.literal("hello") >> P.success[String, Int](1)
+    val p2     = P.literal("world") >> P.success[String, Int](2)
+    val parser = p1 || p2
+    assert(parser.run(Left(()), "goodbye").isFailure)
+  }
+
+  test("merge fails if the second branch fails on Right input") {
+    val p1     = P.literal("hello") >> P.success[String, Int](1)
+    val p2     = P.literal("world") >> P.success[String, Int](2)
+    val parser = p1 || p2
+    assert(parser.run(Right(()), "goodbye").isFailure)
+  }
 }
