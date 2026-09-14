@@ -41,7 +41,7 @@ trait ParserAlgebra {
 
 object ParserAlgebra {
 
-  /** Summons the parser algebra of *P*. */
+  /** Summons the `ParserAlgebra` instance of `P`. */
   def apply[P[_, _]: ParserAlgebra]: P is ParserAlgebra = {
     summon
   }
