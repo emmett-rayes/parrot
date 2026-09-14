@@ -96,4 +96,23 @@ object Promonad {
         self.first.combine(other.second)
       }
   }
+
+  /** Every costrong promonad induces a comonoidal profunctor, where
+    *   - *empty* = *η*(*id*) is the unit element
+    *   - *p* ⊕ *q* = *left*(*p*) ; *right*(*q*) is the sum
+    *
+    * Here *η* and ; are the unit and the multiplication of *P*.
+    */
+  given PromonadIsCoMonoidalProfunctor: [P[_, _]: Promonad] => (F: P is CoStrongProfunctor) => P is CoMonoidalProfunctor {
+    export F.dimap
+
+    def empty: P[Nothing, Nothing] = {
+      P.unit(identity)
+    }
+
+    extension [A, B](self: P[A, B])
+      def sum[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = {
+        self.left.combine(other.right)
+      }
+  }
 }
