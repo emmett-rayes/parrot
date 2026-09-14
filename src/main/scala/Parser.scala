@@ -1,5 +1,6 @@
 package parrot
 
+import scala.annotation.targetName
 import scala.util.Try
 
 /** A Parser over `String` input with `Throwable` failures.
@@ -30,6 +31,7 @@ object Parser {
 /** The canonical parser implementation is a parser algebra. */
 given ParserIsParserAlgebra: Parser is ParserAlgebra {
   import Kleisli.given
+  import Promonad.given
   import StateT.given
 
   import scala.util.{Failure, Success}
@@ -54,5 +56,11 @@ given ParserIsParserAlgebra: Parser is ParserAlgebra {
   extension [A, B](self: Parser[A, B])
     def andThen[C](other: Parser[B, C]): Parser[A, C] = {
       self.combine(other)
+    }
+
+  extension [A, B](self: Parser[A, B])
+    def zip[C, D](other: P[C, D]): P[(A, C), (B, D)] = {
+      given Parser is MonoidalProfunctor = summon // to assist type inference
+      self.tensor(other)
     }
 }
