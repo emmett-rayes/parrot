@@ -79,13 +79,30 @@ object Kleisli {
     *
     * Here *η*' is the unit of *M*.
     */
-  given KleisliIsCoStrongProfunctor: [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is CoStrongProfunctor {
+  given KleisliIsCoStrongProfunctor
+    : [M[_]: Monad] => (P: Kleisli[M] is Profunctor) => Kleisli[M] is CoStrongProfunctor {
     export P.dimap
 
     extension [A, B](self: A => M[B])
       def left[C]: Either[A, C] => M[Either[B, C]] = {
         case Left(a)  => self(a).map(Left(_))
         case Right(c) => M.unit(Right(c))
+      }
+  }
+
+  /** Every restriction monad *M* induces a restriction promonad *K*, where
+    *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
+    *   - *k̅* = *a* ↦ *M*(*_ ↦ a*)(*k*(*a*)̅') is the restriction operation
+    *
+    * Here *m̅*' is the restriction operation of *M*.
+    */
+  given KleisliIsRestrictionPromonad
+    : [M[_]: RestrictionMonad] => (K: Kleisli[M] is Promonad) => Kleisli[M] is RestrictionPromonad {
+    export K.{unit, combine}
+
+    extension [A, B](self: Kleisli[M][A, B])
+      def restrict: Kleisli[M][A, A] = {
+        a => self(a).restrict.map(_ => a)
       }
   }
 }
