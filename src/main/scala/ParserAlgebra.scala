@@ -21,6 +21,18 @@ trait ParserAlgebra {
     def andThen[C](other: P[B, C]): P[A, C]
 
   extension [A, B](self: P[A, B])
+    /** A parser that tries `self`, falling back to `other` on the original input if `self` fails, yielding a common
+      * result.
+      */
+    def orElse(other: P[A, B]): P[A, B]
+
+  extension [A, B](self: P[A, B])
+    /** A parser that tries `self`, falling back to `other` on the original input if `self` fails. */
+    def either[C](other: P[A, C]): P[A, Either[B, C]] = {
+      self.rmap(Left(_)).orElse(other.rmap(Right(_)))
+    }
+
+  extension [A, B](self: P[A, B])
     /** A parser that sequences `self` with `other`, pairing their respective inputs and results while passing the
       * remaining input to `other`.
       */
@@ -40,6 +52,18 @@ trait ParserAlgebra {
     /** Alias for [[andThen]]. */
     def >>[C](other: P[B, C]): P[A, C] = {
       self.andThen(other)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[orElse]]. */
+    def +>(other: P[A, B]): P[A, B] = {
+      self.orElse(other)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[either]]. */
+    def |>[C](other: P[A, C]): P[A, Either[B, C]] = {
+      self.either(other)
     }
 
   extension [A, B](self: P[A, B])
