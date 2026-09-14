@@ -1,13 +1,13 @@
 package parrot
 
-/** A monoidal endoprofunctor over **Type**.
+/** A cartesian monoidal endoprofunctor over **Type**.
   *
   * Represents a profunctor *P*: **Type**^*op* × **Type** → **Type** equipped with a monoidal structure with respect to
   * the cartesian product × on **Type**, where
   *   - *unit*: *P*[Unit, Unit] is the unit element
   *   - ⊗: *P*[*A*,*B*] × *P*[*C*,*D*] → *P*[*A* × *C*, *B* × *D*] is the tensor product
   */
-trait MonoidalProfunctor extends Profunctor {
+trait CartesianMonoidalProfunctor extends Profunctor {
   type Self[_, _]
   type P = Self
 
@@ -38,10 +38,10 @@ trait MonoidalProfunctor extends Profunctor {
     }
 }
 
-object MonoidalProfunctor {
+object CartesianMonoidalProfunctor {
 
-  /** Summons the `MonoidalProfunctor` instance of `P`. */
-  def apply[P[_, _]: MonoidalProfunctor]: P is MonoidalProfunctor = {
+  /** Summons the `CartesianMonoidalProfunctor` instance of `P`. */
+  def apply[P[_, _]: CartesianMonoidalProfunctor]: P is CartesianMonoidalProfunctor = {
     summon
   }
 }

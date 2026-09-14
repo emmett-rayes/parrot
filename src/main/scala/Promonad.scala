@@ -78,13 +78,13 @@ object Promonad {
       }
   }
 
-  /** Every strong promonad induces a monoidal profunctor, where
+  /** Every cartesian strong promonad induces a cartesian monoidal profunctor, where
     *   - *unit* = *η*(*id*) is the unit element
     *   - *p* ⊗ *q* = *first*(*p*) ; *second*(*q*) is the tensor product
     *
     * Here *η* and ; are the unit and the multiplication of *P*.
     */
-  given PromonadIsMonoidalProfunctor: [P[_, _]: Promonad] => (F: P is StrongProfunctor) => P is MonoidalProfunctor {
+  given PromonadIsCartesianMonoidalProfunctor: [P[_, _]: Promonad] => (F: P is CartesianStrongProfunctor) => P is CartesianMonoidalProfunctor {
     export F.dimap
 
     def unit: P[Unit, Unit] = {

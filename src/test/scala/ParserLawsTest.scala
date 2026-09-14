@@ -17,7 +17,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   private val CSP  = CoStrongProfunctor[Parser]
   private val Cat  = Category[Parser]
-  private val MP   = MonoidalProfunctor[Parser]
+  private val MP   = CartesianMonoidalProfunctor[Parser]
   private val PA   = ParserAlgebra[Parser]
   private val PMP  = PromonoidPlus[Parser]
   private val ProM = Promonad[Parser]
@@ -240,10 +240,10 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   }
 
   // =========================================================================
-  // MonoidalProfunctor Laws on Parser
+  // CartesianMonoidalProfunctor Laws on Parser
   // =========================================================================
 
-  test("MonoidalProfunctor: Parser left identity") {
+  test("CartesianMonoidalProfunctor: Parser left identity") {
     val p   = PA.literal("x")
     val lhs = MP.unit.tensor(p).dimap(
       (_: Unit) => ((), ()),
@@ -254,7 +254,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     }
   }
 
-  test("MonoidalProfunctor: Parser right identity") {
+  test("CartesianMonoidalProfunctor: Parser right identity") {
     val p   = PA.literal("x")
     val lhs = p.tensor(MP.unit).dimap(
       (_: Unit) => ((), ()),
@@ -265,7 +265,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     }
   }
 
-  test("MonoidalProfunctor: Parser associativity") {
+  test("CartesianMonoidalProfunctor: Parser associativity") {
     val p1 = PA.literal("1")
     val p2 = PA.literal("2")
     val p3 = PA.literal("3")

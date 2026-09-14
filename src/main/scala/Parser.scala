@@ -72,7 +72,7 @@ object Parser {
 
     extension [A, B](self: Parser[A, B])
       def zip[C, D](other: P[C, D]): P[(A, C), (B, D)] = {
-        given Parser is MonoidalProfunctor = summon // to assist type inference
+        given Parser is CartesianMonoidalProfunctor = summon // to assist type inference
         self.tensor(other)
       }
 
