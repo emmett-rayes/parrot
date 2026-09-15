@@ -45,4 +45,21 @@ object ConwayPromonad {
   def apply[P[_, _]: ConwayPromonad]: P is ConwayPromonad = {
     summon
   }
+
+  /** Every Conway promonad induces a cartesian traced promonad, where trace is derived from the Conway dagger operator:
+    * `trace(g) = π₁ ∘ (g ∘ (id × π₂))†`
+    *
+    * Here ∘ is the composition of the category induced by *P*.
+    */
+  given ConwayPromonadIsCartesianTracedPromonad: [P[_, _]] => (C: P is ConwayPromonad) => P is CartesianTracedPromonad {
+    export C.unit
+    export C.combine
+
+    extension [A, B, C](self: P[(A, C), (B, C)])
+      def trace: P[A, B] = {
+        val step: P[(A, (B, C)), (B, C)] =
+          C.unit((in: (A, (B, C))) => (in._1, in._2._2)).combine(self)
+        step.dagger.combine(C.unit(_._1))
+      }
+  }
 }
