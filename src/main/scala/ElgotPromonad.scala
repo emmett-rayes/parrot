@@ -49,4 +49,24 @@ object ElgotPromonad {
   def apply[P[_, _]: ElgotPromonad]: P is ElgotPromonad = {
     summon
   }
+
+  /** Every Elgot promonad induces a cocartesian traced promonad, where cotrace is derived from the Elgot dagger
+    * operator: cotrace routes feedback through the universal dagger operator.
+    */
+  given ElgotPromonadIsCocartesianTracedPromonad
+    : [P[_, _]] => (E: P is ElgotPromonad) => P is CocartesianTracedPromonad {
+    export E.unit
+    export E.combine
+
+    extension [A, B, C](self: P[Either[A, C], Either[B, C]])
+      def trace: P[A, B] = {
+        val step: P[Either[A, C], Either[B, Either[A, C]]] =
+          self.combine(E.unit {
+            case Left(b)  => Left(b)
+            case Right(c) => Right(Right(c))
+          })
+        val loop: P[Either[A, C], B] = step.dagger
+        E.unit((a: A) => Left[A, C](a)).combine(loop)
+      }
+  }
 }
