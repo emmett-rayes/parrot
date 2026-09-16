@@ -271,4 +271,29 @@ class ParserTest extends AnyFunSuite {
     val parser = step.loop
     assert(parser.run(0, "xxxrest") == Success((result = 3, state = "rest")))
   }
+
+  test("repeated consumes multiple consecutive matches") {
+    val parser = P.literal("hello").repeated
+    assert(parser.run("hellohello world") == Success((result = List("hello", "hello"), state = " world")))
+  }
+
+  test("repeated consumes a single match") {
+    val parser = P.literal("hello").repeated
+    assert(parser.run("hello world") == Success((result = List("hello"), state = " world")))
+  }
+
+  test("repeated succeeds with an empty list on a mismatch") {
+    val parser = P.literal("hello").repeated
+    assert(parser.run("goodbye") == Success((result = List.empty, state = "goodbye")))
+  }
+
+  test("repeated consuming the whole input leaves an empty remainder") {
+    val parser = P.literal("hello").repeated
+    assert(parser.run("hellohello") == Success((result = List("hello", "hello"), state = "")))
+  }
+
+  test("repeated succeeds on empty input") {
+    val parser = P.literal("hello").repeated
+    assert(parser.run("") == Success((result = List.empty, state = "")))
+  }
 }
