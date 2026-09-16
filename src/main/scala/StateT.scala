@@ -80,4 +80,29 @@ object StateT {
         state => self(state).restrict.map(_ => ((), state))
       }
   }
+
+  given StateTIsElgotMonad: [S, M[_]: ElgotMonad] => (T: StateT[S, M] is Monad) => StateT[S, M] is ElgotMonad {
+    export T.{map, unit, flatten}
+
+    override def iterate[A, B](f: A => S => M[(result: Either[B, A], state: S)])(a: A)
+      : S => M[(result: B, state: S)] = {
+
+      val step: ((result: A, state: S)) => M[Either[(result: B, state: S), (result: A, state: S)]] = {
+        (result, state) =>
+          f(result)(state).map {
+            (result2, state2) =>
+              {
+                result2 match {
+                  case Left(value)  => Left(value, state2)
+                  case Right(value) => Right(value, state2)
+                }
+              }
+          }
+      }
+
+      s => {
+        ElgotMonad[M].iterate[(result: A, state: S), (result: B, state: S)](step)((a, s))
+      }
+    }
+  }
 }
