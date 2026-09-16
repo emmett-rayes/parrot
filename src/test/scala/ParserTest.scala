@@ -5,9 +5,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import scala.util.Success
 
 class ParserTest extends AnyFunSuite {
+  import Kleisli.given
   import Parser.{run, given}
+  import StateT.given
 
-  private val P = ParserAlgebra[Parser]
+  private val P    = ParserAlgebra[Parser]
+  private val Prof = Profunctor[Parser]
+  import Prof.rmap
 
   test("a literal consumes a matching prefix") {
     val parser = P.literal("hello")
@@ -250,5 +254,21 @@ class ParserTest extends AnyFunSuite {
     val p2     = P.literal("world") >> P.success[String, Int](2)
     val parser = p1 || p2
     assert(parser.run(Right(()), "goodbye").isFailure)
+  }
+
+  test("loop terminates immediately when the step returns Left") {
+    val step   = P.literal("hello").rmap(s => Left[String, Unit](s))
+    val parser = step.loop
+    assert(parser.run("hello world") == Success((result = "hello", state = " world")))
+  }
+
+  test("loop consumes tokens iteratively until termination") {
+    val step: Parser[Int, Either[Int, Int]] =
+      (n: Int) =>
+        input =>
+          if input.startsWith("x") then Success((Right(n + 1), input.drop(1)))
+          else Success((Left(n), input))
+    val parser = step.loop
+    assert(parser.run(0, "xxxrest") == Success((result = 3, state = "rest")))
   }
 }
