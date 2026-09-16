@@ -93,17 +93,26 @@ object Kleisli {
 
   /** Every restriction monad *M* induces a restriction promonad *K*, where
     *   - *K*[*A*,*B*] = *A* → *M*[*B*] are the elements
-    *   - *k̅* = *a* ↦ *M*(*_ ↦ a*)(*k*(*a*)̅') is the restriction operation
+    *   - *k̄* = *a* ↦ *M*(*_ ↦ a*)(*k*(*a*)̄') is the restriction operation
     *
-    * Here *m̅*' is the restriction operation of *M*.
+    * Here *m̄*' is the restriction operation of *M*.
     */
   given KleisliIsRestrictionPromonad
     : [M[_]: RestrictionMonad] => (K: Kleisli[M] is Promonad) => Kleisli[M] is RestrictionPromonad {
     export K.{unit, combine}
 
-    extension [A, B](self: Kleisli[M][A, B])
-      def restrict: Kleisli[M][A, A] = {
+    extension [A, B](self: A => M[B])
+      def restrict: A => M[A] = {
         a => self(a).restrict.map(_ => a)
+      }
+  }
+
+  given KleisliIsElgotPromonad: [M[_]: ElgotMonad] => (K: Kleisli[M] is Promonad) => Kleisli[M] is ElgotPromonad {
+    export K.{unit, combine}
+
+    extension [A, B](self: A => M[Either[B, A]])
+      def dagger: A => M[B] = {
+        M.iterate(self)
       }
   }
 }
