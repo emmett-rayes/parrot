@@ -70,6 +70,19 @@ trait ParserAlgebra {
     def loop: P[A, B]
 
   extension [A, B](self: P[A, B])
+    /** A parser that repeatedly executes `self` until it fails, collecting the results into a list. */
+    def repeated: P[A, List[B]] = {
+      val break: P[(A, List[B]), List[B]]                = pure(_._2.reverse)
+      val state: P[((A, A), List[B]), ((A, B), List[B])] = pure(identity[A]) ** self ** pure(identity[List[B]])
+      val continue: P[(A, List[B]), (A, List[B])]        = state.dimap(
+        { case (a, bs) => ((a, a), bs) },
+        { case ((a, b), bs) => (a, b :: bs) }
+      )
+      val step = (continue |> break).rmap(_.swap)
+      step.loop.lmap((_: A, List.empty))
+    }
+
+  extension [A, B](self: P[A, B])
     /** Alias for [[lookahead]]. */
     def unary_~ : P[A, Unit] = {
       self.lookahead
