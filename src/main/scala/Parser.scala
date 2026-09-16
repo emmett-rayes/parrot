@@ -46,8 +46,8 @@ object Parser {
         }
     }
 
-    def success[A, B](result: B): Parser[A, B] = {
-      Promonad[Parser].unit(_ => result)
+    def pure[A, B](f: A => B): Parser[A, B] = {
+      Promonad[Parser].unit(f)
     }
 
     def failure[A, B]: Parser[A, B] = {
