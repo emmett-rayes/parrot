@@ -65,6 +65,10 @@ trait ParserAlgebra {
       self.branch(other).rmap(_.merge)
     }
 
+  extension [A, B](self: P[A, Either[B, A]])
+    /** A parser that repeatedly executes `self` while it yields `Right`, and terminates when it yields `Left`. */
+    def loop: P[A, B]
+
   extension [A, B](self: P[A, B])
     /** Alias for [[lookahead]]. */
     def unary_~ : P[A, Unit] = {
