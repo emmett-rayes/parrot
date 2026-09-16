@@ -8,8 +8,13 @@ trait ParserAlgebra {
   /** A parser that consumes a literal at the start of the input. */
   def literal(expected: String): P[Unit, expected.type]
 
+  /** A parser that succeeds without consuming input, computing its result by applying `f` to the semantic input. */
+  def pure[A, B](f: A => B): P[A, B]
+
   /** A parser that always succeeds with the given result. */
-  def success[A, B](result: B): P[A, B]
+  def success[A, B](result: B): P[A, B] = {
+    pure(_ => result)
+  }
 
   /** A parser that always fails. */
   def failure[A, B]: P[A, B]
