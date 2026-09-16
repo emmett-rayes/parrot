@@ -49,3 +49,37 @@ trait ElgotMonad extends Monad {
     }
   }
 }
+
+object ElgotMonad {
+  import scala.annotation.tailrec
+  import scala.util.Try
+
+  /** Summons the `ElgotMonad` instance of `M`. */
+  def apply[M[_]: ElgotMonad]: M is ElgotMonad = {
+    summon
+  }
+
+  /** `Try` is an Elgot monad *M*, where
+    *   - *M*[*A*] = *A* + *E* are the elements
+    *   - *f*†(*a*) = [*ι*₁,*f*†](*v*) when *f*(*a*) = *ι*₁(*v*), and *ι*₂(*e*) when *f*(*a*) = *ι*₂(*e*) is the
+    *     iteration operation
+    *
+    * Here *E* is the type of failures, i.e. `Throwable`, and *ι*₁ and *ι*₂ are the injections into `Try`, i.e.
+    * `Success` and `Failure`.
+    */
+  given TryIsElgotMonad: (M: Try is Monad) => Try is ElgotMonad {
+    export M.{map, unit, flatten}
+
+    @tailrec
+    final override def iterate[A, B](f: A => Try[Either[B, A]])(a: A): Try[B] = {
+      f(a) match {
+        case Failure(exception) => Failure(exception)
+        case Success(value)     =>
+          value match {
+            case Left(value)  => Success(value)
+            case Right(value) => iterate(f)(value)
+          }
+      }
+    }
+  }
+}
