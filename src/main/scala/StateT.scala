@@ -30,17 +30,17 @@ object StateT {
     * underlying function.
     */
   given StateTIsMonad: [S, M[_]: Monad] => StateT[S, M] is Monad {
-    def unit[A](a: A): StateT[S, M][A] = {
+    def unit[A](a: A): S => M[(result: A, state: S)] = {
       s => M.unit((a, s))
     }
 
-    extension [A](self: StateT[S, M][StateT[S, M][A]])
-      def flatten: StateT[S, M][A] = {
+    extension [A](self: S => M[(result: S => M[(result: A, state: S)], state: S)])
+      def flatten: S => M[(result: A, state: S)] = {
         s => self(s).flatMap((result, state) => result(state))
       }
 
-    extension [A](self: StateT[S, M][A])
-      def map[B](f: A => B): StateT[S, M][B] = {
+    extension [A](self: S => M[(result: A, state: S)])
+      def map[B](f: A => B): S => M[(result: B, state: S)] = {
         s => self(s).map((result, state) => (f(result), state))
       }
   }
@@ -55,12 +55,12 @@ object StateT {
   given StateTIsMonoidPlus: [S, M[_]: MonoidPlus] => (F: StateT[S, M] is Functor) => StateT[S, M] is MonoidPlus {
     export F.map
 
-    def zero[A]: StateT[S, M][A] = {
+    def zero[A]: S => M[(result: A, state: S)] = {
       _ => M.zero
     }
 
-    extension [A](self: StateT[S, M][A])
-      def plus(other: StateT[S, M][A]): StateT[S, M][A] = {
+    extension [A](self: S => M[(result: A, state: S)])
+      def plus(other: S => M[(result: A, state: S)]): S => M[(result: A, state: S)] = {
         s => self(s).plus(other(s))
       }
   }
@@ -75,7 +75,7 @@ object StateT {
     : [S, M[_]: RestrictionMonad] => (T: StateT[S, M] is Monad) => StateT[S, M] is RestrictionMonad {
     export T.{map, unit, flatten}
 
-    extension [A](self: StateT[S, M][A])
+    extension [A](self: S => M[(result: A, state: S)])
       def restrict: StateT[S, M][Unit] = {
         state => self(state).restrict.map(_ => ((), state))
       }
