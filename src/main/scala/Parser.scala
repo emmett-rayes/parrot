@@ -81,5 +81,10 @@ object Parser {
         given Parser is CocartesianMonoidalProfunctor = summon // to assist type inference
         self.sum(other)
       }
+
+    extension [A, B](self: Parser[A, Either[B, A]])
+      def loop: Parser[A, B] = {
+        self.dagger
+      }
   }
 }
