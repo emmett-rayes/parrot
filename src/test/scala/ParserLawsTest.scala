@@ -8,6 +8,7 @@ import scala.util.{Failure, Success, Try}
 
 class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
+  import ElgotMonad.given
   import Functor.given
   import Kleisli.given
   import Monad.given
@@ -17,6 +18,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   private val CSP  = CocartesianStrongProfunctor[Parser]
   private val Cat  = Category[Parser]
+  private val EP   = ElgotPromonad[Parser]
   private val MP   = CartesianMonoidalProfunctor[Parser]
   private val PA   = ParserAlgebra[Parser]
   private val PMP  = PromonoidPlus[Parser]
@@ -27,6 +29,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   import CSP.*
   import Cat.*
+  import EP.dagger
   import MP.*
   import PMP.*
   import Prof.{dimap, lmap}
@@ -321,6 +324,98 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       val lhs: Parser[Unit, String] = p >>> q.restrict
       val rhs: Parser[Unit, String] = (p >>> q).restrict >>> p
       assert(lhs.run(st) =~= rhs.run(st))
+    }
+  }
+
+  // =========================================================================
+  // ElgotPromonad Laws on Parser
+  // =========================================================================
+
+  test("ElgotPromonad: Parser fixpoint law") {
+    val p: Parser[Int, Either[String, Int]] = (x: Int) =>
+      (st: String) =>
+        if x <= 0 then Success((result = Left(x.toString), state = st))
+        else if st.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x - 1), state = st.drop(1)))
+
+    val lhs = p.dagger
+    val rhs = p >>> p.dagger.right[String] >>> ProM.unit(_.merge)
+
+    forAll { (n: Int, st: String) =>
+      assert(lhs.run(n, st) === rhs.run(n, st))
+    }
+  }
+
+  test("ElgotPromonad: Parser naturality in parameters law") {
+    val p: Parser[Int, Either[Int, Int]] = (x: Int) =>
+      (st: String) =>
+        if x <= 0 then Success((result = Left(x), state = st))
+        else if st.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x - 1), state = st.drop(1)))
+    val g: Int => String = _.toString
+
+    val lhs = p.dagger >>> ProM.unit(g)
+    val rhs = (p >>> ProM.unit(_.left.map(g))).dagger
+
+    forAll { (n: Int, st: String) =>
+      assert(lhs.run(n, st) === rhs.run(n, st))
+    }
+  }
+
+  test("ElgotPromonad: Parser dinaturality law") {
+    val p: Parser[Int, Either[String, Int]] = (x: Int) =>
+      (st: String) =>
+        if x <= 0 then Success((result = Left(x.toString), state = st))
+        else if st.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x), state = st.drop(1)))
+    val g: Int => Int = c => c - 1
+
+    val lhs = (p >>> ProM.unit(_.map(g))).dagger
+    val rhs = p >>> (ProM.unit(g) >>> p).dagger.right[String] >>> ProM.unit(_.merge)
+
+    forAll { (n: Int, st: String) =>
+      assert(lhs.run(n, st) === rhs.run(n, st))
+    }
+  }
+
+  test("ElgotPromonad: Parser codiagonal law") {
+    val p: Parser[Int, Either[Either[String, Int], Int]] = (x: Int) =>
+      (st: String) =>
+        if x <= 0 then Success((result = Left(Left(x.toString)), state = st))
+        else if st.isEmpty then Failure(Exception("empty state"))
+        else if x % 2 == 0 then Success((result = Left(Right(x - 2)), state = st.drop(1)))
+        else Success((result = Right(x - 1), state = st.drop(1)))
+
+    val lhs = p.dagger.dagger
+    val rhs =
+      (p >>> ProM.unit {
+        case Left(Left(b))  => Left(b)
+        case Left(Right(a)) => Right(a)
+        case Right(a)       => Right(a)
+      }).dagger
+
+    forAll { (n: Int, st: String) =>
+      assert(lhs.run(n, st) === rhs.run(n, st))
+    }
+  }
+
+  test("ElgotPromonad: Parser uniformity law") {
+    val h: Int => Int                       = _ + 1
+    val q: Parser[Int, Either[String, Int]] = (y: Int) =>
+      (st: String) =>
+        if y <= 0 then Success((result = Left(y.toString), state = st))
+        else if st.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(y - 2), state = st.drop(1)))
+
+    val p: Parser[Int, Either[String, Int]] = (a: Int) =>
+      (st: String) =>
+        q(h(a))(st).map { case (res, state) => (res.map(y => y - 1), state) }
+
+    val lhs = p.dagger
+    val rhs = ProM.unit(h) >>> q.dagger
+
+    forAll { (n: Int, st: String) =>
+      assert(lhs.run(n, st) === rhs.run(n, st))
     }
   }
 }
