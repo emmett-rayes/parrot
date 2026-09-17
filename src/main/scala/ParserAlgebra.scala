@@ -142,6 +142,26 @@ trait ParserAlgebra {
     }
 
   extension [A, B](self: P[A, B])
+    /** A parser that executes `self` exactly `n` times, collecting the results into a list. */
+    def times(n: Int): P[A, List[B]] = {
+      require(n >= 0, "n must be non-negative")
+      val split: P[(A, Int, List[B]), Either[List[B], (A, Int, List[B])]] = pure {
+        case (a, k, bs) =>
+          if k <= 0 then Left(bs.reverse)
+          else Right((a, k, bs))
+      }
+      val state = pure(identity[A]) ** self ** pure(identity[(Int, List[B])])
+      val continue: P[(A, Int, List[B]), (A, Int, List[B])] = state.dimap(
+        { case (a, k, bs) => ((a, a), (k, bs)) },
+        { case ((a, b), (k, bs)) => (a, k - 1, b :: bs) }
+      )
+
+      val break = pure(identity[List[B]])
+      val step  = split >> (break ++ continue)
+      step.loop.lmap(a => (a, n, List.empty))
+    }
+
+  extension [A, B](self: P[A, B])
     /** Alias for [[lookahead]]. */
     def unary_~ : P[A, Unit] = {
       self.lookahead
