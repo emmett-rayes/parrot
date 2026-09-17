@@ -14,6 +14,7 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   private val M  = Monad[StateT[String, Try]]
   private val RM = StateT.StateTIsRestrictionMonad[String, Try]
   private val MP = StateT.StateTIsMonoidPlus[String, Try]
+  private val EM = ElgotMonad[StateT[String, Try]]
 
   import M.{flatMap, flatten}
   import MP.+
@@ -72,7 +73,7 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       state => Success((result = 42, state = state))
     }
     val m: StateT[String, Try][StateT[String, Try][Int]] = M.unit(s)
-    val f: Int => String                                = _.toString
+    val f: Int => String                                 = _.toString
     forAll { (st: String) =>
       assert(m.flatten.map(f)(st) === m.map(_.map(f)).flatten(st))
     }
@@ -165,6 +166,99 @@ class StateTLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       val lhs = s1.restrict.flatMap(_ => s2.restrict)
       val rhs = s2.restrict.flatMap(_ => s1.restrict)
       assert(lhs(st) =~= rhs(st))
+    }
+  }
+
+  // =========================================================================
+  // ElgotMonad Laws on StateT
+  // =========================================================================
+
+  test("StateT: ElgotMonad fixpoint law") {
+    val f: Int => StateT[String, Try][Either[String, Int]] = x =>
+      state =>
+        if x <= 0 then Success((result = Left(x.toString), state = state))
+        else if state.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x - 1), state = state.drop(1)))
+
+    forAll { (n: Int, st: String) =>
+      val lhs = EM.iterate(f)(n)
+      val rhs = f(n).flatMap {
+        case Left(b)  => EM.unit(b)
+        case Right(a) => EM.iterate(f)(a)
+      }
+      assert(lhs(st) === rhs(st))
+    }
+  }
+
+  test("StateT: ElgotMonad naturality in parameters law") {
+    val f: Int => StateT[String, Try][Either[Int, Int]] = x =>
+      state =>
+        if x <= 0 then Success((result = Left(x), state = state))
+        else if state.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x - 1), state = state.drop(1)))
+    val g: Int => String = _.toString
+
+    forAll { (n: Int, st: String) =>
+      val lhs = EM.iterate(f)(n).map(g)
+      val rhs = EM.iterate((a: Int) => f(a).map(_.left.map(g)))(n)
+      assert(lhs(st) === rhs(st))
+    }
+  }
+
+  test("StateT: ElgotMonad dinaturality law") {
+    val f: Int => StateT[String, Try][Either[String, Int]] = x =>
+      state =>
+        if x <= 0 then Success((result = Left(x.toString), state = state))
+        else if state.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x), state = state.drop(1)))
+    val g: Int => Int = c => c - 1
+
+    forAll { (n: Int, st: String) =>
+      val lhs = EM.iterate((a: Int) => f(a).map(_.map(g)))(n)
+      val rhs = f(n).flatMap {
+        case Left(b)  => EM.unit(b)
+        case Right(c) => EM.iterate((c: Int) => f(g(c)))(c)
+      }
+      assert(lhs(st) === rhs(st))
+    }
+  }
+
+  test("StateT: ElgotMonad codiagonal law") {
+    val f: Int => StateT[String, Try][Either[Either[String, Int], Int]] = x =>
+      state =>
+        if x <= 0 then Success((result = Left(Left(x.toString)), state = state))
+        else if state.isEmpty then Failure(Exception("empty state"))
+        else if x % 2 == 0 then Success((result = Left(Right(x - 2)), state = state.drop(1)))
+        else Success((result = Right(x - 1), state = state.drop(1)))
+
+    forAll { (n: Int, st: String) =>
+      val lhs = EM.iterate(EM.iterate(f))(n)
+      val rhs = EM.iterate((a: Int) =>
+        f(a).map {
+          case Left(Left(b))  => Left(b)
+          case Left(Right(a)) => Right(a)
+          case Right(a)       => Right(a)
+        }
+      )(n)
+      assert(lhs(st) === rhs(st))
+    }
+  }
+
+  test("StateT: ElgotMonad uniformity law") {
+    val h: Int => Int                                      = _ + 1
+    val g: Int => StateT[String, Try][Either[String, Int]] = y =>
+      state =>
+        if y <= 0 then Success((result = Left(y.toString), state = state))
+        else if state.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(y - 2), state = state.drop(1)))
+
+    val f: Int => StateT[String, Try][Either[String, Int]] = a =>
+      g(h(a)).map(_.map(y => y - 1))
+
+    forAll { (n: Int, st: String) =>
+      val lhs = EM.iterate(f)(n)
+      val rhs = EM.iterate(g)(h(n))
+      assert(lhs(st) === rhs(st))
     }
   }
 }
