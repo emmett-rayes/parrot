@@ -266,7 +266,7 @@ class ParserTest extends AnyFunSuite {
     val step: Parser[Int, Either[Int, Int]] =
       (n: Int) =>
         input =>
-          if input.startsWith("x") then Success((Right(n + 1), input.drop(1)))
+          if input.mkString.startsWith("x") then Success((Right(n + 1), input.drop(1)))
           else Success((Left(n), input))
     val parser = step.loop
     assert(parser.run(0, "xxxrest") == Success((result = 3, state = "rest")))
