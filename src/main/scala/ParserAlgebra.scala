@@ -11,6 +11,9 @@ trait ParserAlgebra {
   /** A parser that succeeds without consuming input, computing its result by applying `f` to the semantic input. */
   def pure[A, B](f: A => B): P[A, B]
 
+  /** A parser defined recursively by computing the fixed point of `f`. */
+  def recursive[A, B](f: P[A, B] => P[A, B]): P[A, B]
+
   /** A parser that always succeeds with the given result. */
   def success[A, B](result: B): P[A, B] = {
     pure(_ => result)
