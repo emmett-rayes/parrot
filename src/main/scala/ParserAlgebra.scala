@@ -22,10 +22,8 @@ trait ParserAlgebra {
     */
   inline def recursive[T <: Tuple](f: T => T): T = {
     inline compiletime.erasedValue[T] match {
-      case _: EmptyTuple => {
-        EmptyTuple.asInstanceOf[T]
-      }
-      case _: (head *: tail) => {
+      case _: EmptyTuple     => EmptyTuple.asInstanceOf[T]
+      case _: (head *: tail) =>
         def solveHead(t: tail): head = {
           recursive[Any, Any](h =>
             f((h.asInstanceOf[head] *: t).asInstanceOf[T]).productElement(0).asInstanceOf[P[Any, Any]]
@@ -34,9 +32,7 @@ trait ParserAlgebra {
 
         val solvedTail = recursive[tail](t => f((solveHead(t) *: t).asInstanceOf[T]).drop(1).asInstanceOf[tail])
         val solvedHead = solveHead(solvedTail)
-
         (solvedHead *: solvedTail).asInstanceOf[T]
-      }
     }
   }
 
@@ -55,9 +51,7 @@ trait ParserAlgebra {
   extension [A, B](self: P[A, B])
     /** A parser that succeeds if `self` fails, and fails if `self` succeeds. */
     def not: P[A, Unit] = {
-      self.lookahead
-        .either(success(()))
-        .andThen(failure.merge(success(())))
+      (~self |> success(())) >> (failure || success(()))
     }
 
   extension [A, B](self: P[A, B])
@@ -75,7 +69,7 @@ trait ParserAlgebra {
   extension [A, B](self: P[A, B])
     /** A parser that tries `self`, falling back to `other` on the original input if `self` fails. */
     def either[C](other: P[A, C]): P[A, Either[B, C]] = {
-      self.rmap(Left(_)).orElse(other.rmap(Right(_)))
+      self.rmap(Left(_)) +> other.rmap(Right(_))
     }
 
   extension [A, B](self: P[A, B])
@@ -83,13 +77,20 @@ trait ParserAlgebra {
       * results.
       */
     def union[C](other: P[A, C]): P[A, B | C] = {
-      self.rmap(b => (b: B | C)) +> other.rmap(c => (c: B | C))
+      self.rmap(b => b: B | C) +> other.rmap(c => c: B | C)
     }
+
   extension [A, B](self: P[A, B])
     /** A parser that sequences `self` with `other`, pairing their respective inputs and results while passing the
       * remaining input to `other`.
       */
     def zip[C, D](other: P[C, D]): P[(A, C), (B, D)]
+
+  extension [A, B](self: P[A, B])
+    /** A parser that sequences `self` with `other`, pairing both results. */
+    def pair[C](other: P[A, C]): P[A, (B, C)] = {
+      (self ** other).lmap(a => (a, a))
+    }
 
   extension [A, B](self: P[A, B])
     /** A parser that dispatches between `self` and `other` based on the input. */
@@ -98,7 +99,7 @@ trait ParserAlgebra {
   extension [A, B](self: P[A, B])
     /** A parser that dispatches between `self` and `other` based on the input, merging to a common result. */
     def merge[C](other: P[C, B]): P[Either[A, C], B] = {
-      self.branch(other).rmap(_.merge)
+      (self ++ other).rmap(_.merge)
     }
 
   extension [A, B](self: P[A, Either[B, A]])
@@ -122,30 +123,6 @@ trait ParserAlgebra {
     /** A parser that tries `self`, returning `Some` on success or `None` on failure. */
     def optional: P[A, Option[B]] = {
       self.rmap(Some(_)) +> success(None)
-    }
-
-  extension [A, B](self: P[A, B])
-    /** A parser that sequences `self` with `other`, keeping only the result of `other`. */
-    def skipThen[C](other: P[A, C]): P[A, C] = {
-      (self ** other).dimap(a => (a, a), (_, c) => c)
-    }
-
-  extension [A, B](self: P[A, B])
-    /** A parser that sequences `self` with `other`, keeping only the result of `self`. */
-    def thenSkip[C](other: P[A, C]): P[A, B] = {
-      (self ** other).dimap(a => (a, a), (b, _) => b)
-    }
-
-  extension [A, B](self: P[A, B])
-    /** A parser that sequences `self` with `other`, pairing both results. */
-    def pair[C](other: P[A, C]): P[A, (B, C)] = {
-      (self ** other).lmap(a => (a, a))
-    }
-
-  extension [A, B](self: P[A, B])
-    /** A parser that sequences `first`, `self`, and `second`, keeping only the result of `self`. */
-    def between[C, D](first: P[A, C], second: P[A, D]): P[A, B] = {
-      first *> self >* second
     }
 
   extension [A, B](self: P[A, B])
@@ -173,6 +150,24 @@ trait ParserAlgebra {
     def atLeast(n: Int): P[A, List[B]] = {
       require(n >= 0, "n must be non-negative")
       (self.times(n) && self.repeated).rmap((bs1, bs2) => bs1 ++ bs2)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** A parser that sequences `self` with `other`, keeping only the result of `other`. */
+    def skipThen[C](other: P[A, C]): P[A, C] = {
+      (self && other).rmap((_, c) => c)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** A parser that sequences `self` with `other`, keeping only the result of `self`. */
+    def thenSkip[C](other: P[A, C]): P[A, B] = {
+      (self && other).rmap((b, _) => b)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** A parser that sequences `first`, `self`, and `second`, keeping only the result of `self`. */
+    def between[C, D](first: P[A, C], second: P[A, D]): P[A, B] = {
+      first *> self >* second
     }
 
   extension [A, B](self: P[A, B])
