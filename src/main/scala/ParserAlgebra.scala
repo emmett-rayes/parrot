@@ -79,6 +79,13 @@ trait ParserAlgebra {
     }
 
   extension [A, B](self: P[A, B])
+    /** A parser that tries `self`, falling back to `other` on the original input if `self` fails, yielding a union of
+      * results.
+      */
+    def union[C](other: P[A, C]): P[A, B | C] = {
+      self.rmap(b => (b: B | C)) +> other.rmap(c => (c: B | C))
+    }
+  extension [A, B](self: P[A, B])
     /** A parser that sequences `self` with `other`, pairing their respective inputs and results while passing the
       * remaining input to `other`.
       */
