@@ -462,6 +462,14 @@ class ParserTest extends AnyFunSuite {
     )
   }
 
+  test("separatedBy matches elements separated by a delimiter") {
+    val p = P.literal("a").separatedBy(P.literal(","))
+    assert(
+      p.run("a,a,arest") == Success((result = List("a", "a", "a"), state = "rest")) &&
+        p.run("a") == Success((result = List("a"), state = "")) &&
+        p.run("b").isFailure,
+    )
+  }
 
   test("times matches a parser exactly n times") {
     val p = P.literal("x").times(3)
