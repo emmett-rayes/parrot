@@ -130,6 +130,12 @@ trait ParserAlgebra {
     }
 
   extension [A, B](self: P[A, B])
+    /** A parser that sequences `self` with `other`, pairing both results. */
+    def pair[C](other: P[A, C]): P[A, (B, C)] = {
+      (self ** other).lmap(a => (a, a))
+    }
+
+  extension [A, B](self: P[A, B])
     /** Alias for [[lookahead]]. */
     def unary_~ : P[A, Unit] = {
       self.lookahead
@@ -163,6 +169,12 @@ trait ParserAlgebra {
     /** Alias for [[zip]]. */
     def **[C, D](other: P[C, D]): P[(A, C), (B, D)] = {
       self.zip(other)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[pair]] */
+    def &&[C](other: P[A, C]): P[A, (B, C)] = {
+      (self ** other).lmap(a => (a, a))
     }
 
   extension [A, B](self: P[A, B])
