@@ -296,4 +296,62 @@ class ParserTest extends AnyFunSuite {
     val parser = P.literal("hello").repeated
     assert(parser.run("") == Success((result = List.empty, state = "")))
   }
+
+  test("recursive supports direct left recursion and grows the seed") {
+    val expr: Parser[Unit, String] = P.recursive[Unit, String] { rec =>
+      val step: Parser[Unit, String] = (rec ** P.literal("+") ** P.literal("1")).dimap(
+        (_: Unit) => (((), ()), ()),
+        { case ((e, _), one) => s"($e+$one)" }
+      )
+      step +> P.literal("1")
+    }
+
+    assert(
+      expr.run("1") == Success((result = "1", state = "")) &&
+        expr.run("1+1") == Success((result = "(1+1)", state = "")) &&
+        expr.run("1+1+1") == Success((result = "((1+1)+1)", state = "")) &&
+        expr.run("1+1+1+1") == Success((result = "(((1+1)+1)+1)", state = "")) &&
+        expr.run("x").isFailure,
+    )
+  }
+
+  test("recursive supports non-left recursion") {
+    val parens: Parser[Unit, String] = P.recursive[Unit, String] { rec =>
+      val nested: Parser[Unit, String] = (P.literal("(") ** rec ** P.literal(")")).dimap(
+        (_: Unit) => (((), ()), ()),
+        { case ((_, inner), _) => s"[$inner]" }
+      )
+      nested +> P.literal("x")
+    }
+
+    assert(
+      parens.run("x") == Success((result = "x", state = "")) &&
+        parens.run("(x)") == Success((result = "[x]", state = "")) &&
+        parens.run("((x))") == Success((result = "[[x]]", state = "")),
+    )
+  }
+
+  test("recursive supports semantic input (e.g. left-associative accumulator)") {
+    // A step parser that takes an accumulator acc: Int, parses "+1", and yields acc + 1
+    val plusOne: Parser[Unit, Unit] = (P.literal("+") >> P.success[String, Unit](()) >> P.literal("1")).dimap(
+      identity,
+      _ => ()
+    )
+    val step: Parser[Int, Int] = (P.pure((acc: Int) => acc) ** plusOne).dimap(
+      acc => (acc, ()),
+      { case (acc, _) => acc + 1 }
+    )
+
+    // Left-recursive accumulator fold: rec >> step | pure(acc => acc)
+    val fold: Parser[Int, Int] = P.recursive[Int, Int] { rec =>
+      (rec >> step) +> P.pure(identity[Int])
+    }
+
+    assert(
+      fold.run(0, "") == Success((result = 0, state = "")) &&
+        fold.run(10, "+1") == Success((result = 11, state = "")) &&
+        fold.run(10, "+1+1+1") == Success((result = 13, state = "")) &&
+        fold.run(0, "+1+1+1+1") == Success((result = 4, state = "")),
+    )
+  }
 }
