@@ -435,6 +435,16 @@ class ParserTest extends AnyFunSuite {
         parser.run("hellogoodbye").isFailure,
     )
   }
+
+  test("thenSkip sequences two parsers keeping only the first result") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1.thenSkip(p2)
+    assert(
+      parser.run("helloworld") == Success((result = "hello", state = "")) &&
+        parser.run("hellogoodbye").isFailure,
+    )
+  }
   test("optional succeeds with Some when self succeeds and None when self fails") {
     val p = P.literal("hello").optional
     assert(
