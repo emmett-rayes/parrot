@@ -136,6 +136,12 @@ trait ParserAlgebra {
     }
 
   extension [A, B](self: P[A, B])
+    /** A parser that sequences `first`, `self`, and `second`, keeping only the result of `self`. */
+    def between[C, D](first: P[A, C], second: P[A, D]): P[A, B] = {
+      first *> self >* second
+    }
+
+  extension [A, B](self: P[A, B])
     /** Alias for [[lookahead]]. */
     def unary_~ : P[A, Unit] = {
       self.lookahead
