@@ -425,6 +425,16 @@ class ParserTest extends AnyFunSuite {
         expr.run("1/3*2+1/3*2+1") == Success((result = "((((((1/3)*2)+1)/3)*2)+1)", state = "")),
     )
   }
+
+  test("skipThen sequences two parsers keeping only the second result") {
+    val p1     = P.literal("hello")
+    val p2     = P.literal("world")
+    val parser = p1.skipThen(p2)
+    assert(
+      parser.run("helloworld") == Success((result = "world", state = "")) &&
+        parser.run("hellogoodbye").isFailure,
+    )
+  }
   test("optional succeeds with Some when self succeeds and None when self fails") {
     val p = P.literal("hello").optional
     assert(
