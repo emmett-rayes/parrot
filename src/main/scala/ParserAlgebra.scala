@@ -118,6 +118,12 @@ trait ParserAlgebra {
     }
 
   extension [A, B](self: P[A, B])
+    /** A parser that sequences `self` with `other`, keeping only the result of `other`. */
+    def skipThen[C](other: P[A, C]): P[A, C] = {
+      (self ** other).dimap(a => (a, a), (_, c) => c)
+    }
+
+  extension [A, B](self: P[A, B])
     /** Alias for [[lookahead]]. */
     def unary_~ : P[A, Unit] = {
       self.lookahead
@@ -163,6 +169,12 @@ trait ParserAlgebra {
     /** Alias for [[merge]]. */
     def ||[C](other: P[C, B]): P[Either[A, C], B] = {
       self.merge(other)
+    }
+
+  extension [A, B](self: P[A, B])
+    /** Alias for [[skipThen]]. */
+    def *>[C](other: P[A, C]): P[A, C] = {
+      self.skipThen(other)
     }
 }
 
