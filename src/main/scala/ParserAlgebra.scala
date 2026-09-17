@@ -8,6 +8,9 @@ trait ParserAlgebra {
   /** A parser that consumes a literal at the start of the input. */
   def literal(expected: String): P[Unit, expected.type]
 
+  /** A parser that consumes a regular expression match at the start of the input. */
+  def regex(expected: scala.util.matching.Regex): P[Unit, String]
+
   /** A parser that succeeds without consuming input, computing its result by applying `f` to the semantic input. */
   def pure[A, B](f: A => B): P[A, B]
 
