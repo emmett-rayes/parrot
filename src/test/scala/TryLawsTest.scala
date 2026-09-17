@@ -12,6 +12,7 @@ class TryLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   private val M  = Monad[Try]
   private val MP = MonoidPlus[Try]
   private val RM = RestrictionMonad[Try]
+  private val EM = ElgotMonad[Try]
 
   import MP.+
   import RM.restrict
@@ -145,6 +146,94 @@ class TryLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       val lhs = t1.restrict.flatMap(_ => t2.restrict)
       val rhs = t2.restrict.flatMap(_ => t1.restrict)
       assert(lhs =~= rhs)
+    }
+  }
+
+  // =========================================================================
+  // 5. ElgotMonad Laws on Try
+  // =========================================================================
+
+  test("ElgotMonad: Try fixpoint law") {
+    forAll { (n: Int) =>
+      val f: Int => Try[Either[String, Int]] = x =>
+        if x <= 0 then Success(Left(x.toString))
+        else if x > 100 then Failure(Exception("too big"))
+        else Success(Right(x - 1))
+
+      val lhs = EM.iterate(f)(n)
+      val rhs = f(n).flatMap {
+        case Left(b)  => EM.unit(b)
+        case Right(a) => EM.iterate(f)(a)
+      }
+      assert(lhs === rhs)
+    }
+  }
+
+  test("ElgotMonad: Try naturality in parameters law") {
+    forAll { (n: Int) =>
+      val f: Int => Try[Either[Int, Int]] = x =>
+        if x <= 0 then Success(Left(x))
+        else if x > 100 then Failure(Exception("too big"))
+        else Success(Right(x - 1))
+      val g: Int => String = _.toString
+
+      val lhs = EM.iterate(f)(n).map(g)
+      val rhs = EM.iterate((a: Int) => f(a).map(_.left.map(g)))(n)
+      assert(lhs === rhs)
+    }
+  }
+
+  test("ElgotMonad: Try dinaturality law") {
+    forAll { (n: Int) =>
+      val f: Int => Try[Either[String, Int]] = x =>
+        if x <= 0 then Success(Left(x.toString))
+        else if x > 100 then Failure(Exception("too big"))
+        else Success(Right(x))
+      val g: Int => Int = c => c - 1
+
+      val lhs = EM.iterate((a: Int) => f(a).map(_.map(g)))(n)
+      val rhs = f(n).flatMap {
+        case Left(b)  => EM.unit(b)
+        case Right(c) => EM.iterate((c: Int) => f(g(c)))(c)
+      }
+      assert(lhs === rhs)
+    }
+  }
+
+  test("ElgotMonad: Try codiagonal law") {
+    forAll { (n: Int) =>
+      val f: Int => Try[Either[Either[String, Int], Int]] = x =>
+        if x <= 0 then Success(Left(Left(x.toString)))
+        else if x > 100 then Failure(Exception("too big"))
+        else if x % 2 == 0 then Success(Left(Right(x - 2)))
+        else Success(Right(x - 1))
+
+      val lhs = EM.iterate(EM.iterate(f))(n)
+      val rhs = EM.iterate((a: Int) =>
+        f(a).map {
+          case Left(Left(b))  => Left(b)
+          case Left(Right(a)) => Right(a)
+          case Right(a)       => Right(a)
+        }
+      )(n)
+      assert(lhs === rhs)
+    }
+  }
+
+  test("ElgotMonad: Try uniformity law") {
+    forAll { (n: Int) =>
+      val h: Int => Int                      = _ + 1
+      val g: Int => Try[Either[String, Int]] = y =>
+        if y <= 0 then Success(Left(y.toString))
+        else if y > 100 then Failure(Exception("too big"))
+        else Success(Right(y - 2))
+
+      val f: Int => Try[Either[String, Int]] = a =>
+        g(h(a)).map(_.map(y => y - 1))
+
+      val lhs = EM.iterate(f)(n)
+      val rhs = EM.iterate(g)(h(n))
+      assert(lhs === rhs)
     }
   }
 }
