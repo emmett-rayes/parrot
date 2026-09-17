@@ -453,4 +453,9 @@ class ParserTest extends AnyFunSuite {
     )
   }
 
+
+  test("pair sequences two parsers pairing both results") {
+    val p = P.literal("a") && P.literal("b")
+    assert(p.run("ab") == Success((result = ("a", "b"), state = "")))
+  }
 }
