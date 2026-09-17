@@ -445,6 +445,15 @@ class ParserTest extends AnyFunSuite {
         parser.run("hellogoodbye").isFailure,
     )
   }
+
+  test("between sequences first, self, and second, keeping only the result of self") {
+    val p = P.literal("content").between(P.literal("("), P.literal(")"))
+    assert(
+      p.run("(content)") == Success((result = "content", state = "")) &&
+        p.run("(content").isFailure,
+    )
+  }
+
   test("optional succeeds with Some when self succeeds and None when self fails") {
     val p = P.literal("hello").optional
     assert(
