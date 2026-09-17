@@ -354,4 +354,75 @@ class ParserTest extends AnyFunSuite {
         fold.run(0, "+1+1+1+1") == Success((result = 4, state = "")),
     )
   }
+
+  test("recursive supports a pair of mutually left-recursive parsers") {
+    // E -> T '+' '1' | '1'
+    // T -> E '*' '2' | '2'
+    val (expr, term) = P.recursive[(Parser[Unit, String], Parser[Unit, String])] { (recE, recT) =>
+      val eStep: Parser[Unit, String] = (recT ** P.literal("+") ** P.literal("1")).dimap(
+        (_: Unit) => (((), ()), ()),
+        { case ((t, _), one) => s"($t+$one)" }
+      )
+      val eRule = eStep +> P.literal("1")
+
+      val tStep: Parser[Unit, String] = (recE ** P.literal("*") ** P.literal("2")).dimap(
+        (_: Unit) => (((), ()), ()),
+        { case ((e, _), two) => s"($e*$two)" }
+      )
+      val tRule = tStep +> P.literal("2")
+
+      (eRule, tRule)
+    }
+
+    assert(
+      expr.run("1") == Success((result = "1", state = "")) &&
+        term.run("2") == Success((result = "2", state = "")) &&
+        term.run("1*2") == Success((result = "(1*2)", state = "")) &&
+        expr.run("2+1") == Success((result = "(2+1)", state = "")) &&
+        expr.run("1*2+1") == Success((result = "((1*2)+1)", state = "")) &&
+        term.run("1*2+1*2") == Success((result = "(((1*2)+1)*2)", state = "")),
+    )
+  }
+
+  test("recursive supports an arbitrary N-tuple (e.g. 3) of mutually left-recursive parsers") {
+    // E -> T '+' '1' | '1'
+    // T -> F '*' '2' | '2'
+    // F -> E '/' '3' | '3'
+    type Rules = (Parser[Unit, String], Parser[Unit, String], Parser[Unit, String])
+
+    val (expr, term, fact) = P.recursive[Rules] { (recE, recT, recF) =>
+      val eStep: Parser[Unit, String] = (recT ** P.literal("+") ** P.literal("1")).dimap(
+        (_: Unit) => (((), ()), ()),
+        { case ((t, _), one) => s"($t+$one)" }
+      )
+      val eRule = eStep +> P.literal("1")
+
+      val tStep: Parser[Unit, String] = (recF ** P.literal("*") ** P.literal("2")).dimap(
+        (_: Unit) => (((), ()), ()),
+        { case ((f, _), two) => s"($f*$two)" }
+      )
+      val tRule = tStep +> P.literal("2")
+
+      val fStep: Parser[Unit, String] = (recE ** P.literal("/") ** P.literal("3")).dimap(
+        (_: Unit) => (((), ()), ()),
+        { case ((e, _), three) => s"($e/$three)" }
+      )
+      val fRule = fStep +> P.literal("3")
+
+      (eRule, tRule, fRule)
+    }
+
+    assert(
+      expr.run("1") == Success((result = "1", state = "")) &&
+        term.run("2") == Success((result = "2", state = "")) &&
+        fact.run("3") == Success((result = "3", state = "")) &&
+        fact.run("1/3") == Success((result = "(1/3)", state = "")) &&
+        term.run("3*2") == Success((result = "(3*2)", state = "")) &&
+        expr.run("2+1") == Success((result = "(2+1)", state = "")) &&
+        expr.run("3*2+1") == Success((result = "((3*2)+1)", state = "")) &&
+        expr.run("1/3*2+1") == Success((result = "(((1/3)*2)+1)", state = "")) &&
+        fact.run("3*2+1/3") == Success((result = "(((3*2)+1)/3)", state = "")) &&
+        expr.run("1/3*2+1/3*2+1") == Success((result = "((((((1/3)*2)+1)/3)*2)+1)", state = "")),
+    )
+  }
 }
