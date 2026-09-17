@@ -14,6 +14,29 @@ trait ParserAlgebra {
   /** A parser defined recursively by computing the fixed point of `f`. */
   def recursive[A, B](f: P[A, B] => P[A, B]): P[A, B]
 
+  /** A tuple of parsers defined mutually recursively by computing the simultaneous fixed point of tuple of parsers via
+    * Bekic's theorem.
+    */
+  inline def recursive[T <: Tuple](f: T => T): T = {
+    inline compiletime.erasedValue[T] match {
+      case _: EmptyTuple => {
+        EmptyTuple.asInstanceOf[T]
+      }
+      case _: (head *: tail) => {
+        def solveHead(t: tail): head = {
+          recursive[Any, Any](h =>
+            f((h.asInstanceOf[head] *: t).asInstanceOf[T]).productElement(0).asInstanceOf[P[Any, Any]]
+          ).asInstanceOf[head]
+        }
+
+        val solvedTail = recursive[tail](t => f((solveHead(t) *: t).asInstanceOf[T]).drop(1).asInstanceOf[tail])
+        val solvedHead = solveHead(solvedTail)
+
+        (solvedHead *: solvedTail).asInstanceOf[T]
+      }
+    }
+  }
+
   /** A parser that always succeeds with the given result. */
   def success[A, B](result: B): P[A, B] = {
     pure(_ => result)
