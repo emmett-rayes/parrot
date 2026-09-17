@@ -169,6 +169,13 @@ trait ParserAlgebra {
     }
 
   extension [A, B](self: P[A, B])
+    /** A parser that executes `self` at least `n` times, collecting the results into a list. */
+    def atLeast(n: Int): P[A, List[B]] = {
+      require(n >= 0, "n must be non-negative")
+      (self.times(n) && self.repeated).rmap((bs1, bs2) => bs1 ++ bs2)
+    }
+
+  extension [A, B](self: P[A, B])
     /** A parser that applies `self` one or more times separated by `separator`, collecting the results into a list. */
     def separatedBy[C](separator: P[A, C]): P[A, List[B]] = {
       (self ** (separator *> self).repeated).dimap(a => (a, a), { case (head, tail) => head :: tail })
