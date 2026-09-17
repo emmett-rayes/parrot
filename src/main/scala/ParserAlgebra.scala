@@ -6,7 +6,7 @@ trait ParserAlgebra {
   type P = Self
 
   /** A parser that consumes a literal at the start of the input. */
-  def literal(expected: String): P[Unit, expected.type]
+  def literal(expected: String): P[Unit, String]
 
   /** A parser that consumes a regular expression match at the start of the input. */
   def regex(expected: scala.util.matching.Regex): P[Unit, String]
@@ -109,6 +109,12 @@ trait ParserAlgebra {
       )
       val step = (continue |> break).rmap(_.swap)
       step.loop.lmap((_: A, List.empty))
+    }
+
+  extension [A, B](self: P[A, B])
+    /** A parser that tries `self`, returning `Some` on success or `None` on failure. */
+    def optional: P[A, Option[B]] = {
+      self.rmap(Some(_)) +> success(None)
     }
 
   extension [A, B](self: P[A, B])
