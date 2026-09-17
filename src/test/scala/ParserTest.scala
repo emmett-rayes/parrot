@@ -463,6 +463,15 @@ class ParserTest extends AnyFunSuite {
   }
 
 
+  test("times matches a parser exactly n times") {
+    val p = P.literal("x").times(3)
+    assert(
+      p.run("xxxrest") == Success((result = List("x", "x", "x"), state = "rest")) &&
+        p.run("xx").isFailure &&
+        P.literal("x").times(0).run("rest") == Success((result = List.empty, state = "rest")),
+    )
+  }
+
   test("pair sequences two parsers pairing both results") {
     val p = P.literal("a") && P.literal("b")
     assert(p.run("ab") == Success((result = ("a", "b"), state = "")))
