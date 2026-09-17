@@ -42,5 +42,57 @@ object Parser {
           else Failure(Exception(s"expected $expected at this position"))
         }
     }
+
+    def recursive[A, B](f: Parser[A, B] => Parser[A, B]): Parser[A, B] = {
+      val bottom: Try[(result: B, state: String)] = Failure(Exception("recursion bottom"))
+
+      def improved(current: Try[(result: B, state: String)], next: Try[(result: B, state: String)]): Boolean = {
+        (current, next) match {
+          case (Failure(_), Failure(_))                    => false
+          case (Failure(_), Success(_))                    => true
+          case (Success(_), Failure(_))                    => false
+          case (Success((_, current)), Success((_, next))) => next.length < current.length
+        }
+      }
+
+      headA =>
+        headInput => {
+          var current       = bottom
+          var leftRecursive = false
+
+          val self: Parser[A, B] = {
+            a => input =>
+              {
+                if input == headInput then {
+                  leftRecursive = true
+                  current
+                } else {
+                  recursive(f)(a)(input)
+                }
+              }
+          }
+
+          @annotation.tailrec
+          def iterate(step: Int): Try[(result: B, state: String)] = {
+            step match {
+              case 0 => current
+              case n =>
+                val next = f(self)(headA)(headInput)
+                if !improved(current, next) then current
+                else {
+                  current = next
+                  iterate(n - 1)
+                }
+            }
+          }
+
+          val first = f(self)(headA)(headInput)
+          if !leftRecursive then first
+          else {
+            current = first
+            iterate(headInput.length)
+          }
+        }
+    }
   }
 }
