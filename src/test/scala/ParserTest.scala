@@ -484,4 +484,14 @@ class ParserTest extends AnyFunSuite {
     val p = P.literal("a") && P.literal("b")
     assert(p.run("ab") == Success((result = ("a", "b"), state = "")))
   }
+
+  test("union returns the union of results") {
+    val p1: Parser[Unit, Int]    = P.literal("1").rmap(_ => 1)
+    val p2: Parser[Unit, String] = P.literal("two")
+    val unionParser              = p1.union(p2)
+    assert(
+      unionParser.run("1") == Success((result = 1, state = "")) &&
+        unionParser.run("two") == Success((result = "two", state = "")),
+    )
+  }
 }
