@@ -31,11 +31,8 @@ object Parser {
     }
 
   /** The canonical parser implementation is a parser algebra. */
-  given ParserIsParserAlgebra: Parser is ParserAlgebra {
+  given ParserIsCanonicalParser: Parser is CanonicalParser {
     import scala.util.{Failure, Success}
-
-    given P: Parser is Profunctor = summon
-    export P.dimap
 
     def literal(expected: String): Parser[Unit, expected.type] = {
       _ => input =>
@@ -45,46 +42,5 @@ object Parser {
           else Failure(Exception(s"expected $expected at this position"))
         }
     }
-
-    def pure[A, B](f: A => B): Parser[A, B] = {
-      Promonad[Parser].unit(f)
-    }
-
-    def failure[A, B]: Parser[A, B] = {
-      PromonoidPlus[Parser].zero
-    }
-
-    extension [A, B](self: Parser[A, B])
-      def lookahead: Parser[A, Unit] = {
-        given Parser is RestrictionPromonad = summon // to assist type inference
-        self.restrict.rmap(_ => ())
-      }
-
-    extension [A, B](self: Parser[A, B])
-      def andThen[C](other: Parser[B, C]): Parser[A, C] = {
-        self.combine(other)
-      }
-
-    extension [A, B](self: Parser[A, B])
-      def orElse(other: Parser[A, B]): Parser[A, B] = {
-        self.plus(other)
-      }
-
-    extension [A, B](self: Parser[A, B])
-      def zip[C, D](other: P[C, D]): P[(A, C), (B, D)] = {
-        given Parser is CartesianMonoidalProfunctor = summon // to assist type inference
-        self.tensor(other)
-      }
-
-    extension [A, B](self: Parser[A, B])
-      def branch[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = {
-        given Parser is CocartesianMonoidalProfunctor = summon // to assist type inference
-        self.sum(other)
-      }
-
-    extension [A, B](self: Parser[A, Either[B, A]])
-      def loop: Parser[A, B] = {
-        self.dagger
-      }
   }
 }
