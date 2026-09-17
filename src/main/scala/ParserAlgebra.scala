@@ -162,6 +162,12 @@ trait ParserAlgebra {
     }
 
   extension [A, B](self: P[A, B])
+    /** A parser that applies `self` one or more times separated by `separator`, collecting the results into a list. */
+    def separatedBy[C](separator: P[A, C]): P[A, List[B]] = {
+      (self ** (separator *> self).repeated).dimap(a => (a, a), { case (head, tail) => head :: tail })
+    }
+
+  extension [A, B](self: P[A, B])
     /** Alias for [[lookahead]]. */
     def unary_~ : P[A, Unit] = {
       self.lookahead
