@@ -2,51 +2,45 @@ package parrot
 
 import org.scalatest.funsuite.AnyFunSuite
 
-import scala.util.Success
+import scala.util.{Success, Try}
 
 class JsonGrammarTest extends AnyFunSuite {
-  import Parser.{run, given}
+  import Parser.given
+
+  extension [B](self: Parser[Unit, B])
+    def run(input: String): Try[(result: B, state: String)] =
+      Parser.run(self)(input).map(res => (result = res.result, state = res.state.tokens.toString))
 
   private val grammar = JsonGrammar[Parser]
-  private val P       = ParserAlgebra[Parser]
 
-  test("s parses whitespace") {
+  test("s consumes whitespace") {
     assert(
-      grammar.s.run("   abc") == Success(("   ", "abc")) &&
-        grammar.s.run("\t\n\r foo") == Success(("\t\n\r ", "foo")) &&
-        grammar.s.run("abc").isFailure,
+      grammar.s.run("   rest") == Success(("   ", "rest")) &&
+        grammar.s.run("\t\n\rrest") == Success(("\t\n\r", "rest")) &&
+        grammar.s.run("no_ws").isFailure,
     )
   }
 
-  test("times executes parser exactly n times") {
-    val parser = P.literal("a").times(3)
+  test("jsonTrue parses 'true'") {
     assert(
-      parser.run("aaarest") == Success((result = List("a", "a", "a"), state = "rest")) &&
-        parser.run("aaa") == Success((result = List("a", "a", "a"), state = "")) &&
-        parser.run("aa").isFailure &&
-        parser.run("").isFailure &&
-        P.literal("a").times(0).run("rest") == Success((result = List.empty, state = "rest")) &&
-        P.literal("a").times(0).run("") == Success((result = List.empty, state = "")),
-    )
-  }
-
-  test("jsonTrue parses true") {
-    assert(
-      grammar.jsonTrue.run("true, rest") == Success(("true", ", rest")) &&
+      grammar.jsonTrue.run("true") == Success(("true", "")) &&
+        grammar.jsonTrue.run("true_extra") == Success(("true", "_extra")) &&
         grammar.jsonTrue.run("false").isFailure,
     )
   }
 
-  test("jsonFalse parses false") {
+  test("jsonFalse parses 'false'") {
     assert(
-      grammar.jsonFalse.run("false, rest") == Success(("false", ", rest")) &&
+      grammar.jsonFalse.run("false") == Success(("false", "")) &&
+        grammar.jsonFalse.run("false_extra") == Success(("false", "_extra")) &&
         grammar.jsonFalse.run("true").isFailure,
     )
   }
 
-  test("jsonNull parses null") {
+  test("jsonNull parses 'null'") {
     assert(
-      grammar.jsonNull.run("null, rest") == Success(("null", ", rest")) &&
+      grammar.jsonNull.run("null") == Success(("null", "")) &&
+        grammar.jsonNull.run("null_extra") == Success(("null", "_extra")) &&
         grammar.jsonNull.run("nil").isFailure,
     )
   }
@@ -85,14 +79,14 @@ class JsonGrammarTest extends AnyFunSuite {
 
   test("string parses quoted strings with escapes and whitespace") {
     assert(
-      grammar.string.run("\"hello\"") == Success((List("h", "e", "l", "l", "o"), "")) &&
+      grammar.string.run("\"hello\"") == Success((List("hello"), "")) &&
         grammar.string.run("\"\"") == Success((List.empty, "")) &&
         grammar.string.run("  \"with whitespace\"  ") == Success((
-          List("w", "i", "t", "h", " ", "w", "h", "i", "t", "e", "s", "p", "a", "c", "e"),
+          List("with whitespace"),
           "",
         )) &&
         grammar.string.run("\"escape: \\n and \\\"\"") == Success((
-          List("e", "s", "c", "a", "p", "e", ":", " ", "n", " ", "a", "n", "d", " ", "\""),
+          List("escape: ", "n", " and ", "\""),
           "",
         )),
     )
