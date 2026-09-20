@@ -4,7 +4,7 @@ package parrot
 final class JsonGrammar[P[_, _]: ParserAlgebra] {
   import JsonGrammar.*
 
-  val algebra = summon[P is ParserAlgebra]
+  val algebra: P is ParserAlgebra = ParserAlgebra[P]
   import algebra.{*, given}
 
   /** A parser that consumes JSON whitespace. */
@@ -68,7 +68,7 @@ final class JsonGrammar[P[_, _]: ParserAlgebra] {
 
   /** A parser that consumes a JSON string literal. */
   val string: P[Unit, JsonString] = {
-    val unescaped = regex("[^\"\\\\\\u0000-\\u001f]".r)
+    val unescaped = regex("[^\"\\\\\\u0000-\\u001f]+".r)
     val character = unescaped.union(escape)
     val quoted    = literal("\"") *> character.repeated >* literal("\"")
     s.optional *> quoted >* s.optional
@@ -76,7 +76,7 @@ final class JsonGrammar[P[_, _]: ParserAlgebra] {
 
   /** The start symbol of the JSON grammar along with mutually recursive object and array parsers. */
   val (json, obj, array): (P[Unit, JsonJson], P[Unit, JsonObj], P[Unit, JsonArray]) = {
-    algebra.recursive[(P[Unit, JsonJson], P[Unit, JsonObj], P[Unit, JsonArray])] { (recJson, recObj, recArray) =>
+    algebra.recursive[(P[Unit, JsonJson], P[Unit, JsonObj], P[Unit, JsonArray])] { (recJson, _, _) =>
       /** A parser that consumes a JSON object. */
       val obj = {
         val member = (string >* literal(":")) && recJson
