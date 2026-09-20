@@ -5,6 +5,10 @@ trait ParserAlgebra {
   type Self[_, _]: Profunctor
   type P = Self
 
+  extension [A, B](self: P[A, B])
+    /** A parser that associates `self` with a named rule `label`. */
+    def rule(label: String): P[A, B]
+
   /** A parser that consumes a literal at the start of the input. */
   def literal(expected: String): P[Unit, String]
 
