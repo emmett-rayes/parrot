@@ -6,8 +6,16 @@ import scala.util.Success
 
 class ParserTest extends AnyFunSuite {
   import Kleisli.given
-  import Parser.{run, given}
+  import Parser.given
   import StateT.given
+
+  extension [A, B](self: Parser[A, B])
+    def run(a: A, input: String): scala.util.Try[(result: B, state: String)] =
+      Parser.run(self)(a, input).map(res => (result = res.result, state = res.state.tokens.toString))
+
+  extension [B](self: Parser[Unit, B])
+    def run(input: String): scala.util.Try[(result: B, state: String)] =
+      Parser.run(self)(input).map(res => (result = res.result, state = res.state.tokens.toString))
 
   private val P    = ParserAlgebra[Parser]
   private val Prof = Profunctor[Parser]
@@ -265,9 +273,10 @@ class ParserTest extends AnyFunSuite {
   test("loop consumes tokens iteratively until termination") {
     val step: Parser[Int, Either[Int, Int]] =
       (n: Int) =>
-        input =>
-          if input.mkString.startsWith("x") then Success((Right(n + 1), input.drop(1)))
-          else Success((Left(n), input))
+        state =>
+          if state.tokens.toString.startsWith("x") then
+            Success((Right(n + 1), (memo = state.memo, tokens = state.tokens.drop(1))))
+          else Success((Left(n), state))
     val parser = step.loop
     assert(parser.run(0, "xxxrest") == Success((result = 3, state = "rest")))
   }

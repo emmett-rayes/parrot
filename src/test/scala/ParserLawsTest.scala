@@ -5,10 +5,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import scala.annotation.targetName
+import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-given arbTokens: Arbitrary[Tokens] = Arbitrary(Arbitrary.arbitrary[String].map(_.asTokens))
-given shrinkTokens: Shrink[Tokens] = Shrink(tokens => Shrink.shrink(tokens.mkString).map(_.asTokens))
+given arbParserState: Arbitrary[ParserState] =
+  Arbitrary(Arbitrary.arbitrary[String].map(s => (memo = mutable.LinkedHashMap.empty, tokens = s.asTokens)))
+given shrinkParserState: Shrink[ParserState] =
+  Shrink(st => Shrink.shrink(st.tokens.toString).map(s => (memo = mutable.LinkedHashMap.empty, tokens = s.asTokens)))
 
 class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
@@ -42,19 +45,19 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   // --- Observational Equivalence Helpers ---
 
-  extension [B](t1: Try[(result: B, state: Tokens)])
+  extension [B](t1: Try[(result: B, state: ParserState)])
     @targetName("eqResult")
-    infix def ===(t2: Try[(result: B, state: Tokens)]): Boolean = (t1, t2) match {
-      case (Success(s1), Success(s2)) => s1.result == s2.result && s1.state == s2.state
+    infix def ===(t2: Try[(result: B, state: ParserState)]): Boolean = (t1, t2) match {
+      case (Success(s1), Success(s2)) => s1.result == s2.result && s1.state.tokens == s2.state.tokens
       case (Failure(e1), Failure(e2)) => e1.getMessage == e2.getMessage
       case _                          => false
     }
 
-  extension [B](t1: Try[(result: B, state: Tokens)])
+  extension [B](t1: Try[(result: B, state: ParserState)])
     // Equivalence up to failure identification
     @targetName("eqResultFailureNorm")
-    infix def =~=(t2: Try[(result: B, state: Tokens)]): Boolean = (t1, t2) match {
-      case (Success(s1), Success(s2)) => s1.result == s2.result && s1.state == s2.state
+    infix def =~=(t2: Try[(result: B, state: ParserState)]): Boolean = (t1, t2) match {
+      case (Success(s1), Success(s2)) => s1.result == s2.result && s1.state.tokens == s2.state.tokens
       case (Failure(_), Failure(_))   => true
       case _                          => false
     }
@@ -65,7 +68,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("Category: Parser left identity") {
     val p = PA.literal("abc")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs = Cat.id[String].compose(p)
       assert(lhs.run(st) === p.run(st))
     }
@@ -73,7 +76,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("Category: Parser right identity") {
     val p = PA.literal("abc")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs = p.compose(Cat.id[Unit])
       assert(lhs.run(st) === p.run(st))
     }
@@ -83,7 +86,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val p1: Parser[Unit, String]   = PA.literal("a")
     val p2: Parser[String, String] = PA.literal("b").lmap((_: String) => ())
     val p3: Parser[String, String] = PA.literal("c").lmap((_: String) => ())
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs = p3.compose(p2).compose(p1)
       val rhs = p3.compose(p2.compose(p1))
       assert(lhs.run(st) === rhs.run(st))
@@ -96,7 +99,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("Profunctor: Parser identity law") {
     val p = PA.literal("hello")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val mapped = p.dimap(identity[Unit], identity[String])
       assert(mapped.run(st) === p.run(st))
     }
@@ -108,7 +111,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val f2: Boolean => Int = b => if b then 1 else 0
     val g1: String => Int  = _.length
     val g2: Int => String  = _.toString
-    forAll { (b: Boolean, st: Tokens) =>
+    forAll { (b: Boolean, st: ParserState) =>
       val lhs = p.dimap(f1, g1).dimap(f2, g2)
       val rhs = p.dimap(f2.andThen(f1), g1.andThen(g2))
       assert(lhs.run(b, st) === rhs.run(b, st))
@@ -121,7 +124,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("Promonad: Parser left unitality") {
     val p = PA.literal("xyz")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val idUnit = ProM.unit(identity[Unit])
       val lhs    = idUnit >>> p
       assert(lhs.run(st) === p.run(st))
@@ -130,7 +133,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("Promonad: Parser right unitality") {
     val p = PA.literal("xyz")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val idStr = ProM.unit(identity[String])
       val lhs   = p >>> idStr
       assert(lhs.run(st) === p.run(st))
@@ -141,7 +144,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val p1: Parser[Unit, String]   = PA.literal("1")
     val p2: Parser[String, String] = PA.literal("2").lmap((_: String) => ())
     val p3: Parser[String, String] = PA.literal("3").lmap((_: String) => ())
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs = (p1 >>> p2) >>> p3
       val rhs = p1 >>> (p2 >>> p3)
       assert(lhs.run(st) === rhs.run(st))
@@ -154,7 +157,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("PromonoidPlus: Parser left identity") {
     val p = PA.literal("abc")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs = PMP.zero[Unit, String] <+> p
       assert(lhs.run(st) === p.run(st))
     }
@@ -162,7 +165,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("PromonoidPlus: Parser right identity (up to failure equivalence)") {
     val p = PA.literal("abc")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs = p <+> PMP.zero[Unit, String]
       assert(lhs.run(st) =~= p.run(st))
     }
@@ -172,7 +175,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val p1 = PA.literal("a")
     val p2 = PA.literal("b")
     val p3 = PA.literal("c")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs = (p1 <+> p2) <+> p3
       val rhs = p1 <+> (p2 <+> p3)
       assert(lhs.run(st) === rhs.run(st))
@@ -186,7 +189,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("CartesianStrongProfunctor: Parser unitality") {
     val p    = PA.literal("a")
     val self = p.first[Unit].dimap((a: Unit) => (a, ()), { case (b, _) => b })
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       assert(self.run(st) === p.run(st))
     }
   }
@@ -201,7 +204,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val lhs = p.first[String].first[Int].dimap(f, g)
     val rhs = p.first[(String, Int)]
 
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val input: (Unit, (String, Int)) = ((), ("s", 42))
       assert(lhs.run(input, st) === rhs.run(input, st))
     }
@@ -212,7 +215,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val f: Unit => Either[Unit, Nothing]     = Left(_)
     val g: Either[String, Nothing] => String = _.merge
     val self                                 = p.left[Nothing].dimap(f, g)
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       assert(self.run(st) === p.run(st))
     }
   }
@@ -234,7 +237,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val lhs = p.left[String].left[Int].dimap(f, g)
     val rhs = p.left[Either[String, Int]]
 
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val in1: Either[Unit, Either[String, Int]] = Left(())
       val in2: Either[Unit, Either[String, Int]] = Right(Left("c"))
       val in3: Either[Unit, Either[String, Int]] = Right(Right(42))
@@ -256,7 +259,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       (a: Unit) => ((), a),
       (_, b: String) => b,
     )
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       assert(lhs.run(st) === p.run(st))
     }
   }
@@ -267,7 +270,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       (a: Unit) => (a, ()),
       (b: String, _) => b,
     )
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       assert(lhs.run(st) === p.run(st))
     }
   }
@@ -283,7 +286,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     )
     val rhs = p1 *** (p2 *** p3)
 
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val input: (Unit, (Unit, Unit)) = ((), ((), ()))
       assert(lhs.run(input, st) === rhs.run(input, st))
     }
@@ -296,7 +299,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("RestrictionPromonad: Parser restriction law") {
     val p                         = PA.literal("test")
     val lhs: Parser[Unit, String] = p.restrict >>> p
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       assert(lhs.run(st) === p.run(st))
     }
   }
@@ -304,7 +307,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("RestrictionPromonad: Parser commutativity law (up to failure equivalence)") {
     val p: Parser[Unit, String] = PA.literal("a")
     val q: Parser[Unit, String] = PA.literal("b")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs: Parser[Unit, Unit] = p.restrict >>> q.restrict
       val rhs: Parser[Unit, Unit] = q.restrict >>> p.restrict
       assert(lhs.run(st) =~= rhs.run(st))
@@ -314,7 +317,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("RestrictionPromonad: Parser absorption law (up to failure equivalence)") {
     val p: Parser[Unit, String] = PA.literal("a")
     val q: Parser[Unit, String] = PA.literal("b")
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs: Parser[Unit, Unit] = (p.restrict >>> q).restrict
       val rhs: Parser[Unit, Unit] = p.restrict >>> q.restrict
       assert(lhs.run(st) =~= rhs.run(st))
@@ -324,7 +327,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("RestrictionPromonad: Parser lax naturality law (up to failure equivalence)") {
     val p: Parser[Unit, String]   = PA.literal("a")
     val q: Parser[String, String] = PA.literal("b").lmap((_: String) => ())
-    forAll { (st: Tokens) =>
+    forAll { (st: ParserState) =>
       val lhs: Parser[Unit, String] = p >>> q.restrict
       val rhs: Parser[Unit, String] = (p >>> q).restrict >>> p
       assert(lhs.run(st) =~= rhs.run(st))
@@ -337,58 +340,59 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   test("ElgotPromonad: Parser fixpoint law") {
     val p: Parser[Int, Either[String, Int]] = (x: Int) =>
-      (st: Tokens) =>
-        if x <= 0 then Success((result = Left(x.toString), state = st))
-        else if st.isEmpty then Failure(Exception("empty state"))
-        else Success((result = Right(x - 1), state = st.drop(1)))
+      state =>
+        if x <= 0 then Success((result = Left(x.toString), state = state))
+        else if state.tokens.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x - 1), state = (memo = state.memo, tokens = state.tokens.drop(1))))
 
     val lhs = p.dagger
     val rhs = p >>> p.dagger.right[String] >>> ProM.unit(_.merge)
 
-    forAll { (n: Int, st: Tokens) =>
+    forAll { (n: Int, st: ParserState) =>
       assert(lhs.run(n, st) === rhs.run(n, st))
     }
   }
 
   test("ElgotPromonad: Parser naturality in parameters law") {
     val p: Parser[Int, Either[Int, Int]] = (x: Int) =>
-      (st: Tokens) =>
-        if x <= 0 then Success((result = Left(x), state = st))
-        else if st.isEmpty then Failure(Exception("empty state"))
-        else Success((result = Right(x - 1), state = st.drop(1)))
+      state =>
+        if x <= 0 then Success((result = Left(x), state = state))
+        else if state.tokens.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x - 1), state = (memo = state.memo, tokens = state.tokens.drop(1))))
     val g: Int => String = _.toString
 
     val lhs = p.dagger >>> ProM.unit(g)
     val rhs = (p >>> ProM.unit(_.left.map(g))).dagger
 
-    forAll { (n: Int, st: Tokens) =>
+    forAll { (n: Int, st: ParserState) =>
       assert(lhs.run(n, st) === rhs.run(n, st))
     }
   }
 
   test("ElgotPromonad: Parser dinaturality law") {
     val p: Parser[Int, Either[String, Int]] = (x: Int) =>
-      (st: Tokens) =>
-        if x <= 0 then Success((result = Left(x.toString), state = st))
-        else if st.isEmpty then Failure(Exception("empty state"))
-        else Success((result = Right(x), state = st.drop(1)))
+      state =>
+        if x <= 0 then Success((result = Left(x.toString), state = state))
+        else if state.tokens.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(x), state = (memo = state.memo, tokens = state.tokens.drop(1))))
     val g: Int => Int = c => c - 1
 
     val lhs = (p >>> ProM.unit(_.map(g))).dagger
     val rhs = p >>> (ProM.unit(g) >>> p).dagger.right[String] >>> ProM.unit(_.merge)
 
-    forAll { (n: Int, st: Tokens) =>
+    forAll { (n: Int, st: ParserState) =>
       assert(lhs.run(n, st) === rhs.run(n, st))
     }
   }
 
   test("ElgotPromonad: Parser codiagonal law") {
     val p: Parser[Int, Either[Either[String, Int], Int]] = (x: Int) =>
-      (st: Tokens) =>
-        if x <= 0 then Success((result = Left(Left(x.toString)), state = st))
-        else if st.isEmpty then Failure(Exception("empty state"))
-        else if x % 2 == 0 then Success((result = Left(Right(x - 2)), state = st.drop(1)))
-        else Success((result = Right(x - 1), state = st.drop(1)))
+      state =>
+        if x <= 0 then Success((result = Left(Left(x.toString)), state = state))
+        else if state.tokens.isEmpty then Failure(Exception("empty state"))
+        else if x % 2 == 0 then
+          Success((result = Left(Right(x - 2)), state = (memo = state.memo, tokens = state.tokens.drop(1))))
+        else Success((result = Right(x - 1), state = (memo = state.memo, tokens = state.tokens.drop(1))))
 
     val lhs = p.dagger.dagger
     val rhs =
@@ -398,7 +402,7 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
         case Right(a)       => Right(a)
       }).dagger
 
-    forAll { (n: Int, st: Tokens) =>
+    forAll { (n: Int, st: ParserState) =>
       assert(lhs.run(n, st) === rhs.run(n, st))
     }
   }
@@ -406,19 +410,19 @@ class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   test("ElgotPromonad: Parser uniformity law") {
     val h: Int => Int                       = _ + 1
     val q: Parser[Int, Either[String, Int]] = (y: Int) =>
-      (st: Tokens) =>
-        if y <= 0 then Success((result = Left(y.toString), state = st))
-        else if st.isEmpty then Failure(Exception("empty state"))
-        else Success((result = Right(y - 2), state = st.drop(1)))
+      state =>
+        if y <= 0 then Success((result = Left(y.toString), state = state))
+        else if state.tokens.isEmpty then Failure(Exception("empty state"))
+        else Success((result = Right(y - 2), state = (memo = state.memo, tokens = state.tokens.drop(1))))
 
     val p: Parser[Int, Either[String, Int]] = (a: Int) =>
-      (st: Tokens) =>
-        q(h(a))(st).map { case (res, state) => (res.map(y => y - 1), state) }
+      state =>
+        q(h(a))(state).map { res => (result = res.result.map(y => y - 1), state = res.state) }
 
     val lhs = p.dagger
     val rhs = ProM.unit(h) >>> q.dagger
 
-    forAll { (n: Int, st: Tokens) =>
+    forAll { (n: Int, st: ParserState) =>
       assert(lhs.run(n, st) === rhs.run(n, st))
     }
   }

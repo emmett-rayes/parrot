@@ -68,17 +68,17 @@ class JsonTestSuite extends AnyFunSuite {
         case Success(input) =>
           grammar.json.run(input) match {
             case Success((_, remaining)) if expectation == Expectation.Accept =>
-              assert(remaining.isEmpty)
+              assert(remaining.tokens.isEmpty)
             case Failure(_) if expectation == Expectation.Reject =>
               succeed
             case Success((_, remaining)) if expectation == Expectation.Reject =>
-              assert(remaining.nonEmpty)
+              assert(remaining.tokens.nonEmpty)
             case Success((_, _)) if expectation == Expectation.ImplementationDefined =>
               succeed
             case Failure(_) if expectation == Expectation.ImplementationDefined =>
               succeed
             case Success((_, remaining)) =>
-              fail(s"Expected full parse for $fileName, remaining='$remaining'")
+              fail(s"Expected full parse for $fileName, remaining='${remaining.tokens}'")
             case Failure(e) =>
               fail(e.getMessage)
           }
