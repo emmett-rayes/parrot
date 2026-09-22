@@ -112,15 +112,15 @@ trait ParserAlgebra {
 
   extension [A, B](self: P[A, B])
     /** A parser that repeatedly executes `self` until it fails, collecting the results into a list. */
-    def repeated: P[A, List[B]] = {
-      val break: P[(A, List[B]), List[B]]                = pure(_._2.reverse)
-      val state: P[((A, A), List[B]), ((A, B), List[B])] = pure(identity[A]) ** self ** pure(identity[List[B]])
-      val continue: P[(A, List[B]), (A, List[B])]        = state.dimap(
+    def repeated: P[A, Vector[B]] = {
+      val break: P[(A, Vector[B]), Vector[B]]                = pure(_._2)
+      val state: P[((A, A), Vector[B]), ((A, B), Vector[B])] = pure(identity[A]) ** self ** pure(identity[Vector[B]])
+      val continue: P[(A, Vector[B]), (A, Vector[B])]        = state.dimap(
         { case (a, bs) => ((a, a), bs) },
-        { case ((a, b), bs) => (a, b :: bs) }
+        { case ((a, b), bs) => (a, bs :+ b) }
       )
       val step = (continue |> break).rmap(_.swap)
-      step.loop.lmap((_: A, List.empty))
+      step.loop.lmap((_: A, Vector.empty))
     }
 
   extension [A, B](self: P[A, B])
@@ -131,27 +131,27 @@ trait ParserAlgebra {
 
   extension [A, B](self: P[A, B])
     /** A parser that executes `self` exactly `n` times, collecting the results into a list. */
-    def times(n: Int): P[A, List[B]] = {
+    def times(n: Int): P[A, Vector[B]] = {
       require(n >= 0, "n must be non-negative")
-      val split: P[(A, Int, List[B]), Either[List[B], (A, Int, List[B])]] = pure {
+      val split: P[(A, Int, Vector[B]), Either[Vector[B], (A, Int, Vector[B])]] = pure {
         case (a, k, bs) =>
-          if k <= 0 then Left(bs.reverse)
+          if k <= 0 then Left(bs)
           else Right((a, k, bs))
       }
-      val state = pure(identity[A]) ** self ** pure(identity[(Int, List[B])])
-      val continue: P[(A, Int, List[B]), (A, Int, List[B])] = state.dimap(
+      val state = pure(identity[A]) ** self ** pure(identity[(Int, Vector[B])])
+      val continue: P[(A, Int, Vector[B]), (A, Int, Vector[B])] = state.dimap(
         { case (a, k, bs) => ((a, a), (k, bs)) },
-        { case ((a, b), (k, bs)) => (a, k - 1, b :: bs) }
+        { case ((a, b), (k, bs)) => (a, k - 1, bs :+ b) }
       )
 
-      val break = pure(identity[List[B]])
+      val break = pure(identity[Vector[B]])
       val step  = split >> (break ++ continue)
-      step.loop.lmap(a => (a, n, List.empty))
+      step.loop.lmap(a => (a, n, Vector.empty))
     }
 
   extension [A, B](self: P[A, B])
     /** A parser that executes `self` at least `n` times, collecting the results into a list. */
-    def atLeast(n: Int): P[A, List[B]] = {
+    def atLeast(n: Int): P[A, Vector[B]] = {
       require(n >= 0, "n must be non-negative")
       (self.times(n) && self.repeated).rmap((bs1, bs2) => bs1 ++ bs2)
     }
@@ -176,8 +176,8 @@ trait ParserAlgebra {
 
   extension [A, B](self: P[A, B])
     /** A parser that applies `self` one or more times separated by `separator`, collecting the results into a list. */
-    def separatedBy[C](separator: P[A, C]): P[A, List[B]] = {
-      (self ** (separator *> self).repeated).dimap(a => (a, a), { case (head, tail) => head :: tail })
+    def separatedBy[C](separator: P[A, C]): P[A, Vector[B]] = {
+      (self ** (separator *> self).repeated).dimap(a => (a, a), { case (head, tail) => head +: tail })
     }
 
   extension [A, B](self: P[A, B])

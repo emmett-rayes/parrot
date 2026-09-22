@@ -119,11 +119,11 @@ object JsonGrammar {
   type JsonFractionalPart = String
   type JsonExponentPart   = (Option[String], String)
   type JsonNumber = (((Option[JsonMinus], JsonIntegralPart), Option[JsonFractionalPart]), Option[JsonExponentPart])
-  type JsonUnicodeEscape = List[String]
+  type JsonUnicodeEscape = Vector[String]
   type JsonEscape        = String | JsonUnicodeEscape
-  type JsonString        = List[String | JsonEscape]
-  type JsonObj           = List[(JsonString, JsonJson)] | Option[JsonS]
-  type JsonArray         = List[JsonJson] | Option[JsonS]
+  type JsonString        = Vector[String | JsonEscape]
+  type JsonObj           = Vector[(JsonString, JsonJson)] | Option[JsonS]
+  type JsonArray         = Vector[JsonJson] | Option[JsonS]
 
   /** Creates a `JsonGrammar` using the given `ParserAlgebra`. */
   def apply[P[_, _]: ParserAlgebra]: JsonGrammar[P] = {
