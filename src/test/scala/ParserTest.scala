@@ -514,4 +514,36 @@ class ParserTest extends AnyFunSuite {
         unionParser.run("two") == Success((result = "two", state = "")),
     )
   }
+
+  test("ParserResult ordering orders failures, successes, and token consumption") {
+    import ParserResult.given
+    import scala.math.Ordering.Implicits.*
+
+    val fail1: ParserResult[String] = scala.util.Failure(Exception("fail1"))
+    val fail2: ParserResult[String] = scala.util.Failure(Exception("fail2"))
+
+    val s1: ParserResult[String] = Success((result = "a", state = ParserState.empty("world".asTokens)))
+    val s2: ParserResult[String] = Success((result = "b", state = ParserState.empty("rld".asTokens)))
+    val s3: ParserResult[String] = Success((result = "c", state = ParserState.empty("".asTokens)))
+    val s1Equivalent: ParserResult[String] = Success((result = "alt", state = ParserState.empty("world".asTokens)))
+
+    assert(
+      // Failure vs Failure: neither is less than the other
+      !(fail1 < fail2) &&
+        !(fail2 < fail1) &&
+        // Failure vs Success: Failure < Success
+        fail1 < s1 &&
+        !(s1 < fail1) &&
+        // Success vs Success: more tokens consumed (fewer remaining) is greater
+        // s1 has 5 tokens left, s2 has 3 tokens left, s3 has 0 tokens left
+        s1 < s2 &&
+        s2 < s3 &&
+        s1 < s3 &&
+        !(s2 < s1) &&
+        !(s3 < s2) &&
+        // Equal tokens remaining: neither is less than the other
+        !(s1 < s1Equivalent) &&
+        !(s1Equivalent < s1)
+    )
+  }
 }

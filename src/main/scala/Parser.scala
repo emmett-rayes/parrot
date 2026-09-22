@@ -1,10 +1,32 @@
 package parrot
 
-import scala.collection.mutable
 import scala.util.Try
 
 /** LinkedHashMap preserves insertion order, serving as both memo table and rollback log in O(1). */
-type ParserState = (memo: mutable.LinkedHashMap[Any, Any], tokens: Tokens)
+type ParserState = (memo: java.util.LinkedHashMap[Any, Any], tokens: Tokens)
+
+object ParserState {
+  given Ordering[ParserState] = Ordering.by(_.tokens)
+
+  def empty(tokens: Tokens): ParserState = (memo = java.util.LinkedHashMap(), tokens = tokens)
+}
+
+/** The result of running a parser: either a failure or a result paired with the remaining state. */
+type ParserResult[A] = Try[(result: A, state: ParserState)]
+
+object ParserResult {
+  import ParserState.given
+
+  import scala.math.Ordering.Implicits.*
+  import scala.util.{Failure, Success}
+
+  /** Parser results are ordered by failure vs success, then by unconsumed tokens in the remaining state. */
+  given [A] => Ordering[ParserResult[A]] = Ordering.fromLessThan {
+    case (Failure(_), Success(_))          => true
+    case (Success(current), Success(next)) => next.state < current.state
+    case _                                 => false
+  }
+}
 
 /** A Parser over `ParserState` input with `Throwable` failures.
   *
@@ -24,30 +46,33 @@ object Parser {
 
   extension [A, B](self: Parser[A, B])
     /** Runs a parser on a given state and semantic input. */
-    def run(a: A, state: ParserState): Try[(result: B, state: ParserState)] = {
+    def run(a: A, state: ParserState): ParserResult[B] = {
       self(a)(state)
     }
 
   extension [A, B](self: Parser[A, B])
     /** Runs a parser on a given string and semantic input. */
-    def run(a: A, input: String): Try[(result: B, state: ParserState)] = {
-      self.run(a, (memo = mutable.LinkedHashMap.empty, tokens = input.asTokens))
+    def run(a: A, input: String): ParserResult[B] = {
+      self.run(a, ParserState.empty(input.asTokens))
     }
 
   extension [B](self: Parser[Unit, B])
     /** Runs a parser on a given state. */
-    def run(state: ParserState): Try[(result: B, state: ParserState)] = {
+    def run(state: ParserState): ParserResult[B] = {
       self.run((), state)
     }
 
   extension [B](self: Parser[Unit, B])
     /** Runs a parser on a given string. */
-    def run(input: String): Try[(result: B, state: ParserState)] = {
-      self.run((), (memo = mutable.LinkedHashMap.empty, tokens = input.asTokens))
+    def run(input: String): ParserResult[B] = {
+      self.run((), ParserState.empty(input.asTokens))
     }
 
   /** The canonical parser implementation is a parser algebra. */
   given ParserIsCanonicalParser: Parser is CanonicalParser {
+    import ParserResult.given
+
+    import scala.math.Ordering.Implicits.*
     import scala.util.chaining.*
     import scala.util.{Failure, Success}
 
@@ -80,90 +105,69 @@ object Parser {
       def rule(label: String): Parser[A, B] = {
         a => state =>
           val key = (label, a, state.tokens)
-          state.memo.get(key) match {
+          Option(state.memo.get(key)) match {
             case Some(cached) =>
               cached.asInstanceOf[Try[(result: B, state: ParserState)]]
             case None =>
-              self(a)(state).tap(state.memo(key) = _)
+              self(a)(state).tap { result => state.memo.put(key, result) }
           }
       }
 
     def recursive[A, B](f: Parser[A, B] => Parser[A, B]): Parser[A, B] = {
-      val id     = new Object()
-      val bottom = Failure(Exception("recursion bottom")): Try[(result: B, state: ParserState)]
+      val randomId = scala.util.Random.nextLong().toHexString // per fixpoint calculation unique ID
+      val bottom   = Failure(Exception("recursion bottom")): ParserResult[B]
 
-      def improved(
-        current: Try[(result: B, state: ParserState)],
-        next: Try[(result: B, state: ParserState)],
-      ): Boolean = {
-        (current, next) match {
-          case (Failure(_), Failure(_))                => false
-          case (Failure(_), Success(_))                => true
-          case (Success(_), Failure(_))                => false
-          case (Success(currentRes), Success(nextRes)) =>
-            nextRes.state.tokens.length <= currentRes.state.tokens.length
+      def parser(headA: A)(head: ParserState): ParserResult[B] = {
+        val key  = (randomId, headA, head.tokens)
+        val mark = head.memo.size
+
+        var current       = bottom
+        var leftRecursive = false
+
+        val self: Parser[A, B] = {
+          a => s =>
+            if s.tokens == head.tokens && a == headA then {
+              leftRecursive = true
+              current
+            } else parser.rule(randomId)(a)(s)
+        }
+        val body: Parser[A, B] = f(self)
+
+        def restore(): Unit = {
+          while head.memo.size > mark do {
+            val _ = head.memo.pollLastEntry()
+          }
+        }
+
+        @annotation.tailrec
+        def iterate(step: Int): ParserResult[B] = {
+          step match {
+            case 0 => current
+            case n =>
+              restore()
+              head.memo.put(key, current)
+              val next = body(headA)(head)
+              if current < next then {
+                current = next
+                iterate(n - 1)
+              } else current
+          }
+        }
+
+        def grow(length: Int): ParserResult[B] = {
+          iterate(length).tap(_ => restore())
+        }
+
+        head.memo.put(key, bottom)
+        val first = body(headA)(head)
+        if !leftRecursive then first
+        else {
+          current = first
+          grow(head.tokens.length)
         }
       }
 
-      def parser(headA: A)(head: ParserState): Try[(result: B, state: ParserState)] = {
-        val key = (id, headA, head.tokens)
-        head.memo.get(key) match {
-          case Some(cached) =>
-            cached.asInstanceOf[Try[(result: B, state: ParserState)]]
-          case None =>
-            val mark          = head.memo.size
-            var current       = bottom
-            var leftRecursive = false
-
-            def restore(): Unit = {
-              while head.memo.size > mark do {
-                val _ = head.memo.remove(head.memo.last._1)
-              }
-            }
-
-            val self: Parser[A, B] = {
-              a => s =>
-                if s.tokens == head.tokens && a == headA then {
-                  leftRecursive = true
-                  current
-                } else parser(a)(s)
-            }
-
-            @annotation.tailrec
-            def iterate(step: Int): Try[(result: B, state: ParserState)] = {
-              step match {
-                case 0 => current
-                case n =>
-                  restore()
-                  head.memo(key) = current
-                  val next = f(self)(headA)(head)
-                  if !improved(current, next) then current
-                  else {
-                    current = next
-                    iterate(n - 1)
-                  }
-              }
-            }
-
-            def grow(length: Int): Try[(result: B, state: ParserState)] = {
-              iterate(length).tap(_ => restore())
-            }
-
-            head.memo(key) = bottom
-            val first  = f(self)(headA)(head)
-            val result =
-              if !leftRecursive then first
-              else {
-                current = first
-                grow(head.tokens.length)
-              }
-
-            head.memo(key) = result
-            result
-        }
-      }
-
-      parser
+      parser.rule(randomId)
     }
   }
 }

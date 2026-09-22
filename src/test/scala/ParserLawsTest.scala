@@ -5,13 +5,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import scala.annotation.targetName
-import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 given arbParserState: Arbitrary[ParserState] =
-  Arbitrary(Arbitrary.arbitrary[String].map(s => (memo = mutable.LinkedHashMap.empty, tokens = s.asTokens)))
+  Arbitrary(Arbitrary.arbitrary[String].map(s => ParserState.empty(s.asTokens)))
 given shrinkParserState: Shrink[ParserState] =
-  Shrink(st => Shrink.shrink(st.tokens.toString).map(s => (memo = mutable.LinkedHashMap.empty, tokens = s.asTokens)))
+  Shrink(st => Shrink.shrink(st.tokens.toString).map(s => ParserState.empty(s.asTokens)))
 
 class ParserLawsTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
