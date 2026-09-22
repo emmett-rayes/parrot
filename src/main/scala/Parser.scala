@@ -87,29 +87,33 @@ object Parser {
     }
 
     def regex(expected: scala.util.matching.Regex): Parser[Unit, String] = {
-      _ => state =>
-        expected.findPrefixMatchOf(state.tokens) match {
-          case Some(m) =>
+      val pattern = expected.pattern
+      _ =>
+        state => {
+          val matcher = pattern.matcher(state.tokens)
+          if matcher.lookingAt() then
+            val end = matcher.end()
             Success((
-              result = state.tokens.substring(m.start, m.end),
-              state = (memo = state.memo, tokens = state.tokens.drop(m.end))
+              result = state.tokens.substring(0, end),
+              state = (memo = state.memo, tokens = state.tokens.drop(end)),
             ))
-          case None =>
-            Failure(
-              ParserError(s"no matching for ${expected.regex} at this position \"${state.tokens.context()}\".")
-            )
+          else
+            Failure(ParserError(s"no matching for ${expected.regex} at this position \"${state.tokens.context()}\"."))
         }
     }
 
     extension [A, B](self: Parser[A, B])
       def rule(label: String): Parser[A, B] = {
         a => state =>
-          val key = (label, a, state.tokens)
-          Option(state.memo.get(key)) match {
-            case Some(cached) =>
-              cached.asInstanceOf[Try[(result: B, state: ParserState)]]
-            case None =>
-              self(a)(state).tap { result => state.memo.put(key, result) }
+          {
+            val key    = (label, a, state.tokens)
+            val cached = state.memo.get(key)
+            if cached != null then cached.asInstanceOf[ParserResult[B]]
+            else {
+              val result = self(a)(state)
+              state.memo.put(key, result)
+              result
+            }
           }
       }
 

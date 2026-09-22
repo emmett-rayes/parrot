@@ -63,8 +63,19 @@ final class Tokens private (private val underlying: Array[Token], val start: Int
   }
 
   /** True if this window starts with the tokens of `that`. */
-  def startsWith(that: Tokens): Boolean =
-    that.length <= length && (0 until that.length).forall(i => apply(i) == that(i))
+  def startsWith(that: Tokens): Boolean = {
+    val len = that.length
+    if length < len then false
+    else {
+      var i       = 0
+      var matched = true
+      while matched && i < len do {
+        if charAt(i) != that.charAt(i) then matched = false
+        else i += 1
+      }
+      matched
+    }
+  }
 
   /** The token at `index`, relative to the start of this window. */
   def apply(index: Int): Token = underlying(start + index)
