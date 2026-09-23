@@ -2,7 +2,7 @@ scalaVersion := "3.8.4"
 
 lazy val root = rootProject
   .settings(
-    name := "Parrot",
+    name             := "Parrot",
     idePackagePrefix := Some("parrot"),
     scalacOptions ++= Seq(
       "-Wnonunit-statement",
@@ -23,7 +23,14 @@ lazy val root = rootProject
       "-unchecked",
     ),
     libraryDependencies ++= Seq(
-      "org.scalatest" %% "scalatest" % "3.2.20" % Test,
+      "org.scalatest"     %% "scalatest"       % "3.2.20"   % Test,
       "org.scalatestplus" %% "scalacheck-1-19" % "3.2.20.0" % Test,
-    )
+    ),
+    // exclude legacy
+    ideExcludedDirectories := Seq(
+      (Compile / scalaSource).value / "legacy",
+      (Test / scalaSource).value / "legacy",
+    ),
+    Compile / unmanagedSources := (Compile / unmanagedSources).value.filterNot(_.getPath.contains("/legacy/")),
+    Test / unmanagedSources    := (Test / unmanagedSources).value.filterNot(_.getPath.contains("/legacy/")),
   )

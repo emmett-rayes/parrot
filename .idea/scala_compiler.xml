@@ -19,6 +19,7 @@
         <parameter value="-language:experimental.modularity" />
         <parameter value="-language:experimental.pureFunctions" />
         <parameter value="-language:experimental.relaxedLambdaSyntax" />
+        <parameter value="-language:strictEquality" />
         <parameter value="-preview" />
         <parameter value="-source:future" />
       </parameters>
