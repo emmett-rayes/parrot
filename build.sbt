@@ -18,6 +18,7 @@ lazy val root = rootProject
       "-language:experimental.modularity",
       "-language:experimental.pureFunctions",
       "-language:experimental.relaxedLambdaSyntax",
+      "-language:strictEquality",
       "-preview",
       "-source:future",
       "-unchecked",
