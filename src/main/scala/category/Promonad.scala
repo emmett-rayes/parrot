@@ -50,6 +50,9 @@ trait Promonad extends Profunctor {
     multiply(q, p)
   }
 
+  /** Maps a pair of morphisms *f*: *C* ==> *A*, *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*] via *P*(*f*,
+    * *g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*).
+    */
   override def dimap[A, B, C, D](f: C ==> A, g: B ==> D)(p: A ~> B): C ~> D = {
     unit(f) >>> p >>> unit(g)
   }
