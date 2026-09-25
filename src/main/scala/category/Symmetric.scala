@@ -17,6 +17,23 @@ trait Symmetric extends Monoidal {
     braid[B, A]
   }
 
+  /** The right unitor morphism *ρ*: *A* ⊗ *I* ~> *A* = *λ* ∘ *β*. */
+  override def rightUnitor[A]: (A * I) ~> A = {
+    braid >>> leftUnitor
+  }
+
+  /** The inverse right unitor morphism *ρ*⁻¹: *A* ~> *A* ⊗ *I* = *β* ∘ *λ*⁻¹. */
+  override def rightUnitorInv[A]: A ~> (A * I) = {
+    leftUnitorInv >>> braid
+  }
+
+  /** The inverse associator morphism *α*⁻¹: *A* ⊗ (*B* ⊗ *C*) ~> (*A* ⊗ *B*) ⊗ *C* via iterated braiding and
+    * association.
+    */
+  override def unassociate[A, B, C]: (A * (B * C)) ~> ((A * B) * C) = {
+    braid >>> associate >>> braid >>> associate >>> braid
+  }
+
   /** Laws that any `Symmetric` monoidal profunctor must satisfy. */
   object SymmetricLaws {
 
@@ -54,7 +71,13 @@ object Symmetric {
   given FunctionIsSymmetric
     : (P: Function is Monoidal on Function withUnit Unit withTensor ([A, B] =>> (A, B)))
         => Function is Symmetric {
-    export P.{Self as _, *}
+    export P.{
+      Self as _,
+      rightUnitor as _,
+      rightUnitorInv as _,
+      unassociate as _,
+      *,
+    }
 
     def braid[A, B]: ((A, B)) => (B, A) = {
       (a, b) => (b, a)
