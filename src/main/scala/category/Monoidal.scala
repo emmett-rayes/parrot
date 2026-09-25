@@ -3,9 +3,9 @@ package category
 
 import scala.annotation.targetName
 
-/** A monoidal profunctor over an underlying category **C**.
+/** A monoidal profunctor on an underlying category **C**.
   *
-  * Represents a monoidal profunctor *P* over **C**, where
+  * Represents a monoidal profunctor *P* on **C**, where
   *   - ⊗ is the tensor product
   *   - *I* is the unit object
   *   - *α*: (*A* ⊗ *B*) ⊗ *C* ⇒ *A* ⊗ (*B* ⊗ *C*) is the associator
@@ -123,8 +123,8 @@ object Monoidal {
   /** Summons the `Monoidal` instance of `P`. */
   def apply[P[_, _]: Monoidal]: P is Monoidal = summon
 
-  /** `Monoidal` instance for `Function` over the category **Type**. */
-  given FunctionIsMonoidal: (P: Function is Promonad over Function) => Function is Monoidal {
+  /** `Monoidal` instance for `Function` on the category **Type**. */
+  given FunctionIsMonoidal: (P: Function is Promonad on Function) => Function is Monoidal {
     export P.{Self as _, *}
 
     type I      = Unit

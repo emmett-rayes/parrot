@@ -3,9 +3,9 @@ package category
 
 import scala.annotation.targetName
 
-/** A cartesian monoidal profunctor over an underlying category **C**.
+/** A cartesian monoidal profunctor on an underlying category **C**.
   *
-  * Represents a cartesian monoidal profunctor *P* over **C**, where
+  * Represents a cartesian monoidal profunctor *P* on **C**, where
   *   - ⊗ is the categorical product
   *   - *I* is the terminal object
   *   - *π*₁: *A* ⊗ *B* ⇒ *A* is the first projection
@@ -89,9 +89,9 @@ object Cartesian {
   /** Summons the `Cartesian` instance of `P`. */
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
-  /** `Cartesian` instance for `Function` over the category **Type**. */
+  /** `Cartesian` instance for `Function` on the category **Type**. */
   given FunctionIsCartesian
-    : (P: Function is Monoidal over Function withUnit Unit withTensor ([A, B] =>> (A, B)))
+    : (P: Function is Monoidal on Function withUnit Unit withTensor ([A, B] =>> (A, B)))
         => Function is Cartesian {
     export P.{Self as _, *}
 

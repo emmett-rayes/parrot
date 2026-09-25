@@ -1,9 +1,9 @@
 package parrot
 package category
 
-/** A symmetric monoidal profunctor over an underlying category **C**.
+/** A symmetric monoidal profunctor on an underlying category **C**.
   *
-  * Represents a symmetric monoidal profunctor *P* over **C**, where
+  * Represents a symmetric monoidal profunctor *P* on **C**, where
   *   - *β*: *A* ⊗ *B* ⇒ *B* ⊗ *A* is the braiding
   */
 trait Symmetric extends Monoidal {
@@ -50,9 +50,9 @@ object Symmetric {
   /** Summons the `Symmetric` instance of `P`. */
   def apply[P[_, _]: Symmetric]: P is Symmetric = summon
 
-  /** `Symmetric` instance for `Function` over the category **Type**. */
+  /** `Symmetric` instance for `Function` on the category **Type**. */
   given FunctionIsSymmetric
-    : (P: Function is Monoidal over Function withUnit Unit withTensor ([A, B] =>> (A, B)))
+    : (P: Function is Monoidal on Function withUnit Unit withTensor ([A, B] =>> (A, B)))
         => Function is Symmetric {
     export P.{Self as _, *}
 

@@ -3,16 +3,16 @@ package category
 
 import scala.annotation.targetName
 
-/** A promonad over an underlying category **C**.
+/** A promonad on an underlying category **C**.
   *
-  * Represents a monoid *P* in the monoidal category of endoprofunctors **Prof** over **C**, where
+  * Represents a monoid *P* in the monoidal category of endoprofunctors **Prof** on **C**, where
   *   - *P* ⇒ *Q* are morphisms of **Prof** (natural transformations between profunctors)
   *   - *Hom* is the unit object of **Prof** (the Hom-profunctor)
   *   - ⋄ is the tensor product of **Prof**
   *   - *η*: *Hom* ⇒ *P* is the unit of the monoid
   *   - *μ*: *P* ⋄ *P* ⇒ *P* is the multiplication of the monoid
   *
-  * Every promonad over **C** induces a category with objects *Ob*(**C**) and hom-sets *P*[*A*,*B*], where
+  * Every promonad on **C** induces a category with objects *Ob*(**C**) and hom-sets *P*[*A*,*B*], where
   *   - *id* : *A* ~> *A* are the identity morphisms given by the unit *η*
   *   - ∘ is the composition given by the multiplication *μ*
   */
@@ -33,7 +33,7 @@ trait Promonad extends Profunctor {
 
   /** The identity morphism *id* = *η*(*id*) in *A* ~> *A* of the category induced by *P*. */
   def identity[A]: A ~> A = {
-    unit(Promonad[Over].identity)
+    unit(Promonad[On].identity)
   }
 
   /** Composes two morphisms *p*: *B* ~> *C* and *q*: *A* ~> *B* to a morphism *p* ∘ *q*: *A* ~> *C* in the category
@@ -137,9 +137,9 @@ object Promonad {
   /** Summons the `Promonad` instance of `P`. */
   def apply[P[_, _]: Promonad]: P is Promonad = summon
 
-  /** `Promonad` instance for `=:=` over the discrete category *Ob*(**Type**). */
+  /** `Promonad` instance for `=:=` on the discrete category *Ob*(**Type**). */
   given TypeEqIsPromonad: =:= is Promonad {
-    export Profunctor.TypeEqIsProfunctor.Over
+    export Profunctor.TypeEqIsProfunctor.On
 
     def unit[A, B](f: A =:= B): A =:= B = {
       f
@@ -154,8 +154,8 @@ object Promonad {
     }
   }
 
-  /** `Promonad` instance for `Function` over the category **Type**. */
-  given FunctionIsPromonad: (P: Function is Profunctor over Function) => Function is Promonad {
+  /** `Promonad` instance for `Function` on the category **Type**. */
+  given FunctionIsPromonad: (P: Function is Profunctor on Function) => Function is Promonad {
     export P.{Self as _, dimap as _, *}
 
     def unit[A, B](f: A => B): A => B = {
