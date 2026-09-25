@@ -64,12 +64,15 @@ trait Symmetric extends Monoidal {
 
 object Symmetric {
 
+  /** Type helper to refine `I` and `Tensor` simultaneously on `Symmetric`. */
+  type `with`[U, T[_, _]] = Symmetric { type I = U; type Tensor = T }
+
   /** Summons the `Symmetric` instance of `P`. */
   def apply[P[_, _]: Symmetric]: P is Symmetric = summon
 
   /** `Symmetric` instance for `Function` on the category **Type**. */
   given FunctionIsSymmetric
-    : (P: Function is Monoidal on Function withUnit Unit withTensor ([A, B] =>> (A, B)))
+    : (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] on Function)
         => Function is Symmetric {
     export P.{
       Self as _,

@@ -123,12 +123,15 @@ trait Cartesian extends Monoidal {
 
 object Cartesian {
 
+  /** Type helper to refine `I` and `Tensor` simultaneously on `Cartesian`. */
+  type `with`[U, T[_, _]] = Cartesian { type I = U; type Tensor = T }
+
   /** Summons the `Cartesian` instance of `P`. */
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
   /** `Cartesian` instance for `Function` on the category **Type**. */
   given FunctionIsCartesian
-    : (P: Function is Monoidal on Function withUnit Unit withTensor ([A, B] =>> (A, B)))
+    : (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] on Function)
         => Function is Cartesian {
     export P.{
       Self as _,

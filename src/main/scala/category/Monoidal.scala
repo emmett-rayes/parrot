@@ -39,7 +39,7 @@ trait Monoidal extends Promonad {
   /** The inverse right unitor morphism *ρ*⁻¹: *A* ~> *A* ⊗ *I*. */
   def rightUnitorInv[A]: A ~> (A * I)
 
-  /** The associator morphism *α*: (*A* ⊗ *B*) ⊗ *C* ~> *A* ⊗ (*B* ⊗ *C*). */
+  /** The associator morphism *α*: (*A* ⊗ *B*) ⊗ *C* ~> *A* ⊗ (*B* ⊗ *C*) = ((A * B) * C) ~> (A * (B * C)). */
   def associate[A, B, C]: ((A * B) * C) ~> (A * (B * C))
 
   /** The inverse associator morphism *α*⁻¹: *A* ⊗ (*B* ⊗ *C*) ~> (*A* ⊗ *B*) ⊗ *C*. */
@@ -119,6 +119,9 @@ trait Monoidal extends Promonad {
 }
 
 object Monoidal {
+
+  /** Type helper to refine `I` and `Tensor` simultaneously on `Monoidal`. */
+  type `with`[U, T[_, _]] = Monoidal { type I = U; type Tensor = T }
 
   /** Summons the `Monoidal` instance of `P`. */
   def apply[P[_, _]: Monoidal]: P is Monoidal = summon
