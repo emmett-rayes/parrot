@@ -20,7 +20,7 @@ trait Monoidal extends Promonad {
 
   /** The tensor product ⊗ on objects. */
   type Tensor[_, _]
-  type * = Tensor
+  final type * = Tensor
 
   /** Maps two morphisms *p*: *A* ~> *B* and *q*: *C* ~> *D* to a morphism *p* ⊗ *q*: *A* ⊗ *C* ~> *B* ⊗ *D* in the
     * category induced by *P*.
