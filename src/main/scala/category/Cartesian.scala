@@ -17,6 +17,9 @@ import scala.annotation.targetName
 trait Cartesian extends Monoidal {
   type Self[_, _]
 
+  private val Prom: Self is Promonad = summon
+  import Prom.*
+
   /** The unique morphism !: *A* ~> *I* to the terminal object. */
   def augment[A]: A ~> I
 
@@ -122,7 +125,6 @@ trait Cartesian extends Monoidal {
 }
 
 object Cartesian {
-  import Profunctor.on
 
   /** Type helper to refine `I` and `Tensor` simultaneously on `Cartesian`. */
   type `with`[U, T[_, _]] = Cartesian { type I = U; type Tensor = T }
@@ -131,9 +133,7 @@ object Cartesian {
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
   /** `Cartesian` instance for `Function` on the category **Type**. */
-  given FunctionIsCartesian
-    : (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] on Function)
-        => Function is Cartesian {
+  given FunctionIsCartesian: (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)]) => Function is Cartesian {
     export P.{
       Self as _,
       tensor as _,
@@ -166,7 +166,10 @@ object Cartesian {
   /** Every cartesian monoidal category induces a symmetric monoidal category, where
     *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
     */
-  given CartesianIsSymmetric: [P[_, _]] => (C: P is Cartesian) => P is Symmetric {
+  given CartesianIsSymmetric: [P[_, _]: Promonad] => (C: P is Cartesian) => P is Symmetric {
+    private val Prom: P is Promonad = summon
+    import Prom.*
+
     export C.{
       Self as _,
       rightUnitor as _,

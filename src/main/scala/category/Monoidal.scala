@@ -12,8 +12,11 @@ import scala.annotation.targetName
   *   - *λ*: *I* ⊗ *A* ⇒ *A* is the left unitor
   *   - *ρ*: *A* ⊗ *I* ⇒ *A* is the right unitor
   */
-trait Monoidal extends Promonad {
-  type Self[_, _]
+trait Monoidal {
+  type Self[_, _]: Promonad
+
+  private val Prom: Self is Promonad = summon
+  import Prom.*
 
   /** The unit object *I* in *Ob*(**C**). */
   type I
@@ -119,7 +122,6 @@ trait Monoidal extends Promonad {
 }
 
 object Monoidal {
-  import Profunctor.on
 
   /** Type helper to refine `I` and `Tensor` simultaneously on `Monoidal`. */
   type `with`[U, T[_, _]] = Monoidal { type I = U; type Tensor = T }
@@ -128,9 +130,7 @@ object Monoidal {
   def apply[P[_, _]: Monoidal]: P is Monoidal = summon
 
   /** `Monoidal` instance for `Function` on the category **Type**. */
-  given FunctionIsMonoidal: (P: Function is Promonad on Function) => Function is Monoidal {
-    export P.{Self as _, *}
-
+  given FunctionIsMonoidal: Function is Monoidal {
     type I      = Unit
     type Tensor = [A, B] =>> (A, B)
 

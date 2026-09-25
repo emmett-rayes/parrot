@@ -9,6 +9,9 @@ package category
 trait Symmetric extends Monoidal {
   type Self[_, _]
 
+  private val Prom: Self is Promonad = summon
+  import Prom.*
+
   /** The braiding natural isomorphism *β*: *A* ⊗ *B* ~> *B* ⊗ *A*. */
   def braid[A, B]: (A * B) ~> (B * A)
 
@@ -63,7 +66,6 @@ trait Symmetric extends Monoidal {
 }
 
 object Symmetric {
-  import Profunctor.on
 
   /** Type helper to refine `I` and `Tensor` simultaneously on `Symmetric`. */
   type `with`[U, T[_, _]] = Symmetric { type I = U; type Tensor = T }
@@ -72,9 +74,7 @@ object Symmetric {
   def apply[P[_, _]: Symmetric]: P is Symmetric = summon
 
   /** `Symmetric` instance for `Function` on the category **Type**. */
-  given FunctionIsSymmetric
-    : (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] on Function)
-        => Function is Symmetric {
+  given FunctionIsSymmetric: (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)]) => Function is Symmetric {
     export P.{
       Self as _,
       rightUnitor as _,
