@@ -16,6 +16,7 @@ trait Eq {
 }
 
 object Eq {
+  import scala.util.{Failure, Success, Try}
 
   /** Summons the `Eq` instance of `A`. */
   def apply[A: Eq]: A is Eq = summon
@@ -31,6 +32,17 @@ object Eq {
   given CanEqualIsEq: [A] => CanEqual[A, A] => A is Eq {
     def eq(a: A, b: A): Boolean = {
       a == b
+    }
+  }
+
+  /** `Eq` instance for `Try[A]` if `A` has an `Eq` instance. */
+  given TryIsEq: [A: Eq] => Try[A] is Eq {
+    def eq(a: Try[A], b: Try[A]): Boolean = {
+      (a, b) match {
+        case (Success(x), Success(y)) => x === y
+        case (Failure(_), Failure(_)) => true
+        case _                        => false
+      }
     }
   }
 }
