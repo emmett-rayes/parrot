@@ -63,6 +63,7 @@ trait Symmetric extends Monoidal {
 }
 
 object Symmetric {
+  import Profunctor.on
 
   /** Type helper to refine `I` and `Tensor` simultaneously on `Symmetric`. */
   type `with`[U, T[_, _]] = Symmetric { type I = U; type Tensor = T }

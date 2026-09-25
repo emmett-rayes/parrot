@@ -122,6 +122,7 @@ trait Cartesian extends Monoidal {
 }
 
 object Cartesian {
+  import Profunctor.on
 
   /** Type helper to refine `I` and `Tensor` simultaneously on `Cartesian`. */
   type `with`[U, T[_, _]] = Cartesian { type I = U; type Tensor = T }

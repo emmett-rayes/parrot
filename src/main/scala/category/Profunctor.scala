@@ -11,11 +11,11 @@ import scala.annotation.targetName
   */
 trait Profunctor {
   type Self[_, _]
-  type ~> = Self
+  final type ~> = Self
 
   /** The promonad inducing the underlying category **C**. */
   type On[_, _]: Promonad
-  type ==> = On
+  final type ==> = On
 
   /** Maps a pair of morphisms *f*: *C* ==> *A*, *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*]. */
   def dimap[A, B, C, D](f: C ==> A, g: B ==> D)(p: A ~> B): C ~> D
@@ -75,6 +75,9 @@ trait Profunctor {
 }
 
 object Profunctor {
+
+  /** Refines the `On` type of `Profunctor` to `T`. */
+  infix type on[P <: Profunctor, T[_, _]] = P { type On = T }
 
   /** Summons the `Profunctor` instance of `P`. */
   def apply[P[_, _]: Profunctor]: P is Profunctor = summon

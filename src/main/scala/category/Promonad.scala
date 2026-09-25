@@ -136,6 +136,7 @@ trait Promonad extends Profunctor {
 }
 
 object Promonad {
+  import Profunctor.on
 
   /** Summons the `Promonad` instance of `P`. */
   def apply[P[_, _]: Promonad]: P is Promonad = summon

@@ -119,6 +119,7 @@ trait Monoidal extends Promonad {
 }
 
 object Monoidal {
+  import Profunctor.on
 
   /** Type helper to refine `I` and `Tensor` simultaneously on `Monoidal`. */
   type `with`[U, T[_, _]] = Monoidal { type I = U; type Tensor = T }
