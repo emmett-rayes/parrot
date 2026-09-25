@@ -31,6 +31,43 @@ trait Cartesian extends Monoidal {
     */
   def product[C, A, B](f: C ~> A, g: C ~> B): C ~> (A * B)
 
+  /** The tensor product of two morphisms *p* ⊗ *q* = ⟨*p* ∘ *π*₁, *q* ∘ *π*₂⟩. */
+  override def tensor[A, B, C, D](p: A ~> B, q: C ~> D): (A * C) ~> (B * D) = {
+    (first[A, C] >>> p) &&& (second[A, C] >>> q)
+  }
+
+  /** The left unitor morphism *λ*: *I* ⊗ *A* ~> *A* = *π*₂. */
+  override def leftUnitor[A]: (I * A) ~> A = {
+    second[I, A]
+  }
+
+  /** The inverse left unitor morphism *λ*⁻¹: *A* ~> *I* ⊗ *A* = ⟨!, *id*⟩. */
+  override def leftUnitorInv[A]: A ~> (I * A) = {
+    augment[A] &&& identity[A]
+  }
+
+  /** The right unitor morphism *ρ*: *A* ⊗ *I* ~> *A* = *π*₁. */
+  override def rightUnitor[A]: (A * I) ~> A = {
+    first[A, I]
+  }
+
+  /** The inverse right unitor morphism *ρ*⁻¹: *A* ~> *A* ⊗ *I* = ⟨*id*, !⟩. */
+  override def rightUnitorInv[A]: A ~> (A * I) = {
+    identity[A] &&& augment[A]
+  }
+
+  /** The associator morphism *α*: (*A* ⊗ *B*) ⊗ *C* ~> *A* ⊗ (*B* ⊗ *C*) = ⟨*π*₁ ∘ *π*₁, ⟨*π*₂ ∘ *π*₁, *π*₂⟩⟩. */
+  override def associate[A, B, C]: ((A * B) * C) ~> (A * (B * C)) = {
+    (first[A * B, C] >>> first[A, B]) &&& ((first[A * B, C] >>> second[A, B]) &&& second[A * B, C])
+  }
+
+  /** The inverse associator morphism *α*⁻¹: *A* ⊗ (*B* ⊗ *C*) ~> (*A* ⊗ *B*) ⊗ *C* = ⟨⟨*π*₁, *π*₁ ∘ *π*₂⟩, *π*₂ ∘
+    * *π*₂⟩.
+    */
+  override def unassociate[A, B, C]: (A * (B * C)) ~> ((A * B) * C) = {
+    ((first[A, B * C] &&& (second[A, B * C] >>> first[B, C])) &&& (second[A, B * C] >>> second[B, C]))
+  }
+
   extension [C, A](f: C ~> A)
     /** Infix extension for [[product]]. */
     @targetName("productExt")
@@ -93,7 +130,17 @@ object Cartesian {
   given FunctionIsCartesian
     : (P: Function is Monoidal on Function withUnit Unit withTensor ([A, B] =>> (A, B)))
         => Function is Cartesian {
-    export P.{Self as _, *}
+    export P.{
+      Self as _,
+      tensor as _,
+      leftUnitor as _,
+      leftUnitorInv as _,
+      rightUnitor as _,
+      rightUnitorInv as _,
+      associate as _,
+      unassociate as _,
+      *,
+    }
 
     def augment[A]: A => Unit = {
       _ => ()
@@ -116,7 +163,13 @@ object Cartesian {
     *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
     */
   given CartesianIsSymmetric: [P[_, _]] => (C: P is Cartesian) => P is Symmetric {
-    export C.{Self as _, *}
+    export C.{
+      Self as _,
+      rightUnitor as _,
+      rightUnitorInv as _,
+      unassociate as _,
+      *,
+    }
 
     def braid[A, B]: (A * B) ~> (B * A) = {
       second &&& first
