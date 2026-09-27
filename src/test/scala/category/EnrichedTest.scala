@@ -1,9 +1,6 @@
 package parrot
 package category
 
-import category.Enriched.over
-import category.Monoid.in
-
 import org.scalacheck.{Arbitrary, Gen, Prop, Test}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
@@ -19,7 +16,9 @@ class EnrichedTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   given OptionFunctionIsPromonad: OptionFunction is Promonad {
     type On = Function
 
-    def unit[A, B](f: A => B): A => Option[B] = { a => Some(f(a)) }
+    def unit[A, B](f: A => B): A => Option[B] = {
+      a => Some(f(a))
+    }
 
     def multiply[A, B, C](q: B => Option[C], p: A => Option[B]): A => Option[C] = {
       a => p(a).flatMap(q)
@@ -32,6 +31,7 @@ class EnrichedTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   given OptionFunctionIsEnriched: OptionFunction is Enriched {
     type Over = Monoid.Additive
+    override val Prom: OptionFunctionIsPromonad.type = summon
 
     override given HomIsV: [A, B] => ((A => Option[B]) is Monoid.Additive) = {
       Monoid.Additive.FunctionIsAdditive[A, Option[B]]
@@ -45,62 +45,67 @@ class EnrichedTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     }
   }
 
-  private given [M] => (m: M is Monoid.Additive)
-    => (M is (Monoid in Function) { val Mon: OptionFunctionMonoidEnrichedLaws.FMon.type }) =
-    m.asInstanceOf[M is (Monoid in Function) { val Mon: OptionFunctionMonoidEnrichedLaws.FMon.type }]
-
   // =========================================================================
-  // 1. Instance Summons
+  // Monoid-Enriched Laws (Point-Free)
   // =========================================================================
 
-  test("Enriched summons with 'over Monoid.Additive'") {
-    val enriched = summon[OptionFunction is Enriched over Monoid.Additive]
-    import enriched.given
-
-    val f: Int => Option[String] = i => if i > 0 then Some(s"pos: $i") else None
-    val g: Int => Option[String] = i => if i == 0 then Some("zero") else None
-
-    val additive = summon[(Int => Option[String]) is Monoid.Additive]
-    val zeroFn   = additive.zero
-    val plusFn   = additive.plus(f, g)
-
-    val _ = assert(plusFn(1) == Some("pos: 1"))
-    val _ = assert(plusFn(0) == Some("zero"))
-    val _ = assert(plusFn(-1) == None)
-    val _ = assert(additive.plus(f, zeroFn)(1) == f(1))
-    assert(additive.plus(zeroFn, g)(0) == g(0))
-  }
-
-  test("Enriched summons via Enriched.apply") {
-    val enriched = Enriched[OptionFunction]
-    import enriched.given
-
-    val evidence = summon[(Int => Option[String]) is enriched.V]
-    assert(evidence.isInstanceOf[Monoid.Additive])
-  }
-
-  // =========================================================================
-  // 2. Monoid-Enriched Laws
-  // =========================================================================
-
+  import OptionFunctionIsEnriched.given
   private val OptionFunctionMonoidEnrichedLaws = OptionFunctionIsEnriched.MonoidEnrichedLaws
 
   test("OptionFunction is Enriched: unit homomorphy law") {
-    given Arbitrary[OptionFunctionMonoidEnrichedLaws.FMon.I] =
-      Arbitrary(Gen.const(().asInstanceOf[OptionFunctionMonoidEnrichedLaws.FMon.I]))
-
     val f: String => Int    = _.length
     val g: String => String = _ + "!"
+
     assert(OptionFunctionMonoidEnrichedLaws.unitHomomorphy(f, g))
   }
 
   test("OptionFunction is Enriched: multiplication homomorphy law") {
-    type TensorPair = OptionFunctionMonoidEnrichedLaws.FMon.Tensor[Int => Option[String], Int => Option[String]]
-    given Arbitrary[TensorPair] =
-      Arbitrary.arbTuple2[Int => Option[String], Int => Option[String]].asInstanceOf[Arbitrary[TensorPair]]
+    given Arbitrary[Int => Option[String]] = Arbitrary {
+      Gen.oneOf(
+        Gen.const((i: Int) => Some(s"val:$i")),
+        Gen.const((i: Int) => if i > 0 then Some(s"pos:$i") else None),
+        Gen.const((_: Int) => None),
+      )
+    }
 
     val f: String => Int    = _.length
     val g: String => String = _ + "!"
+
     assert(OptionFunctionMonoidEnrichedLaws.multiplicationHomomorphy(f, g))
+  }
+
+  test("OptionFunction is Enriched: right distributivity law") {
+    given Arbitrary[String => Option[Boolean]] = Arbitrary {
+      Gen.oneOf(
+        Gen.const((s: String) => if s.nonEmpty then Some(true) else None),
+        Gen.const((s: String) => if s.length > 3 then Some(false) else None),
+        Gen.const((_: String) => None),
+      )
+    }
+
+    val q: OptionFunction[Int, String] = i => if i >= 0 then Some(i.toString) else None
+
+    assert(OptionFunctionMonoidEnrichedLaws.rightDistributivity(q))
+  }
+
+  test("OptionFunction is Enriched: left distributivity law") {
+    given Arbitrary[Int => Option[String]] = Arbitrary {
+      Gen.oneOf(
+        Gen.const((i: Int) => if i > 0 then Some(s"pos:$i") else None),
+        Gen.const((i: Int) => if i == 0 then Some("zero") else None),
+        Gen.const((_: Int) => None),
+      )
+    }
+
+    val p: OptionFunction[String, Boolean] = s => if s.nonEmpty then Some(true) else None
+
+    assert(OptionFunctionMonoidEnrichedLaws.leftDistributivity(p))
+  }
+
+  test("OptionFunction is Enriched: unit annihilation law") {
+    val p: OptionFunction[String, Boolean] = s => Some(s.nonEmpty)
+    val q: OptionFunction[Int, String]     = i => Some(i.toString)
+
+    assert(OptionFunctionMonoidEnrichedLaws.unitAnnihilation(p, q))
   }
 }

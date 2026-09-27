@@ -52,6 +52,7 @@ trait Monoid {
 }
 
 object Monoid {
+  import Profunctor.on
 
   /** Refines the `In` type of `Monoid` to `T`. */
   infix type in[M <: Monoid, T[_, _]] = Monoid { type In = T }
@@ -65,7 +66,8 @@ object Monoid {
 
     type In = Function
 
-    override val Mon: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] = summon
+    override val Prom: Function is (Promonad on Function)                  = summon
+    override val Mon:  Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] = summon
 
     import Mon.*
     import Prom.*
@@ -143,7 +145,8 @@ object Monoid {
 
     type In = Function
 
-    override val Mon: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] = summon
+    override val Prom: Function is (Promonad on Function)                  = summon
+    override val Mon:  Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)] = summon
 
     import Mon.*
     import Prom.*
