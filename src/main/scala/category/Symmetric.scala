@@ -74,7 +74,7 @@ object Symmetric {
   def apply[P[_, _]: Symmetric]: P is Symmetric = summon
 
   /** `Symmetric` instance for `Function` on the category **Type**. */
-  given FunctionIsSymmetric: (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)]) => Function is Symmetric {
+  given FunctionIsSymmetric: (P: Function is Monoidal.`with`[Unit, Tuple2]) => Function is Symmetric {
     export P.{
       Self as _,
       rightUnitor as _,

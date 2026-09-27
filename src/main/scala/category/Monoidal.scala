@@ -132,7 +132,7 @@ object Monoidal {
   /** `Monoidal` instance for `Function` on the category **Type**. */
   given FunctionIsMonoidal: Function is Monoidal {
     type I      = Unit
-    type Tensor = [A, B] =>> (A, B)
+    type Tensor = Tuple2
 
     def tensor[A, B, C, D](p: A => B, q: C => D): ((A, C)) => (B, D) = {
       (a, c) => (p(a), q(c))

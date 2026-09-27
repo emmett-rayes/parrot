@@ -133,7 +133,7 @@ object Cartesian {
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
   /** `Cartesian` instance for `Function` on the category **Type**. */
-  given FunctionIsCartesian: (P: Function is Monoidal.`with`[Unit, [A, B] =>> (A, B)]) => Function is Cartesian {
+  given FunctionIsCartesian: (P: Function is Monoidal.`with`[Unit, Tuple2]) => Function is Cartesian {
     export P.{
       Self as _,
       tensor as _,
