@@ -60,7 +60,7 @@ trait Profunctor {
       p.dimap(Promonad[On].identity, Promonad[On].identity) === p
     }
 
-    /** *P*(*f1*,*g1*) ∘ *P*(*f2*,*g2*) = *P*(*f2* ∘ *f1*,*g1* ∘ *g2*)
+    /** *P*(*f2*,*g2*) ∘ *P*(*f1*,*g1*) = *P*(*f2* ∘ *f1*,*g1* ∘ *g2*)
       */
     def composition[A, B, C, D, E, F](
       p: A ~> B,

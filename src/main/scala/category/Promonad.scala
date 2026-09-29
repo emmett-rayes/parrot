@@ -86,9 +86,9 @@ trait Promonad extends Profunctor {
   /** Laws that any `Promonad` must satisfy. */
   object PromonadLaws {
 
-    /** *P*(*h*,*k*) ∘ *η* = *η* ∘ *Hom*(*h*,*k*)
+    /** *η* ∘ *P*(*h*,*k*) = *Hom*(*h*,*k*) ∘ *η*
       *
-      * *P*(*h*,*k*)(*η*(*f*)) = *η*(*Hom*(*h*,*k*)(*f*))
+      * *η*(*f*)(*h*,*k*) = *η*(*k* ∘ *f* ∘ *h*)
       */
     def unitNaturality[A, B, C, D](
       f: A ==> B,
@@ -111,19 +111,25 @@ trait Promonad extends Profunctor {
       multiply(q, p).dimap(h, k) === multiply(q.rmap(k), p.lmap(h))
     }
 
-    /** *id* ∘ *p* = *p*
+    /** *μ* ∘ (*η* ⋄ *id*) = *id*
+      *
+      * *id* ∘ *p* = *p*
       */
     def leftIdentity[A, B](p: A ~> B)(using A ~> B is Eq): Boolean = {
-      (p >>> identity) === p
+      multiply(identity[B], p) === p
     }
 
-    /** *p* ∘ *id* = *p*
+    /** *μ* ∘ (*id* ⋄ *η*) = *id*
+      *
+      * *p* ∘ *id* = *p*
       */
     def rightIdentity[A, B](p: A ~> B)(using A ~> B is Eq): Boolean = {
-      (identity >>> p) === p
+      multiply(p, identity[A]) === p
     }
 
-    /** *r* ∘ (*q* ∘ *p*) = (*r* ∘ *q*) ∘ *p*
+    /** *μ* ∘ (*μ* ⋄ *id*) = *μ* ∘ (*id* ⋄ *μ*)
+      *
+      * (*p* ∘ *q*) ∘ *r* = *p* ∘ (*q* ∘ *r*)
       */
     def associativity[A, B, C, D](
       p: A ~> B,
@@ -131,6 +137,16 @@ trait Promonad extends Profunctor {
       r: C ~> D,
     )(using A ~> D is Eq): Boolean = {
       ((p >>> q) >>> r) === (p >>> (q >>> r))
+    }
+
+    /** *P*(*f*, *id*)(*q*) ∘ *p* = *q* ∘ *P*(*id*, *f*)(*p*) in the coend *P* ⋄ *P*
+      */
+    def wedge[A, B, BPrime, C](
+      q: B ~> C,
+      f: BPrime ==> B,
+      p: A ~> BPrime,
+    )(using A ~> C is Eq): Boolean = {
+      multiply(q.lmap(f), p) === multiply(q, p.rmap(f))
     }
   }
 }

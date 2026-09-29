@@ -1,11 +1,7 @@
 package parrot
 package category
 
-import org.scalacheck.{Arbitrary, Prop, Test}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-
-class SymmetricTest extends AnyFunSuite with ScalaCheckPropertyChecks {
+class SymmetricTest extends CategorySuite {
 
   // =========================================================================
   // Symmetric Laws on Function
@@ -13,24 +9,48 @@ class SymmetricTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   private val FunctionLaws = Symmetric.FunctionIsSymmetric.SymmetricLaws
 
-  given ArbitraryFunctionIsEq: [A: Arbitrary, B: Eq] => Function[A, B] is Eq {
-    def eq(f: A => B, g: A => B): Boolean = {
-      val prop = Prop.forAll((a: A) => f(a) === g(a))
-      Test.check(Test.Parameters.default, prop).passed
-    }
-  }
-
   test("Function is Symmetric: braid naturality law") {
-    val f: Int => String     = _.toString
-    val g: Boolean => Double = if _ then 1.0 else 0.0
-    assert(FunctionLaws.braidNaturality(f, g))
+    val f1: Int => String     = i => if i >= 0 then s"pos:$i" else s"neg:$i"
+    val g1: Boolean => Double = if _ then 1.0 else 0.0
+    val _                     = assert(FunctionLaws.braidNaturality(f1, g1))
+
+    val f2: String => Int    = _.length
+    val g2: Double => String = d => s"val:$d"
+    val _                    = assert(FunctionLaws.braidNaturality(f2, g2))
+
+    val f3: Int => Int        = _ * 2
+    val g3: String => Boolean = _.nonEmpty
+    assert(FunctionLaws.braidNaturality(f3, g3))
   }
 
   test("Function is Symmetric: symmetry law") {
-    assert(FunctionLaws.symmetry[Int, String])
+    val _ = assert(FunctionLaws.symmetry[Int, String])
+    val _ = assert(FunctionLaws.symmetry[Double, Boolean])
+    assert(FunctionLaws.symmetry[(Int, String), Boolean])
   }
 
   test("Function is Symmetric: hexagon law") {
-    assert(FunctionLaws.hexagon[Int, String, Boolean])
+    val _ = assert(FunctionLaws.hexagon[Int, String, Boolean])
+    val _ = assert(FunctionLaws.hexagon[Double, Int, String])
+    assert(FunctionLaws.hexagon[String, Boolean, (Int, Int)])
+  }
+
+  test("Function is Symmetric: right unitor consistency law") {
+    val _ = assert(FunctionLaws.rightUnitorConsistency[Int])
+    val _ = assert(FunctionLaws.rightUnitorConsistency[String])
+    assert(FunctionLaws.rightUnitorConsistency[Boolean])
+  }
+
+  test("Function is Symmetric: unassociate 5-braid composite isomorphism") {
+    val F = Symmetric.FunctionIsSymmetric
+    val P = Promonad[Function]
+    import P.>>>
+
+    val iso1 = (F.associate[Int, String, Boolean] >>> F.unassociate[Int, String, Boolean]) ===
+      P.identity[((Int, String), Boolean)]
+    val iso2 = (F.unassociate[Int, String, Boolean] >>> F.associate[Int, String, Boolean]) ===
+      P.identity[(Int, (String, Boolean))]
+    val _ = assert(iso1)
+    assert(iso2)
   }
 }

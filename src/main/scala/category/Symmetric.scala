@@ -62,6 +62,12 @@ trait Symmetric extends Monoidal {
       val rhs = (braid[A, B] *** identity[C]) >>> associate[B, A, C] >>> (identity[B] *** braid[A, C])
       lhs === rhs
     }
+
+    /** *ρ* = *λ* ∘ *β*
+      */
+    def rightUnitorConsistency[A](using (A * I) ~> A is Eq): Boolean = {
+      rightUnitor[A] === (braid[A, I] >>> leftUnitor[A])
+    }
   }
 }
 

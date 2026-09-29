@@ -118,6 +118,31 @@ trait Monoidal {
       val rhs = associate[A * B, C, D] >>> associate[A, B, C * D]
       lhs === rhs
     }
+
+    /** *λ* ∘ *λ*⁻¹ = *id* and *λ*⁻¹ ∘ *λ* = *id*
+      */
+    def leftUnitorIsomorphism[A](using (I * A) ~> (I * A) is Eq, A ~> A is Eq): Boolean = {
+      ((leftUnitorInv[A] >>> leftUnitor[A]) === identity[A]) &&
+      ((leftUnitor[A] >>> leftUnitorInv[A]) === identity[I * A])
+    }
+
+    /** *ρ* ∘ *ρ*⁻¹ = *id* and *ρ*⁻¹ ∘ *ρ* = *id*
+      */
+    def rightUnitorIsomorphism[A](using (A * I) ~> (A * I) is Eq, A ~> A is Eq): Boolean = {
+      ((rightUnitorInv[A] >>> rightUnitor[A]) === identity[A]) &&
+      ((rightUnitor[A] >>> rightUnitorInv[A]) === identity[A * I])
+    }
+
+    /** *α* ∘ *α*⁻¹ = *id* and *α*⁻¹ ∘ *α* = *id*
+      */
+    def associatorIsomorphism[A, B, C](
+      using
+      ((A * B) * C) ~> ((A * B) * C) is Eq,
+      (A * (B * C)) ~> (A * (B * C)) is Eq,
+    ): Boolean = {
+      ((associate[A, B, C] >>> unassociate[A, B, C]) === identity[(A * B) * C]) &&
+      ((unassociate[A, B, C] >>> associate[A, B, C]) === identity[A * (B * C)])
+    }
   }
 }
 

@@ -34,6 +34,11 @@ trait Cartesian extends Monoidal {
     */
   def product[C, A, B](f: C ~> A, g: C ~> B): C ~> (A * B)
 
+  /** The diagonal morphism Δ: *A* ~> *A* ⊗ *A*. */
+  def diagonal[A]: A ~> (A * A) = {
+    identity[A] &&& identity[A]
+  }
+
   /** The tensor product of two morphisms *p* ⊗ *q* = ⟨*p* ∘ *π*₁, *q* ∘ *π*₂⟩. */
   override def tensor[A, B, C, D](p: A ~> B, q: C ~> D): (A * C) ~> (B * D) = {
     (first[A, C] >>> p) &&& (second[A, C] >>> q)
@@ -84,29 +89,18 @@ trait Cartesian extends Monoidal {
       f.product(g)
     }
 
-  /** The diagonal morphism Δ: *A* ~> *A* ⊗ *A*. */
-  def diagonal[A]: A ~> (A * A) = {
-    identity[A] &&& identity[A]
-  }
-
   /** Laws that any `Cartesian` monoidal profunctor must satisfy. */
   object CartesianLaws {
 
     /** *π*₁ ∘ ⟨*f*, *g*⟩ = *f*
       */
-    def firstProjection[C, A, B](
-      f: C ~> A,
-      g: C ~> B,
-    )(using C ~> A is Eq): Boolean = {
+    def firstProjection[A, B, C](f: A ~> B, g: A ~> C)(using (A ~> B) is Eq): Boolean = {
       ((f &&& g) >>> first) === f
     }
 
     /** *π*₂ ∘ ⟨*f*, *g*⟩ = *g*
       */
-    def secondProjection[C, A, B](
-      f: C ~> A,
-      g: C ~> B,
-    )(using C ~> B is Eq): Boolean = {
+    def secondProjection[A, B, C](f: A ~> B, g: A ~> C)(using (A ~> C) is Eq): Boolean = {
       ((f &&& g) >>> second) === g
     }
 
@@ -116,21 +110,51 @@ trait Cartesian extends Monoidal {
       (first[A, B] &&& second[A, B]) === identity[A * B]
     }
 
-    /** For any morphism *f*: *A* ~> *I*, *f* = !
-      */
+    /* *A* ~> *I*, *f* = ! */
     def terminalUniqueness[A](f: A ~> I)(using A ~> I is Eq): Boolean = {
       f === augment[A]
+    }
+
+    /** *π*₁ ∘ Δ = *id*
+      */
+    def diagonalFirst[A](using (A ~> A) is Eq): Boolean = {
+      (diagonal[A] >>> first[A, A]) === identity[A]
+    }
+
+    /** *π*₂ ∘ Δ = *id*
+      */
+    def diagonalSecond[A](using (A ~> A) is Eq): Boolean = {
+      (diagonal[A] >>> second[A, A]) === identity[A]
     }
   }
 }
 
 object Cartesian {
 
-  /** Type helper to refine `I` and `Tensor` simultaneously on `Cartesian`. */
+  /** Refines the `I` and `Tensor` types of `Cartesian` to `U` and `T`. */
   type `with`[U, T[_, _]] = Cartesian { type I = U; type Tensor = T }
 
   /** Summons the `Cartesian` instance of `P`. */
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
+
+  /** Every cartesian monoidal category induces a symmetric monoidal category, where
+    *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
+    */
+  given CartesianIsSymmetric: [P[_, _]: Promonad] => (C: P is Cartesian) => P is Symmetric {
+    export C.{
+      Self as _,
+      rightUnitor as _,
+      rightUnitorInv as _,
+      unassociate as _,
+      *,
+    }
+
+    import C.Prom.*
+
+    def braid[A, B]: (A * B) ~> (B * A) = {
+      second &&& first
+    }
+  }
 
   /** `Cartesian` instance for `Function` on the category **Type**. */
   given FunctionIsCartesian: (P: Function is Monoidal.`with`[Unit, Tuple2]) => Function is Cartesian {
@@ -160,26 +184,6 @@ object Cartesian {
 
     def product[C, A, B](f: C => A, g: C => B): C => (A, B) = {
       c => (f(c), g(c))
-    }
-  }
-
-  /** Every cartesian monoidal category induces a symmetric monoidal category, where
-    *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
-    */
-  given CartesianIsSymmetric: [P[_, _]: Promonad] => (C: P is Cartesian) => P is Symmetric {
-    private val Prom: P is Promonad = summon
-    import Prom.*
-
-    export C.{
-      Self as _,
-      rightUnitor as _,
-      rightUnitorInv as _,
-      unassociate as _,
-      *,
-    }
-
-    def braid[A, B]: (A * B) ~> (B * A) = {
-      second &&& first
     }
   }
 }

@@ -17,9 +17,8 @@ trait Monoid {
   type In[_, _]: {Promonad, Monoidal}
 
   val Prom: In is Promonad = summon
+  val Mon: In is Monoidal  = summon
   import Prom.*
-
-  val Mon: In is Monoidal = summon
   import Mon.*
 
   /** The unit morphism *η*: *I* ~> *M*. */
@@ -66,11 +65,10 @@ object Monoid {
 
     type In = Function
 
-    override val Prom: Function is (Promonad on Function)                  = summon
-    override val Mon:  Function is Monoidal.`with`[Unit, Tuple2] = summon
-
-    import Mon.*
+    override val Prom: Function is (Promonad on Function)       = summon
+    override val Mon: Function is Monoidal.`with`[Unit, Tuple2] = summon
     import Prom.*
+    import Mon.*
 
     /** The unit element 0 of *M*. */
     def zero: M
@@ -116,7 +114,11 @@ object Monoid {
       }
     }
 
-    /** `Try[A]` is a `Monoid.Additive` under `orElse` with `Failure` as zero. */
+    /** `Try[A]` is a `Monoid.Additive` under `orElse` with `Failure` as zero.
+      *
+      * @note Under standard runtime equality, `Try[A]` is a monoid object strictly under the quotient equivalence
+      *   relation defined by `Eq.TryIsEq`, which identifies all `Failure` states.
+      */
     given TryIsAdditive: [A] => Try[A] is Additive {
       def zero: Try[A] = {
         Failure(Exception())
@@ -124,6 +126,17 @@ object Monoid {
 
       def plus(x: Try[A], y: Try[A]): Try[A] = {
         x.orElse(y)
+      }
+    }
+
+    /** `Set[A]` is a `Monoid.Additive` under `union` with `Set.empty` as zero. */
+    given SetIsAdditive: [A] => Set[A] is Additive {
+      def zero: Set[A] = {
+        Set.empty
+      }
+
+      def plus(x: Set[A], y: Set[A]): Set[A] = {
+        x.union(y)
       }
     }
 
@@ -145,11 +158,11 @@ object Monoid {
 
     type In = Function
 
-    override val Prom: Function is (Promonad on Function)                  = summon
-    override val Mon:  Function is Monoidal.`with`[Unit, Tuple2] = summon
+    override val Prom: Function is (Promonad on Function)       = summon
+    override val Mon: Function is Monoidal.`with`[Unit, Tuple2] = summon
 
-    import Mon.*
     import Prom.*
+    import Mon.*
 
     /** The unit element 1 of *M*. */
     def one: M

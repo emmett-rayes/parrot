@@ -1,11 +1,7 @@
 package parrot
 package category
 
-import org.scalacheck.{Arbitrary, Prop, Test}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
-
-class ProfunctorTest extends AnyFunSuite with ScalaCheckPropertyChecks {
+class ProfunctorTest extends CategorySuite {
 
   // =========================================================================
   // 1. Profunctor Laws on `=:=`
@@ -29,24 +25,28 @@ class ProfunctorTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   private val FunctionLaws = Profunctor.FunctionIsProfunctor.ProfunctorLaws
 
-  given ArbitraryFunctionIsEq: [A: Arbitrary, B: Eq] => Function[A, B] is Eq {
-    def eq(f: A => B, g: A => B): Boolean = {
-      val prop = Prop.forAll((a: A) => f(a) === g(a))
-      Test.check(Test.Parameters.default, prop).passed
-    }
-  }
-
   test("Function is Profunctor: identity law") {
-    val p: Int => String = _.toString
-    assert(FunctionLaws.identity(p))
+    val p1: Int => String = i => if i >= 0 then s"pos:$i" else s"neg:$i"
+    val p2: Int => String = _ => "const"
+    val p3: String => Int = _.length
+    val _                 = assert(FunctionLaws.identity(p1))
+    val _                 = assert(FunctionLaws.identity(p2))
+    assert(FunctionLaws.identity(p3))
   }
 
   test("Function is Profunctor: composition law") {
-    val p: Int => String     = n => s"num:$n"
-    val f1: Double => Int    = _.toInt
-    val f2: String => Double = _.length.toDouble
-    val g1: String => Int    = _.length
-    val g2: Int => Boolean   = _ % 2 == 0
-    assert(FunctionLaws.composition(p, f1, g1, f2, g2))
+    val p1: Int => String      = n => if n % 2 == 0 then s"even:$n" else s"odd:$n"
+    val f1_1: Double => Int    = d => math.round(d).toInt
+    val f2_1: String => Double = _.length.toDouble
+    val g1_1: String => Int    = _.length
+    val g2_1: Int => Boolean   = _ > 5
+    val _                      = assert(FunctionLaws.composition(p1, f1_1, g1_1, f2_1, g2_1))
+
+    val p2: Int => String      = _ => "fixed"
+    val f1_2: Double => Int    = _ => 0
+    val f2_2: String => Double = _ => 0.0
+    val g1_2: String => Int    = _ => 1
+    val g2_2: Int => Boolean   = _ => true
+    assert(FunctionLaws.composition(p2, f1_2, g1_2, f2_2, g2_2))
   }
 }
