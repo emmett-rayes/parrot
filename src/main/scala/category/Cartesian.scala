@@ -171,18 +171,9 @@ object Cartesian {
   }
 
   /** `Cartesian` instance for `Function` on the category **Type**. */
-  given FunctionIsCartesian: (P: Function is Monoidal.`with`[Unit, Tuple2]) => Function is Cartesian {
-    export P.{
-      Self as _,
-      tensor as _,
-      leftUnitor as _,
-      leftUnitorInv as _,
-      rightUnitor as _,
-      rightUnitorInv as _,
-      associate as _,
-      unassociate as _,
-      *,
-    }
+  given FunctionIsCartesian: Function is Cartesian {
+    type I      = Unit
+    type Tensor = Tuple2
 
     def augment[A]: A => Unit = {
       _ => ()
@@ -198,6 +189,28 @@ object Cartesian {
 
     def product[C, A, B](f: C => A, g: C => B): C => (A, B) = {
       c => (f(c), g(c))
+    }
+  }
+
+  /** `Cartesian` instance for `Function` on the category **Type** with lazy products. */
+  given FunctionIsLazyCartesian: Function is Cartesian {
+    type I      = Unit
+    type Tensor = LazyTuple2
+
+    def augment[A]: A => Unit = {
+      _ => ()
+    }
+
+    def first[A, B]: LazyTuple2[A, B] => A = {
+      p => p._1
+    }
+
+    def second[A, B]: LazyTuple2[A, B] => B = {
+      p => p._2
+    }
+
+    def product[C, A, B](f: C => A, g: C => B): C => LazyTuple2[A, B] = {
+      c => LazyTuple2(f(c), g(c))
     }
   }
 }
