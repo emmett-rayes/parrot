@@ -67,6 +67,7 @@ object Monoid {
 
     override val Prom: Function is (Promonad on Function)       = summon
     override val Mon: Function is Monoidal.`with`[Unit, Tuple2] = summon
+
     import Prom.*
     import Mon.*
 

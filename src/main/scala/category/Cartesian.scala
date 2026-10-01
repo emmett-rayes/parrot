@@ -137,6 +137,20 @@ object Cartesian {
   /** Summons the `Cartesian` instance of `P`. */
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
+  /** Every object in a cartesian monoidal category is uniquely a comonoid object via the augment and diagonal. */
+  given MIsComonoid: [M, P[_, _]: Promonad] => (C: P is Cartesian) => M is Comonoid {
+    type In = P
+
+    override val Mon: C.type = C
+
+    import C.*
+    import Prom.*
+
+    def zero: M ~> I = augment
+
+    def add: M ~> (M * M) = diagonal
+  }
+
   /** Every cartesian monoidal category induces a symmetric monoidal category, where
     *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
     */
