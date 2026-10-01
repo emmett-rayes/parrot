@@ -54,7 +54,7 @@ object Monoid {
   import Profunctor.on
 
   /** Refines the `In` type of `Monoid` to `T`. */
-  infix type in[M <: Monoid, T[_, _]] = Monoid { type In = T }
+  infix type in[M <: Monoid, T[_, _]] = M { type In = T }
 
   /** Summons the `Monoid` instance of `M`. */
   def apply[M: Monoid]: M is Monoid = summon

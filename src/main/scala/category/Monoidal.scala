@@ -3,9 +3,9 @@ package category
 
 import scala.annotation.targetName
 
-/** A monoidal profunctor on an underlying category **C**.
+/** A monoidal promonad on an underlying category **C**.
   *
-  * Represents a monoidal profunctor *P* on **C**, where
+  * Represents a monoidal promonad *P* on **C**, where
   *   - ⊗ is the tensor product
   *   - *I* is the unit object
   *   - *α*: (*A* ⊗ *B*) ⊗ *C* ⇒ *A* ⊗ (*B* ⊗ *C*) is the associator

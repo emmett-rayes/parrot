@@ -3,9 +3,9 @@ package category
 
 import scala.annotation.targetName
 
-/** A cartesian monoidal profunctor on an underlying category **C**.
+/** A cartesian monoidal promonad on an underlying category **C**.
   *
-  * Represents a cartesian monoidal profunctor *P* on **C**, where
+  * Represents a cartesian monoidal promonad *P* on **C**, where
   *   - ⊗ is the categorical product
   *   - *I* is the terminal object
   *   - *π*₁: *A* ⊗ *B* ⇒ *A* is the first projection
@@ -140,7 +140,7 @@ object Cartesian {
   /** Every cartesian monoidal category induces a symmetric monoidal category, where
     *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
     */
-  given CartesianIsSymmetric: [P[_, _]: Promonad] => (C: P is Cartesian) => P is Symmetric {
+  given CartesianIsSymmetric: [P[_, _]: {Promonad, Cartesian}] => (C: P is Cartesian) => P is Symmetric {
     export C.{
       Self as _,
       rightUnitor as _,
