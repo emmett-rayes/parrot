@@ -35,13 +35,15 @@ object ReferenceParser
   final case class Input(source: String, offset: Int)
 
   /** The outcome of running a parser. */
-  enum Result[+B] derives CanEqual {
+  sealed trait Result[+B] derives CanEqual
+
+  object Result {
 
     /** Success with a semantic `value`, having consumed the input up to `offset`. */
-    case Success(value: B, offset: Int)
+    final case class Success[+B](value: B, offset: Int) extends Result[B]
 
     /** Failure at `offset`, expecting `expected`. */
-    case Failure(offset: Int, expected: String) extends Result[Nothing]
+    final case class Failure(offset: Int, expected: String) extends Result[Nothing]
   }
 
   import Result.{Failure, Success}

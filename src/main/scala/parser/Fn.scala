@@ -1,7 +1,7 @@
 package parrot
 package parser
 
-import parrot.category.{Cartesian, Cocartesian, Promonad}
+import category.{Cartesian, Cocartesian, Promonad}
 
 /** Reified morphisms of the base category **Type** (with ×, `Unit`, `Either`, `Nothing`).
   *
@@ -13,11 +13,10 @@ import parrot.category.{Cartesian, Cocartesian, Promonad}
   *   - *ι*₁ ⨾ [*f*, *g*] = *f*, *ι*₂ ⨾ [*f*, *g*] = *g*, [*ι*₁, *ι*₂] = *id*
   *   - *f* ⨾ ! = !
   *
-  * @note
-  *   Lifted functions must be total and pure, as befits morphisms of the base category; normalization may discard or
-  *   fuse them.
+  * @note Lifted functions must be total and pure, as befits morphisms of the base category; normalization may discard
+  *   or fuse them.
   */
-sealed abstract class Fn[A, B] {
+sealed trait Fn[A, B] {
   def apply(a: A): B
 }
 
@@ -66,46 +65,42 @@ object Fn {
     def apply(ab: Either[A, B]): C = ab.fold(f.apply, g.apply)
   }
 
-  private type F = Fn[Any, Any]
-
-  private def any(f: Fn[?, ?]): F = f.asInstanceOf[F]
-
   def id[A]: Fn[A, A] = Id()
 
   def lift[A, B](f: A => B): Fn[A, B] = Lift(f)
 
   /** Normalizing composition *f* ⨾ *g*. */
   def andThen[A, B, C](f: Fn[A, B], g: Fn[B, C]): Fn[A, C] = {
-    compose(any(f), any(g)).asInstanceOf[Fn[A, C]]
+    compose(f, g)
   }
 
   /** Normalizing pairing ⟨*f*, *g*⟩. */
   def fanout[A, B, C](f: Fn[A, B], g: Fn[A, C]): Fn[A, (B, C)] = {
-    ((f, g): (Fn[?, ?], Fn[?, ?])) match {
-      case (Proj1(), Proj2()) => Id().asInstanceOf[Fn[A, (B, C)]]
+    (f, g) match {
+      case (Proj1(), Proj2()) => Id()
       case _                  => Fanout(f, g)
     }
   }
 
   /** Normalizing copairing [*f*, *g*]. */
   def copair[A, B, C](f: Fn[A, C], g: Fn[B, C]): Fn[Either[A, B], C] = {
-    ((f, g): (Fn[?, ?], Fn[?, ?])) match {
-      case (Inl(), Inr()) => Id().asInstanceOf[Fn[Either[A, B], C]]
+    (f, g) match {
+      case (Inl(), Inr()) => Id()
       case _              => Copair(f, g)
     }
   }
 
-  private def compose(f: F, g: F): F = {
-    ((f, g): (Fn[?, ?], Fn[?, ?])) match {
+  private def compose[A, B, C](f: Fn[A, B], g: Fn[B, C]): Fn[A, C] = {
+    (f, g) match {
       case (Id(), _)                => g
       case (_, Id())                => f
-      case (_, Bang())              => any(Bang())
-      case (Fanout(f1, _), Proj1()) => any(f1)
-      case (Fanout(_, f2), Proj2()) => any(f2)
-      case (Inl(), Copair(g1, _))   => any(g1)
-      case (Inr(), Copair(_, g2))   => any(g2)
-      case (Lift(f1), Lift(g1))     => any(Lift(f1.asInstanceOf[Any => Any].andThen(g1.asInstanceOf[Any => Any])))
-      case (Compose(f1, f2), _)     => compose(any(f1), compose(any(f2), g))
+      case (_, Bang())              => Bang()
+      case (Fanout(f1, _), Proj1()) => f1
+      case (Fanout(_, f2), Proj2()) => f2
+      case (Inl(), Copair(g1, _))   => g1
+      case (Inr(), Copair(_, g2))   => g2
+      case (Lift(f1), Lift(g1))     => Lift(f1.andThen(g1))
+      case (Compose(f1, f2), _)     => compose(f1, compose(f2, g))
       case _                        => Compose(f, g)
     }
   }

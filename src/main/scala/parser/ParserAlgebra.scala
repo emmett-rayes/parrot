@@ -359,6 +359,15 @@ object ParserAlgebra {
   /** Summons the `ParserAlgebra` instance of `P`. */
   def apply[P[_, _]: ParserAlgebra]: P is ParserAlgebra = summon
 
+  /** An algebra whose semantic values are the standard Scala ones: `Unit`, tuples, `Either`, `Nothing` and `Vector`. */
+  type Standard = ParserAlgebra {
+    type Empty             = Unit
+    type Pair[A, B]        = (A, B)
+    type None              = Nothing
+    type Alternative[A, B] = Either[A, B]
+    type Many[B]           = Vector[B]
+  }
+
   // ===========================================================================
   // Structural mixins
   // ===========================================================================
