@@ -286,6 +286,11 @@ trait ParserAlgebra {
       (~p >> !p) === failure[A, A]
     }
 
+    /** A recursive parser is its own unfolding. */
+    def recursionUnfolding[A, B](f: P[A, B] => P[A, B])(using P[A, B] is Eq): Boolean = {
+      recursive(f) === f(recursive(f))
+    }
+
     /** A loop is one step followed by either stopping or looping again. */
     def loopUnfolding[A, B](p: P[A, B + A])(using P[A, B] is Eq): Boolean = {
       p.loop === (p >> (success[B] || p.loop))
@@ -341,13 +346,13 @@ trait ParserAlgebra {
   *   - [[Alternation]]: `Self` is enriched in additive monoids (parsers can be added)
   *   - [[Lookahead]]: `Self` is a restriction promonad (parsers form a restriction category)
   *   - [[Looping]]: `Self` is an Elgot promonad (parsers can be iterated)
+  *   - [[Recursion]]: `Self` is enriched in types with fixed points (parsers can be defined recursively)
   *
   * '''Derived mixins''' implement the remaining combinators from the operations of the algebra, requiring some
   * structure on `On`: [[Pairing]] and [[Iteration]]. Combinators that require nothing at all (`optional`, `not`) are
   * defined in [[ParserAlgebra]] itself.
   *
-  * Recursion and the lexical and structural primitives (`rule`, `literal`, `regex`, `recursive`) are left to
-  * interpreters.
+  * The lexical and structural primitives (`rule`, `literal`, `regex`) are left to interpreters.
   */
 object ParserAlgebra {
 
@@ -422,8 +427,8 @@ object ParserAlgebra {
     * even if `r` then fails. Choice is also not commutative.
     */
   trait Alternation extends ParserAlgebra {
-    val SelfIsEnriched: Self is Enriched over Monoid.Additive
-    import SelfIsEnriched.HomIsV
+    val SelfIsAdditive: Self is Enriched over Monoid.Additive
+    import SelfIsAdditive.HomIsV
 
     override def failure[A, B]: P[A, B] = HomIsV[A, B].zero
 
@@ -455,6 +460,21 @@ object ParserAlgebra {
 
     extension [A, B](self: P[A, B + A])
       override def loop: P[A, B] = self.dagger
+  }
+
+  /** Implements `recursive` as the fixed point of `f` in the hom-set of parsers, which is enriched in types with a
+    * Conway fixed-point operator.
+    *
+    * The Conway laws hold: the fixed point, dinaturality and diagonal properties, which also justify solving mutual
+    * recursion one parser at a time by Bekić's theorem. For the least fixed point, unguarded (left) recursion
+    * diverges. Interpreters supporting left recursion by growing a seed from `failure` compute a different fixed
+    * point, which breaks these laws when ordered choice or negation make the definition non-monotone.
+    */
+  trait Recursion extends ParserAlgebra {
+    val SelfIsFixed: Self is Enriched over Conway.Fixed
+    import SelfIsFixed.HomIsV
+
+    override def recursive[A, B](f: P[A, B] => P[A, B]): P[A, B] = HomIsV[A, B].fix(f)
   }
 
   // ===========================================================================

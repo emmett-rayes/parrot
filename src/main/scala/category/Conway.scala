@@ -150,4 +150,72 @@ object Conway {
         }
     }
   }
+
+  /** A type *M* with a fixed-point operator fix: (*M* → *M*) → *M* satisfying the Conway laws.
+    *
+    * `Fixed` is the unparameterized, internal counterpart of a `Conway` promonad rather than a specialization of it: in
+    * a cartesian closed category the two are interdefinable via *f*† = *a* ↦ fix(*c* ↦ *f*(*a*, *c*)) and fix = *ev*†,
+    * where *ev*: (*M* → *M*) × *M* → *M* is evaluation. Not every type of **Type** has fixed points (e.g. `Int`), but
+    * function types do, and fixed points of pairs reduce to fixed points of their components by Bekić's theorem.
+    */
+  trait Fixed {
+    type Self
+    final type M = Self
+
+    /** The fixed point of *f*. */
+    def fix(f: M => M): M
+
+    /** Laws that any `Fixed` must satisfy. */
+    object FixedLaws {
+
+      /** Fixed-point property: fix(*f*) = *f*(fix(*f*))
+        */
+      def fixedPoint(f: M => M)(using M is Eq): Boolean = {
+        fix(f) === f(fix(f))
+      }
+
+      /** Dinaturality (composition identity): fix(*g* ∘ *f*) = *g*(fix(*f* ∘ *g*))
+        */
+      def dinaturality[N](f: M => N, g: N => M)(using N: N is Fixed, eq: M is Eq): Boolean = {
+        fix(f.andThen(g)) === g(N.fix(g.andThen(f)))
+      }
+
+      /** Diagonal property: fix(*x* ↦ fix(*y* ↦ *f*(*x*, *y*))) = fix(*x* ↦ *f*(*x*, *x*))
+        */
+      def diagonal(f: (M, M) => M)(using M is Eq): Boolean = {
+        fix(x => fix(y => f(x, y))) === fix(x => f(x, x))
+      }
+    }
+  }
+
+  object Fixed {
+
+    /** Summons the `Fixed` instance of `M`. */
+    def apply[M: Fixed]: M is Fixed = summon
+
+    /** `A => B` has fixed points by eta-expansion, delaying the recursive reference until application:
+      * fix(*f*) = *g* where *g* = *f*(*a* ↦ *g*(*a*)).
+      *
+      * This is the least fixed point with respect to non-termination: unguarded recursion diverges.
+      */
+    given FunctionIsFixed: [A, B] => Function[A, B] is Fixed {
+      def fix(f: (A => B) => (A => B)): A => B = {
+        lazy val g: A => B = f(a => g(a))
+        g
+      }
+    }
+
+    /** `(A, B)` has fixed points if `A` and `B` do, by Bekić's theorem:
+      *
+      * fix(*f*) = (*a*₀, *b*₀) where *b*₀ = fix(*b* ↦ *f*₂(*a*(*b*), *b*)), *a*₀ = *a*(*b*₀) and *a*(*b*) = fix(*a* ↦
+      * *f*₁(*a*, *b*)).
+      */
+    given Tuple2IsFixed: [A, B] => (FA: A is Fixed, FB: B is Fixed) => (A, B) is Fixed {
+      def fix(f: ((A, B)) => (A, B)): (A, B) = {
+        def solveFirst(b: B): A = FA.fix(a => f((a, b))._1)
+        val b0                  = FB.fix(b => f((solveFirst(b), b))._2)
+        (solveFirst(b0), b0)
+      }
+    }
+  }
 }

@@ -10,6 +10,8 @@ import Profunctor.on
   *
   * Further structure of *F* lifts to further structure of *K*:
   *   - every monad induces a promonad (the Kleisli category), a strong profunctor and coproducts
+  *   - every monad induces an enrichment of the Kleisli category in types with fixed points, since hom-sets are
+  *     function types
   *   - a `Monad.Plus` induces an enrichment of the Kleisli category in additive monoids
   *   - a `Monad.Restriction` induces a restriction category
   *   - a `Monad.Elgot` induces an Elgot iteration
@@ -64,7 +66,7 @@ object Kleisli {
     }
 
   /** Hom-sets are additive monoids pointwise: 0 = *a* ↦ 0', *p* + *q* = *a* ↦ *p*(*a*) +' *q*(*a*). */
-  given KleisliIsEnriched: [F[_]] => (F: F is Monad.Plus) => (Kleisli[F] is Enriched over Monoid.Additive) =
+  given KleisliIsAdditiveEnriched: [F[_]] => (F: F is Monad.Plus) => (Kleisli[F] is Enriched over Monoid.Additive) =
     new Enriched {
       type Self[A, B] = A => F[B]
       type Over       = Monoid.Additive
@@ -78,6 +80,19 @@ object Kleisli {
 
         def plus(p: A => F[B], q: A => F[B]): A => F[B] = a => F.plus(p(a))(q(a))
       }
+    }
+
+  /** Hom-sets are function types and thus have fixed points by eta-expansion: fix(*f*) = *g* where *g* = *f*(*a* ↦
+    * *g*(*a*)).
+    */
+  given KleisliIsFixedEnriched: [F[_]] => (F: F is Monad) => (Kleisli[F] is Enriched over Conway.Fixed) =
+    new Enriched {
+      type Self[A, B] = A => F[B]
+      type Over       = Conway.Fixed
+
+      override val SelfIsPromonad: Kleisli[F] is Promonad = KleisliIsPromonad[F]
+
+      override given HomIsV: [A, B] => ((A => F[B]) is Conway.Fixed) = Conway.Fixed.FunctionIsFixed[A, F[B]]
     }
 
   /** The restriction of *p* keeps the definedness of *p*(*a*) and returns *a*: p̄ = *a* ↦ *F*(_ ↦ *a*)(*p*(*a*)‾'). */

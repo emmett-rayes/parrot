@@ -9,7 +9,7 @@ class KleisliTest extends CategorySuite {
   private val Cocartesian = Kleisli.KleisliIsCocartesian[Option]
   private val Restriction = Kleisli.KleisliIsRestriction[Option]
   private val Elgot       = Kleisli.KleisliIsElgot[Option]
-  private val Enriched    = Kleisli.KleisliIsEnriched[Option]
+  private val Enriched    = Kleisli.KleisliIsAdditiveEnriched[Option]
 
   private val p: Int => Option[String]     = i => if i % 3 == 0 then None else Some(s"v$i")
   private val q: String => Option[Boolean] = s => if s.length > 3 then Some(s.length % 2 == 0) else None
@@ -56,5 +56,25 @@ class KleisliTest extends CategorySuite {
     val _    = assert(alt(3) == Some("alt3"))
     val _    = assert(alt(4) == Some("v4"))
     assert(plus.plus(plus.zero, p)(4) == p(4))
+  }
+
+  private val FixedEnriched = Kleisli.KleisliIsFixedEnriched[Option]
+
+  test("Kleisli[Option] is Enriched over Conway.Fixed: recursion in hom-sets") {
+    val collatz = FixedEnriched.HomIsV[Int, Int].fix { self => n =>
+      if n <= 1 then Some(0) else if n > 1000 then None else self(if n % 2 == 0 then n / 2 else 3 * n + 1).map(_ + 1)
+    }
+    val _ = assert(collatz(6) == Some(8))
+    assert(collatz(27) == None)
+  }
+
+  test("Kleisli[Option] is Enriched over Conway.Fixed: hom dinaturality law") {
+    val u: (Int => Option[Int]) => (Int => Option[String]) = {
+      p => n => if n <= 0 then Some("") else p(n / 2).map(_.toString)
+    }
+    val v: (Int => Option[String]) => (Int => Option[Int]) = {
+      q => n => if n <= 0 then Some(0) else q(n / 2).map(_.length)
+    }
+    assert(FixedEnriched.FixedEnrichedLaws.homDinaturality(u, v))
   }
 }

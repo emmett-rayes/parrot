@@ -90,6 +90,22 @@ trait Enriched {
       ((MonAB.unit >>> lp) === MonAC.unit) && ((MonBC.unit >>> rq) === MonAC.unit)
     }
   }
+
+  /** Laws that any `Conway.Fixed`-enriched promonad must satisfy, beyond the Conway laws on each hom-set. */
+  object FixedEnrichedLaws {
+
+    /** Fixed points are dinatural across hom-sets: fix(*v* ∘ *u*) = *v*(fix(*u* ∘ *v*)) for any *u*: (*A* ~> *B*) →
+      * (*C* ~> *D*) and *v*: (*C* ~> *D*) → (*A* ~> *B*), e.g. pre- and postcomposition.
+      */
+    def homDinaturality[A, B, C, D](u: (A ~> B) => (C ~> D), v: (C ~> D) => (A ~> B))(
+      using
+      FixAB: (A ~> B) is Conway.Fixed,
+      FixCD: (C ~> D) is Conway.Fixed,
+      eq: (A ~> B) is Eq,
+    ): Boolean = {
+      FixAB.fix(u.andThen(v)) === v(FixCD.fix(v.andThen(u)))
+    }
+  }
 }
 
 object Enriched {

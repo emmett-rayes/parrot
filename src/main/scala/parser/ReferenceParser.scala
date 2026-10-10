@@ -9,10 +9,10 @@ import scala.util.matching.Regex
   *
   * Parsers are the Kleisli arrows `A => Parse[B]` of the [[Parse]] monad, a deterministic, backtracking computation
   * over the input. The Kleisli construction lifts the structure of the monad to all the structural mixins, so this
-  * interpreter only implements the lexical primitives and recursion; every other operation comes from the generic
-  * mixins and is therefore tested along with it.
+  * interpreter only implements the lexical primitives; every other operation comes from the generic mixins and is
+  * therefore tested along with it.
   *
-  * Fixed points are naive unfoldings, so left-recursive grammars diverge, as do repetitions of parsers that succeed
+  * Recursion takes least fixed points, so left-recursive grammars diverge, as do repetitions of parsers that succeed
   * without consuming input.
   *
   * @note
@@ -27,6 +27,7 @@ object ReferenceParser
       ParserAlgebra.Alternation,
       ParserAlgebra.Lookahead,
       ParserAlgebra.Looping,
+      ParserAlgebra.Recursion,
       ParserAlgebra.Pairing,
       ParserAlgebra.Iteration {
 
@@ -106,9 +107,10 @@ object ReferenceParser
   override val SelfIsPromonad    = Kleisli.KleisliIsPromonad[Parse](using ParseIsMonad)
   override val SelfIsStrong      = Kleisli.KleisliIsStrong[Parse](using ParseIsMonad)
   override val SelfIsCocartesian = Kleisli.KleisliIsCocartesian[Parse](using ParseIsMonad)
-  override val SelfIsEnriched    = Kleisli.KleisliIsEnriched[Parse](using ParseIsMonad)
+  override val SelfIsAdditive    = Kleisli.KleisliIsAdditiveEnriched[Parse](using ParseIsMonad)
   override val SelfIsRestriction = Kleisli.KleisliIsRestriction[Parse](using ParseIsMonad)
   override val SelfIsElgot       = Kleisli.KleisliIsElgot[Parse](using ParseIsMonad)
+  override val SelfIsFixed       = Kleisli.KleisliIsFixedEnriched[Parse](using ParseIsMonad)
 
   override val OnIsCartesian: Cartesian.FunctionIsCartesian.type       = Cartesian.FunctionIsCartesian
   override val OnIsCocartesian: Cocartesian.FunctionIsCocartesian.type = Cocartesian.FunctionIsCocartesian
@@ -149,9 +151,4 @@ object ReferenceParser
       if matcher.lookingAt() then Success(matcher.group(), matcher.end())
       else Failure(in.offset, s"/${expected.regex}/")
     }
-
-  override def recursive[A, B](f: P[A, B] => P[A, B]): P[A, B] = {
-    lazy val fixed: P[A, B] = f(a => fixed(a))
-    fixed
-  }
 }

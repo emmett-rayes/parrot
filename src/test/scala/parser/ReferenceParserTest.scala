@@ -133,4 +133,9 @@ class ReferenceParserTest extends AnyFunSuite {
   test("ParserLaws: loop unfolds") {
     val _ = assert(laws.loopUnfolding(countdown))
   }
+
+  test("ParserLaws: recursion unfolds") {
+    val nested: P[Unit, String] => P[Unit, String] = self => a |> self.between(literal("("), literal(")"))
+    val _ = assert(laws.recursionUnfolding(nested))
+  }
 }
