@@ -1,11 +1,11 @@
 package parrot
 package parser
 
-import java.nio.file.{Files, Path}
-
-/** Compares the throughput of the interpreters on the JSON grammar.
+/** Compares the throughput of the interpreters on the JSON grammar over the whole [[JsonFixtures]] suite.
   *
-  * Run with `sbt "Test/runMain parrot.parser.JsonBenchmark [fixture.json ...]"`.
+  * Run with `sbt "Test/runMain parrot.parser.JsonBenchmark [fixture.json ...]"`; without arguments, every fixture that
+  * is valid UTF-8 is parsed. Throughput is measured in megabytes of UTF-8 input per second, per group of fixtures and
+  * in total, from the median of several passes over each group.
   */
 object JsonBenchmark {
 
@@ -29,34 +29,67 @@ object JsonBenchmark {
     Interpreter("StrictParser", input => StrictParser.parse(grammar.json)(input).exists(_.offset == input.length))
   }
 
-  val defaultFixtures: List[String] = List("y_sample_1_mb.json", "y_sample_5_mb.json", "y_sample_5120_kb_min.json")
+  /** A decoded fixture and its size in bytes. */
+  final case class Fixture(name: String, input: String, bytes: Int)
 
-  /** Times each interpreter on each fixture: the median of `runs` runs after `warmup` runs. */
-  def run(interpreters: List[Interpreter], fixtures: List[String], warmup: Int = 3, runs: Int = 7): Unit = {
-    for fixture <- fixtures do {
-      val input = Files.readString(Path.of("src", "test", "resources", "json", fixture)).nn
-      val mb    = input.length / 1e6
-      println(f"$fixture (${mb}%.2f M chars)")
-      for interpreter <- interpreters do {
-        val result = scala.util.Try {
-          for _ <- 1 to warmup do require(interpreter.accepts(input), "rejected")
-          val times = (1 to runs).map { _ =>
-            val start = System.nanoTime()
-            val _     = interpreter.accepts(input)
-            (System.nanoTime() - start) / 1e6
-          }.sorted
-          times(runs / 2)
-        }
-        result match {
-          case scala.util.Success(ms) =>
-            println(f"  ${interpreter.name}%-24s ${ms}%9.1f ms ${mb / ms * 1000}%8.1f M chars/s")
-          case scala.util.Failure(e) => println(f"  ${interpreter.name}%-24s failed: ${e.getClass.getSimpleName}")
-        }
+  /** A group of fixtures, measured together. */
+  final case class Group(label: String, fixtures: List[Fixture]) {
+    val megabytes: Double = fixtures.map(_.bytes).sum / 1e6
+  }
+
+  /** The fixtures `names` that are valid UTF-8, grouped by expectation. */
+  def groups(names: List[String]): List[Group] = {
+    val fixtures = names.flatMap { name =>
+      JsonFixtures.load(name).toOption.map(Fixture(name, _, JsonFixtures.bytes(name).length))
+    }
+    List("valid (y_)" -> "y_", "invalid (n_)" -> "n_", "implementation-defined (i_)" -> "i_")
+      .map((label, prefix) => Group(label, fixtures.filter(_.name.startsWith(prefix))))
+      .filter(_.fixtures.nonEmpty)
+  }
+
+  /** The median duration in milliseconds of `runs` passes of `interpreter` over `group`, after `warmup` passes, and the
+    * number of fixtures it accepts.
+    */
+  def measure(interpreter: Interpreter, group: Group, warmup: Int, runs: Int): (ms: Double, accepted: Int) = {
+    def pass(): Int = group.fixtures.count(fixture => interpreter.accepts(fixture.input))
+    for _ <- 1 to warmup do {
+      val _ = pass()
+    }
+    var accepted = 0
+    val times    = (1 to runs).map { _ =>
+      val start = System.nanoTime()
+      accepted = pass()
+      (System.nanoTime() - start) / 1e6
+    }.sorted
+    (ms = times(runs / 2), accepted = accepted)
+  }
+
+  /** Measures each interpreter on each group, then compares the total throughputs with that of the first one. */
+  def run(interpreters: List[Interpreter], names: List[String], warmup: Int = 3, runs: Int = 7): Unit = {
+    val suite = groups(names)
+    val total = suite.map(_.megabytes).sum
+    println(f"${suite.map(_.fixtures.size).sum} fixtures, $total%.2f MB, median of $runs passes after $warmup warm-ups")
+    val throughputs =
+      for interpreter <- interpreters yield {
+        println(interpreter.name)
+        val ms = suite.map { group =>
+          val result = measure(interpreter, group, warmup, runs)
+          println(
+            f"  ${group.label}%-28s ${group.fixtures.size}%4d fixtures ${result.accepted}%4d accepted " +
+              f"${group.megabytes}%9.4f MB ${result.ms}%9.1f ms ${group.megabytes / result.ms * 1000}%8.1f MB/s"
+          )
+          result.ms
+        }.sum
+        val throughput = total / ms * 1000
+        println(f"  ${"total"}%-58s ${total}%9.4f MB ${ms}%9.1f ms ${throughput}%8.1f MB/s")
+        throughput
       }
+    for (interpreter, throughput) <- interpreters.zip(throughputs).drop(1) do {
+      println(f"${interpreter.name}: ${throughput / throughputs.head}%.1fx the throughput of ${interpreters.head.name}")
     }
   }
 
   def main(args: Array[String]): Unit = {
-    run(List(reference, strict), if args.isEmpty then defaultFixtures else args.toList)
+    run(List(reference, strict), if args.isEmpty then JsonFixtures.names else args.toList)
   }
 }
