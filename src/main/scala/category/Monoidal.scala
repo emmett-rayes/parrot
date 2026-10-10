@@ -51,7 +51,7 @@ trait Monoidal {
   extension [A, B](p: A ~> B)
     /** Infix extension for [[tensor]]. */
     @targetName("tensorExt")
-    infix def tensor[C, D](q: C ~> D): (A * C) ~> (B * D) = {
+    def tensor[C, D](q: C ~> D): (A * C) ~> (B * D) = {
       Monoidal.this.tensor(p, q)
     }
 
