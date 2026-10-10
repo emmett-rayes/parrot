@@ -193,16 +193,22 @@ class StrictParserTest extends AnyFunSuite {
   private val inputs = List("", "a", "b", "ab", "aab", "aaab", "abab", "a,a,a", "a,a,", "(a)", "((a))", "((a)", "[1, 22]")
 
   private def agree[B](name: String)(grammar: Grammar[B])(using CanEqual[B, B]): Unit = {
-    test(s"StrictParser agrees with ReferenceParser on $name") {
-      val reference = grammar(ReferenceParser)([X, Y] => (f: X => Y) => f)
-      val strict    = grammar(StrictParser)([X, Y] => (f: X => Y) => Fn.lift(f))
+    test(s"StrictParser and ReferenceFnParser agree with ReferenceParser on $name") {
+      val reference   = grammar(ReferenceParser)([X, Y] => (f: X => Y) => f)
+      val referenceFn = grammar(ReferenceFnParser)([X, Y] => (f: X => Y) => Fn.lift(f))
+      val strict      = grammar(StrictParser)([X, Y] => (f: X => Y) => Fn.lift(f))
       for input <- inputs do {
         val expected = ReferenceParser.parse(reference)(input) match {
           case ReferenceParser.Result.Success(value, offset) => Some((value, offset))
           case ReferenceParser.Result.Failure(_, _)          => None
         }
+        val fn = ReferenceFnParser.parse(referenceFn)(input) match {
+          case ReferenceFnParser.Result.Success(value, offset) => Some((value, offset))
+          case ReferenceFnParser.Result.Failure(_, _)          => None
+        }
         val actual = StrictParser.parse(strict)(input).toOption.map(r => (r.value, r.offset))
-        val _ = assert(actual == expected, s"on input \"$input\"")
+        val _      = assert(fn == expected, s"ReferenceFnParser on input \"$input\"")
+        val _      = assert(actual == expected, s"StrictParser on input \"$input\"")
       }
     }
   }

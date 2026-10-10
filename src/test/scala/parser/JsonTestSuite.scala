@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import java.nio.charset.MalformedInputException
 import scala.util.{Failure, Success}
 
-/** Runs the JSON grammar on the [[JsonFixtures]] (ported from the legacy interpreter), on both interpreters.
+/** Runs the JSON grammar on the [[JsonFixtures]] (ported from the legacy interpreter), on every interpreter.
   *
   * Valid (`y_`) fixtures must be accepted and invalid (`n_`) ones rejected. Whatever the expectation, both interpreters
   * must agree on the result.
@@ -15,14 +15,22 @@ class JsonTestSuite extends AnyFunSuite {
 
   given CanEqual[Any, Any] = CanEqual.derived
 
-  private val reference = JsonGrammar(ReferenceParser)
-  private val strict    = JsonGrammar(StrictParser)
+  private val reference   = JsonGrammar(ReferenceParser)
+  private val referenceFn = JsonGrammar(ReferenceFnParser)
+  private val strict      = JsonGrammar(StrictParser)
 
   /** Parses `input` on a prefix, returning the result and whether the whole input was consumed. */
   private def runReference(input: String): Option[(JsonGrammar.JsonJson, Boolean)] = {
     ReferenceParser.parse(reference.json)(input) match {
       case ReferenceParser.Result.Success(value, offset) => Some((value, offset == input.length))
       case ReferenceParser.Result.Failure(_, _)          => None
+    }
+  }
+
+  private def runReferenceFn(input: String): Option[(JsonGrammar.JsonJson, Boolean)] = {
+    ReferenceFnParser.parse(referenceFn.json)(input) match {
+      case ReferenceFnParser.Result.Success(value, offset) => Some((value, offset == input.length))
+      case ReferenceFnParser.Result.Failure(_, _)          => None
     }
   }
 
@@ -43,7 +51,8 @@ class JsonTestSuite extends AnyFunSuite {
           } else if fileName.startsWith("n_") then {
             val _ = assert(!accepted, "invalid JSON accepted")
           }
-          val _ = assert(runReference(input) == strictResult, "interpreters disagree")
+          val _ = assert(runReference(input) == strictResult, "ReferenceParser disagrees")
+          val _ = assert(runReferenceFn(input) == strictResult, "ReferenceFnParser disagrees")
       }
     }
 }

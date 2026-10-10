@@ -8,14 +8,23 @@ class JsonGrammarTest extends AnyFunSuite {
 
   given CanEqual[Any, Any] = CanEqual.derived
 
-  private val reference = JsonGrammar(ReferenceParser)
-  private val strict    = JsonGrammar(StrictParser)
+  private val reference   = JsonGrammar(ReferenceParser)
+  private val referenceFn = JsonGrammar(ReferenceFnParser)
+  private val strict      = JsonGrammar(StrictParser)
 
   tests("ReferenceParser", reference)([B] =>
     (p: reference.algebra.P[Unit, B], input: String) =>
       ReferenceParser.parse(p)(input) match {
         case ReferenceParser.Result.Success(value, offset) => Some((value, input.substring(offset)))
         case ReferenceParser.Result.Failure(_, _)          => None
+      }
+  )
+
+  tests("ReferenceFnParser", referenceFn)([B] =>
+    (p: referenceFn.algebra.P[Unit, B], input: String) =>
+      ReferenceFnParser.parse(p)(input) match {
+        case ReferenceFnParser.Result.Success(value, offset) => Some((value, input.substring(offset)))
+        case ReferenceFnParser.Result.Failure(_, _)          => None
       }
   )
 

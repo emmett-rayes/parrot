@@ -6,6 +6,9 @@ package parser
   * Run with `sbt "Test/runMain parrot.parser.JsonBenchmark [fixture.json ...]"`; without arguments, every fixture that
   * is valid UTF-8 is parsed. Throughput is measured in megabytes of UTF-8 input per second, per group of fixtures and
   * in total, from the median of several passes over each group.
+  *
+  * [[ReferenceFnParser]] differs from [[ReferenceParser]] only in using [[Fn]] for pure functions, so comparing the
+  * three interpreters separates the effect of [[Fn]] from that of the static analysis of [[StrictParser]].
   */
 object JsonBenchmark {
 
@@ -20,6 +23,18 @@ object JsonBenchmark {
         ReferenceParser.parse(grammar.json)(input) match {
           case ReferenceParser.Result.Success(_, offset) => offset == input.length
           case ReferenceParser.Result.Failure(_, _)      => false
+        },
+    )
+  }
+
+  def referenceFn: Interpreter = {
+    val grammar = JsonGrammar(ReferenceFnParser)
+    Interpreter(
+      "ReferenceFnParser",
+      input =>
+        ReferenceFnParser.parse(grammar.json)(input) match {
+          case ReferenceFnParser.Result.Success(_, offset) => offset == input.length
+          case ReferenceFnParser.Result.Failure(_, _)      => false
         },
     )
   }
@@ -90,6 +105,6 @@ object JsonBenchmark {
   }
 
   def main(args: Array[String]): Unit = {
-    run(List(reference, strict), if args.isEmpty then JsonFixtures.names else args.toList)
+    run(List(reference, referenceFn, strict), if args.isEmpty then JsonFixtures.names else args.toList)
   }
 }
