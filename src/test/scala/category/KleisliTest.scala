@@ -2,8 +2,6 @@ package parrot
 package category
 
 class KleisliTest extends CategorySuite {
-  import Kleisli.given
-
   private val Promonad    = Kleisli.KleisliIsPromonad[Option]
   private val Strong      = Kleisli.KleisliIsStrong[Option]
   private val Cocartesian = Kleisli.KleisliIsCocartesian[Option]
@@ -60,7 +58,7 @@ class KleisliTest extends CategorySuite {
 
   private val FixedEnriched = Kleisli.KleisliIsFixedEnriched[Option]
 
-  test("Kleisli[Option] is Enriched over Conway.Fixed: recursion in hom-sets") {
+  test("Kleisli[Option] is Enriched over Fixed: recursion in hom-sets") {
     val collatz = FixedEnriched.HomIsV[Int, Int].fix { self => n =>
       if n <= 1 then Some(0) else if n > 1000 then None else self(if n % 2 == 0 then n / 2 else 3 * n + 1).map(_ + 1)
     }
@@ -68,7 +66,7 @@ class KleisliTest extends CategorySuite {
     assert(collatz(27) == None)
   }
 
-  test("Kleisli[Option] is Enriched over Conway.Fixed: hom dinaturality law") {
+  test("Kleisli[Option] is Enriched over Fixed: hom dinaturality law") {
     val u: (Int => Option[Int]) => (Int => Option[String]) = {
       p => n => if n <= 0 then Some("") else p(n / 2).map(_.toString)
     }

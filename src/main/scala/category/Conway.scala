@@ -3,21 +3,30 @@ package category
 
 import scala.annotation.targetName
 
-/** A Conway promonad on an underlying cartesian category **C**.
+/** A Conway structure on a promonad over an underlying cartesian category **C**.
   *
-  * Represents a promonad *P* equipped with a parameterized Conway fixed-point operator with respect to a cartesian
-  * category (**C**, ⊗, *I*), where
+  * Represents a promonad *P* that is strong with respect to a cartesian category (**C**, ⊗, *I*) and equipped with a
+  * parameterized Conway fixed-point operator, where
   *   - _†: *P*[*A* ⊗ *C*, *C*] → *P*[*A*, *C*] is the parameterized Conway fixed-point operation.
   *
+  * The products are those of **C**, acting on *P* through its strength, rather than products of the category induced
+  * by *P*: effectful categories (e.g. Kleisli categories) are only premonoidal, but still admit fixed points.
+  *
   * @note Conway promonads in a cartesian setting are equivalent to cartesian traced promonads.
+  * @see [[Fixed]] for the unparameterized fixed points on exponentials of a cartesian closed category.
   */
-trait Conway extends Promonad {
-  type Self[_, _]
+trait Conway {
+  type Self[_, _]: Promonad
 
-  override type On[_, _]: {Promonad, Cartesian}
+  val SelfIsPromonad: Self is Promonad = summon
+  import SelfIsPromonad.*
 
-  val OnIsCartesian: On is Cartesian
-  import OnIsCartesian.*
+  /** The cartesian structure of the underlying category **C**. */
+  val OnIsCartesian: SelfIsPromonad.On is Cartesian
+  import OnIsCartesian.{&&&, ***, `*`, diagonal, second}
+
+  /** The strength of *P* with respect to the cartesian structure of **C**. */
+  val SelfIsStrong: Self is Strong.on[SelfIsPromonad.On, OnIsCartesian.I, OnIsCartesian.Tensor]
 
   /** Maps a morphism *p*: *A* ⊗ *C* ~> *C* to its Conway fixed-point morphism *p*†: *A* ~> *C*. */
   def dagger[A, C](p: (A * C) ~> C): A ~> C
@@ -29,18 +38,13 @@ trait Conway extends Promonad {
       Conway.this.dagger(p)
     }
 
-  /** Laws that any `Conway` promonad must satisfy. */
+  /** Laws that any `Conway` must satisfy. */
   object ConwayLaws {
 
-    /** Fixed-point property: *f*† = *f* ∘ ⟨*id*, *f*†⟩
+    /** Fixed-point property: *f*† = *f* ∘ ⟨*id*, *f*†⟩, where ⟨*id*, *f*†⟩ = *second*(*f*†) ∘ Δ
       */
-    def fixedPoint[A, C](p: (A * C) ~> C)(
-      using
-      C: Self is Cartesian.`with`[?, OnIsCartesian.Tensor],
-      eq: (A ~> C) is Eq,
-    ): Boolean = {
-      val pair: A ~> (A * C) = identity[A] &&& p.dagger
-      (pair >>> p) === p.dagger
+    def fixedPoint[A, C](p: (A * C) ~> C)(using (A ~> C) is Eq): Boolean = {
+      (unit(diagonal[A]) >>> SelfIsStrong.second[A, C, A](p.dagger) >>> p) === p.dagger
     }
 
     /** Parameter naturality: (*f* ∘ (*h* ⊗ *id*))† = *f*† ∘ *h*
@@ -64,8 +68,7 @@ trait Conway extends Promonad {
     def doubleDagger[A, C](p: ((A * C) * C) ~> C)(
       using (A ~> C) is Eq,
     ): Boolean = {
-      val step: (A * C) ==> ((A * C) * C) =
-        OnIsPromonad.identity[A * C] &&& OnIsCartesian.second[A, C]
+      val step: (A * C) ==> ((A * C) * C) = OnIsPromonad.identity[A * C] &&& second[A, C]
       p.lmap(step).dagger === p.dagger.dagger
     }
   }
@@ -73,13 +76,7 @@ trait Conway extends Promonad {
 
 object Conway {
 
-  /** Refines the `On` type of `Conway` to the cartesian `K` with unit `U` and tensor `T`. */
-  type on[K[_, _], U, T[_, _]] = Conway {
-    type On = K
-    val OnIsCartesian: K is Cartesian.`with`[U, T]
-  }
-
-  /** Refines the `I` and `Tensor` types of `Conway` to `U` and `T`. */
+  /** Refines the products of `Conway` to the unit `U` and product `T`. */
   type `with`[U, T[_, _]] = Conway { val OnIsCartesian: Cartesian.`with`[U, T] }
 
   /** Summons the `Conway` instance of `P`. */
@@ -88,20 +85,18 @@ object Conway {
   /** Every Conway promonad on an underlying cartesian category induces a cartesian traced promonad, where trace is
     * derived from the Conway dagger operator: `trace(p) = π₁ ∘ (p ∘ (id ⊗ π₂))†`
     */
-  given ConwayIsCartesianTraced
-    : [P[_, _]] => (C: P is Conway) => P is Traced.on[C.On, C.OnIsCartesian.I, C.OnIsCartesian.Tensor] = new Traced {
-    type Self = P
-    type On   = C.On
+  given ConwayIsCartesianTraced: [P[_, _]] => (C: P is Conway)
+    => P is Traced.on[C.SelfIsPromonad.On, C.OnIsCartesian.I, C.OnIsCartesian.Tensor] = new Traced {
+    type Self[A, B] = P[A, B]
 
-    override val OnIsPromonad: C.On is Promonad = C.OnIsPromonad
-
-    export C.dimap
-
-    override val OnIsMonoidal: C.OnIsCartesian.type = C.OnIsCartesian
-    import OnIsMonoidal.*
+    override given given_Profunctor_Self: C.SelfIsPromonad.type = C.SelfIsPromonad
+    override val SelfIsProfunctor: C.SelfIsPromonad.type        = C.SelfIsPromonad
+    override val OnIsMonoidal: C.OnIsCartesian.type             = C.OnIsCartesian
+    import SelfIsProfunctor.{dimap, lmap, rmap, ~>, OnIsPromonad}
+    import OnIsMonoidal.{&&&, ***, `*`, first, second}
 
     def left[A, B, C0](p: (A * C0) ~> (B * C0)): A ~> B = {
-      val f    = C.OnIsPromonad.identity[A] *** second[B, C0]
+      val f    = OnIsPromonad.identity[A] *** second[B, C0]
       val step = lmap(f)(p)
       rmap(first[B, C0])(C.dagger(step))
     }
@@ -113,21 +108,22 @@ object Conway {
     }
   }
 
-  /** Every cartesian and traced promonad induces a Conway promonad, where dagger is derived from the trace operator:
-    * `p† = trace(p ∘ Δ)`
+  /** Every strong and traced promonad over a cartesian category induces a Conway promonad, where dagger is derived from
+    * the trace operator: `p† = trace(p ∘ Δ)`
     */
   given CartesianTracedIsConway: [P[_, _]] => (
     P: P is Promonad,
     C: P.On is Cartesian,
+    S: P is Strong.on[P.On, C.I, C.Tensor],
     T: P is Traced.on[P.On, C.I, C.Tensor],
-  ) => P is Conway.on[P.On, C.I, C.Tensor] = new Conway {
-    type Self = P
-    type On   = P.On
+  ) => P is Conway.`with`[C.I, C.Tensor] = new Conway {
+    type Self[A, B] = P[A, B]
 
-    export P.{Self as _, On as _, *}
-
-    override val OnIsCartesian: C.type = C
-    import OnIsCartesian.*
+    override val SelfIsPromonad: P.type = P
+    override val OnIsCartesian: C.type  = C
+    override val SelfIsStrong: S.type   = S
+    import P.{rmap, ~>}
+    import C.{`*`, diagonal}
 
     def dagger[A, X](p: (A * X) ~> X): A ~> X = {
       val step = rmap(diagonal[X])(p)
@@ -137,10 +133,9 @@ object Conway {
 
   /** `Function` is a `Conway` promonad under lazy tuple products via knot-tying fixed points. */
   given FunctionIsLazyCartesianConway: Function is Conway {
-    export Promonad.FunctionIsPromonad.*
-
-    override given given_Cartesian_On: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
-    override val OnIsCartesian: Cartesian.FunctionIsLazyCartesian.type        = Cartesian.FunctionIsLazyCartesian
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override val OnIsCartesian: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
+    override val SelfIsStrong: Strong.FunctionIsLazyStrong.type     = Strong.FunctionIsLazyStrong
 
     def dagger[A, C](p: LazyTuple2[A, C] => C): A => C = {
       a =>
@@ -148,74 +143,6 @@ object Conway {
           lazy val c: C = p(LazyTuple2(a, c))
           c
         }
-    }
-  }
-
-  /** A type *M* with a fixed-point operator fix: (*M* → *M*) → *M* satisfying the Conway laws.
-    *
-    * `Fixed` is the unparameterized, internal counterpart of a `Conway` promonad rather than a specialization of it: in
-    * a cartesian closed category the two are interdefinable via *f*† = *a* ↦ fix(*c* ↦ *f*(*a*, *c*)) and fix = *ev*†,
-    * where *ev*: (*M* → *M*) × *M* → *M* is evaluation. Not every type of **Type** has fixed points (e.g. `Int`), but
-    * function types do, and fixed points of pairs reduce to fixed points of their components by Bekić's theorem.
-    */
-  trait Fixed {
-    type Self
-    final type M = Self
-
-    /** The fixed point of *f*. */
-    def fix(f: M => M): M
-
-    /** Laws that any `Fixed` must satisfy. */
-    object FixedLaws {
-
-      /** Fixed-point property: fix(*f*) = *f*(fix(*f*))
-        */
-      def fixedPoint(f: M => M)(using M is Eq): Boolean = {
-        fix(f) === f(fix(f))
-      }
-
-      /** Dinaturality (composition identity): fix(*g* ∘ *f*) = *g*(fix(*f* ∘ *g*))
-        */
-      def dinaturality[N](f: M => N, g: N => M)(using N: N is Fixed, eq: M is Eq): Boolean = {
-        fix(f.andThen(g)) === g(N.fix(g.andThen(f)))
-      }
-
-      /** Diagonal property: fix(*x* ↦ fix(*y* ↦ *f*(*x*, *y*))) = fix(*x* ↦ *f*(*x*, *x*))
-        */
-      def diagonal(f: (M, M) => M)(using M is Eq): Boolean = {
-        fix(x => fix(y => f(x, y))) === fix(x => f(x, x))
-      }
-    }
-  }
-
-  object Fixed {
-
-    /** Summons the `Fixed` instance of `M`. */
-    def apply[M: Fixed]: M is Fixed = summon
-
-    /** `A => B` has fixed points by eta-expansion, delaying the recursive reference until application:
-      * fix(*f*) = *g* where *g* = *f*(*a* ↦ *g*(*a*)).
-      *
-      * This is the least fixed point with respect to non-termination: unguarded recursion diverges.
-      */
-    given FunctionIsFixed: [A, B] => Function[A, B] is Fixed {
-      def fix(f: (A => B) => (A => B)): A => B = {
-        lazy val g: A => B = f(a => g(a))
-        g
-      }
-    }
-
-    /** `(A, B)` has fixed points if `A` and `B` do, by Bekić's theorem:
-      *
-      * fix(*f*) = (*a*₀, *b*₀) where *b*₀ = fix(*b* ↦ *f*₂(*a*(*b*), *b*)), *a*₀ = *a*(*b*₀) and *a*(*b*) = fix(*a* ↦
-      * *f*₁(*a*, *b*)).
-      */
-    given Tuple2IsFixed: [A, B] => (FA: A is Fixed, FB: B is Fixed) => (A, B) is Fixed {
-      def fix(f: ((A, B)) => (A, B)): (A, B) = {
-        def solveFirst(b: B): A = FA.fix(a => f((a, b))._1)
-        val b0                  = FB.fix(b => f((solveFirst(b), b))._2)
-        (solveFirst(b0), b0)
-      }
     }
   }
 }

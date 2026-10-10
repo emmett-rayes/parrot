@@ -65,16 +65,17 @@ class RestrictionTest extends CategorySuite {
 
   test("PartialFunction is Restriction: unit is total") {
     val f: Int => String = i => s"val:$i"
-    assert(PartialInstance.restrict(PartialInstance.unit(f)) === PartialInstance.identity[Int])
+    val promonad         = PartialInstance.SelfIsPromonad
+    assert(PartialInstance.restrict(promonad.unit(f)) === promonad.identity[Int])
   }
 
   test("PartialFunction is Restriction: composition restricts the domain") {
-    val composed = PartialInstance.andThen(positive, shortString)
+    val composed = PartialInstance.SelfIsPromonad.andThen(positive, shortString)
     assert(composed.isDefinedAt(9) && !composed.isDefinedAt(10) && !composed.isDefinedAt(-1))
   }
 
   test("PartialFunction is Restriction satisfies PromonadLaws") {
-    val laws = PartialInstance.PromonadLaws
+    val laws = PartialInstance.SelfIsPromonad.PromonadLaws
     val _    = assert(laws.leftIdentity(positive))
     val _    = assert(laws.rightIdentity(positive))
     assert(laws.associativity(even, PartialFunction.fromFunction((b: Boolean) => b.toString), shortString))

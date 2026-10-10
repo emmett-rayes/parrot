@@ -94,9 +94,10 @@ class ConwayTest extends CategorySuite {
   test("CartesianTracedIsConway: derived dagger works correctly") {
     val prom   = summon[Function is Promonad]
     val cart   = Cartesian.FunctionIsLazyCartesian
+    val strong = Strong.FunctionIsLazyStrong
     val traced = Traced.FunctionIsLazyCartesianTraced
 
-    val conway = Conway.CartesianTracedIsConway(using prom, cart, traced)
+    val conway = Conway.CartesianTracedIsConway(using prom, cart, strong, traced)
 
     val p: LazyTuple2[Int, Int] => Int = p => p._1 + 10
     val fixed: Int => Int              = conway.dagger(p)
@@ -106,58 +107,29 @@ class ConwayTest extends CategorySuite {
   test("CartesianTracedIsConway satisfies ConwayLaws") {
     val prom   = summon[Function is Promonad]
     val cart   = Cartesian.FunctionIsLazyCartesian
+    val strong = Strong.FunctionIsLazyStrong
     val traced = Traced.FunctionIsLazyCartesianTraced
 
-    val conway = Conway.CartesianTracedIsConway(using prom, cart, traced)
+    val conway = Conway.CartesianTracedIsConway(using prom, cart, strong, traced)
     val laws   = conway.ConwayLaws
 
     val p: LazyTuple2[Int, Int => String] => (Int => String) =
       p => x => s"${p._1 * 3 + x}"
-    assert(laws.fixedPoint[Int, Int => String](p)(using cart))
+    assert(laws.fixedPoint[Int, Int => String](p))
   }
 
   test("Roundtrip conversion: Conway -> Traced -> Conway preserves dagger") {
     val tracedDerived   = Conway.ConwayIsCartesianTraced
     val prom            = summon[Function is Promonad]
-    val conwayRoundtrip = Conway.CartesianTracedIsConway(using prom, ConwayInstance.OnIsCartesian, tracedDerived)
+    val conwayRoundtrip = Conway.CartesianTracedIsConway(
+      using prom,
+      ConwayInstance.OnIsCartesian,
+      ConwayInstance.SelfIsStrong,
+      tracedDerived,
+    )
 
     val p: LazyTuple2[Int, Int] => Int = p => p._1 * 7 + 3
     val daggerRoundtrip: Int => Int    = conwayRoundtrip.dagger(p)
     assert(daggerRoundtrip(4) == ConwayInstance.dagger(p)(4))
-  }
-
-  // =========================================================================
-  // Conway.Fixed
-  // =========================================================================
-
-  private val FunctionFixed = Conway.Fixed.FunctionIsFixed[Int, Int]
-  private val FunctionLaws  = FunctionFixed.FixedLaws
-
-  test("Function is Conway.Fixed: fix ties the knot by eta-expansion") {
-    val factorial = FunctionFixed.fix(self => n => if n <= 1 then 1 else n * self(n - 1))
-    assert(factorial(5) == 120)
-  }
-
-  test("Function is Conway.Fixed satisfies fixedPoint law") {
-    val f: (Int => Int) => (Int => Int) = self => n => if n <= 0 then 0 else 1 + self(n / 2)
-    assert(FunctionLaws.fixedPoint(f))
-  }
-
-  test("Function is Conway.Fixed satisfies dinaturality law") {
-    val f: (Int => Int) => (Int => String) = h => n => if n <= 0 then "." else h(n / 2).toString
-    val g: (Int => String) => (Int => Int) = k => n => if n <= 0 then 0 else k(n / 2).length + 1
-    assert(FunctionLaws.dinaturality(f, g))
-  }
-
-  test("Function is Conway.Fixed satisfies diagonal law") {
-    val f: (Int => Int, Int => Int) => (Int => Int) = (x, y) => n => if n <= 0 then 0 else x(n / 2) + y(n / 3) + 1
-    assert(FunctionLaws.diagonal(f))
-  }
-
-  test("Tuple2 is Conway.Fixed: mutual recursion via Bekić's theorem") {
-    val fixed       = summon[(Int => Boolean, Int => Boolean) is Conway.Fixed]
-    val (even, odd) = fixed.fix((even, odd) => (n => n == 0 || odd(n - 1), n => n != 0 && even(n - 1)))
-    val _           = assert(even(10) && !even(7))
-    assert(odd(7) && !odd(10))
   }
 }

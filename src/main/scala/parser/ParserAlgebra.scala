@@ -344,8 +344,8 @@ trait ParserAlgebra {
   *   - [[Zipping]]: `Self` is strong (parsers form a premonoidal category)
   *   - [[Branching]]: `Self` is cocartesian (parsers have coproducts)
   *   - [[Alternation]]: `Self` is enriched in additive monoids (parsers can be added)
-  *   - [[Lookahead]]: `Self` is a restriction promonad (parsers form a restriction category)
-  *   - [[Looping]]: `Self` is an Elgot promonad (parsers can be iterated)
+  *   - [[Lookahead]]: `Self` has a restriction structure (parsers form a restriction category)
+  *   - [[Looping]]: `Self` has an Elgot structure on its coproducts (parsers can be iterated)
   *   - [[Recursion]]: `Self` is enriched in types with fixed points (parsers can be defined recursively)
   *
   * '''Derived mixins''' implement the remaining combinators from the operations of the algebra, requiring some
@@ -449,13 +449,13 @@ object ParserAlgebra {
       override def lookahead: P[A, A] = self.restrict
   }
 
-  /** Implements `loop` as the Elgot iteration *p*† with respect to (`Alternative`, `None`) on `On`.
+  /** Implements `loop` as the Elgot iteration *p*† with respect to the coproducts (`Alternative`, `None`) of parsers.
     *
     * The fixed point, naturality and codiagonal laws hold. Iteration is a least fixed point, so a step that keeps
     * yielding on the right diverges rather than fails.
     */
   trait Looping extends ParserAlgebra {
-    val SelfIsElgot: Self is Elgot.on[On, None, Alternative]
+    val SelfIsElgot: Self is Elgot.`with`[None, Alternative]
     import SelfIsElgot.dagger
 
     extension [A, B](self: P[A, B + A])
@@ -471,7 +471,7 @@ object ParserAlgebra {
     * point, which breaks these laws when ordered choice or negation make the definition non-monotone.
     */
   trait Recursion extends ParserAlgebra {
-    val SelfIsFixed: Self is Enriched over Conway.Fixed
+    val SelfIsFixed: Self is Enriched over Fixed
     import SelfIsFixed.HomIsV
 
     override def recursive[A, B](f: P[A, B] => P[A, B]): P[A, B] = HomIsV[A, B].fix(f)

@@ -35,12 +35,9 @@ object Kleisli {
   /** Every monad on **Type** is strong: *first*(*p*) = (*a*, *c*) ↦ *F*(− × *c*)(*p*(*a*)). */
   given KleisliIsStrong: [F[_]] => (F: F is Monad) => (Kleisli[F] is Strong.on[Function, Unit, Tuple2]) = new Strong {
     type Self[A, B] = A => F[B]
-    type On         = Function
 
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
-
-    def dimap[A, B, C, D](f: C => A, g: B => D)(p: A => F[B]): C => F[D] = c => F.map(p(f(c)))(g)
+    override val SelfIsProfunctor: Kleisli[F] is Promonad on Function = KleisliIsPromonad[F]
+    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type        = Monoidal.FunctionIsMonoidal
 
     def first[A, B, C](p: A => F[B]): ((A, C)) => F[(B, C)] = (a, c) => F.map(p(a))((_, c))
 
@@ -85,43 +82,32 @@ object Kleisli {
   /** Hom-sets are function types and thus have fixed points by eta-expansion: fix(*f*) = *g* where *g* = *f*(*a* ↦
     * *g*(*a*)).
     */
-  given KleisliIsFixedEnriched: [F[_]] => (F: F is Monad) => (Kleisli[F] is Enriched over Conway.Fixed) =
+  given KleisliIsFixedEnriched: [F[_]] => (F: F is Monad) => (Kleisli[F] is Enriched over Fixed) =
     new Enriched {
       type Self[A, B] = A => F[B]
-      type Over       = Conway.Fixed
+      type Over       = Fixed
 
       override val SelfIsPromonad: Kleisli[F] is Promonad = KleisliIsPromonad[F]
 
-      override given HomIsV: [A, B] => ((A => F[B]) is Conway.Fixed) = Conway.Fixed.FunctionIsFixed[A, F[B]]
+      override given HomIsV: [A, B] => ((A => F[B]) is Fixed) = Fixed.FunctionIsFixed[A, F[B]]
     }
 
   /** The restriction of *p* keeps the definedness of *p*(*a*) and returns *a*: p̄ = *a* ↦ *F*(_ ↦ *a*)(*p*(*a*)‾'). */
-  given KleisliIsRestriction: [F[_]] => (F: F is Monad.Restriction) => (Kleisli[F] is Restriction on Function) =
+  given KleisliIsRestriction: [F[_]] => (F: F is Monad.Restriction) => (Kleisli[F] is Restriction) =
     new Restriction {
       type Self[A, B] = A => F[B]
-      type On         = Function
 
-      override val OnIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-
-      def unit[A, B](f: A => B): A => F[B] = a => F.unit(f(a))
-
-      def multiply[A, B, C](q: B => F[C], p: A => F[B]): A => F[C] = a => F.flatMap(p(a))(q)
+      override val SelfIsPromonad: Kleisli[F] is Promonad = KleisliIsPromonad[F]
 
       def restrict[A, B](p: A => F[B]): A => F[A] = a => F.map(F.restrict(p(a)))(_ => a)
     }
 
   /** The Elgot iteration of the Kleisli category is the iteration of *F*: *p*† = *p*†'. */
-  given KleisliIsElgot: [F[_]] => (F: F is Monad.Elgot) => (Kleisli[F] is Elgot.on[Function, Nothing, Either]) =
+  given KleisliIsElgot: [F[_]] => (F: F is Monad.Elgot) => (Kleisli[F] is Elgot.`with`[Nothing, Either]) =
     new Elgot {
       type Self[A, B] = A => F[B]
-      type On         = Function
 
-      override val OnIsPromonad: Promonad.FunctionIsPromonad.type          = Promonad.FunctionIsPromonad
-      override val OnIsCocartesian: Cocartesian.FunctionIsCocartesian.type = Cocartesian.FunctionIsCocartesian
-
-      def unit[A, B](f: A => B): A => F[B] = a => F.unit(f(a))
-
-      def multiply[A, B, C](q: B => F[C], p: A => F[B]): A => F[C] = a => F.flatMap(p(a))(q)
+      override val SelfIsCocartesian: Kleisli[F] is Cocartesian.`with`[Nothing, Either] = KleisliIsCocartesian[F]
 
       def dagger[A, C](p: C => F[Either[A, C]]): C => F[A] = F.iterate(p)
     }

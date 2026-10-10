@@ -3,7 +3,7 @@ package category
 
 import scala.annotation.targetName
 
-/** A restriction promonad on an underlying category **C**.
+/** A restriction structure on the category induced by a promonad.
   *
   * Represents a promonad *P* whose induced category is a restriction category, where
   *   - ‾: *P*[*A*, *B*] → *P*[*A*, *A*] is the restriction operation, mapping a morphism *f* to the partial identity
@@ -11,8 +11,11 @@ import scala.annotation.targetName
   *
   * A morphism *f*: *A* ~> *B* is total if *f̄* = *id*.
   */
-trait Restriction extends Promonad {
-  type Self[_, _]
+trait Restriction {
+  type Self[_, _]: Promonad
+
+  val SelfIsPromonad: Self is Promonad = summon
+  import SelfIsPromonad.*
 
   /** Maps a morphism *p*: *A* ~> *B* to its restriction *p̄*: *A* ~> *A*. */
   def restrict[A, B](p: A ~> B): A ~> A
@@ -24,7 +27,7 @@ trait Restriction extends Promonad {
       Restriction.this.restrict(p)
     }
 
-  /** Laws that any `Restriction` promonad must satisfy. */
+  /** Laws that any `Restriction` must satisfy. */
   object RestrictionLaws {
 
     /** (R1) *f* ∘ *f̄* = *f*
@@ -58,30 +61,20 @@ object Restriction {
   /** Summons the `Restriction` instance of `P`. */
   def apply[P[_, _]: Restriction]: P is Restriction = summon
 
-  /** `Function` is a trivial `Restriction` promonad on the category **Type**, where every morphism is total. */
+  /** `Function` is a trivial `Restriction` on the category **Type**, where every morphism is total. */
   given FunctionIsRestriction: Function is Restriction {
-    export Promonad.FunctionIsPromonad.*
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     def restrict[A, B](p: A => B): A => A = {
-      identity[A]
+      a => a
     }
   }
 
-  /** `PartialFunction` is a `Restriction` promonad on the category **Type**, where the restriction of a partial function
-    * is the partial identity on its domain of definition.
+  /** `PartialFunction` is a `Restriction` on the category of partial functions, where the restriction of a partial
+    * function is the partial identity on its domain of definition.
     */
   given PartialFunctionIsRestriction: PartialFunction is Restriction {
-    type On = Function
-
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-
-    def unit[A, B](f: A => B): PartialFunction[A, B] = {
-      PartialFunction.fromFunction(f)
-    }
-
-    def multiply[A, B, C](q: PartialFunction[B, C], p: PartialFunction[A, B]): PartialFunction[A, C] = {
-      p andThen q
-    }
+    override val SelfIsPromonad: Promonad.PartialFunctionIsPromonad.type = Promonad.PartialFunctionIsPromonad
 
     def restrict[A, B](p: PartialFunction[A, B]): PartialFunction[A, A] = {
       case a if p.isDefinedAt(a) => a
