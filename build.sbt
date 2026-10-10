@@ -1,4 +1,4 @@
-scalaVersion := "3.8.4"
+scalaVersion := "3.9.0"
 
 lazy val root = rootProject
   .settings(
@@ -17,7 +17,6 @@ lazy val root = rootProject
       "-language:experimental.genericNumberLiterals",
       "-language:experimental.modularity",
       "-language:experimental.pureFunctions",
-      "-language:experimental.relaxedLambdaSyntax",
       "-language:strictEquality",
       "-preview",
       "-source:future",
