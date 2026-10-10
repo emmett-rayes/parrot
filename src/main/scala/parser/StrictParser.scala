@@ -1,6 +1,8 @@
 package parrot
 package parser
 
+import parrot.category.{Elgot, Enriched, Fixed, Monoid, Promonad, Restriction, Strong, Cocartesian}
+
 import java.util.regex.{Matcher, Pattern as JPattern}
 import scala.util.matching.Regex
 
@@ -716,5 +718,101 @@ object StrictParser extends ParserAlgebra, ParserAlgebra.Pairing {
     val knot = Rec[A, B]()
     knot.body = f(knot)
     knot
+  }
+
+  // ===========================================================================
+  // Categorical structure
+  // ===========================================================================
+  //
+  // The same structures as ReferenceParser, implemented by the smart constructors above, so that their laws are
+  // checked against the actual implementation. Equalities hold extensionally (the terms may differ in shape) and with
+  // the same exceptions as for ReferenceParser: parsers are premonoidal, composition distributes over choice only on
+  // one side, and loops and fixed points must be productive. In addition, left-recursive fixed points are grown from
+  // a seed and break the Conway laws.
+
+  /** Parsers form a category over `Fn`: `pure` is the unit, `success` the identity and `andThen` the composition. */
+  given NodeIsPromonad: Node is Promonad {
+    type On = Fn
+
+    override val OnIsPromonad: Fn.FnIsPromonad.type = Fn.FnIsPromonad
+
+    def unit[A, B](f: Fn[A, B]): Node[A, B] = StrictParser.pure(f)
+
+    def multiply[A, B, C](q: Node[B, C], p: Node[A, B]): Node[A, C] = StrictParser.andThen(p)(q)
+
+    override def identity[A]: Node[A, A] = StrictParser.success
+  }
+
+  /** Parsers are strong with respect to (`Tuple2`, `Unit`): *first*(*p*) = *p* ⊗ `success`. */
+  given NodeIsStrong: Node is Strong {
+    override given given_Profunctor_Self: NodeIsPromonad.type = NodeIsPromonad
+    override val SelfIsProfunctor: NodeIsPromonad.type        = NodeIsPromonad
+    override val OnIsMonoidal: Fn.FnIsCartesian.type          = Fn.FnIsCartesian
+
+    def first[A, B, C](p: Node[A, B]): Node[(A, C), (B, C)] = StrictParser.zip(p)(StrictParser.success[C])
+
+    def second[A, B, C](p: Node[A, B]): Node[(C, A), (C, B)] = StrictParser.zip(StrictParser.success[C])(p)
+  }
+
+  /** Parsers have coproducts (`Either`, `Nothing`): the injections are pure and copairing is `merge`. */
+  given NodeIsCocartesian: Node is Cocartesian {
+    type Z      = Nothing
+    type Tensor = Either
+
+    override val SelfIsPromonad: NodeIsPromonad.type = NodeIsPromonad
+
+    def absurd[A]: Node[Nothing, A] = StrictParser.pure(Fn.Absurd())
+
+    def left[A, B]: Node[A, Either[A, B]] = StrictParser.pure(Fn.Inl())
+
+    def right[A, B]: Node[B, Either[A, B]] = StrictParser.pure(Fn.Inr())
+
+    def sum[A, B, C](f: Node[A, C], g: Node[B, C]): Node[Either[A, B], C] = StrictParser.merge(f)(g)
+
+    override def tensor[A, B, C, D](p: Node[A, B], q: Node[C, D]): Node[Either[A, C], Either[B, D]] = {
+      StrictParser.branch(p)(q)
+    }
+  }
+
+  /** Hom-sets of parsers are additive monoids under ordered choice, with `failure` as zero. */
+  given NodeIsAdditiveEnriched: Node is Enriched {
+    type Over = Monoid.Additive
+
+    override val SelfIsPromonad: NodeIsPromonad.type = NodeIsPromonad
+
+    override given HomIsV: [A, B] => (Node[A, B] is Monoid.Additive) = new Monoid.Additive {
+      type Self = Node[A, B]
+
+      def zero: Node[A, B] = StrictParser.failure
+
+      def plus(p: Node[A, B], q: Node[A, B]): Node[A, B] = StrictParser.orElse(p)(q)
+    }
+  }
+
+  /** Parsers form a restriction category: the restriction of a parser is its `lookahead`. */
+  given NodeIsRestriction: Node is Restriction {
+    override val SelfIsPromonad: NodeIsPromonad.type = NodeIsPromonad
+
+    def restrict[A, B](p: Node[A, B]): Node[A, A] = StrictParser.lookahead(p)
+  }
+
+  /** Parsers have an Elgot iteration on their coproducts: the dagger is `loop`. */
+  given NodeIsElgot: Node is Elgot {
+    override val SelfIsCocartesian: NodeIsCocartesian.type = NodeIsCocartesian
+
+    def dagger[A, C](p: Node[C, Either[A, C]]): Node[C, A] = StrictParser.loop(p)
+  }
+
+  /** Hom-sets of parsers have fixed points: fix is `recursive`. */
+  given NodeIsFixedEnriched: Node is Enriched {
+    type Over = Fixed
+
+    override val SelfIsPromonad: NodeIsPromonad.type = NodeIsPromonad
+
+    override given HomIsV: [A, B] => (Node[A, B] is Fixed) = new Fixed {
+      type Self = Node[A, B]
+
+      def fix(f: Node[A, B] => Node[A, B]): Node[A, B] = StrictParser.recursive(f)
+    }
   }
 }
