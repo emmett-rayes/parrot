@@ -9,8 +9,7 @@ package category
 trait Symmetric extends Monoidal {
   type Self[_, _]
 
-  private val Prom: Self is Promonad = summon
-  import Prom.*
+  import SelfIsPromonad.*
 
   /** The braiding natural isomorphism *β*: *A* ⊗ *B* ~> *B* ⊗ *A*. */
   def braid[A, B]: (A * B) ~> (B * A)
@@ -80,9 +79,8 @@ object Symmetric {
   def apply[P[_, _]: Symmetric]: P is Symmetric = summon
 
   /** `Symmetric` instance for `Function` on the category **Type**. */
-  given FunctionIsSymmetric: (P: Function is Monoidal.`with`[Unit, Tuple2]) => Function is Symmetric {
-    export P.{
-      Self as _,
+  given FunctionIsSymmetric: Function is Symmetric {
+    export Monoidal.FunctionIsMonoidal.{
       rightUnitor as _,
       rightUnitorInv as _,
       unassociate as _,

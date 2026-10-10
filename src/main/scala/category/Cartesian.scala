@@ -15,10 +15,9 @@ import scala.annotation.targetName
   *   - Δ: *A* ⇒ *A* ⊗ *A* is the diagonal morphism
   */
 trait Cartesian extends Monoidal {
-  type Self[_, _]
+  type Self[_, _]: Promonad
 
-  private val Prom: Self is Promonad = summon
-  import Prom.*
+  import SelfIsPromonad.*
 
   /** The unique morphism !: *A* ~> *I* to the terminal object. */
   def augment[A]: A ~> I
@@ -138,23 +137,24 @@ object Cartesian {
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
   /** Every object in a cartesian monoidal category is uniquely a comonoid object via the augment and diagonal. */
-  given MIsComonoid: [M, P[_, _]: Promonad] => (C: P is Cartesian) => M is Comonoid {
+  given TIsComonoid: [T, P[_, _]: Promonad] => (C: P is Cartesian) => T is Comonoid {
     type In = P
 
-    override val Mon: C.type = C
+    override val InIsMonoidal: C.type              = C
+    override val InIsPromonad: C.SelfIsPromonad.type = C.SelfIsPromonad
 
-    import C.*
-    import Prom.*
+    import InIsMonoidal.*
+    import InIsPromonad.*
 
-    def zero: M ~> I = augment
+    def zero: T ~> I = augment
 
-    def add: M ~> (M * M) = diagonal
+    def add: T ~> (T * T) = diagonal
   }
 
   /** Every cartesian monoidal category induces a symmetric monoidal category, where
     *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
     */
-  given CartesianIsSymmetric: [P[_, _]: {Promonad, Cartesian}] => (C: P is Cartesian) => P is Symmetric {
+  given CartesianIsSymmetric: [P[_, _]: Promonad] => (C: P is Cartesian) => P is Symmetric {
     export C.{
       Self as _,
       rightUnitor as _,
@@ -163,7 +163,7 @@ object Cartesian {
       *,
     }
 
-    import C.Prom.*
+    import C.SelfIsPromonad.*
 
     def braid[A, B]: (A * B) ~> (B * A) = {
       second &&& first

@@ -33,7 +33,7 @@ trait Promonad extends Profunctor {
 
   /** The identity morphism *id* = *η*(*id*) in *A* ~> *A* of the category induced by *P*. */
   def identity[A]: A ~> A = {
-    unit(Promonad[On].identity)
+    unit(OnIsPromonad.identity)
   }
 
   /** Composes two morphisms *p*: *B* ~> *C* and *q*: *A* ~> *B* to a morphism *p* ∘ *q*: *A* ~> *C* in the category
@@ -152,14 +152,15 @@ trait Promonad extends Profunctor {
 }
 
 object Promonad {
-  import Profunctor.on
 
   /** Summons the `Promonad` instance of `P`. */
   def apply[P[_, _]: Promonad]: P is Promonad = summon
 
   /** `Promonad` instance for `=:=` on the discrete category *Ob*(**Type**). */
   given TypeEqIsPromonad: =:= is Promonad {
-    export Profunctor.TypeEqIsProfunctor.On
+    type On = =:=
+
+    override val OnIsPromonad: TypeEqIsPromonad.type = TypeEqIsPromonad
 
     def unit[A, B](f: A =:= B): A =:= B = {
       f
@@ -175,8 +176,10 @@ object Promonad {
   }
 
   /** `Promonad` instance for `Function` on the category **Type**. */
-  given FunctionIsPromonad: (P: Function is Profunctor on Function) => Function is Promonad {
-    export P.{Self as _, dimap as _, *}
+  given FunctionIsPromonad: Function is Promonad {
+    type On = Function
+
+    override val OnIsPromonad: FunctionIsPromonad.type = FunctionIsPromonad
 
     def unit[A, B](f: A => B): A => B = {
       f

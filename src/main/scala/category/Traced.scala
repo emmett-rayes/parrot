@@ -13,10 +13,11 @@ import scala.annotation.targetName
 trait Traced extends Profunctor {
   type Self[_, _]
 
-  override type On[_, _]: Monoidal
+  override type On[_, _]: {Promonad, Monoidal}
 
-  val Mon: On is Monoidal = summon
-  import Mon.*
+  val OnIsMonoidal: On is Monoidal
+  import OnIsMonoidal.*
+  import OnIsPromonad.*
 
   /** Left tensorial trace: *P*[*A* ⊗ *C*, *B* ⊗ *C*] → *P*[*A*, *B*]. */
   def left[A, B, C](p: (A * C) ~> (B * C)): A ~> B
@@ -46,7 +47,7 @@ trait Traced extends Profunctor {
     def leftNaturality[A, B, C, D, X](p: (A * X) ~> (B * X), f: C ==> A, g: B ==> D)(
       using C ~> D is Eq
     ): Boolean = {
-      p.dimap(f *** Promonad[On].identity[X], g *** Promonad[On].identity[X]).left === p.left.dimap(f, g)
+      p.dimap(f *** identity[X], g *** identity[X]).left === p.left.dimap(f, g)
     }
 
     /** *right*(*P*(*id* ⊗ *f*, *id* ⊗ *g*)(*p*)) = *P*(*f*, *g*)(*right*(*p*))
@@ -54,7 +55,7 @@ trait Traced extends Profunctor {
     def rightNaturality[A, B, C, D, X](p: (X * A) ~> (X * B), f: C ==> A, g: B ==> D)(
       using C ~> D is Eq
     ): Boolean = {
-      p.dimap(Promonad[On].identity[X] *** f, Promonad[On].identity[X] *** g).right === p.right.dimap(f, g)
+      p.dimap(identity[X] *** f, identity[X] *** g).right === p.right.dimap(f, g)
     }
 
     /** *left*(*P*(ρ, ρ⁻¹)(*p*)) = *p*
@@ -92,16 +93,21 @@ trait Traced extends Profunctor {
 }
 
 object Traced {
-  import Profunctor.on
+
+  /** Refines the `On` type of `Traced` to the monoidal `K` with unit `U` and tensor `T`. */
+  type on[K[_, _], U, T[_, _]] = Traced {
+    type On = K
+    val OnIsMonoidal: K is Monoidal.`with`[U, T]
+  }
 
   /** Summons the `Traced` instance of `P`. */
   def apply[P[_, _]: Traced]: P is Traced = summon
 
   /** `Function` is traced under its cartesian monoidal structure via fixed points. */
-  given FunctionIsLazyCartesianTraced: (F: Function is Profunctor on Function) => Function is Traced {
-    export F.{Self as _, *}
+  given FunctionIsLazyCartesianTraced: Function is Traced {
+    export Profunctor.FunctionIsProfunctor.*
 
-    override val Mon: Function is Monoidal.`with`[Unit, LazyTuple2] = Cartesian.FunctionIsLazyCartesian
+    override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
 
     def left[A, B, C](p: LazyTuple2[A, C] => LazyTuple2[B, C]): A => B = {
       a =>
@@ -121,10 +127,11 @@ object Traced {
   }
 
   /** `Function` is traced under its cocartesian monoidal structure via tail-recursive iteration. */
-  given FunctionIsCocartesianTraced: (F: Function is Profunctor on Function) => (Function is Traced) {
-    export F.{Self as _, *}
+  given FunctionIsCocartesianTraced: Function is Traced {
+    import Profunctor.FunctionIsProfunctor
+    export FunctionIsProfunctor.*
 
-    override val Mon: Function is Monoidal.`with`[Nothing, Either] = Cocartesian.FunctionIsCocartesian
+    override val OnIsMonoidal: Cocartesian.FunctionIsCocartesian.type = Cocartesian.FunctionIsCocartesian
 
     def left[A, B, C](p: Either[A, C] => Either[B, C]): A => B = { a =>
       @annotation.tailrec

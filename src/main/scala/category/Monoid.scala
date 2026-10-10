@@ -16,10 +16,11 @@ trait Monoid {
 
   type In[_, _]: {Promonad, Monoidal}
 
-  val Prom: In is Promonad = summon
-  val Mon: In is Monoidal  = summon
-  import Prom.*
-  import Mon.*
+  val InIsMonoidal: In is Monoidal = summon
+  val InIsPromonad: In is Promonad = summon
+
+  import InIsMonoidal.*
+  import InIsPromonad.*
 
   /** The unit morphism *η*: *I* ~> *M*. */
   def unit: I ~> M
@@ -53,23 +54,26 @@ trait Monoid {
 object Monoid {
   import Profunctor.on
 
-  /** Refines the `In` type of `Monoid` to `T`. */
-  infix type in[M <: Monoid, T[_, _]] = M { type In = T }
+  /** Refines the `In` type of `Monoid` to the monoidal `K` with unit `U` and tensor `T`. */
+  type in[K[_, _], U, T[_, _]] = Monoid {
+    type In = K
+    val InIsMonoidal: K is Monoidal.`with`[U, T]
+    val InIsPromonad: K is Promonad on Function
+  }
 
   /** Summons the `Monoid` instance of `M`. */
   def apply[M: Monoid]: M is Monoid = summon
 
   /** An additive monoid (*M*, +, 0) internal to (**Type**, ×, Unit). */
-  trait Additive extends Monoid {
+  trait Additive extends Monoid.in[Function, Unit, Tuple2] {
     type Self
-
     type In = Function
 
-    override val Prom: Function is (Promonad on Function)       = summon
-    override val Mon: Function is Monoidal.`with`[Unit, Tuple2] = summon
+    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override val InIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
-    import Prom.*
-    import Mon.*
+    import InIsMonoidal.*
+    import InIsPromonad.*
 
     /** The unit element 0 of *M*. */
     def zero: M
@@ -154,16 +158,15 @@ object Monoid {
   }
 
   /** A multiplicative monoid (*M*, *, 1) internal to (**Type**, ×, Unit). */
-  trait Multiplicative extends Monoid {
+  trait Multiplicative extends Monoid.in[Function, Unit, Tuple2] {
     type Self
-
     type In = Function
 
-    override val Prom: Function is (Promonad on Function)       = summon
-    override val Mon: Function is Monoidal.`with`[Unit, Tuple2] = summon
+    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override val InIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
-    import Prom.*
-    import Mon.*
+    import InIsMonoidal.*
+    import InIsPromonad.*
 
     /** The unit element 1 of *M*. */
     def one: M

@@ -15,7 +15,7 @@ import scala.annotation.targetName
   *   - ∇: *A* ⊕ *A* ⇒ *A* is the fold morphism
   */
 trait Cocartesian extends Monoidal {
-  type Self[_, _]
+  type Self[_, _]: Promonad
 
   /** The initial object *Z* in *Ob*(**C**). */
   type Z
@@ -24,8 +24,7 @@ trait Cocartesian extends Monoidal {
   /** The coproduct ⊕ on objects. */
   final type +[A, B] = Tensor[A, B]
 
-  private val Prom: Self is Promonad = summon
-  import Prom.*
+  import SelfIsPromonad.*
 
   /** The unique morphism ¡: *Z* ~> *A* from the initial object. */
   def absurd[A]: Z ~> A
@@ -40,6 +39,11 @@ trait Cocartesian extends Monoidal {
     * ~> *C*.
     */
   def sum[A, B, C](f: A ~> C, g: B ~> C): (A + B) ~> C
+
+  /** The fold (codiagonal) morphism ∇: *A* ⊕ *A* ~> *A*. */
+  def fold[A]: (A + A) ~> A = {
+    identity[A] ||| identity[A]
+  }
 
   /** The tensor product of two morphisms *p* ⊕ *q* = [*p* ∘ *ι*₁, *q* ∘ *ι*₂]. */
   override def tensor[A, B, C, D](p: A ~> B, q: C ~> D): (A + C) ~> (B + D) = {
@@ -91,11 +95,6 @@ trait Cocartesian extends Monoidal {
       f.sum(g)
     }
 
-  /** The fold (codiagonal) morphism ∇: *A* ⊕ *A* ~> *A*. */
-  def fold[A]: (A + A) ~> A = {
-    identity[A] ||| identity[A]
-  }
-
   /** Laws that any `Cocartesian` monoidal profunctor must satisfy. */
   object CocartesianLaws {
 
@@ -145,17 +144,18 @@ object Cocartesian {
   def apply[P[_, _]: Cocartesian]: P is Cocartesian = summon
 
   /** Every object in a cocartesian monoidal category is uniquely a monoid object via the initial morphism and fold. */
-  given MIsMonoid: [M, P[_, _]: Promonad] => (C: P is Cocartesian) => M is Monoid {
+  given TIsMonoid: [T, P[_, _]: Promonad] => (C: P is Cocartesian) => T is Monoid {
     type In = P
 
-    override val Mon: C.type = C
+    override val InIsMonoidal: C.type = C
 
-    import C.*
-    import Prom.*
+    import C.{+, Z}
+    import InIsMonoidal.*
+    import InIsPromonad.*
 
-    def unit: Z ~> M = absurd
+    def unit: Z ~> T = absurd
 
-    def multiply: (M + M) ~> M = fold
+    def multiply: (T + T) ~> T = fold
   }
 
   /** Every cocartesian monoidal category induces a symmetric monoidal category, where
@@ -170,7 +170,7 @@ object Cocartesian {
       *,
     }
 
-    import C.Prom.*
+    import C.SelfIsPromonad.*
 
     def braid[A, B]: (A * B) ~> (B * A) = {
       right[B, A] ||| left[B, A]
@@ -181,6 +181,8 @@ object Cocartesian {
   given FunctionIsCocartesian: Function is Cocartesian {
     type Z      = Nothing
     type Tensor = Either
+
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     def absurd[A]: Nothing => A = {
       n => n

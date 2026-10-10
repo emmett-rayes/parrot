@@ -17,17 +17,20 @@ trait Profunctor {
   type On[_, _]: Promonad
   final type ==> = On
 
+  val OnIsPromonad: On is Promonad
+  import OnIsPromonad.*
+
   /** Maps a pair of morphisms *f*: *C* ==> *A*, *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*]. */
   def dimap[A, B, C, D](f: C ==> A, g: B ==> D)(p: A ~> B): C ~> D
 
   /** Maps a morphism *f*: *C* ==> *A* to a morphism *P*[*A*,*B*] → *P*[*C*,*B*]. */
   def lmap[A, B, C](f: C ==> A)(p: A ~> B): C ~> B = {
-    dimap(f, Promonad[On].identity)(p)
+    dimap(f, identity)(p)
   }
 
   /** Maps a morphism *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*A*,*D*]. */
   def rmap[A, B, D](g: B ==> D)(p: A ~> B): A ~> D = {
-    dimap(Promonad[On].identity, g)(p)
+    dimap(identity, g)(p)
   }
 
   extension [A, B](p: A ~> B)
@@ -57,7 +60,7 @@ trait Profunctor {
     /** *P*(*id*,*id*) = *id*
       */
     def identity[A, B](p: A ~> B)(using A ~> B is Eq): Boolean = {
-      p.dimap(Promonad[On].identity, Promonad[On].identity) === p
+      p.dimap(OnIsPromonad.identity, OnIsPromonad.identity) === p
     }
 
     /** *P*(*f2*,*g2*) ∘ *P*(*f1*,*g1*) = *P*(*f2* ∘ *f1*,*g1* ∘ *g2*)
@@ -86,6 +89,8 @@ object Profunctor {
   given TypeEqIsProfunctor: =:= is Profunctor {
     type On = =:=
 
+    override val OnIsPromonad: Promonad.TypeEqIsPromonad.type = Promonad.TypeEqIsPromonad
+
     def dimap[A, B, C, D](f: C =:= A, g: B =:= D)(p: A =:= B): C =:= D = {
       f andThen p andThen g
     }
@@ -95,8 +100,11 @@ object Profunctor {
   given FunctionIsProfunctor: Function is Profunctor {
     type On = Function
 
+    override val OnIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+
     def dimap[A, B, C, D](f: C => A, g: B => D)(p: A => B): C => D = {
       f andThen p andThen g
     }
+
   }
 }

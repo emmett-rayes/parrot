@@ -13,10 +13,11 @@ trait Comonoid {
 
   type In[_, _]: {Promonad, Monoidal}
 
-  val Prom: In is Promonad = summon
-  val Mon: In is Monoidal  = summon
-  import Prom.*
-  import Mon.*
+  val InIsMonoidal: In is Monoidal = summon
+  val InIsPromonad: In is Promonad = summon
+
+  import InIsMonoidal.*
+  import InIsPromonad.*
 
   /** The counit morphism *ε*: *M* ~> *I*. */
   def zero: M ~> I
@@ -48,9 +49,14 @@ trait Comonoid {
 }
 
 object Comonoid {
+  import Profunctor.on
 
-  /** Refines the `In` type of `Comonoid` to `T`. */
-  infix type in[M <: Comonoid, T[_, _]] = Comonoid { type In = T }
+  /** Refines the `In` type of `Comonoid` to the monoidal `K` with unit `U` and tensor `T`. */
+  type in[K[_, _], U, T[_, _]] = Comonoid {
+    type In = K
+    val InIsMonoidal: K is Monoidal.`with`[U, T]
+    val InIsPromonad: K is Promonad on Function
+  }
 
   /** Summons the `Comonoid` instance of `M`. */
   def apply[M: Comonoid]: M is Comonoid = summon

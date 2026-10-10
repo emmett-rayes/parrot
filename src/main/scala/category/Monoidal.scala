@@ -15,8 +15,8 @@ import scala.annotation.targetName
 trait Monoidal {
   type Self[_, _]: Promonad
 
-  private val Prom: Self is Promonad = summon
-  import Prom.*
+  val SelfIsPromonad: Self is Promonad = summon
+  import SelfIsPromonad.*
 
   /** The unit object *I* in *Ob*(**C**). */
   type I

@@ -13,10 +13,11 @@ import scala.annotation.targetName
 trait Strong extends Profunctor {
   type Self[_, _]
 
-  override type On[_, _]: Monoidal
+  override type On[_, _]: {Promonad, Monoidal}
 
-  val Mon: On is Monoidal = summon
-  import Mon.*
+  val OnIsMonoidal: On is Monoidal = summon
+  import OnIsMonoidal.*
+  import OnIsPromonad.*
 
   /** Strong tensorial action on the left: *P*[*A*, *B*] → *P*[*A* ⊗ *C*, *B* ⊗ *C*]. */
   def first[A, B, C](p: A ~> B): (A * C) ~> (B * C)
@@ -46,7 +47,7 @@ trait Strong extends Profunctor {
     def firstNaturality[A, B, C, D, X](p: A ~> B, f: C ==> A, g: B ==> D)(
       using (C * X) ~> (D * X) is Eq
     ): Boolean = {
-      p.dimap(f, g).first[X] === p.first[X].dimap(f *** Promonad[On].identity[X], g *** Promonad[On].identity[X])
+      p.dimap(f, g).first[X] === p.first[X].dimap(f *** identity[X], g *** identity[X])
     }
 
     /** *second*(*P*(*f*, *g*)(*p*)) = *P*(*id* ⊗ *f*, *id* ⊗ *g*)(*second*(*p*))
@@ -54,7 +55,7 @@ trait Strong extends Profunctor {
     def secondNaturality[A, B, C, D, X](p: A ~> B, f: C ==> A, g: B ==> D)(
       using (X * C) ~> (X * D) is Eq
     ): Boolean = {
-      p.dimap(f, g).second[X] === p.second[X].dimap(Promonad[On].identity[X] *** f, Promonad[On].identity[X] *** g)
+      p.dimap(f, g).second[X] === p.second[X].dimap(identity[X] *** f, identity[X] *** g)
     }
 
     /** *P*(*ρ*⁻¹, *ρ*)(*first*(*p*)) = *p*
@@ -92,16 +93,21 @@ trait Strong extends Profunctor {
 }
 
 object Strong {
-  import Profunctor.on
+
+  /** Refines the `On` type of `Strong` to the monoidal `K` with unit `U` and tensor `T`. */
+  type on[K[_, _], U, T[_, _]] = Strong {
+    type On = K
+    val OnIsMonoidal: K is Monoidal.`with`[U, T]
+  }
 
   /** Summons the `Strong` instance of `P`. */
   def apply[P[_, _]: Strong]: P is Strong = summon
 
   /** `Function` is canonically `Strong` over itself under its cartesian monoidal structure. */
-  given FunctionIsStrong: (F: Function is Profunctor on Function) => Function is Strong {
-    export F.{Self as _, *}
+  given FunctionIsStrong: Function is Strong {
+    export Profunctor.FunctionIsProfunctor.*
 
-    override val Mon: Function is Monoidal.`with`[Unit, Tuple2] = summon
+    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
 
     def first[A, B, C](p: A => B): ((A, C)) => (B, C) = {
       (a, c) => (p(a), c)

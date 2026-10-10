@@ -5,6 +5,8 @@ import org.scalacheck.{Arbitrary, Gen}
 
 class EnrichedTest extends CategorySuite {
 
+  import Monoid.Additive.given
+
   // =========================================================================
   // 1. OptionFunction (Kleisli Category of Option)
   // =========================================================================
@@ -13,6 +15,8 @@ class EnrichedTest extends CategorySuite {
 
   given OptionFunctionIsPromonad: OptionFunction is Promonad {
     type On = Function
+
+    override val OnIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     def unit[A, B](f: A => B): A => Option[B] = {
       a => Some(f(a))
@@ -29,14 +33,13 @@ class EnrichedTest extends CategorySuite {
 
   given OptionFunctionIsEnriched: OptionFunction is Enriched {
     type Over = Monoid.Additive
-    override val Prom: OptionFunctionIsPromonad.type = summon
+    override val SelfIsPromonad: OptionFunctionIsPromonad.type = OptionFunctionIsPromonad
 
     override given HomIsV: [A, B] => ((A => Option[B]) is Monoid.Additive) = {
       Monoid.Additive.FunctionIsAdditive[A, Option[B]]
     }
   }
 
-  import OptionFunctionIsEnriched.given
   private val OptionFunctionLaws = OptionFunctionIsEnriched.MonoidEnrichedLaws
 
   test("OptionFunction is Enriched: unit homomorphy law") {
@@ -133,6 +136,8 @@ class EnrichedTest extends CategorySuite {
   given RelFunctionIsPromonad: RelFunction is Promonad {
     type On = Function
 
+    override val OnIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+
     def unit[A, B](f: A => B): A => Set[B] = {
       a => Set(f(a))
     }
@@ -148,14 +153,13 @@ class EnrichedTest extends CategorySuite {
 
   given RelFunctionIsEnriched: RelFunction is Enriched {
     type Over = Monoid.Additive
-    override val Prom: RelFunctionIsPromonad.type = summon
+    override val SelfIsPromonad: RelFunctionIsPromonad.type = RelFunctionIsPromonad
 
     override given HomIsV: [A, B] => ((A => Set[B]) is Monoid.Additive) = {
       Monoid.Additive.FunctionIsAdditive[A, Set[B]]
     }
   }
 
-  import RelFunctionIsEnriched.given
   private val RelFunctionLaws = RelFunctionIsEnriched.MonoidEnrichedLaws
 
   test("RelFunction is Enriched: unit homomorphy law") {
