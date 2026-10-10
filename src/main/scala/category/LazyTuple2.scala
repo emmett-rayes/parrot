@@ -29,7 +29,7 @@ trait LazyTuple2[+A, +B] extends Product2[A, B] {
   }
 
   override def hashCode(): Int = {
-    Objects.hash(_1.asInstanceOf[AnyRef], _2.asInstanceOf[AnyRef])
+    Objects.hash(_1, _2)
   }
 
   override def toString: String = s"LazyTuple2(${_1}, ${_2})"
