@@ -33,4 +33,8 @@ lazy val root = rootProject
     ),
     Compile / unmanagedSources := (Compile / unmanagedSources).value.filterNot(_.getPath.contains("/legacy/")),
     Test / unmanagedSources    := (Test / unmanagedSources).value.filterNot(_.getPath.contains("/legacy/")),
+    // benchmarks (Test/runMain) run in their own JVM, with a fixed heap that fits the parse trees of large documents
+    Test / run / fork           := true,
+    Test / run / javaOptions ++= Seq("-Xms6g", "-Xmx6g", "-Xss16m"),
+    Test / run / outputStrategy := Some(StdoutOutput),
   )

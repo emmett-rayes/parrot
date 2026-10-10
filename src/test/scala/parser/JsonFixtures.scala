@@ -6,7 +6,10 @@ import java.nio.file.{Files, Path}
 import scala.jdk.CollectionConverters.*
 import scala.util.Try
 
-/** The JSONTestSuite fixtures in `src/test/resources/json`.
+/** The JSON fixtures in `src/test/resources/json`, from two sources:
+  *   - [[jsonTestSuite]]: the `test_parsing` documents of JSONTestSuite, [[https://github.com/nst/JSONTestSuite]] at
+  *     commit `1ef36fa` (MIT license)
+  *   - [[jsonDummyData]]: the `y_sample_*` documents of [[https://microsoftedge.github.io/Demos/json-dummy-data]]
   *
   * The fixtures are prefixed by
   *   - `y_`: valid JSON that must be accepted
@@ -17,13 +20,21 @@ object JsonFixtures {
 
   val directory: Path = Path.of("src", "test", "resources", "json")
 
-  /** Nesting too deep for the call stack, and a fixture whose form feed was lost (it contains `[]`). */
+  /** Nesting too deep for the call stack. */
   val excluded: Set[String] = Set(
     "i_structure_500_nested_arrays.json",
     "n_structure_100000_opening_arrays.json",
     "n_structure_open_array_object.json",
-    "n_structure_whitespace_formfeed.json",
   )
+
+  /** True if `name` is one of the json-dummy-data documents rather than a JSONTestSuite fixture. */
+  def isDummyData(name: String): Boolean = name.startsWith("y_sample_")
+
+  /** The JSONTestSuite fixtures that are not [[excluded]], sorted. */
+  def jsonTestSuite: List[String] = names.filterNot(isDummyData)
+
+  /** The json-dummy-data documents, sorted. */
+  def jsonDummyData: List[String] = names.filter(isDummyData)
 
   /** The names of the fixtures that are not [[excluded]], sorted. */
   def names: List[String] = {

@@ -124,13 +124,28 @@ The laws hold except for these, each pinned down by a counterexample test:
 
 ## Measured effect
 
-`sbt "Test/runMain parrot.parser.JsonBenchmark"`, JSONTestSuite (300 fixtures, 12.07 MB):
+`sbt "Test/runMain parrot.parser.JsonBenchmark [--reference] [suite ...]"` runs four suites one after the other, each
+reported separately with its own methodology:
 
-| Interpreter         | Throughput  | vs `ReferenceParser` |
-|---------------------|-------------|----------------------|
-| `ReferenceParser`   | 6.8 MB/s    | 1.0×                 |
-| `ReferenceFnParser` | 6.2 MB/s    | 0.9×                 |
-| `StrictParser`      | 123.6 MB/s  | 18.2×                |
+- **JSONTestSuite**: the `test_parsing` fixtures of [nst/JSONTestSuite](https://github.com/nst/JSONTestSuite).
+- **json-dummy-data**: the documents of [json-dummy-data](https://microsoftedge.github.io/Demos/json-dummy-data).
+- **json_benchmark**: the documents of [TkTech/json_benchmark](https://github.com/TkTech/json_benchmark), up to 66 MB.
+- **nativejson-benchmark**: the Parse and Parse Validation benchmarks of
+  [miloyip/nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark).
 
-`ReferenceFnParser` uses `Fn` without `StrictParser`'s normalization and analysis, and shows that `Fn` alone gives no
-speedup. `Fn` matters because it makes structural morphisms visible to the smart constructors.
+The first two suites are vendored in `src/test/resources/json`. The last two are downloaded from pinned commits into
+`target/benchmark-data`. `--reference` adds `ReferenceParser` as the baseline. Memory is the heap allocated by the
+parsing thread, including the parse trees.
+
+nativejson-benchmark Parse (canada, citm_catalog, twitter: 4.6 MB, minimum of 10 trials):
+
+| Interpreter       | Throughput  | Allocated per byte | vs `ReferenceParser`              |
+|-------------------|-------------|--------------------|-----------------------------------|
+| `ReferenceParser` | 6.6 MiB/s   | 724 B              | 1.0×                              |
+| `StrictParser`    | 126.4 MiB/s | 16.5 B             | 19× throughput, 1/44 allocation   |
+
+Both interpreters pass all 34 JSON_checker validation cases.
+
+`ReferenceFnParser` uses `Fn` without `StrictParser`'s normalization and analysis. In an earlier measurement it ran at
+0.9× the throughput of `ReferenceParser`, so `Fn` alone gives no speedup. `Fn` matters because it makes structural
+morphisms visible to the smart constructors.
