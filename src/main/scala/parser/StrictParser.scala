@@ -6,25 +6,25 @@ import scala.util.matching.Regex
 /** A specialized interpreter of [[ParserAlgebra]] that normalizes parsers at construction time and runs them without
   * allocating intermediate structure.
   *
-  * Parsers are reified terms ([[Node]]) over reified base morphisms ([[Fn]]). Every primitive is a smart constructor
-  * that rewrites its arguments towards a normal form, so the *generic* derivations of the mixins collapse into
-  * specialized nodes. For example
-  *   - `p.pair(q)` = Δ ⨾ (*p* ⊗ *q*) becomes `Pair(p, q)`: the input is never duplicated into a tuple
-  *   - `p.skipThen(q)` = `Pair(p, q)` ⨾ *π*₂ becomes `SkipThen(p, q)`: no result tuple is built
-  *   - `p.merge(q)` = (*p* ⊕ *q*) ⨾ ∇ becomes `Merge(p, q)`: no result `Either` is built
+  * Parsers are reified terms ([[Node]]) over reified pure functions ([[Fn]]). Instead of the structural mixins, every
+  * primitive is implemented directly as a smart constructor that rewrites its arguments towards a normal form, so the
+  * *derived* mixins collapse into specialized nodes. For example
+  *   - `p.pair(q)` = `p.zip(q).mapInput(Δ)` becomes `Pair(p, q)`: the input is never duplicated into a tuple
+  *   - `p.skipThen(q)` = `Pair(p, q).map(π₂)` becomes `SkipThen(p, q)`: no result tuple is built
+  *   - `p.branch(q).map([f, g])` becomes `Merge(p.map(f), q.map(g))`: no intermediate `Either` is built
   *   - `p.zip(success)` becomes `First(p)`
   *
-  * Combinators whose generic derivation cannot be fused this way (`not`, iteration) are overridden with dedicated
-  * nodes. At run time, a single mutable [[State]] carries the position, and failure is signalled by the [[Failed]]
-  * sentinel instead of a result wrapper.
+  * Combinators whose derivation cannot be fused this way (`not`, repetition) are implemented with dedicated nodes. At
+  * run time, a single mutable [[State]] carries the position, and failure is signalled by the [[Failed]] sentinel
+  * instead of a result wrapper.
   *
   * ==Strictness of the unit==
   *
-  * The unit is strict *on terms*, not *on types*: `Tensor` stays `Tuple2` and `I` stays `Unit`, while the unitors and
+  * The unit is strict *on terms*, not *on types*: `Pair` stays `Tuple2` and `Empty` stays `Unit`, while the unitors and
   * projections that witness *I* ⊗ *A* ≅ *A* are eliminated by normalization before any tuple is built. Making it strict
-  * on types with a match type (`Tensor[Unit, B] = B`, `Tensor[A, Unit] = A`, otherwise `(A, B)`) is unsound for the
+  * on types with a match type (`Pair[Unit, B] = B`, `Pair[A, Unit] = A`, otherwise `(A, B)`) is unsound for the
   * generic mixins: the projection *π*₂: *A* ⊗ *B* ==> *B* is not determined by its (reduced) type. Its runtime value
-  * must be `identity` at `Tensor[Unit, (X, Y)]` but `_._2` at `Tensor[X, Y]`, which both reduce to `(X, Y)` and share
+  * must be `identity` at `Pair[Unit, (X, Y)]` but `_._2` at `Pair[X, Y]`, which both reduce to `(X, Y)` and share
   * a representation. Parametric code such as `Pairing` constructs *π*₂ with *A* and *B* abstract (where the match type
   * is stuck), so it cannot choose. A type-strict variant would need shape-indexed morphisms (`Shape[A]` evidence on
   * every projection and on [[zip]]), which the assumption-free root signatures deliberately do not carry. By Mac Lane's
@@ -32,22 +32,18 @@ import scala.util.matching.Regex
   */
 object StrictParser
     extends ParserAlgebra,
-      ParserAlgebra.Mapping,
-      ParserAlgebra.Zipping,
       ParserAlgebra.Pairing,
-      ParserAlgebra.AlternativeBranching,
       ParserAlgebra.Optional {
 
-  type Self[A, B]      = Node[A, B]
-  type On[A, B]        = Fn[A, B]
-  type I               = Unit
-  type Tensor[A, B]    = (A, B)
-  type Z               = Nothing
-  type Coproduct[A, B] = Either[A, B]
-  type Many[B]         = Vector[B]
+  type Self[A, B]        = Node[A, B]
+  type On[A, B]          = Fn[A, B]
+  type Empty             = Unit
+  type Pair[A, B]        = (A, B)
+  type None              = Nothing
+  type Alternative[A, B] = Either[A, B]
+  type Many[B]           = Vector[B]
 
-  override val OnIsCartesian: Fn.FnIsCartesian.type     = Fn.FnIsCartesian
-  override val OnIsCocartesian: Fn.FnIsCocartesian.type = Fn.FnIsCocartesian
+  override val OnIsCartesian: Fn.FnIsCartesian.type = Fn.FnIsCartesian
 
   // ===========================================================================
   // Runtime
@@ -355,7 +351,17 @@ object StrictParser
       }
     }
 
+    override def map[D](g: Fn[B, D]): P[A, D] = self.andThen(pure(g))
+
+    override def mapInput[C](f: Fn[C, A]): P[C, B] = pure(f).andThen(self)
+
     override def branch[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = Branch(self, other)
+
+    override def merge[C](other: P[C, B]): P[Either[A, C], B] = Merge(self, other)
+
+    override def or[C](other: P[A, C]): P[A, Either[B, C]] = {
+      self.map(Fn.Inl[B, C]()).orElse(other.map(Fn.Inr[B, C]()))
+    }
 
     override def orElse(other: P[A, B]): P[A, B] = {
       ((self, other): (Node[?, ?], Node[?, ?])) match {

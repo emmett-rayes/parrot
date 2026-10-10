@@ -1,11 +1,12 @@
 package parrot
 package parser
 
-import parrot.category.{CategorySuite, Eq}
+import parrot.category.Eq
 
 import org.scalacheck.{Arbitrary, Gen, Prop, Test}
+import org.scalatest.funsuite.AnyFunSuite
 
-class ReferenceParserTest extends CategorySuite {
+class ReferenceParserTest extends AnyFunSuite {
   import ReferenceParser.*
   import ReferenceParser.Result.{Failure, Success}
 
@@ -14,10 +15,10 @@ class ReferenceParserTest extends CategorySuite {
   private val inputs = Gen.oneOf("", "a", "b", "ab", "ba", "aa", "aab", "abab", "aaab", "a,a,a", "(a)", "((a))")
 
   /** Extensional equality of parsers: equal results on sampled semantic inputs and sources. */
-  given ParserIsEq: [A: Arbitrary, B: Eq] => Parser[A, B] is Eq = new (Parser[A, B] is Eq) {
-    def eq(p: Parser[A, B], q: Parser[A, B]): Boolean = {
+  given ParserIsEq: [A: Arbitrary, B: Eq] => P[A, B] is Eq = new (P[A, B] is Eq) {
+    def eq(p: P[A, B], q: P[A, B]): Boolean = {
       val prop = Prop.forAll(Arbitrary.arbitrary[A], inputs) { (a, source) =>
-        (p(a, source, 0), q(a, source, 0)) match {
+        (p(a)(Input(source, 0)), q(a)(Input(source, 0))) match {
           case (Success(x, i), Success(y, j)) => x === y && i == j
           case (Failure(_, _), Failure(_, _)) => true
           case _                              => false
@@ -44,14 +45,14 @@ class ReferenceParserTest extends CategorySuite {
   test("pair, skipThen, thenSkip and between share the semantic input") {
     val _ = assert((a && b).parse("ab") == Success(("a", "b"), 2))
     val _ = assert((a *> b).parse("ab") == Success("b", 2))
-    val _ = assert((a >* b).parse("ab") == Success("a", 2))
+    val _ = assert((a <* b).parse("ab") == Success("a", 2))
     val _ = assert(as.between(literal("("), literal(")")).parse("(aa)") == Success("aa", 4))
   }
 
-  test("either, optional and merge tag and dispatch on branches") {
-    val _ = assert((a |> b).parse("b") == Success(Right("b"), 1))
+  test("or, optional and merge tag and dispatch on branches") {
+    val _ = assert((a +> b).parse("b") == Success(Right("b"), 1))
     val _ = assert(a.optional.parse("b") == Success(Right(()), 0))
-    val _ = assert((a |> b).andThen(pure[String, Int](_.length) || pure(_ => 0)).parse("a") == Success(1, 1))
+    val _ = assert(((a +> b) >> (pure[String, Int](_.length) || pure(_ => 0))).parse("a") == Success(1, 1))
   }
 
   test("lookahead and not consume no input") {
@@ -71,7 +72,7 @@ class ReferenceParserTest extends CategorySuite {
   }
 
   test("recursive computes fixed points") {
-    val nested = recursive[Unit, String](self => a +> self.between(literal("("), literal(")")))
+    val nested = recursive[Unit, String](self => a |> self.between(literal("("), literal(")")))
     val _ = assert(nested.parseAll("((a))") == Success("a", 5))
     val _ = assert(nested.parseAll("((a)").isInstanceOf[Failure])
   }
@@ -79,7 +80,7 @@ class ReferenceParserTest extends CategorySuite {
   test("recursive solves mutual recursion via Bekić's theorem") {
     // even ::= "a" odd | ""   odd ::= "a" even
     val (even, odd) = recursive[(P[Unit, Int], P[Unit, Int])] { case (even, odd) =>
-      ((a *> odd).rmap(_ + 1) +> pure(_ => 0), (a *> even).rmap(_ + 1))
+      ((a *> odd).map(_ + 1) |> pure(_ => 0), (a *> even).map(_ + 1))
     }
     val _ = assert(even.parseAll("aaaa") == Success(4, 4))
     val _ = assert(odd.parseAll("aaa") == Success(3, 3))
@@ -92,10 +93,10 @@ class ReferenceParserTest extends CategorySuite {
 
   private val laws = ParserLaws
 
-  private val samples: List[P[Unit, String]] = List(a, b, as, a *> b, a +> b, a.repeated.rmap(_.mkString), failure)
+  private val samples: List[P[Unit, String]] = List(a, b, as, a *> b, a |> b, a.repeated.map(_.mkString), failure)
 
   private val countdown: P[Int, Either[Int, Int]] = {
-    a.lmap((_: Int) => ()).pair(success[Int]).rmap((_, n) => if n <= 0 then Left(n) else Right(n - 1)) +>
+    a.mapInput((_: Int) => ()).pair(success[Int]).map((_, n) => if n <= 0 then Left(n) else Right(n - 1)) |>
       pure(n => Left(-n))
   }
 
@@ -103,7 +104,7 @@ class ReferenceParserTest extends CategorySuite {
     for p <- samples; q <- samples do {
       val _ = assert(laws.leftIdentity(p))
       val _ = assert(laws.rightIdentity(p))
-      val _ = assert(laws.associativity(p.rmap(_ => ()), q.rmap(_ => ()), p))
+      val _ = assert(laws.associativity(p.map(_ => ()), q.map(_ => ()), p))
     }
     val _ = assert(laws.zipIdentity[Unit, Int])
   }
@@ -123,13 +124,13 @@ class ReferenceParserTest extends CategorySuite {
       val _ = assert(laws.lookaheadIdentity(p))
       val _ = assert(laws.lookaheadCommutativity(p, q))
       val _ = assert(laws.lookaheadCompose(p, q))
-      val _ = assert(laws.lookaheadPrecompose(p, regex(".*".r).lmap((_: String) => ())))
+      val _ = assert(laws.lookaheadPrecompose(p, regex(".*".r).mapInput((_: String) => ())))
       val _ = assert(laws.doubleNegation(p))
       val _ = assert(laws.negationExclusion(p))
     }
   }
 
-  test("ParserLaws: loop is an Elgot fixed point") {
-    val _ = assert(laws.loopFixedPoint(countdown))
+  test("ParserLaws: loop unfolds") {
+    val _ = assert(laws.loopUnfolding(countdown))
   }
 }
