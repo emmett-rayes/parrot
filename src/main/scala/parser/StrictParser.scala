@@ -30,10 +30,7 @@ import scala.util.matching.Regex
   * every projection and on [[zip]]), which the assumption-free root signatures deliberately do not carry. By Mac Lane's
   * coherence theorem, normalizing the structural morphisms is equivalent and stays parametric.
   */
-object StrictParser
-    extends ParserAlgebra,
-      ParserAlgebra.Pairing,
-      ParserAlgebra.Optional {
+object StrictParser extends ParserAlgebra, ParserAlgebra.Pairing {
 
   type Self[A, B]        = Node[A, B]
   type On[A, B]          = Fn[A, B]

@@ -28,8 +28,6 @@ object ReferenceParser
       ParserAlgebra.Lookahead,
       ParserAlgebra.Looping,
       ParserAlgebra.Pairing,
-      ParserAlgebra.Optional,
-      ParserAlgebra.Negation,
       ParserAlgebra.Iteration {
 
   /** The input: a `source` and the current `offset` into it. */

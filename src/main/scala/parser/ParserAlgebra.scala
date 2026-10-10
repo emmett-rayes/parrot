@@ -10,10 +10,11 @@ import scala.util.matching.Regex
 /** An algebra of parsers.
   *
   * A parser `P[A, B]` consumes a prefix of the input while turning a *semantic input* `A` into a *semantic result* `B`.
-  * The algebra only declares the vocabulary of parsing; it makes no assumptions about how parsers are represented or
-  * which equations they satisfy. Implementations of the operations are supplied by the mixins in
-  * [[ParserAlgebra$ ParserAlgebra]], so that an interpreter can pick, per operation, a generic implementation or a
-  * specialized one.
+  * The algebra declares the vocabulary of parsing; it makes no assumptions about how parsers are represented or which
+  * equations they satisfy. Combinators expressible with the other operations alone (`optional`, `not`) are defined
+  * here; the remaining operations are implemented by the mixins in [[ParserAlgebra$ ParserAlgebra]], so that an
+  * interpreter can pick, per operation, a generic implementation or a specialized one. Interpreters may override any
+  * operation.
   *
   * The abstract types are
   *   - `Self` (alias `P`): parsers
@@ -138,7 +139,7 @@ trait ParserAlgebra {
     def or[C](other: P[A, C]): P[A, B + C]
 
     /** Tries `self`; if it fails, succeeds without consuming anything, returning the semantic input on the right. */
-    def optional: P[A, B + A]
+    def optional: P[A, B + A] = self +> success[A]
 
   // ===========================================================================
   // 8. Predicates & Lookahead
@@ -148,8 +149,10 @@ trait ParserAlgebra {
     /** Succeeds iff `self` succeeds, consuming nothing and returning the semantic input. */
     def lookahead: P[A, A]
 
-    /** Succeeds iff `self` fails, consuming nothing and returning the semantic input. */
-    def not: P[A, A]
+    /** Succeeds iff `self` fails, consuming nothing and returning the semantic input: looks ahead at `self`, then fails
+      * on the left alternative and succeeds on the right one.
+      */
+    def not: P[A, A] = (~self +> success[A]) >> (failure[A, A] || success[A])
 
   // ===========================================================================
   // 9. Iteration & Recursion
@@ -339,8 +342,9 @@ trait ParserAlgebra {
   *   - [[Lookahead]]: `Self` is a restriction promonad (parsers form a restriction category)
   *   - [[Looping]]: `Self` is an Elgot promonad (parsers can be iterated)
   *
-  * '''Derived mixins''' implement the remaining combinators from the operations of the algebra, requiring at most some
-  * structure on `On`: [[Pairing]], [[Optional]], [[Negation]] and [[Iteration]].
+  * '''Derived mixins''' implement the remaining combinators from the operations of the algebra, requiring some
+  * structure on `On`: [[Pairing]] and [[Iteration]]. Combinators that require nothing at all (`optional`, `not`) are
+  * defined in [[ParserAlgebra]] itself.
   *
   * Recursion and the lexical and structural primitives (`rule`, `literal`, `regex`, `recursive`) are left to
   * interpreters.
@@ -475,20 +479,6 @@ object ParserAlgebra {
       override def thenSkip[C](other: P[A, C]): P[A, B] = (self && other).map(first[B, C])
 
       override def between[C, D](open: P[A, C], close: P[A, D]): P[A, B] = open *> self <* close
-  }
-
-  /** Implements `optional` as `self +> success`. Requires: nothing. */
-  trait Optional extends ParserAlgebra {
-    extension [A, B](self: P[A, B])
-      override def optional: P[A, B + A] = self +> success[A]
-  }
-
-  /** Implements `not` by looking ahead and failing on the left alternative: `(~p +> success) >> (failure || success)`.
-    * Requires: nothing.
-    */
-  trait Negation extends ParserAlgebra {
-    extension [A, B](self: P[A, B])
-      override def not: P[A, A] = (~self +> success[A]) >> (failure[A, A] || success[A])
   }
 
   /** Implements the repetition combinators with `loop`, threading the semantic input and the results so far.
