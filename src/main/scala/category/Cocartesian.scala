@@ -82,6 +82,12 @@ trait Cocartesian extends Monoidal {
     (left[A, B] >>> left[A + B, C]) ||| ((right[A, B] >>> left[A + B, C]) ||| right[A + B, C])
   }
 
+  extension [A, B](p: A ~> B)
+    /** Alias for [[tensor]]. */
+    def +++[C, D](q: C ~> D): (A * C) ~> (B * D) = {
+      Cocartesian.this.tensor(p, q)
+    }
+  
   extension [A, C](f: A ~> C)
     /** Infix extension for [[sum]]. */
     @targetName("sumExt")
