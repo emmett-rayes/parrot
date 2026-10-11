@@ -148,6 +148,9 @@ trait Monoidal {
 
 object Monoidal {
 
+  /** Refines underlying category of `Monoidal` to `T`. */
+  infix type on[P <: Monoidal, T[_, _]] = P { val SelfIsPromonad: Self is Profunctor.on[Promonad, T] }
+
   /** Type helper to refine `I` and `Tensor` simultaneously on `Monoidal`. */
   type `with`[U, T[_, _]] = Monoidal { type I = U; type Tensor = T }
 
@@ -158,6 +161,8 @@ object Monoidal {
   given FunctionIsMonoidal: Function is Monoidal {
     type I      = Unit
     type Tensor = Tuple2
+
+    override val SelfIsPromonad: Self is Profunctor.on[Promonad, Function] = Promonad.FunctionIsPromonad
 
     def tensor[A, B, C, D](p: A => B, q: C => D): ((A, C)) => (B, D) = {
       (a, c) => (p(a), q(c))

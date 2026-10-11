@@ -98,7 +98,7 @@ object Strong {
 
   /** Refines the underlying category of `Strong` to the monoidal `K` with unit `U` and tensor `T`. */
   type on[K[_, _], U, T[_, _]] = Strong {
-    val SelfIsProfunctor: Profunctor { type On = K }
+    val SelfIsProfunctor: Profunctor.on[Profunctor, K]
     val OnIsMonoidal: K is Monoidal.`with`[U, T]
   }
 

@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import category.Monoidal.on
+
 /** A comonoid object on an underlying monoidal category **C**.
   *
   * Represents a comonoid object (*M*, *δ*, *ε*) in (**C**, ⊗, *I*), where
@@ -11,13 +13,12 @@ trait Comonoid {
   type Self
   final type M = Self
 
-  type In[_, _]: {Promonad, Monoidal}
+  type In[_, _]: Monoidal on Function
 
-  val InIsMonoidal: In is Monoidal = summon
-  val InIsPromonad: In is Promonad = summon
+  val InIsMonoidal: In is Monoidal on Function = summon
 
   import InIsMonoidal.*
-  import InIsPromonad.*
+  import InIsMonoidal.SelfIsPromonad.*
 
   /** The counit morphism *ε*: *M* ~> *I*. */
   def zero: M ~> I
@@ -49,13 +50,11 @@ trait Comonoid {
 }
 
 object Comonoid {
-  import Profunctor.on
 
   /** Refines the `In` type of `Comonoid` to the monoidal `K` with unit `U` and tensor `T`. */
   type in[K[_, _], U, T[_, _]] = Comonoid {
     type In = K
-    val InIsMonoidal: K is Monoidal.`with`[U, T]
-    val InIsPromonad: K is Promonad on Function
+    val InIsMonoidal: (K is Monoidal.`with`[U, T]) on Function
   }
 
   /** Summons the `Comonoid` instance of `M`. */

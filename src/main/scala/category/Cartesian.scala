@@ -130,6 +130,9 @@ trait Cartesian extends Monoidal {
 
 object Cartesian {
 
+  /** Refines underlying category of `Cartesian` to `T`. */
+  infix type on[P <: Cartesian, T[_, _]] = P { val SelfIsPromonad: Self is Profunctor.on[Promonad, T] }
+
   /** Refines the `I` and `Tensor` types of `Cartesian` to `U` and `T`. */
   type `with`[U, T[_, _]] = Cartesian { type I = U; type Tensor = T }
 
@@ -137,14 +140,13 @@ object Cartesian {
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
   /** Every object in a cartesian monoidal category is uniquely a comonoid object via the augment and diagonal. */
-  given TIsComonoid: [T, P[_, _]: Promonad] => (C: P is Cartesian) => T is Comonoid {
+  given TIsComonoid: [T, P[_, _]: Promonad] => (C: P is Cartesian on Function) => T is Comonoid {
     type In = P
 
-    override val InIsMonoidal: C.type              = C
-    override val InIsPromonad: C.SelfIsPromonad.type = C.SelfIsPromonad
+    override val InIsMonoidal: C.type                = C
 
     import InIsMonoidal.*
-    import InIsPromonad.*
+    import InIsMonoidal.SelfIsPromonad.*
 
     def zero: T ~> I = augment
 

@@ -32,8 +32,8 @@ trait Enriched {
       MonCD: (C ~> D) is Monoid.in[K, U, T],
       eq: K[U, C ~> D] is Eq,
     ): Boolean = {
-      import MonAB.InIsPromonad.>>>
-      val h = MonAB.InIsPromonad.unit(dimap(f, g))
+      import MonAB.InIsMonoidal.SelfIsPromonad.{>>>, unit}
+      val h = unit(dimap(f, g))
       (MonAB.unit >>> h) === MonCD.unit
     }
 
@@ -45,8 +45,8 @@ trait Enriched {
       eq: K[T[A ~> B, A ~> B], C ~> D] is Eq,
     ): Boolean = {
       import MonAB.InIsMonoidal.***
-      import MonAB.InIsPromonad.>>>
-      val h = MonAB.InIsPromonad.unit(dimap(f, g))
+      import MonAB.InIsMonoidal.SelfIsPromonad.{>>>, unit}
+      val h = unit(dimap(f, g))
       (MonAB.multiply >>> h) === ((h *** h) >>> MonCD.multiply)
     }
 
@@ -58,8 +58,8 @@ trait Enriched {
       eq: K[T[B ~> C, B ~> C], A ~> C] is Eq,
     ): Boolean = {
       import MonBC.InIsMonoidal.***
-      import MonBC.InIsPromonad.>>>
-      val rq = MonBC.InIsPromonad.unit((p: B ~> C) => compose(p, q))
+      import MonBC.InIsMonoidal.SelfIsPromonad.{>>>, unit}
+      val rq = unit((p: B ~> C) => compose(p, q))
       (MonBC.multiply >>> rq) === ((rq *** rq) >>> MonAC.multiply)
     }
 
@@ -71,8 +71,8 @@ trait Enriched {
       eq: K[T[A ~> B, A ~> B], A ~> C] is Eq,
     ): Boolean = {
       import MonAB.InIsMonoidal.***
-      import MonAB.InIsPromonad.>>>
-      val lp = MonAB.InIsPromonad.unit((q: A ~> B) => compose(p, q))
+      import MonAB.InIsMonoidal.SelfIsPromonad.{>>>, unit}
+      val lp = unit((q: A ~> B) => compose(p, q))
       (MonAB.multiply >>> lp) === ((lp *** lp) >>> MonAC.multiply)
     }
 
@@ -84,9 +84,9 @@ trait Enriched {
       MonAC: (A ~> C) is Monoid.in[K, U, T],
       eqAC: K[U, A ~> C] is Eq,
     ): Boolean = {
-      import MonAC.InIsPromonad.>>>
-      val lp = MonAB.InIsPromonad.unit((q1: A ~> B) => compose(p, q1))
-      val rq = MonBC.InIsPromonad.unit((p1: B ~> C) => compose(p1, q))
+      import MonAC.InIsMonoidal.SelfIsPromonad.{>>>, unit}
+      val lp = unit((q1: A ~> B) => compose(p, q1))
+      val rq = unit((p1: B ~> C) => compose(p1, q))
       ((MonAB.unit >>> lp) === MonAC.unit) && ((MonBC.unit >>> rq) === MonAC.unit)
     }
   }

@@ -87,7 +87,7 @@ trait Cocartesian extends Monoidal {
     def +++[C, D](q: C ~> D): (A * C) ~> (B * D) = {
       Cocartesian.this.tensor(p, q)
     }
-  
+
   extension [A, C](f: A ~> C)
     /** Infix extension for [[sum]]. */
     @targetName("sumExt")
@@ -143,6 +143,9 @@ trait Cocartesian extends Monoidal {
 
 object Cocartesian {
 
+  /** Refines underlying category of `Cocartesian` to `T`. */
+  infix type on[P <: Cocartesian, T[_, _]] = P { val SelfIsPromonad: Self is Profunctor.on[Promonad, T] }
+
   /** Refines the `Z` and `Tensor` types of `Cocartesian` to `U` and `T`. */
   type `with`[U, T[_, _]] = Cocartesian { type Z = U; type Tensor = T }
 
@@ -150,14 +153,14 @@ object Cocartesian {
   def apply[P[_, _]: Cocartesian]: P is Cocartesian = summon
 
   /** Every object in a cocartesian monoidal category is uniquely a monoid object via the initial morphism and fold. */
-  given TIsMonoid: [T, P[_, _]: Promonad] => (C: P is Cocartesian) => T is Monoid {
+  given TIsMonoid: [T, P[_, _]: Promonad] => (C: P is Cocartesian on Function) => T is Monoid {
     type In = P
 
     override val InIsMonoidal: C.type = C
 
     import C.{+, Z}
     import InIsMonoidal.*
-    import InIsPromonad.*
+    import InIsMonoidal.SelfIsPromonad.*
 
     def unit: Z ~> T = absurd
 

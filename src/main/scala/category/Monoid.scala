@@ -4,7 +4,7 @@ package category
 import scala.annotation.targetName
 import scala.util.{Failure, Try}
 
-/** A monoid object on an underlying monoidal category **C**.
+/** A monoid object in an underlying monoidal category **C**.
   *
   * Represents a monoid object (*M*, *μ*, *η*) in (**C**, ⊗, *I*), where
   *   - *η*: *I* ~> *M* is the unit morphism
@@ -14,13 +14,12 @@ trait Monoid {
   type Self
   final type M = Self
 
-  type In[_, _]: {Promonad, Monoidal}
+  type In[_, _]: Monoidal
 
   val InIsMonoidal: In is Monoidal = summon
-  val InIsPromonad: In is Promonad = summon
 
   import InIsMonoidal.*
-  import InIsPromonad.*
+  import InIsMonoidal.SelfIsPromonad.*
 
   /** The unit morphism *η*: *I* ~> *M*. */
   def unit: I ~> M
@@ -52,13 +51,12 @@ trait Monoid {
 }
 
 object Monoid {
-  import Profunctor.on
+  import Monoidal.on
 
   /** Refines the `In` type of `Monoid` to the monoidal `K` with unit `U` and tensor `T`. */
   type in[K[_, _], U, T[_, _]] = Monoid {
     type In = K
-    val InIsMonoidal: K is Monoidal.`with`[U, T]
-    val InIsPromonad: K is Promonad on Function
+    val InIsMonoidal: K is Monoidal.`with`[U, T] on Function // currently, only `Function` is supported as base promonad
   }
 
   /** Summons the `Monoid` instance of `M`. */
@@ -70,10 +68,9 @@ object Monoid {
     type In = Function
 
     override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
-    override val InIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     import InIsMonoidal.*
-    import InIsPromonad.*
+    import InIsMonoidal.SelfIsPromonad.*
 
     /** The unit element 0 of *M*. */
     def zero: M
@@ -163,10 +160,9 @@ object Monoid {
     type In = Function
 
     override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
-    override val InIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     import InIsMonoidal.*
-    import InIsPromonad.*
+    import InIsMonoidal.SelfIsPromonad.*
 
     /** The unit element 1 of *M*. */
     def one: M
