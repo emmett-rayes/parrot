@@ -118,4 +118,18 @@ object Strong {
       (c, a) => (c, p(a))
     }
   }
+
+  /** `Function` is canonically `Strong` over itself under its lazy cartesian monoidal structure. */
+  given FunctionIsLazyStrong: Function is Strong {
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
+
+    def first[A, B, C](p: A => B): LazyTuple2[A, C] => LazyTuple2[B, C] = {
+      t => LazyTuple2(p(t._1), t._2)
+    }
+
+    def second[A, B, C](p: A => B): LazyTuple2[C, A] => LazyTuple2[C, B] = {
+      t => LazyTuple2(t._1, p(t._2))
+    }
+  }
 }
