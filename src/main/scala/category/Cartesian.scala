@@ -175,6 +175,8 @@ object Cartesian {
     type I      = Unit
     type Tensor = Tuple2
 
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+
     def augment[A]: A => Unit = {
       _ => ()
     }
@@ -196,6 +198,8 @@ object Cartesian {
   given FunctionIsLazyCartesian: Function is Cartesian {
     type I      = Unit
     type Tensor = LazyTuple2
+
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     def augment[A]: A => Unit = {
       _ => ()
