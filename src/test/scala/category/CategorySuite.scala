@@ -60,4 +60,12 @@ abstract class CategorySuite extends AnyFunSuite with ScalaCheckPropertyChecks {
       elems <- Gen.listOfN(n, Arbitrary.arbitrary[A])
     } yield elems.toSet
   }
+
+  /** Sharp generator for `LazyTuple2[A, B]`. */
+  given ArbitraryLazyTuple2: [A: Arbitrary, B: Arbitrary] => Arbitrary[LazyTuple2[A, B]] = Arbitrary {
+    for {
+      a <- Arbitrary.arbitrary[A]
+      b <- Arbitrary.arbitrary[B]
+    } yield LazyTuple2(a, b)
+  }
 }
