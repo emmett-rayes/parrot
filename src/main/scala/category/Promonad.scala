@@ -175,6 +175,21 @@ object Promonad {
     }
   }
 
+  /** `Promonad` instance for `PartialFunction` on the category **Type**, inducing the category of partial functions. */
+  given PartialFunctionIsPromonad: PartialFunction is Promonad {
+    type On = Function
+
+    override val OnIsPromonad: FunctionIsPromonad.type = FunctionIsPromonad
+
+    def unit[A, B](f: A => B): PartialFunction[A, B] = {
+      PartialFunction.fromFunction(f)
+    }
+
+    def multiply[A, B, C](q: PartialFunction[B, C], p: PartialFunction[A, B]): PartialFunction[A, C] = {
+      p andThen q
+    }
+  }
+
   /** `Promonad` instance for `Function` on the category **Type**. */
   given FunctionIsPromonad: Function is Promonad {
     type On = Function
