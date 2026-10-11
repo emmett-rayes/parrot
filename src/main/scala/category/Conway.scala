@@ -32,18 +32,18 @@ trait Conway {
   object ConwayLaws {
 
     /** Fixed-point property: *f*† = *f* ∘ ⟨*id*, *f*†⟩ */
-    def fixedPoint[A, C](p: (A * C) ~> C)(using (A ~> C) is Eq): Boolean = {
-      ((identity[A] &&& p.dagger) >>> p) === p.dagger
+    def fixedPoint[A, C](f: (A * C) ~> C)(using (A ~> C) is Eq): Boolean = {
+      ((identity[A] &&& f.dagger) >>> f) === f.dagger
     }
 
     /** Parameter naturality: (*f* ∘ (*h* ⊗ *id*))† = *f*† ∘ *h* */
-    def parameterNaturality[A0, A, C](p: (A * C) ~> C, h: A0 ==> A)(using (A0 ~> C) is Eq): Boolean = {
-      ((unit(h) *** identity[C]) >>> p).dagger === (unit(h) >>> p.dagger)
+    def parameterNaturality[A0, A, C](f: (A * C) ~> C, h: A0 ==> A)(using (A0 ~> C) is Eq): Boolean = {
+      ((unit(h) *** identity[C]) >>> f).dagger === (unit(h) >>> f.dagger)
     }
 
-    /** Composition identity (dinaturality): (*f* ∘ (*id* ⊗ *g*))† ∘ *g* = (*g* ∘ *f*)† */
-    def composition[A, C, D](p: (A * C) ~> D, g: D ==> C)(using (A ~> C) is Eq): Boolean = {
-      (p >>> unit(g)).dagger === (((identity[A] *** unit(g)) >>> p).dagger >>> unit(g))
+    /** Composition identity (dinaturality): *g* ∘ (*f* ∘ (*id* ⊗ *g*))† = (*g* ∘ *f*)† */
+    def composition[A, C, D](f: (A * C) ~> D, g: D ==> C)(using (A ~> C) is Eq): Boolean = {
+      (f >>> unit(g)).dagger === (((identity[A] *** unit(g)) >>> f).dagger >>> unit(g))
     }
 
     /** Double dagger identity (diagonality / Bekić): (*f* ∘ ⟨*id*, π₂⟩)† = (*f*†)† */
