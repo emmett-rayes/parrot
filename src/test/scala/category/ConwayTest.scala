@@ -92,11 +92,10 @@ class ConwayTest extends CategorySuite {
   // =========================================================================
 
   test("CartesianTracedIsConway: derived dagger works correctly") {
-    val prom   = summon[Function is Promonad]
     val cart   = Cartesian.FunctionIsLazyCartesian
     val traced = Traced.FunctionIsLazyCartesianTraced
 
-    val conway = Conway.CartesianTracedIsConway(using prom, cart, traced)
+    val conway = Conway.CartesianTracedIsConway(using cart, traced)
 
     val p: LazyTuple2[Int, Int] => Int = p => p._1 + 10
     val fixed: Int => Int              = conway.dagger(p)
@@ -104,22 +103,20 @@ class ConwayTest extends CategorySuite {
   }
 
   test("CartesianTracedIsConway satisfies ConwayLaws") {
-    val prom   = summon[Function is Promonad]
     val cart   = Cartesian.FunctionIsLazyCartesian
     val traced = Traced.FunctionIsLazyCartesianTraced
 
-    val conway = Conway.CartesianTracedIsConway(using prom, cart, traced)
+    val conway = Conway.CartesianTracedIsConway(using cart, traced)
     val laws   = conway.ConwayLaws
 
     val p: LazyTuple2[Int, Int => String] => (Int => String) =
       p => x => s"${p._1 * 3 + x}"
-    assert(laws.fixedPoint[Int, Int => String](p)(using cart))
+    assert(laws.fixedPoint[Int, Int => String](p))
   }
 
   test("Roundtrip conversion: Conway -> Traced -> Conway preserves dagger") {
     val tracedDerived   = Conway.ConwayIsCartesianTraced
-    val prom            = summon[Function is Promonad]
-    val conwayRoundtrip = Conway.CartesianTracedIsConway(using prom, ConwayInstance.OnIsCartesian, tracedDerived)
+    val conwayRoundtrip = Conway.CartesianTracedIsConway(using ConwayInstance.SelfIsCartesian, tracedDerived)
 
     val p: LazyTuple2[Int, Int] => Int = p => p._1 * 7 + 3
     val daggerRoundtrip: Int => Int    = conwayRoundtrip.dagger(p)
