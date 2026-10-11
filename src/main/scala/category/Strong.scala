@@ -10,14 +10,16 @@ import scala.annotation.targetName
   *   - *first*: *P*[*A*, *B*] → *P*[*A* ⊗ *C*, *B* ⊗ *C*] is the left strength
   *   - *second*: *P*[*A*, *B*] → *P*[*C* ⊗ *A*, *C* ⊗ *B*] is the right strength
   */
-trait Strong extends Profunctor {
-  type Self[_, _]
+trait Strong {
+  type Self[_, _]: Profunctor
 
-  override type On[_, _]: {Promonad, Monoidal}
+  val SelfIsProfunctor: Self is Profunctor = summon
+  import SelfIsProfunctor.*
 
-  val OnIsMonoidal: On is Monoidal = summon
+  /** The monoidal structure of the underlying category **C**. */
+  val OnIsMonoidal: On is Monoidal
   import OnIsMonoidal.*
-  import OnIsPromonad.*
+  import OnIsPromonad.identity
 
   /** Strong tensorial action on the left: *P*[*A*, *B*] → *P*[*A* ⊗ *C*, *B* ⊗ *C*]. */
   def first[A, B, C](p: A ~> B): (A * C) ~> (B * C)
@@ -94,9 +96,9 @@ trait Strong extends Profunctor {
 
 object Strong {
 
-  /** Refines the `On` type of `Strong` to the monoidal `K` with unit `U` and tensor `T`. */
+  /** Refines the underlying category of `Strong` to the monoidal `K` with unit `U` and tensor `T`. */
   type on[K[_, _], U, T[_, _]] = Strong {
-    type On = K
+    val SelfIsProfunctor: Profunctor { type On = K }
     val OnIsMonoidal: K is Monoidal.`with`[U, T]
   }
 
@@ -105,9 +107,8 @@ object Strong {
 
   /** `Function` is canonically `Strong` over itself under its cartesian monoidal structure. */
   given FunctionIsStrong: Function is Strong {
-    export Profunctor.FunctionIsProfunctor.*
-
-    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type         = Monoidal.FunctionIsMonoidal
 
     def first[A, B, C](p: A => B): ((A, C)) => (B, C) = {
       (a, c) => (p(a), c)
