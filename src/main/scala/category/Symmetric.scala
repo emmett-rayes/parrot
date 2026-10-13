@@ -7,7 +7,7 @@ package category
   *   - *β*: *A* ⊗ *B* ⇒ *B* ⊗ *A* is the braiding
   */
 trait Symmetric extends Monoidal {
-  type Self[_, _]
+  type Self[_, _]: Monoidal
 
   import SelfIsPromonad.*
 
