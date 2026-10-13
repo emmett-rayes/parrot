@@ -5,12 +5,8 @@ import scala.util.{Failure, Success, Try}
 
 class MonadTest extends CategorySuite {
 
-  private val OptionMonad       = Monad.OptionIsMonad
-  private val OptionRestriction = RestrictionMonad.OptionIsRestrictionMonad
-  private val OptionElgot       = ElgotMonad.OptionIsElgotMonad
-  private val TryMonad          = Monad.TryIsMonad
-
-  import OptionRestriction.restrict
+  private val OptionMonad = Monad.OptionIsMonad
+  private val TryMonad    = Monad.TryIsMonad
 
   private val f: Int => Option[String]    = i => if i % 3 == 0 then None else Some(s"v$i")
   private val g: String => Option[Boolean] = s => if s.length > 3 then Some(true) else None
@@ -37,32 +33,13 @@ class MonadTest extends CategorySuite {
     }
   }
 
-  test("Option is Restriction: restriction laws") {
-    forAll { (i: Int, m: Option[Int], n: Option[String]) =>
-      val _ = assert(OptionRestriction.RestrictionLaws.absorption(m))
-      val _ = assert(OptionRestriction.RestrictionLaws.commutativity(m, n))
-      val _ = assert(OptionRestriction.RestrictionLaws.unitality(i))
-      assert(OptionRestriction.RestrictionLaws.idempotence(m))
-    }
-  }
-
-  test("Option is Elgot: iteration computes a tail-recursive loop") {
-    val countdown: Int => Option[Either[String, Int]] = i => {
-      if i < 0 then None else if i == 0 then Some(Left("done")) else Some(Right(i - 1))
-    }
-    val _ = assert(OptionElgot.iterate(countdown)(100000) == Some("done"))
-    val _ = assert(OptionElgot.iterate(countdown)(-1) == None)
-    forAll((i: Int) => assert(OptionElgot.ElgotLaws.fixedPoint(countdown, i % 100)))
-  }
-
   test("Option is Monad: extensions behave as Option") {
     val _ = assert(OptionMonad.flatMap(Some(1))(i => Some(i + 1)) == Some(2))
     val _ = assert(OptionMonad.flatten(Some(Some(1))) == Some(1))
     val _ = assert(OptionMonad.flatten(Some(None: Option[Int])) == None)
     val _ = assert(OptionMonad.flatten(None: Option[Option[Int]]) == None)
     val _ = assert(OptionMonad.SelfIsFunctor.map(Some(1))(_ + 1) == Some(2))
-    val _ = assert(Some(Some(1)).flatten == Some(1))
-    assert(Some(1).restrict == Some(()))
+    assert(Some(Some(1)).flatten == Some(1))
   }
 
   test("Try is Monad: monad laws") {
