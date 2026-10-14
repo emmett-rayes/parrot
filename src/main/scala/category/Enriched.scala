@@ -3,9 +3,9 @@ package category
 
 import scala.compiletime.deferred
 
-/** A **V**-enriched promonad on an underlying category **C**.
+/** A **V**-valued promonad on an underlying category **C**.
   *
-  * Represents a promonad *P*: **C**^*op* × **C** → **Type**, where each hom-set `A ~> B` is in **V**.
+  * Represents a promonad *P*: **C**^*op* × **C** → **V**.
   */
 trait Enriched {
   type Self[_, _]: Promonad

@@ -135,6 +135,19 @@ object Kleisli {
     }
   }
 
+  given KleisliIsValuedEnriched
+    : [M[_]: {Monad, Valued as V}] => (P: V.V is Pointwise) => Kleisli[M] is Enriched over V.V =
+    new Enriched {
+      type Self[A, B] = A => M[B]
+      type Over       = V.V
+
+      override val SelfIsPromonad: Kleisli[M] is Promonad = KleisliIsPromonad[M]
+
+      override given HomIsV: [A, B] => ((A => M[B]) is V) = {
+        P.FunctionIsV[A, M[B]]
+      }
+    }
+
   /** Every Elgot monad *M* induces an Elgot iteration on the Kleisli category, where
     *   - *p*† = *p*†' is the iteration operation
     *
