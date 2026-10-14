@@ -153,7 +153,7 @@ object Cocartesian {
   def apply[P[_, _]: Cocartesian]: P is Cocartesian = summon
 
   /** Every object in a cocartesian monoidal category is uniquely a monoid object via the initial morphism and fold. */
-  given TIsMonoid: [T, P[_, _]: Promonad] => (C: P is Cocartesian on Function) => T is Monoid {
+  given TIsMonoid: [T, P[_, _]: {Cocartesian on Function as C}] => T is Monoid {
     type In = P
 
     override val InIsMonoidal: C.type = C
@@ -170,7 +170,7 @@ object Cocartesian {
   /** Every cocartesian monoidal category induces a symmetric monoidal category, where
     *   - *β* = [*ι*₂, *ι*₁] is the braiding
     */
-  given CocartesianIsSymmetric: [P[_, _]: Promonad] => (C: P is Cocartesian) => P is Symmetric {
+  given CocartesianIsSymmetric: [P[_, _]: {Promonad, Cocartesian as C}] => P is Symmetric {
     export C.{
       Self as _,
       rightUnitor as _,

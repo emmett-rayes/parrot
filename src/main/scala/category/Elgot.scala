@@ -55,7 +55,7 @@ trait Elgot {
     def uniformity[A, C, C0](f: C ~> (A + C), g: C0 ~> (A + C0), h: C ==> C0)(
       using
       (C ~> (A + C0)) is Eq,
-      (C ~> A) is Eq
+      (C ~> A) is Eq,
     ): Boolean = {
       val sim = (f >>> (identity[A] +++ unit(h))) === (unit(h) >>> g)
       if sim then f.dagger === (unit(h) >>> g.dagger) else true
@@ -74,10 +74,10 @@ object Elgot {
   /** Every Elgot structure whose coproducts are inherited from the underlying category induces a cocartesian traced
     * promonad, where trace is derived from the Elgot dagger operator: *trace*(*p*) = ((*p* ∘ (*id* ⊕ ι₂))†) ∘ ι₁
     */
-  given ElgotIsCocartesianTraced: [P[_, _]] => (
-    E: P is Elgot,
-    K: E.SelfIsCocartesian.SelfIsPromonad.On is Cocartesian.`with`[E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor]
-  ) => P is Traced.on[E.SelfIsCocartesian.SelfIsPromonad.On, E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor] =
+  given ElgotIsCocartesianTraced: [P[_, _]: {Elgot as E}]
+    => (K: E.SelfIsCocartesian.SelfIsPromonad.On is
+      Cocartesian.`with`[E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor])
+    => P is Traced.on[E.SelfIsCocartesian.SelfIsPromonad.On, E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor] =
     new Traced {
       type Self[A, B] = P[A, B]
 
@@ -103,10 +103,9 @@ object Elgot {
   /** Every cocartesian and traced promonad induces an Elgot structure, where dagger is derived from the trace operator:
     * *p*† = *trace*(*p* ∘ ∇)
     */
-  given CocartesianTracedIsElgot: [P[_, _]] => (
-    C: P is Cocartesian,
-    T: P is Traced.on[C.SelfIsPromonad.On, C.Z, C.Tensor],
-  ) => P is Elgot.`with`[C.Z, C.Tensor] = new Elgot {
+  given CocartesianTracedIsElgot: [P[_, _]: {Cocartesian as C}]
+    => (T: P is Traced.on[C.SelfIsPromonad.On, C.Z, C.Tensor])
+    => P is Elgot.`with`[C.Z, C.Tensor] = new Elgot {
     type Self[A, B] = P[A, B]
 
     override val SelfIsCocartesian: C.type = C

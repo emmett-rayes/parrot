@@ -64,10 +64,9 @@ object Conway {
   /** Every Conway promonad induces a cartesian traced promonad, where trace is derived from the Conway dagger operator:
     * *tr*(*p*) = π₁ ∘ (*p* ∘ (*id* ⊗ π₂))†
     */
-  given ConwayIsCartesianTraced: [P[_, _]] => (
-    C: P is Conway,
-    K: C.SelfIsCartesian.SelfIsPromonad.On is Cartesian.`with`[C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor],
-  ) => P is Traced.on[C.SelfIsCartesian.SelfIsPromonad.On, C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor] =
+  given ConwayIsCartesianTraced: [P[_, _]: {Conway as C}]
+    => (K: C.SelfIsCartesian.SelfIsPromonad.On is Cartesian.`with`[C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor])
+    => P is Traced.on[C.SelfIsCartesian.SelfIsPromonad.On, C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor] =
     new Traced {
       type Self[A, B] = P[A, B]
 
@@ -93,10 +92,9 @@ object Conway {
   /** Every cartesian traced promonad induces a Conway structure, where dagger is derived from the trace operator as:
     * *p*† = *tr*(Δ ∘ *p*)
     */
-  given CartesianTracedIsConway: [P[_, _]] => (
-    C: P is Cartesian,
-    T: P is Traced.on[C.SelfIsPromonad.On, C.I, C.Tensor],
-  ) => P is Conway.`with`[C.I, C.Tensor] = new Conway {
+  given CartesianTracedIsConway: [P[_, _]: {Cartesian as C}]
+    => (T: P is Traced.on[C.SelfIsPromonad.On, C.I, C.Tensor])
+    => P is Conway.`with`[C.I, C.Tensor] = new Conway {
     type Self[A, B] = P[A, B]
 
     override val SelfIsCartesian: C.type = C

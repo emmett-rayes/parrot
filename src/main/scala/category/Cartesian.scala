@@ -140,10 +140,10 @@ object Cartesian {
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
   /** Every object in a cartesian monoidal category is uniquely a comonoid object via the augment and diagonal. */
-  given TIsComonoid: [T, P[_, _]: Promonad] => (C: P is Cartesian on Function) => T is Comonoid {
+  given TIsComonoid: [T, P[_, _]: {Cartesian on Function as C}] => T is Comonoid {
     type In = P
 
-    override val InIsMonoidal: C.type                = C
+    override val InIsMonoidal: C.type = C
 
     import InIsMonoidal.*
     import InIsMonoidal.SelfIsPromonad.*
@@ -156,7 +156,7 @@ object Cartesian {
   /** Every cartesian monoidal category induces a symmetric monoidal category, where
     *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
     */
-  given CartesianIsSymmetric: [P[_, _]: Promonad] => (C: P is Cartesian) => P is Symmetric {
+  given CartesianIsSymmetric: [P[_, _]: {Promonad, Cartesian as C}] => P is Symmetric {
     export C.{
       Self as _,
       rightUnitor as _,
