@@ -103,19 +103,19 @@ object Kleisli {
   /** Hom-sets are function types and thus have fixed points by eta-expansion: fix(*f*) = *g* where *g* = *f*(*a* ↦
     * *g*(*a*)).
     */
-  given KleisliIsFixedEnriched: [M[_]: Monad] => Kleisli[M] is Enriched over Fixed = new Enriched {
+  given KleisliIsFixedEnriched: [M[_]: Monad] => Kleisli[M] is Enriched over Fixed.in[Function, Unit, LazyTuple2, Function] = new Enriched {
     type Self[A, B] = A => M[B]
-    type Over       = Fixed
+    type Over       = Fixed.in[Function, Unit, LazyTuple2, Function]
 
     override val SelfIsPromonad: Kleisli[M] is Promonad = KleisliIsPromonad[M]
 
-    override given HomIsV: [A, B] => ((A => M[B]) is Fixed) = Fixed.FunctionIsFixed[A, M[B]]
+    override given HomIsV: [A, B] => ((A => M[B]) is Fixed.in[Function, Unit, LazyTuple2, Function]) = Fixed.FunctionIsFixed[A, M[B]]
   }
 
   /** Every restriction monad *M* induces a restriction Kleisli promonad, where
     *   - *p̄* = *a* ↦ *F*(_ ↦ *a*)(*p*(*a*)̄') is the restriction operation
     *
-    * Here *m̄*' is the restriction operation of *M*.
+    * Here *m̄'* is the restriction operation of *M*.\
     */
   given KleisliIsRestriction: [M[_]: RestrictionMonad] => Kleisli[M] is Restriction = {
     import M.SelfIsMonad.SelfIsFunctor.*
