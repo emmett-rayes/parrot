@@ -405,12 +405,9 @@ object ParserAlgebra {
         Branching,
         Alternation,
         Lookahead,
-        Repetition,
+        Concatenation,
         Recursion,
-        Pairing,
-        Iteration {
-    override val OnIsCartesian: On is Cartesian.`with`[Empty, Pair] = RepetitionOnCartesian
-  }
+        Iteration
 
   /** An algebra whose semantic values are the standard Scala ones: `Unit`, `Tuple2`, `Either`, `Nothing` and `Vector`.
     */

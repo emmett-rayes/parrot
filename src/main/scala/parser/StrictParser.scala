@@ -7,7 +7,7 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
-import scala.util.{Failure as TryFailure, Success as TrySuccess, Try}
+import scala.util.{Try, Failure as TryFailure, Success as TrySuccess}
 
 /** An optimizing [[ParserAlgebra]] interpreter that normalizes parsers at construction time and runs them without
   * allocating intermediate structure.
@@ -26,7 +26,7 @@ import scala.util.{Failure as TryFailure, Success as TrySuccess, Try}
   * next character using static first-set and nullability analysis ([[Info]]). `recursive` ties a knot ([[Node.Rec]])
   * and supports left recursion by seed growing.
   */
-trait StrictParser extends ParserAlgebra, ParserAlgebra.CanonicalParser {
+trait StrictParser extends ParserAlgebra.CanonicalParser {
 
   type On          = Fn
   type Self        = Node
@@ -36,12 +36,11 @@ trait StrictParser extends ParserAlgebra, ParserAlgebra.CanonicalParser {
   type Alternative = Either
   type Many        = Vector
 
-  override val OnIsCartesian: Fn.FnIsCartesian.type     = RepetitionOnCartesian
-  override val OnIsCocartesian: Fn.FnIsCocartesian.type = RepetitionOnCocartesian
+  override val OnIsCartesian: Fn.FnIsCartesian.type     = ConcatenationOnCartesian
+  override val OnIsCocartesian: Fn.FnIsCocartesian.type = ConcatenationOnCocartesian
 
-  override given RepetitionOnCartesian: Fn.FnIsCartesian.type          = Fn.FnIsCartesian
-  override given RepetitionOnCocartesian: Fn.FnIsCocartesian.type      = Fn.FnIsCocartesian
-  override given PairingOnCartesian: Fn.FnIsCartesian.type             = Fn.FnIsCartesian
+  override given ConcatenationOnCartesian: Fn.FnIsCartesian.type       = Fn.FnIsCartesian
+  override given ConcatenationOnCocartesian: Fn.FnIsCocartesian.type   = Fn.FnIsCocartesian
   override given SequencingPromonad: Node.NodeIsPromonad.type          = Node.NodeIsPromonad
   override given ZippingStrong: Node.NodeIsStrong.type                 = Node.NodeIsStrong
   override given AlternationEnriched: Node.NodeIsAdditiveEnriched.type = Node.NodeIsAdditiveEnriched
@@ -232,7 +231,7 @@ trait StrictParser extends ParserAlgebra, ParserAlgebra.CanonicalParser {
           case Lookahead(p)                                                              => reaches(p, visited)
           case Not(p)                                                                    => reaches(p, visited)
           case Loop(p)                                                                   => reaches(p, visited)
-          case Repeat(p, _, _, sep) =>
+          case Repeat(p, _, _, sep)                                                      =>
             reaches(p, visited) || (of(p).nullable && sep.exists(reaches(_, visited)))
           case Merge(p, q)          => reaches(p, visited) || reaches(q, visited)
           case Choice(alternatives) => alternatives.exists(reaches(_, visited))
@@ -751,8 +750,8 @@ trait StrictParser extends ParserAlgebra, ParserAlgebra.CanonicalParser {
           override val InIsCartesian: Cartesian.FunctionIsLazyCartesian.type      = Cartesian.FunctionIsLazyCartesian
           override val InIsClosed: Closed.FunctionIsLazyClosed.type               = Closed.FunctionIsLazyClosed
 
-          import InIsClosed.^
           import InIsCartesian.SelfIsPromonad.~>
+          import InIsClosed.^
 
           def fix: (F ^ F) ~> F = { f =>
             val knot = Rec(f)
@@ -799,16 +798,16 @@ trait StrictParser extends ParserAlgebra, ParserAlgebra.CanonicalParser {
   /** Strips pure post-processing and string allocation from `node` when its semantic result is discarded. */
   private def discard[A, B](node: Node[A, B]): Node[A, ?] = {
     node match {
-      case Pure(_)                => Success()
-      case Scan(expected, sc, _)  => Scan(expected, sc, discard = true)
-      case Seq(p, Pure(_))        => discard(p)
-      case Seq(p, q)              => Seq(p, discard(q))
-      case Pair(p, q)             => SkipThen(discard(p), discard(q))
-      case SkipThen(p, q)         => SkipThen(p, discard(q))
-      case ThenSkip(p, q)         => ThenSkip(discard(p), q)
-      case Choice(alternatives)   => choice(alternatives.map(a => discard(a).asInstanceOf[Node[A, Any]]))
-      case Rule(label, p)         => Rule(label, discard(p))
-      case _                      => node
+      case Pure(_)               => Success()
+      case Scan(expected, sc, _) => Scan(expected, sc, discard = true)
+      case Seq(p, Pure(_))       => discard(p)
+      case Seq(p, q)             => Seq(p, discard(q))
+      case Pair(p, q)            => SkipThen(discard(p), discard(q))
+      case SkipThen(p, q)        => SkipThen(p, discard(q))
+      case ThenSkip(p, q)        => ThenSkip(discard(p), q)
+      case Choice(alternatives)  => choice(alternatives.map(a => discard(a).asInstanceOf[Node[A, Any]]))
+      case Rule(label, p)        => Rule(label, discard(p))
+      case _                     => node
     }
   }
 

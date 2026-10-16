@@ -3,17 +3,33 @@ package parser
 
 import category.{Cartesian, Cocartesian}
 
-/** Implements repetition combinators from cartesian and cocartesian structure on `On`. */
-trait Repetition extends ParserAlgebra {
-  override type On[_, _]: {Cartesian.`with`[Empty, Pair] as RepetitionOnCartesian,
-    Cocartesian.`with`[None, Alternative] as RepetitionOnCocartesian}
+/** Implements concatenation combinators from cartesian and cocartesian structure on `On`. */
+trait Concatenation extends ParserAlgebra {
+  override type On[_, _]: {Cartesian.`with`[Empty, Pair] as ConcatenationOnCartesian,
+    Cocartesian.`with`[None, Alternative] as ConcatenationOnCocartesian}
 
-  val OnIsCartesian: On is Cartesian.`with`[Empty, Pair]           = RepetitionOnCartesian
-  val OnIsCocartesian: On is Cocartesian.`with`[None, Alternative] = RepetitionOnCocartesian
+  val OnIsCartesian: On is Cartesian.`with`[Empty, Pair]           = ConcatenationOnCartesian
+  val OnIsCocartesian: On is Cocartesian.`with`[None, Alternative] = ConcatenationOnCocartesian
 
   import OnIsCartesian.*
   import OnIsCartesian.SelfIsPromonad.{>>>, identity, ~>}
   import OnIsCocartesian.{left, right}
+
+  override def pair[A, B, C](self: P[A, B], other: P[A, C]): P[A, B * C] = {
+    (self ** other).mapInput(diagonal)
+  }
+
+  override def skipThen[A, B, C](self: P[A, B], other: P[A, C]): P[A, C] = {
+    (self && other).map(second)
+  }
+
+  override def thenSkip[A, B, C](self: P[A, B], other: P[A, C]): P[A, B] = {
+    (self && other).map(first)
+  }
+
+  override def between[A, B, C, D](self: P[A, B], open: P[A, C], close: P[A, D]): P[A, B] = {
+    open *> self <* close
+  }
 
   /** The empty collection. */
   def nil[B]: Empty ==> Many[B]

@@ -11,7 +11,7 @@ class StrictParserTest extends CategorySuite {
 
   given CanEqual[Any, Any] = CanEqual.derived
 
-  test("StrictParser fuses the generic Pairing derivations into dedicated nodes") {
+  test("StrictParser fuses the generic Concatenation derivations into dedicated nodes") {
     val a = literal("a")
     val b = literal("b")
     val c = literal("c")
