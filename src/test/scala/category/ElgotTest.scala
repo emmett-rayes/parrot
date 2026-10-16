@@ -132,7 +132,7 @@ class ElgotTest extends CategorySuite {
     val cocart = Cocartesian.FunctionIsCocartesian
     val traced = Traced.FunctionIsCocartesianTraced
 
-    val elgot = Elgot.CocartesianTracedIsElgot(using cocart, traced)
+    val elgot = Elgot.CocartesianTracedIsElgot(using cocart)(using traced)
 
     val p: Int => Either[String, Int] = c => {
       if c >= 10 then Left(s"done:$c")
@@ -146,7 +146,7 @@ class ElgotTest extends CategorySuite {
     val cocart = Cocartesian.FunctionIsCocartesian
     val traced = Traced.FunctionIsCocartesianTraced
 
-    val elgot = Elgot.CocartesianTracedIsElgot(using cocart, traced)
+    val elgot = Elgot.CocartesianTracedIsElgot(using cocart)(using traced)
     val laws  = elgot.ElgotLaws
 
     val p: Int => Either[String, Int] = c => {
@@ -159,7 +159,7 @@ class ElgotTest extends CategorySuite {
   test("Roundtrip conversion: Elgot -> Traced -> Elgot preserves dagger") {
     val tracedDerived  = Elgot.ElgotIsCocartesianTraced
     val elgotRoundtrip =
-      Elgot.CocartesianTracedIsElgot(using ElgotInstance.SelfIsCocartesian, tracedDerived)
+      Elgot.CocartesianTracedIsElgot(using ElgotInstance.SelfIsCocartesian)(using tracedDerived)
 
     val p: Int => Either[String, Int] = c => {
       if c >= 10 then Left(s"val:$c")
