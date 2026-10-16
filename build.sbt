@@ -26,11 +26,4 @@ lazy val root = rootProject
       "org.scalatest"     %% "scalatest"       % "3.2.20"   % Test,
       "org.scalatestplus" %% "scalacheck-1-19" % "3.2.20.0" % Test,
     ),
-    // exclude legacy
-    ideExcludedDirectories := Seq(
-      (Compile / scalaSource).value / "legacy",
-      (Test / scalaSource).value / "legacy",
-    ),
-    Compile / unmanagedSources := (Compile / unmanagedSources).value.filterNot(_.getPath.contains("/legacy/")),
-    Test / unmanagedSources    := (Test / unmanagedSources).value.filterNot(_.getPath.contains("/legacy/")),
   )
