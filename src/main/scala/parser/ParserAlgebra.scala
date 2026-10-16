@@ -397,6 +397,31 @@ trait ParserAlgebra {
 /** Utilities and mixins for [[ParserAlgebra]]. */
 object ParserAlgebra {
 
+  /** A [[ParserAlgebra]] equipped with all the categorical mixins. */
+  trait CanonicalParser
+      extends ParserAlgebra,
+        Sequencing,
+        Zipping,
+        Branching,
+        Alternation,
+        Lookahead,
+        Repetition,
+        Recursion,
+        Pairing,
+        Iteration {
+    override val OnIsCartesian: On is Cartesian.`with`[Empty, Pair] = RepetitionOnCartesian
+  }
+
+  /** An algebra whose semantic values are the standard Scala ones: `Unit`, `Tuple2`, `Either`, `Nothing` and `Vector`.
+    */
+  type Standard = ParserAlgebra {
+    type Empty       = Unit
+    type Pair        = Tuple2
+    type None        = Nothing
+    type Alternative = Either
+    type Many        = Vector
+  }
+
   /** Summons the `ParserAlgebra` instance of `P`. */
   def apply[P[_, _]: ParserAlgebra]: P is ParserAlgebra = summon
 }
