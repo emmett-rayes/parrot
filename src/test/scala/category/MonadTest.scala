@@ -8,11 +8,12 @@ class MonadTest extends CategorySuite {
   private val OptionMonad = Monad.OptionIsMonad
   private val TryMonad    = Monad.TryIsMonad
 
-  private val f: Int => Option[String]    = i => if i % 3 == 0 then None else Some(s"v$i")
+  private val f: Int => Option[String]     = i => if i % 3 == 0 then None else Some(s"v$i")
   private val g: String => Option[Boolean] = s => if s.length > 3 then Some(true) else None
 
-  private val fTry: Int => Try[String]    = i => if i % 3 == 0 then Failure(new Exception("div3")) else Success(s"v$i")
-  private val gTry: String => Try[Boolean] = s => if s.length > 3 then Success(true) else Failure(new Exception("short"))
+  private val fTry: Int => Try[String]     = i => if i % 3 == 0 then Failure(new Exception("div3")) else Success(s"v$i")
+  private val gTry: String => Try[Boolean] =
+    s => if s.length > 3 then Success(true) else Failure(new Exception("short"))
 
   test("Option is Monad: monad laws") {
     forAll { (i: Int, m: Option[Int]) =>
@@ -25,6 +26,7 @@ class MonadTest extends CategorySuite {
   test("Option is Monad: unit and multiplication laws") {
     forAll { (i: Int, m: Option[Int], mm: Option[Option[Int]], mmm: Option[Option[Option[Int]]]) =>
       val h: Int => String = _.toString
+
       val _ = assert(OptionMonad.MonadLaws.unitNaturality(i, h))
       val _ = assert(OptionMonad.MonadLaws.leftUnitality(m))
       val _ = assert(OptionMonad.MonadLaws.rightUnitality(m))
@@ -53,6 +55,7 @@ class MonadTest extends CategorySuite {
   test("Try is Monad: unit and multiplication laws") {
     forAll { (i: Int, m: Try[Int], mm: Try[Try[Int]], mmm: Try[Try[Try[Int]]]) =>
       val h: Int => String = _.toString
+
       val _ = assert(TryMonad.MonadLaws.unitNaturality(i, h))
       val _ = assert(TryMonad.MonadLaws.leftUnitality(m))
       val _ = assert(TryMonad.MonadLaws.rightUnitality(m))
@@ -62,11 +65,11 @@ class MonadTest extends CategorySuite {
   }
 
   test("Try is Monad: extensions behave as Try") {
-    val _ = assert(TryMonad.flatMap(Success(1))(i => Success(i + 1)) === Success(2))
-    val _ = assert(TryMonad.flatten(Success(Success(1))) === Success(1))
+    val _  = assert(TryMonad.flatMap(Success(1))(i => Success(i + 1)) === Success(2))
+    val _  = assert(TryMonad.flatten(Success(Success(1))) === Success(1))
     val ex = new Exception("boom")
-    val _ = assert(TryMonad.flatten(Success(Failure(ex)): Try[Try[Int]]) === Failure(ex))
-    val _ = assert(TryMonad.flatten(Failure(ex): Try[Try[Int]]) === Failure(ex))
+    val _  = assert(TryMonad.flatten(Success(Failure(ex)): Try[Try[Int]]) === Failure(ex))
+    val _  = assert(TryMonad.flatten(Failure(ex): Try[Try[Int]]) === Failure(ex))
     assert(TryMonad.SelfIsFunctor.map(Success(1))(_ + 1) === Success(2))
   }
 }

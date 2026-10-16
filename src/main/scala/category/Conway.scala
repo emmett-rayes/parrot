@@ -71,8 +71,8 @@ object Conway {
       type Self[A, B] = P[A, B]
 
       override given TracedProfunctor: C.SelfIsCartesian.SelfIsPromonad.type = C.SelfIsCartesian.SelfIsPromonad
-      override val SelfIsProfunctor: C.SelfIsCartesian.SelfIsPromonad.type        = C.SelfIsCartesian.SelfIsPromonad
-      override val OnIsMonoidal: K.type                                           = K
+      override val SelfIsProfunctor: C.SelfIsCartesian.SelfIsPromonad.type   = C.SelfIsCartesian.SelfIsPromonad
+      override val OnIsMonoidal: K.type                                      = K
       import OnIsMonoidal.*
       import SelfIsProfunctor.*
 
@@ -110,7 +110,7 @@ object Conway {
   /** `Function` is a `Conway` category under lazy tuple products via knot-tying fixed points. */
   given FunctionIsLazyCartesianConway: Function is Conway {
     override given ConwayCartesian: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
-    override val SelfIsCartesian: Cartesian.FunctionIsLazyCartesian.type        = Cartesian.FunctionIsLazyCartesian
+    override val SelfIsCartesian: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
 
     def dagger[A, C](p: LazyTuple2[A, C] => C): A => C = {
       a =>

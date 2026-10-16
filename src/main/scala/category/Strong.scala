@@ -109,7 +109,7 @@ object Strong {
   given FunctionIsStrong: Function is Strong {
     override given StrongProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
     override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type         = Monoidal.FunctionIsMonoidal
+    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type           = Monoidal.FunctionIsMonoidal
 
     def first[A, B, C](p: A => B): ((A, C)) => (B, C) = {
       (a, c) => (p(a), c)
@@ -124,7 +124,7 @@ object Strong {
   given FunctionIsLazyStrong: Function is Strong {
     override given StrongProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
     override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
+    override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type     = Cartesian.FunctionIsLazyCartesian
 
     def first[A, B, C](p: A => B): LazyTuple2[A, C] => LazyTuple2[B, C] = {
       t => LazyTuple2(p(t._1), t._2)

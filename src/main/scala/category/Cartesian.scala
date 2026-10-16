@@ -182,7 +182,7 @@ object Cartesian {
     type Tensor = Tuple2
 
     override given CartesianPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type      = Promonad.FunctionIsPromonad
 
     def augment[A]: A => Unit = {
       _ => ()
@@ -207,7 +207,7 @@ object Cartesian {
     type Tensor = LazyTuple2
 
     override given CartesianPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type      = Promonad.FunctionIsPromonad
 
     def augment[A]: A => Unit = {
       _ => ()

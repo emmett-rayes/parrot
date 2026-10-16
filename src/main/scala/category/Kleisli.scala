@@ -21,7 +21,7 @@ object Kleisli {
     type On         = Function
 
     override given ProfunctorOnPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type          = Promonad.FunctionIsPromonad
+    override val OnIsPromonad: Promonad.FunctionIsPromonad.type           = Promonad.FunctionIsPromonad
 
     def dimap[A, B, C, D](f: C => A, g: B => D)(p: A => F[B]): C => F[D] = {
       c => p(f(c)).map(g)
@@ -40,7 +40,7 @@ object Kleisli {
     type On         = Function
 
     override given ProfunctorOnPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type          = Promonad.FunctionIsPromonad
+    override val OnIsPromonad: Promonad.FunctionIsPromonad.type           = Promonad.FunctionIsPromonad
 
     def unit[A, B](f: A => B): A => M[B] = {
       a => M.unit(f(a))
@@ -59,8 +59,8 @@ object Kleisli {
     type Self[A, B] = A => F[B]
 
     override given StrongProfunctor: (Kleisli[F] is Profunctor on Function) = KleisliIsProfunctor[F]
-    override val SelfIsProfunctor: Kleisli[F] is Profunctor on Function = KleisliIsProfunctor[F]
-    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type         = Monoidal.FunctionIsMonoidal
+    override val SelfIsProfunctor: Kleisli[F] is Profunctor on Function     = KleisliIsProfunctor[F]
+    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type             = Monoidal.FunctionIsMonoidal
 
     def first[A, B, C](p: A => F[B]): ((A, C)) => F[(B, C)] = {
       (a, c) => p(a).map((_, c))
@@ -106,13 +106,15 @@ object Kleisli {
   /** Hom-sets are function types and thus have fixed points by eta-expansion: fix(*f*) = *g* where *g* = *f*(*a* ↦
     * *g*(*a*)).
     */
-  given KleisliIsFixedEnriched: [M[_]: Monad] => Kleisli[M] is Enriched over Fixed.in[Function, Unit, LazyTuple2, Function] = new Enriched {
+  given KleisliIsFixedEnriched
+    : [M[_]: Monad] => Kleisli[M] is Enriched over Fixed.in[Function, Unit, LazyTuple2, Function] = new Enriched {
     type Self[A, B] = A => M[B]
     type Over       = Fixed.in[Function, Unit, LazyTuple2, Function]
 
     override given EnrichedPromonad: Kleisli[M] is Promonad on Function = KleisliIsPromonad[M]
 
-    override given HomIsV: [A, B] => ((A => M[B]) is Fixed.in[Function, Unit, LazyTuple2, Function]) = Fixed.FunctionIsFixed[A, M[B]]
+    override given HomIsV: [A, B] => ((A => M[B]) is Fixed.in[Function, Unit, LazyTuple2, Function]) =
+      Fixed.FunctionIsFixed[A, M[B]]
   }
 
   /** Every restriction monad *M* induces a restriction Kleisli promonad, where
@@ -161,7 +163,7 @@ object Kleisli {
       type Self[A, B] = A => F[B]
 
       override given ElgotCocartesian: Kleisli[F] is Cocartesian.`with`[Nothing, Either] = KleisliIsCocartesian[F]
-      override val SelfIsCocartesian: Kleisli[F] is Cocartesian.`with`[Nothing, Either] = ElgotCocartesian
+      override val SelfIsCocartesian: Kleisli[F] is Cocartesian.`with`[Nothing, Either]  = ElgotCocartesian
 
       def dagger[A, C](p: C => F[Either[A, C]]): C => F[A] = {
         F.iterate(p)

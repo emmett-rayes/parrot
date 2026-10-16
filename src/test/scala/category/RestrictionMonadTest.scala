@@ -35,8 +35,9 @@ class RestrictionMonadTest extends CategorySuite {
 
   test("Try is RestrictionMonad: restrict behaves as Try.map(_ => ())") {
     import TryRestriction.restrict
+
     import scala.util.{Failure, Success}
-    val _ = assert(Success(42).restrict === Success(()))
+    val _  = assert(Success(42).restrict === Success(()))
     val ex = new Exception("boom")
     assert(Failure(ex).restrict === Failure(ex))
   }

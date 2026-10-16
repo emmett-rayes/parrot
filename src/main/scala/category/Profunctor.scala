@@ -90,7 +90,7 @@ object Profunctor {
     type On = =:=
 
     override given ProfunctorOnPromonad: Promonad.TypeEqIsPromonad.type = Promonad.TypeEqIsPromonad
-    override val OnIsPromonad: Promonad.TypeEqIsPromonad.type          = Promonad.TypeEqIsPromonad
+    override val OnIsPromonad: Promonad.TypeEqIsPromonad.type           = Promonad.TypeEqIsPromonad
 
     def dimap[A, B, C, D](f: C =:= A, g: B =:= D)(p: A =:= B): C =:= D = {
       f andThen p andThen g
@@ -102,7 +102,7 @@ object Profunctor {
     type On = Function
 
     override given ProfunctorOnPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type          = Promonad.FunctionIsPromonad
+    override val OnIsPromonad: Promonad.FunctionIsPromonad.type           = Promonad.FunctionIsPromonad
 
     def dimap[A, B, C, D](f: C => A, g: B => D)(p: A => B): C => D = {
       f andThen p andThen g

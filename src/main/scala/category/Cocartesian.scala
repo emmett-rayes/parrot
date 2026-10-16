@@ -195,7 +195,7 @@ object Cocartesian {
     type Tensor = Either
 
     override given CocartesianPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type        = Promonad.FunctionIsPromonad
 
     def absurd[A]: Nothing => A = {
       n => n

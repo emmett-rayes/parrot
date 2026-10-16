@@ -32,7 +32,7 @@ trait KleisliParser extends ParserAlgebra,
   import StateT.given
 
   override val OnIsCartesian: Cartesian.FunctionIsCartesian.type = RepetitionOnCartesian
-  
+
   override given RepetitionOnCartesian: Cartesian.FunctionIsCartesian.type         = Cartesian.FunctionIsCartesian
   override given RepetitionOnCocartesian: Cocartesian.FunctionIsCocartesian.type   = Cocartesian.FunctionIsCocartesian
   override given PairingOnCartesian: Cartesian.FunctionIsCartesian.type            = Cartesian.FunctionIsCartesian

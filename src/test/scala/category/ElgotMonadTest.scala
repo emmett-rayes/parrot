@@ -18,7 +18,8 @@ class ElgotMonadTest extends CategorySuite {
   }
 
   test("Try is ElgotMonad: iteration computes a tail-recursive loop") {
-    val err = new IllegalArgumentException("negative")
+    val err =
+      new IllegalArgumentException("negative")
     val countdown: Int => Try[Either[String, Int]] = i => {
       if i < 0 then Failure(err)
       else if i == 0 then Success(Left("done"))

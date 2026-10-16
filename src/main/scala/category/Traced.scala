@@ -5,8 +5,8 @@ import scala.annotation.targetName
 
 /** A traced profunctor on an underlying monoidal category **C**.
   *
-  * Represents a profunctor *P*: **C**^op × **C** → **Type** equipped with a tensorial trace (cotensorial strength)
-  * with respect to a monoidal category (**C**, ⊗, *I*), where
+  * Represents a profunctor *P*: **C**^op × **C** → **Type** equipped with a tensorial trace (cotensorial strength) with
+  * respect to a monoidal category (**C**, ⊗, *I*), where
   *   - *left*: *P*[*A* ⊗ *C*, *B* ⊗ *C*] → *P*[*A*, *B*] is the left trace
   *   - *right*: *P*[*C* ⊗ *A*, *C* ⊗ *B*] → *P*[*A*, *B*] is the right trace
   */
@@ -109,7 +109,7 @@ object Traced {
   given FunctionIsLazyCartesianTraced: Function is Traced {
     override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
     override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
+    override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type     = Cartesian.FunctionIsLazyCartesian
 
     def left[A, B, C](p: LazyTuple2[A, C] => LazyTuple2[B, C]): A => B = {
       a =>
@@ -132,7 +132,7 @@ object Traced {
   given FunctionIsCocartesianTraced: Function is Traced {
     override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
     override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: Cocartesian.FunctionIsCocartesian.type   = Cocartesian.FunctionIsCocartesian
+    override val OnIsMonoidal: Cocartesian.FunctionIsCocartesian.type     = Cocartesian.FunctionIsCocartesian
 
     def left[A, B, C](p: Either[A, C] => Either[B, C]): A => B = { a =>
       @annotation.tailrec

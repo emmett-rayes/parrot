@@ -82,8 +82,8 @@ object Elgot {
       type Self[A, B] = P[A, B]
 
       override given TracedProfunctor: E.SelfIsCocartesian.SelfIsPromonad.type = E.SelfIsCocartesian.SelfIsPromonad
-      override val SelfIsProfunctor: E.SelfIsCocartesian.SelfIsPromonad.type        = E.SelfIsCocartesian.SelfIsPromonad
-      override val OnIsMonoidal: K.type                                             = K
+      override val SelfIsProfunctor: E.SelfIsCocartesian.SelfIsPromonad.type   = E.SelfIsCocartesian.SelfIsPromonad
+      override val OnIsMonoidal: K.type                                        = K
       import OnIsMonoidal.*
       import SelfIsProfunctor.*
 

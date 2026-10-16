@@ -161,7 +161,7 @@ object Promonad {
     type On = =:=
 
     override given ProfunctorOnPromonad: TypeEqIsPromonad.type = TypeEqIsPromonad
-    override val OnIsPromonad: TypeEqIsPromonad.type          = TypeEqIsPromonad
+    override val OnIsPromonad: TypeEqIsPromonad.type           = TypeEqIsPromonad
 
     def unit[A, B](f: A =:= B): A =:= B = {
       f
@@ -181,7 +181,7 @@ object Promonad {
     type On = Function
 
     override given ProfunctorOnPromonad: FunctionIsPromonad.type = FunctionIsPromonad
-    override val OnIsPromonad: FunctionIsPromonad.type          = FunctionIsPromonad
+    override val OnIsPromonad: FunctionIsPromonad.type           = FunctionIsPromonad
 
     def unit[A, B](f: A => B): PartialFunction[A, B] = {
       PartialFunction.fromFunction(f)
@@ -197,7 +197,7 @@ object Promonad {
     type On = Function
 
     override given ProfunctorOnPromonad: FunctionIsPromonad.type = FunctionIsPromonad
-    override val OnIsPromonad: FunctionIsPromonad.type          = FunctionIsPromonad
+    override val OnIsPromonad: FunctionIsPromonad.type           = FunctionIsPromonad
 
     def unit[A, B](f: A => B): A => B = {
       f

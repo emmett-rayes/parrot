@@ -7,7 +7,7 @@ class FunctorTest extends CategorySuite {
 
   test("Option is Functor: functor laws") {
     forAll { (m: Option[Int]) =>
-      val _ = assert(OptionFunctor.FunctorLaws.identity(m))
+      val _                = assert(OptionFunctor.FunctorLaws.identity(m))
       val f: Int => String = _.toString
       val g: String => Int = _.length
       assert(OptionFunctor.FunctorLaws.composition(m, f, g))
@@ -20,7 +20,6 @@ class FunctorTest extends CategorySuite {
   }
 
   test("Option is Functor: extension behaves as Option.map") {
-    import OptionFunctor.map
     val _ = assert(Some(42).map(_ + 1) == Some(43))
     assert((None: Option[Int]).map(_ + 1) == None)
   }

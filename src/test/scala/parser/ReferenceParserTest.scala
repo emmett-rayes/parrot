@@ -46,43 +46,46 @@ class ReferenceParserTest extends AnyFunSuite with ReferenceParser {
   }
 
   test("sequencing and skipThen / thenSkip") {
-    val ab = (a *> b)
-    val _ = assert(ab.parse("ab").get == (result = "b", offset = 2))
+    val ab    = (a *> b)
+    val _     = assert(ab.parse("ab").get == (result = "b", offset = 2))
     val aOnly = (a <* b)
-    val _ = assert(aOnly.parse("ab").get == (result = "a", offset = 2))
-    val _ = assert(as.between(literal("("), literal(")")).parse("(aa)").get == (result = "aa", offset = 4))
+    val _     = assert(aOnly.parse("ab").get == (result = "a", offset = 2))
+    val _     = assert(as.between(literal("("), literal(")")).parse("(aa)").get == (result = "aa", offset = 4))
   }
 
   test("pairing and map") {
     val pair = (a && b).map((x, y) => s"$x+$y")
-    val _ = assert(pair.parse("ab").get == (result = "a+b", offset = 2))
-    val _ = assert((a && b).parse("ab").get == (result = ("a", "b"), offset = 2))
+    val _    = assert(pair.parse("ab").get == (result = "a+b", offset = 2))
+    val _    = assert((a && b).parse("ab").get == (result = ("a", "b"), offset = 2))
   }
 
   test("choice and alternation") {
     val either = a |> b
+
     val _ = assert(either.parse("a").get == (result = "a", offset = 1))
     val _ = assert(either.parse("b").get == (result = "b", offset = 1))
     val _ = assert(either.parse("c").isFailure)
     val _ = assert((a +> b).parse("b").get == (result = Right("b"), offset = 1))
     val _ = assert(a.optional.parse("b").get == (result = Right(()), offset = 0))
-    val _ = assert(((a +> b) >> (pure[String, Int](_.length) || pure(_ => 0))).parse("a").get == (result = 1, offset = 1))
+    val _ =
+      assert(((a +> b) >> (pure[String, Int](_.length) || pure(_ => 0))).parse("a").get == (result = 1, offset = 1))
   }
 
   test("lookahead and not") {
-    val _ = assert((~a).parse("ab").get == (result = (), offset = 0))
-    val _ = assert((!b).parse("ab").get == (result = (), offset = 0))
-    val _ = assert((!a).parse("ab").isFailure)
-    val pos = ~a *> a
-    val _ = assert(pos.parse("ab").get == (result = "a", offset = 1))
-    val neg = !b *> a
-    val _ = assert(neg.parse("ab").get == (result = "a", offset = 1))
+    val _          = assert((~a).parse("ab").get == (result = (), offset = 0))
+    val _          = assert((!b).parse("ab").get == (result = (), offset = 0))
+    val _          = assert((!a).parse("ab").isFailure)
+    val pos        = ~a *> a
+    val _          = assert(pos.parse("ab").get == (result = "a", offset = 1))
+    val neg        = !b *> a
+    val _          = assert(neg.parse("ab").get == (result = "a", offset = 1))
     val failingNeg = !a *> a
-    val _ = assert(failingNeg.parse("ab").isFailure)
+    val _          = assert(failingNeg.parse("ab").isFailure)
   }
 
   test("repeated, times, atLeast and separatedBy") {
     val rep = a.repeated
+
     val _ = assert(rep.parse("aaab").get == (result = Vector("a", "a", "a"), offset = 3))
     val _ = assert(rep.parse("b").get == (result = Vector.empty, offset = 0))
     val _ = assert(a.times(2).parse("aaa").get == (result = Vector("a", "a"), offset = 2))
@@ -91,7 +94,7 @@ class ReferenceParserTest extends AnyFunSuite with ReferenceParser {
     val _ = assert(a.atLeast(2).parse("ab").isFailure)
 
     val sep = a.separatedBy(literal(","))
-    val _ = assert(sep.parse("a,a,ab").get == (result = Vector("a", "a", "a"), offset = 5))
+    val _   = assert(sep.parse("a,a,ab").get == (result = Vector("a", "a", "a"), offset = 5))
   }
 
   test("recursive parsing") {
@@ -167,6 +170,7 @@ class ReferenceParserTest extends AnyFunSuite with ReferenceParser {
 
   test("ParserLaws: recursion unfolds") {
     val nested: P[Unit, String] => P[Unit, String] = self => a |> self.between(literal("("), literal(")"))
+
     val _ = assert(laws.recursionUnfolding(nested))
   }
 }
