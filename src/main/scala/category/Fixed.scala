@@ -15,10 +15,10 @@ trait Fixed {
   type Self
   final type F = Self
 
-  type In[_, _]: {Cartesian, Closed}
+  type In[_, _]: {Cartesian as FixedInCartesian, Closed as FixedInClosed}
   type Exp[_, _]
 
-  val InIsCartesian: In is Cartesian = summon
+  val InIsCartesian: In is Cartesian = FixedInCartesian
   val InIsClosed
     : In is Closed.`with`[InIsCartesian.I, InIsCartesian.Tensor, Exp] { val SelfIsMonoidal: InIsCartesian.type }
 
@@ -102,9 +102,10 @@ object Fixed {
     type In   = P
     type Exp  = E
 
-    override given given_Cartesian_In: K.SelfIsCartesian.type = K.SelfIsCartesian
-    override val InIsCartesian: K.SelfIsCartesian.type        = K.SelfIsCartesian
-    override val InIsClosed: L.type                           = L
+    override given FixedInCartesian: K.SelfIsCartesian.type = K.SelfIsCartesian
+    override given FixedInClosed: L.type                    = L
+    override val InIsCartesian: K.SelfIsCartesian.type      = K.SelfIsCartesian
+    override val InIsClosed: L.type                         = L
 
     import InIsCartesian.SelfIsPromonad.*
     import InIsClosed.*
@@ -146,10 +147,10 @@ object Fixed {
     type In   = Function
     type Exp  = Function
 
-    override given given_Cartesian_In: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
-    override given given_Closed_In: Closed.FunctionIsLazyClosed.type          = Closed.FunctionIsLazyClosed
-    override val InIsCartesian: Cartesian.FunctionIsLazyCartesian.type        = Cartesian.FunctionIsLazyCartesian
-    override val InIsClosed: Closed.FunctionIsLazyClosed.type                 = Closed.FunctionIsLazyClosed
+    override given FixedInCartesian: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
+    override given FixedInClosed: Closed.FunctionIsLazyClosed.type          = Closed.FunctionIsLazyClosed
+    override val InIsCartesian: Cartesian.FunctionIsLazyCartesian.type      = Cartesian.FunctionIsLazyCartesian
+    override val InIsClosed: Closed.FunctionIsLazyClosed.type               = Closed.FunctionIsLazyClosed
 
     import InIsCartesian.SelfIsPromonad.*
     import InIsClosed.*

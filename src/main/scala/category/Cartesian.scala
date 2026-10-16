@@ -15,8 +15,9 @@ import scala.annotation.targetName
   *   - Δ: *A* ⇒ *A* ⊗ *A* is the diagonal morphism
   */
 trait Cartesian extends Monoidal {
-  type Self[_, _]: Promonad
+  override type Self[_, _]: Promonad as CartesianPromonad
 
+  override val SelfIsPromonad: Self is Promonad = CartesianPromonad
   import SelfIsPromonad.*
 
   /** The unique morphism !: *A* ~> *I* to the terminal object. */
@@ -157,8 +158,11 @@ object Cartesian {
     *   - *β* = ⟨*π*₂, *π*₁⟩ is the braiding
     */
   given CartesianIsSymmetric: [P[_, _]: {Promonad, Cartesian as C}] => P is Symmetric {
+    override given SymmetricMonoidal: C.type = C
+
     export C.{
       Self as _,
+      SelfIsPromonad as _,
       rightUnitor as _,
       rightUnitorInv as _,
       unassociate as _,
@@ -177,6 +181,7 @@ object Cartesian {
     type I      = Unit
     type Tensor = Tuple2
 
+    override given CartesianPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
     override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     def augment[A]: A => Unit = {
@@ -201,6 +206,7 @@ object Cartesian {
     type I      = Unit
     type Tensor = LazyTuple2
 
+    override given CartesianPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
     override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     def augment[A]: A => Unit = {

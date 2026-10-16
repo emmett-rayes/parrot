@@ -7,7 +7,7 @@ import category.*
 trait Iteration extends ParserAlgebra {
   override type Self[_, _]: Elgot.`with`[None, Alternative] as IterationElgot
 
-  val SelfIsElgot: Self is Elgot.`with`[None, Alternative] = summon
+  val SelfIsElgot: Self is Elgot.`with`[None, Alternative] = IterationElgot
   import SelfIsElgot.dagger
 
   override def iterate[A, B](self: P[A, B + A]): P[A, B] = {

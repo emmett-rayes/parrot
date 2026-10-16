@@ -11,9 +11,9 @@ import scala.annotation.targetName
   * A morphism *f*: *A* ~> *B* is total if *f̄* = *id*.
   */
 trait Restriction {
-  type Self[_, _]: Promonad
+  type Self[_, _]: Promonad as RestrictionPromonad
 
-  val SelfIsPromonad: Self is Promonad = summon
+  val SelfIsPromonad: Self is Promonad = RestrictionPromonad
   import SelfIsPromonad.*
 
   /** Maps a morphism *p*: *A* ~> *B* to its restriction *p̄*: *A* ~> *A*. */
@@ -62,7 +62,8 @@ object Restriction {
 
   /** `Function` is a trivial `Restriction` on the category **Type**, where every morphism is total. */
   given FunctionIsRestriction: Function is Restriction {
-    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override given RestrictionPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type        = Promonad.FunctionIsPromonad
 
     def restrict[A, B](p: A => B): A => A = {
       a => a
@@ -73,7 +74,8 @@ object Restriction {
     * function is the partial identity on its domain of definition.
     */
   given PartialFunctionIsRestriction: PartialFunction is Restriction {
-    override val SelfIsPromonad: Promonad.PartialFunctionIsPromonad.type = Promonad.PartialFunctionIsPromonad
+    override given RestrictionPromonad: Promonad.PartialFunctionIsPromonad.type = Promonad.PartialFunctionIsPromonad
+    override val SelfIsPromonad: Promonad.PartialFunctionIsPromonad.type        = Promonad.PartialFunctionIsPromonad
 
     def restrict[A, B](p: PartialFunction[A, B]): PartialFunction[A, A] = {
       case a if p.isDefinedAt(a) => a

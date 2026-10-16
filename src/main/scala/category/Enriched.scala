@@ -5,13 +5,13 @@ import scala.compiletime.deferred
 
 /** A **V**-valued promonad on an underlying category **C**.
   *
-  * Represents a promonad *P*: **C**^*op* × **C** → **V**.
+  * Represents a promonad *P*: **C**^op × **C** → **V**.
   */
 trait Enriched {
-  type Self[_, _]: Promonad
+  type Self[_, _]: Promonad as EnrichedPromonad
   final type P = Self
 
-  val SelfIsPromonad: P is Promonad = summon
+  val SelfIsPromonad: P is Promonad = EnrichedPromonad
   import SelfIsPromonad.*
 
   /** A typeclass describing the objects of the target category **V**. */

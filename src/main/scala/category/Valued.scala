@@ -8,10 +8,10 @@ import scala.compiletime.deferred
   * Represents a functor *F*: **Type** → **V**.
   */
 trait Valued {
-  type Self[_]: Functor
+  type Self[_]: Functor as ValuedFunctor
   final type F = Self
 
-  val SelfIsFunctor: Self is Functor = summon
+  val SelfIsFunctor: Self is Functor = ValuedFunctor
 
   /** A typeclass describing the objects of the target category **V**. */
   type Over <: Any { type Self }
@@ -31,6 +31,9 @@ object Valued {
   def apply[F[_]: Valued]: F is Valued = summon
 
   given TryIsAdditiveValued: Try is Valued {
+    override given ValuedFunctor: Functor.TryIsFunctor.type = Functor.TryIsFunctor
+    override val SelfIsFunctor: Functor.TryIsFunctor.type   = Functor.TryIsFunctor
+
     type Over = Monoid.Additive
 
     override given FIsV: [A] => (Try[A] is Monoid.Additive) = new Monoid.Additive {

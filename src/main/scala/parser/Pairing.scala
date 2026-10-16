@@ -7,7 +7,7 @@ import category.*
 trait Pairing extends ParserAlgebra {
   override type On[_, _]: Cartesian.`with`[Empty, Pair] as PairingOnCartesian
 
-  val OnIsCartesian: On is Cartesian.`with`[Empty, Pair] = summon
+  val OnIsCartesian: On is Cartesian.`with`[Empty, Pair] = PairingOnCartesian
   import OnIsCartesian.{diagonal, first, second}
 
   override def pair[A, B, C](self: P[A, B], other: P[A, C]): P[A, B * C] = {

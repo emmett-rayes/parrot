@@ -5,15 +5,15 @@ import scala.annotation.targetName
 
 /** A traced profunctor on an underlying monoidal category **C**.
   *
-  * Represents a profunctor *P*: **C**^*op* × **C** → **Type** equipped with a tensorial trace (cotensorial strength)
+  * Represents a profunctor *P*: **C**^op × **C** → **Type** equipped with a tensorial trace (cotensorial strength)
   * with respect to a monoidal category (**C**, ⊗, *I*), where
   *   - *left*: *P*[*A* ⊗ *C*, *B* ⊗ *C*] → *P*[*A*, *B*] is the left trace
   *   - *right*: *P*[*C* ⊗ *A*, *C* ⊗ *B*] → *P*[*A*, *B*] is the right trace
   */
 trait Traced {
-  type Self[_, _]: Profunctor
+  type Self[_, _]: Profunctor as TracedProfunctor
 
-  val SelfIsProfunctor: Self is Profunctor = summon
+  val SelfIsProfunctor: Self is Profunctor = TracedProfunctor
   import SelfIsProfunctor.*
 
   /** The monoidal structure of the underlying category **C**. */
@@ -107,7 +107,8 @@ object Traced {
 
   /** `Function` is traced under its cartesian monoidal structure via fixed points. */
   given FunctionIsLazyCartesianTraced: Function is Traced {
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
     override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
 
     def left[A, B, C](p: LazyTuple2[A, C] => LazyTuple2[B, C]): A => B = {
@@ -129,7 +130,8 @@ object Traced {
 
   /** `Function` is traced under its cocartesian monoidal structure via tail-recursive iteration. */
   given FunctionIsCocartesianTraced: Function is Traced {
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
     override val OnIsMonoidal: Cocartesian.FunctionIsCocartesian.type   = Cocartesian.FunctionIsCocartesian
 
     def left[A, B, C](p: Either[A, C] => Either[B, C]): A => B = { a =>

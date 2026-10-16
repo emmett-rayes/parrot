@@ -8,8 +8,8 @@ trait Repetition extends ParserAlgebra {
   override type On[_, _]: {Cartesian.`with`[Empty, Pair] as RepetitionOnCartesian,
     Cocartesian.`with`[None, Alternative] as RepetitionOnCocartesian}
 
-  val OnIsCartesian: On is Cartesian.`with`[Empty, Pair]           = summon
-  val OnIsCocartesian: On is Cocartesian.`with`[None, Alternative] = summon
+  val OnIsCartesian: On is Cartesian.`with`[Empty, Pair]           = RepetitionOnCartesian
+  val OnIsCocartesian: On is Cocartesian.`with`[None, Alternative] = RepetitionOnCocartesian
 
   import OnIsCartesian.*
   import OnIsCartesian.SelfIsPromonad.{>>>, identity, ~>}

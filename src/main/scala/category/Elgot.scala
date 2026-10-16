@@ -12,9 +12,9 @@ import scala.annotation.targetName
   * @note Every Elgot structure induces a cocartesian traced promonad.
   */
 trait Elgot {
-  type Self[_, _]: Cocartesian
+  type Self[_, _]: Cocartesian as ElgotCocartesian
 
-  val SelfIsCocartesian: Self is Cocartesian = summon
+  val SelfIsCocartesian: Self is Cocartesian = ElgotCocartesian
   import SelfIsCocartesian.SelfIsPromonad.*
   import SelfIsCocartesian.{+, +++, right, |||}
 
@@ -81,7 +81,7 @@ object Elgot {
     new Traced {
       type Self[A, B] = P[A, B]
 
-      override given given_Profunctor_Self: E.SelfIsCocartesian.SelfIsPromonad.type = E.SelfIsCocartesian.SelfIsPromonad
+      override given TracedProfunctor: E.SelfIsCocartesian.SelfIsPromonad.type = E.SelfIsCocartesian.SelfIsPromonad
       override val SelfIsProfunctor: E.SelfIsCocartesian.SelfIsPromonad.type        = E.SelfIsCocartesian.SelfIsPromonad
       override val OnIsMonoidal: K.type                                             = K
       import OnIsMonoidal.*
@@ -108,7 +108,8 @@ object Elgot {
     => P is Elgot.`with`[C.Z, C.Tensor] = new Elgot {
     type Self[A, B] = P[A, B]
 
-    override val SelfIsCocartesian: C.type = C
+    override given ElgotCocartesian: C.type = C
+    override val SelfIsCocartesian: C.type  = C
     import C.*
     import C.SelfIsPromonad.*
 
@@ -119,7 +120,8 @@ object Elgot {
 
   /** `Function` is an `Elgot` category under disjoint sum coproducts via tail-recursive iteration. */
   given FunctionIsCocartesianElgot: Function is Elgot {
-    override val SelfIsCocartesian: Cocartesian.FunctionIsCocartesian.type = Cocartesian.FunctionIsCocartesian
+    override given ElgotCocartesian: Cocartesian.FunctionIsCocartesian.type = Cocartesian.FunctionIsCocartesian
+    override val SelfIsCocartesian: Cocartesian.FunctionIsCocartesian.type  = Cocartesian.FunctionIsCocartesian
 
     def dagger[A, C](p: C => Either[A, C]): C => A = {
       c =>

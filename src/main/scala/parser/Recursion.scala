@@ -8,7 +8,7 @@ import category.Enriched.over
 trait Recursion extends ParserAlgebra {
   override type Self[_, _]: Enriched over Fixed.in[Function, Unit, LazyTuple2, Function] as RecursionEnriched
 
-  val SelfIsFixed: Self is Enriched over Fixed.in[Function, Unit, LazyTuple2, Function] = summon
+  val SelfIsFixed: Self is Enriched over Fixed.in[Function, Unit, LazyTuple2, Function] = RecursionEnriched
 
   override def recursive[A, B](f: P[A, B] => P[A, B]): P[A, B] = {
     SelfIsFixed.HomIsV[A, B].fix(f)

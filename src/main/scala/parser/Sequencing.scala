@@ -8,7 +8,7 @@ import category.Profunctor.on
 trait Sequencing extends ParserAlgebra {
   override type Self[_, _]: Promonad on On as SequencingPromonad
 
-  val SelfIsPromonad: Self is Promonad on On = summon
+  val SelfIsPromonad: Self is Promonad on On = SequencingPromonad
   import SelfIsPromonad.*
 
   override def pure[A, B](f: A ==> B): P[A, B] = {

@@ -15,7 +15,10 @@ import scala.annotation.targetName
   *   - ∇: *A* ⊕ *A* ⇒ *A* is the fold morphism
   */
 trait Cocartesian extends Monoidal {
-  type Self[_, _]: Promonad
+  override type Self[_, _]: Promonad as CocartesianPromonad
+
+  override val SelfIsPromonad: Self is Promonad = CocartesianPromonad
+  import SelfIsPromonad.*
 
   /** The initial object *Z* in *Ob*(**C**). */
   type Z
@@ -23,8 +26,6 @@ trait Cocartesian extends Monoidal {
 
   /** The coproduct ⊕ on objects. */
   final type +[A, B] = Tensor[A, B]
-
-  import SelfIsPromonad.*
 
   /** The unique morphism ¡: *Z* ~> *A* from the initial object. */
   def absurd[A]: Z ~> A
@@ -171,6 +172,8 @@ object Cocartesian {
     *   - *β* = [*ι*₂, *ι*₁] is the braiding
     */
   given CocartesianIsSymmetric: [P[_, _]: {Promonad, Cocartesian as C}] => P is Symmetric {
+    override given SymmetricMonoidal: C.type = C
+
     export C.{
       Self as _,
       rightUnitor as _,
@@ -191,6 +194,7 @@ object Cocartesian {
     type Z      = Nothing
     type Tensor = Either
 
+    override given CocartesianPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
     override val SelfIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
 
     def absurd[A]: Nothing => A = {

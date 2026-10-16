@@ -36,10 +36,10 @@ object StateT {
     * underlying function.
     */
   given StateTIsMonad: [S, K[_]] => (K: K is Monad) => StateT[S, K] is Monad = {
-    given StateT[S, K] is Functor = StateTIsFunctor[S, K](using K.SelfIsFunctor)
-
     new Monad {
       type Self = StateT[S, K]
+
+      override given MonadFunctor: StateT[S, K] is Functor = StateTIsFunctor[S, K](using K.SelfIsFunctor)
 
       import K.flatMap
 
@@ -60,11 +60,11 @@ object StateT {
     K: K is (Valued over O),
     P: O is Pointwise,
   ) => StateT[S, K] is (Valued over O) = {
-    given StateT[S, K] is Functor = StateTIsFunctor[S, K](using K.SelfIsFunctor)
-
     new Valued {
       type Self = StateT[S, K]
       type Over = O
+
+      override given ValuedFunctor: StateT[S, K] is Functor = StateTIsFunctor[S, K](using K.SelfIsFunctor)
 
       override given FIsV: [A] => (Self[A] is Over) = {
         P.FunctionIsV[S, K[(result: A, state: S)]](using K.FIsV[(result: A, state: S)])
@@ -79,10 +79,10 @@ object StateT {
     * Here *m̄'* is the restriction operation of *M*.
     */
   given StateTIsRestrictionMonad: [S, K[_]] => (K: K is RestrictionMonad) => StateT[S, K] is RestrictionMonad = {
-    given StateT[S, K] is Monad = StateTIsMonad[S, K](using K.SelfIsMonad)
-
     new RestrictionMonad {
       type Self = StateT[S, K]
+
+      override given RestrictionMonadMonad: StateT[S, K] is Monad = StateTIsMonad[S, K](using K.SelfIsMonad)
 
       import K.SelfIsMonad.SelfIsFunctor.map
       import K.restrict
@@ -99,10 +99,10 @@ object StateT {
     * Here *m*†' is the iteration operation of *M*.
     */
   given StateTIsElgotMonad: [S, K[_]] => (K: K is ElgotMonad) => StateT[S, K] is ElgotMonad = {
-    given StateT[S, K] is Monad = StateTIsMonad[S, K](using K.SelfIsMonad)
-
     new ElgotMonad {
       type Self = StateT[S, K]
+
+      override given ElgotMonadMonad: StateT[S, K] is Monad = StateTIsMonad[S, K](using K.SelfIsMonad)
 
       import K.SelfIsMonad.SelfIsFunctor.map
 

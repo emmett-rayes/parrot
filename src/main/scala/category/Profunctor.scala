@@ -5,7 +5,7 @@ import scala.annotation.targetName
 
 /** A profunctor on an underlying category **C**.
   *
-  * Represents a functor *P*: **C**^*op* × **C** → **Type**, where
+  * Represents a functor *P*: **C**^op × **C** → **Type**, where
   *   - *P*[*A*,*B*] is the object part, contravariant in *A* and covariant in *B*
   *   - *P*(*f*,*g*) is the morphism part
   */
@@ -14,10 +14,10 @@ trait Profunctor {
   final type ~> = Self
 
   /** The promonad inducing the underlying category **C**. */
-  type On[_, _]: Promonad
+  type On[_, _]: Promonad as ProfunctorOnPromonad
   final type ==> = On
 
-  val OnIsPromonad: On is Promonad
+  val OnIsPromonad: On is Promonad = ProfunctorOnPromonad
   import OnIsPromonad.*
 
   /** Maps a pair of morphisms *f*: *C* ==> *A*, *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*]. */
@@ -89,7 +89,8 @@ object Profunctor {
   given TypeEqIsProfunctor: =:= is Profunctor {
     type On = =:=
 
-    override val OnIsPromonad: Promonad.TypeEqIsPromonad.type = Promonad.TypeEqIsPromonad
+    override given ProfunctorOnPromonad: Promonad.TypeEqIsPromonad.type = Promonad.TypeEqIsPromonad
+    override val OnIsPromonad: Promonad.TypeEqIsPromonad.type          = Promonad.TypeEqIsPromonad
 
     def dimap[A, B, C, D](f: C =:= A, g: B =:= D)(p: A =:= B): C =:= D = {
       f andThen p andThen g
@@ -100,7 +101,8 @@ object Profunctor {
   given FunctionIsProfunctor: Function is Profunctor {
     type On = Function
 
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override given ProfunctorOnPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override val OnIsPromonad: Promonad.FunctionIsPromonad.type          = Promonad.FunctionIsPromonad
 
     def dimap[A, B, C, D](f: C => A, g: B => D)(p: A => B): C => D = {
       f andThen p andThen g

@@ -12,10 +12,10 @@ import scala.annotation.targetName
   *   - *μ*: *M* ∘ *M* ⇒ *M* is the multiplication of the monoid, presented here via `flatten`
   */
 trait Monad {
-  type Self[_]: Functor
+  type Self[_]: Functor as MonadFunctor
   final type M = Self
 
-  val SelfIsFunctor: Self is Functor = summon
+  val SelfIsFunctor: Self is Functor = MonadFunctor
 
   /** The unit natural transformation *η*: *Id* ⇒ *M*.
     *
@@ -103,7 +103,8 @@ object Monad {
     * Here 1 is the unit type (`None`) and *ι*₁ and *ι*₂ are the injections into `Option`, i.e. `Some` and `None`.
     */
   given OptionIsMonad: Option is Monad {
-    override val SelfIsFunctor: Option is Functor = Functor.OptionIsFunctor
+    override given MonadFunctor: Functor.OptionIsFunctor.type = Functor.OptionIsFunctor
+    override val SelfIsFunctor: Functor.OptionIsFunctor.type  = Functor.OptionIsFunctor
 
     def unit[A](a: A): Option[A] = {
       Some(a)
@@ -124,7 +125,8 @@ object Monad {
     * and `Failure`.
     */
   given TryIsMonad: Try is Monad {
-    override val SelfIsFunctor: Try is Functor = Functor.TryIsFunctor
+    override given MonadFunctor: Functor.TryIsFunctor.type = Functor.TryIsFunctor
+    override val SelfIsFunctor: Functor.TryIsFunctor.type  = Functor.TryIsFunctor
 
     def unit[A](a: A): Try[A] = {
       Success(a)

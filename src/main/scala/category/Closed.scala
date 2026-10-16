@@ -10,9 +10,9 @@ package category
   *   - Λ: *P*[*C* ⊗ *A*, *B*] → *P*[*C*, *Exp*[*A*, *B*]] is currying
   */
 trait Closed {
-  type Self[_, _]: Monoidal
+  type Self[_, _]: Monoidal as ClosedMonoidal
 
-  val SelfIsMonoidal: Self is Monoidal = summon
+  val SelfIsMonoidal: Self is Monoidal = ClosedMonoidal
   import SelfIsMonoidal.*
   import SelfIsMonoidal.SelfIsPromonad.*
 
@@ -61,8 +61,8 @@ object Closed {
 
   /** `Function` is monoidal closed under tuple products with function types as exponentials. */
   given FunctionIsClosed: Function is Closed {
-    override given given_Monoidal_Self: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
-    override val SelfIsMonoidal: Monoidal.FunctionIsMonoidal.type        = Monoidal.FunctionIsMonoidal
+    override given ClosedMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override val SelfIsMonoidal: Monoidal.FunctionIsMonoidal.type   = Monoidal.FunctionIsMonoidal
 
     type Exp = Function
 
@@ -77,8 +77,8 @@ object Closed {
 
   /** `Function` is monoidal closed under lazy tuple products with function types as exponentials. */
   given FunctionIsLazyClosed: Function is Closed {
-    override given given_Monoidal_Self: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
-    override val SelfIsMonoidal: Cartesian.FunctionIsLazyCartesian.type        = Cartesian.FunctionIsLazyCartesian
+    override given ClosedMonoidal: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
+    override val SelfIsMonoidal: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
 
     type Exp = Function
 

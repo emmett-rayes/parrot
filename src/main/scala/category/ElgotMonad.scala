@@ -7,10 +7,10 @@ package category
   *   - _†: (*A* → *M*[*B* + *A*]) → (*A* → *M*[*B*]) is the Elgot iteration operation.
   */
 trait ElgotMonad {
-  type Self[_]: Monad
+  type Self[_]: Monad as ElgotMonadMonad
   final type M = Self
 
-  val SelfIsMonad: Self is Monad = summon
+  val SelfIsMonad: Self is Monad = ElgotMonadMonad
 
   /** Maps a step morphism *f*: *A* → *M*[*B* + *A*] and an initial state *a* in *A* to an iterated computation in
     * *M*[*B*].
@@ -37,6 +37,9 @@ object ElgotMonad {
 
   /** `Option` is an Elgot monad *M* with iteration computing a tail-recursive loop. */
   given OptionIsElgotMonad: Option is ElgotMonad {
+    override given ElgotMonadMonad: Monad.OptionIsMonad.type = Monad.OptionIsMonad
+    override val SelfIsMonad: Monad.OptionIsMonad.type       = Monad.OptionIsMonad
+
     def iterate[A, B](f: A => Option[Either[B, A]]): A => Option[B] = {
       @annotation.tailrec
       def loop(a: A): Option[B] = f(a) match {
@@ -50,6 +53,9 @@ object ElgotMonad {
 
   /** `Try` is an Elgot monad *M* with iteration computing a tail-recursive loop. */
   given TryIsElgotMonad: Try is ElgotMonad {
+    override given ElgotMonadMonad: Monad.TryIsMonad.type = Monad.TryIsMonad
+    override val SelfIsMonad: Monad.TryIsMonad.type       = Monad.TryIsMonad
+
     def iterate[A, B](f: A => Try[Either[B, A]]): A => Try[B] = {
       @annotation.tailrec
       def loop(a: A): Try[B] = f(a) match {

@@ -7,7 +7,7 @@ package category
   *   - *β*: *A* ⊗ *B* ⇒ *B* ⊗ *A* is the braiding
   */
 trait Symmetric extends Monoidal {
-  type Self[_, _]: Monoidal
+  override type Self[_, _]: Monoidal as SymmetricMonoidal
 
   import SelfIsPromonad.*
 
@@ -24,7 +24,7 @@ trait Symmetric extends Monoidal {
     braid >>> leftUnitor
   }
 
-  /** The inverse right unitor morphism *ρ*⁻¹: *A* ~> *A* ⊗ *I* = *β* ∘ *λ*⁻¹. */
+  /** The inverse right unitor morphism *ρ*⁻¹: *A* ⊗ *I* ~> *A* = *β* ∘ *λ*⁻¹. */
   override def rightUnitorInv[A]: A ~> (A * I) = {
     leftUnitorInv >>> braid
   }
@@ -80,6 +80,8 @@ object Symmetric {
 
   /** `Symmetric` instance for `Function` on the category **Type**. */
   given FunctionIsSymmetric: Function is Symmetric {
+    override given SymmetricMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+
     export Monoidal.FunctionIsMonoidal.{
       rightUnitor as _,
       rightUnitorInv as _,

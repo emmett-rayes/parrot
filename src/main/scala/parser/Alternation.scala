@@ -8,7 +8,7 @@ import category.{Enriched, Monoid}
 trait Alternation extends ParserAlgebra {
   override type Self[_, _]: Enriched over Monoid.Additive as AlternationEnriched
 
-  val SelfIsAdditive: Self is Enriched over Monoid.Additive = summon
+  val SelfIsAdditive: Self is Enriched over Monoid.Additive = AlternationEnriched
   import SelfIsAdditive.HomIsV
 
   override def failure[A, B]: P[A, B] = {

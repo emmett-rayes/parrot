@@ -12,9 +12,9 @@ import scala.annotation.targetName
   * @note Every Conway structure induces a cartesian traced promonad.
   */
 trait Conway {
-  type Self[_, _]: Cartesian
+  type Self[_, _]: Cartesian as ConwayCartesian
 
-  val SelfIsCartesian: Self is Cartesian = summon
+  val SelfIsCartesian: Self is Cartesian = ConwayCartesian
   import SelfIsCartesian.*
   import SelfIsCartesian.SelfIsPromonad.*
 
@@ -46,7 +46,7 @@ trait Conway {
       (f >>> unit(g)).dagger === (((identity[A] *** unit(g)) >>> f).dagger >>> unit(g))
     }
 
-    /** Double dagger identity (diagonality / Bekić): (*f* ∘ ⟨*id*, π₂⟩)† = (*f*†)† */
+    /** Double dagger identity (diagonality / Beki\u0107): (*f* ∘ ⟨*id*, \u03c0₂⟩)† = (*f*†)† */
     def doubleDagger[A, C](p: ((A * C) * C) ~> C)(using (A ~> C) is Eq): Boolean = {
       ((identity[A * C] &&& second[A, C]) >>> p).dagger === p.dagger.dagger
     }
@@ -62,7 +62,7 @@ object Conway {
   def apply[P[_, _]: Conway]: P is Conway = summon
 
   /** Every Conway promonad induces a cartesian traced promonad, where trace is derived from the Conway dagger operator:
-    * *tr*(*p*) = π₁ ∘ (*p* ∘ (*id* ⊗ π₂))†
+    * *tr*(*p*) = \u03c0₁ ∘ (*p* ∘ (*id* ⊗ \u03c0₂))†
     */
   given ConwayIsCartesianTraced: [P[_, _]: {Conway as C}]
     => (K: C.SelfIsCartesian.SelfIsPromonad.On is Cartesian.`with`[C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor])
@@ -70,7 +70,7 @@ object Conway {
     new Traced {
       type Self[A, B] = P[A, B]
 
-      override given given_Profunctor_Self: C.SelfIsCartesian.SelfIsPromonad.type = C.SelfIsCartesian.SelfIsPromonad
+      override given TracedProfunctor: C.SelfIsCartesian.SelfIsPromonad.type = C.SelfIsCartesian.SelfIsPromonad
       override val SelfIsProfunctor: C.SelfIsCartesian.SelfIsPromonad.type        = C.SelfIsCartesian.SelfIsPromonad
       override val OnIsMonoidal: K.type                                           = K
       import OnIsMonoidal.*
@@ -97,7 +97,8 @@ object Conway {
     => P is Conway.`with`[C.I, C.Tensor] = new Conway {
     type Self[A, B] = P[A, B]
 
-    override val SelfIsCartesian: C.type = C
+    override given ConwayCartesian: C.type = C
+    override val SelfIsCartesian: C.type   = C
     import C.*
     import C.SelfIsPromonad.*
 
@@ -108,7 +109,7 @@ object Conway {
 
   /** `Function` is a `Conway` category under lazy tuple products via knot-tying fixed points. */
   given FunctionIsLazyCartesianConway: Function is Conway {
-    override given given_Cartesian_Self: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
+    override given ConwayCartesian: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
     override val SelfIsCartesian: Cartesian.FunctionIsLazyCartesian.type        = Cartesian.FunctionIsLazyCartesian
 
     def dagger[A, C](p: LazyTuple2[A, C] => C): A => C = {

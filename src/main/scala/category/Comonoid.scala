@@ -13,9 +13,9 @@ trait Comonoid {
   type Self
   final type M = Self
 
-  type In[_, _]: Monoidal on Function
+  type In[_, _]: Monoidal on Function as ComonoidInMonoidal
 
-  val InIsMonoidal: In is Monoidal on Function = summon
+  val InIsMonoidal: In is Monoidal on Function = ComonoidInMonoidal
 
   import InIsMonoidal.*
   import InIsMonoidal.SelfIsPromonad.*

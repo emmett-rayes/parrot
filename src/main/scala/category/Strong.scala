@@ -5,15 +5,15 @@ import scala.annotation.targetName
 
 /** A strong profunctor on an underlying monoidal category **C**.
   *
-  * Represents a profunctor *P*: **C**^*op* × **C** → **Type** equipped with a tensorial strength with respect to a
+  * Represents a profunctor *P*: **C**^op × **C** → **Type** equipped with a tensorial strength with respect to a
   * monoidal category (**C**, ⊗, *I*), where
   *   - *first*: *P*[*A*, *B*] → *P*[*A* ⊗ *C*, *B* ⊗ *C*] is the left strength
   *   - *second*: *P*[*A*, *B*] → *P*[*C* ⊗ *A*, *C* ⊗ *B*] is the right strength
   */
 trait Strong {
-  type Self[_, _]: Profunctor
+  type Self[_, _]: Profunctor as StrongProfunctor
 
-  val SelfIsProfunctor: Self is Profunctor = summon
+  val SelfIsProfunctor: Self is Profunctor = StrongProfunctor
   import SelfIsProfunctor.*
 
   /** The monoidal structure of the underlying category **C**. */
@@ -107,7 +107,8 @@ object Strong {
 
   /** `Function` is canonically `Strong` over itself under its cartesian monoidal structure. */
   given FunctionIsStrong: Function is Strong {
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override given StrongProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
     override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type         = Monoidal.FunctionIsMonoidal
 
     def first[A, B, C](p: A => B): ((A, C)) => (B, C) = {
@@ -121,7 +122,8 @@ object Strong {
 
   /** `Function` is canonically `Strong` over itself under its lazy cartesian monoidal structure. */
   given FunctionIsLazyStrong: Function is Strong {
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override given StrongProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
     override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
 
     def first[A, B, C](p: A => B): LazyTuple2[A, C] => LazyTuple2[B, C] = {

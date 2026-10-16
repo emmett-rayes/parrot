@@ -14,9 +14,9 @@ trait Monoid {
   type Self
   final type M = Self
 
-  type In[_, _]: Monoidal
+  type In[_, _]: Monoidal as MonoidInMonoidal
 
-  val InIsMonoidal: In is Monoidal = summon
+  val InIsMonoidal: In is Monoidal = MonoidInMonoidal
 
   import InIsMonoidal.*
   import InIsMonoidal.SelfIsPromonad.*
@@ -67,7 +67,8 @@ object Monoid {
     type Self
     type In = Function
 
-    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override given MonoidInMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type       = Monoidal.FunctionIsMonoidal
 
     import InIsMonoidal.*
     import InIsMonoidal.SelfIsPromonad.*
@@ -159,7 +160,8 @@ object Monoid {
     type Self
     type In = Function
 
-    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override given MonoidInMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
+    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type       = Monoidal.FunctionIsMonoidal
 
     import InIsMonoidal.*
     import InIsMonoidal.SelfIsPromonad.*

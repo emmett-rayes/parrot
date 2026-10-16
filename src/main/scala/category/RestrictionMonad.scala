@@ -9,10 +9,10 @@ import scala.annotation.targetName
   *   - _̄: *M*[*A*] → *M*[Unit] is the restriction operation
   */
 trait RestrictionMonad {
-  type Self[_]: Monad
+  type Self[_]: Monad as RestrictionMonadMonad
   final type M = Self
 
-  val SelfIsMonad: Self is Monad = summon
+  val SelfIsMonad: Self is Monad = RestrictionMonadMonad
 
   /** Maps an element *m* in *M*[*A*] to its restriction idempotent *m̄* in *M*[Unit]. */
   def restrict[A](m: M[A]): M[Unit]
@@ -63,6 +63,9 @@ object RestrictionMonad {
     * Here 1 is the unit type (`None`).
     */
   given OptionIsRestrictionMonad: Option is RestrictionMonad {
+    override given RestrictionMonadMonad: Monad.OptionIsMonad.type = Monad.OptionIsMonad
+    override val SelfIsMonad: Monad.OptionIsMonad.type             = Monad.OptionIsMonad
+
     def restrict[A](m: Option[A]): Option[Unit] = {
       m.map(_ => ())
     }
@@ -72,9 +75,12 @@ object RestrictionMonad {
     *   - *M*[*A*] = *A* + *E* are the elements
     *   - *m̄* = *M*(_ ↦ ())(*m*) is the restriction operation
     *
-    * Here *E* is the type of failures, i.e. `Throwable`.
+    * Here *E* is the type of failures, i.e. `Throwable` shipping.
     */
   given TryIsRestrictionMonad: Try is RestrictionMonad {
+    override given RestrictionMonadMonad: Monad.TryIsMonad.type = Monad.TryIsMonad
+    override val SelfIsMonad: Monad.TryIsMonad.type             = Monad.TryIsMonad
+
     def restrict[A](m: Try[A]): Try[Unit] = {
       m.map(_ => ())
     }
