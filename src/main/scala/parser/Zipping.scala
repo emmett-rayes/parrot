@@ -5,7 +5,7 @@ import category.*
 
 /** Implements parallel composition from a strength of `Self` over `On`. */
 trait Zipping extends ParserAlgebra {
-  type Self[_, _]: Strong.on[On, Empty, Pair]
+  override type Self[_, _]: Strong.on[On, Empty, Pair] as ZippingStrong
 
   val SelfIsStrong: Self is Strong.on[On, Empty, Pair] = summon
   import SelfIsStrong.{first, second}

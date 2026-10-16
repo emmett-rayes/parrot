@@ -5,7 +5,7 @@ import category.Cocartesian
 
 /** Implements branching and merging from coproducts on `Self`. */
 trait Branching extends ParserAlgebra {
-  override type Self[_, _]: Cocartesian.`with`[None, Alternative]
+  override type Self[_, _]: Cocartesian.`with`[None, Alternative] as BranchingCocartesian
 
   val SelfIsCocartesian: Self is Cocartesian.`with`[None, Alternative] = summon
   import SelfIsCocartesian.{+++, left, right, |||}

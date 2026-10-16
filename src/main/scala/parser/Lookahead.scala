@@ -5,7 +5,7 @@ import category.*
 
 /** Implements lookahead from a restriction structure on `Self`. */
 trait Lookahead extends ParserAlgebra {
-  override type Self[_, _]: Restriction
+  override type Self[_, _]: Restriction as LookaheadRestriction
 
   val SelfIsRestriction: Self is Restriction = summon
   import SelfIsRestriction.restrict

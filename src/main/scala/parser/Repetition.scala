@@ -5,7 +5,8 @@ import category.{Cartesian, Cocartesian}
 
 /** Implements repetition combinators from cartesian and cocartesian structure on `On`. */
 trait Repetition extends ParserAlgebra {
-  override type On[_, _]: {Cartesian.`with`[Empty, Pair], Cocartesian.`with`[None, Alternative]}
+  override type On[_, _]: {Cartesian.`with`[Empty, Pair] as RepetitionOnCartesian,
+    Cocartesian.`with`[None, Alternative] as RepetitionOnCocartesian}
 
   val OnIsCartesian: On is Cartesian.`with`[Empty, Pair]           = summon
   val OnIsCocartesian: On is Cocartesian.`with`[None, Alternative] = summon

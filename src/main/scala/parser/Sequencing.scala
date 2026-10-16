@@ -6,7 +6,7 @@ import category.Profunctor.on
 
 /** Implements sequential composition and embedding from a promonad structure on `Self` over `On`. */
 trait Sequencing extends ParserAlgebra {
-  override type Self[_, _]: Promonad on On
+  override type Self[_, _]: Promonad on On as SequencingPromonad
 
   val SelfIsPromonad: Self is Promonad on On = summon
   import SelfIsPromonad.*

@@ -5,7 +5,7 @@ import category.*
 
 /** Implements paired sequencing from a cartesian structure on `On`. */
 trait Pairing extends ParserAlgebra {
-  override type On[_, _]: Cartesian.`with`[Empty, Pair]
+  override type On[_, _]: Cartesian.`with`[Empty, Pair] as PairingOnCartesian
 
   val OnIsCartesian: On is Cartesian.`with`[Empty, Pair] = summon
   import OnIsCartesian.{diagonal, first, second}

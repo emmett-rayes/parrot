@@ -6,7 +6,7 @@ import category.{Enriched, Monoid}
 
 /** Implements failure and ordered choice from an additive monoid enrichment on `Self`. */
 trait Alternation extends ParserAlgebra {
-  override type Self[_, _]: Enriched over Monoid.Additive
+  override type Self[_, _]: Enriched over Monoid.Additive as AlternationEnriched
 
   val SelfIsAdditive: Self is Enriched over Monoid.Additive = summon
   import SelfIsAdditive.HomIsV
