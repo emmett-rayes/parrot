@@ -8,18 +8,18 @@ import java.nio.file.Path
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
 
-/** Compares the throughput and memory usage of the interpreters on the JSON grammar, with four offline suites in
+/** Compares the throughput and memory usage of the interpreters on [[JsonGrammar]], with four offline suites in
   * `src/test/resources/json` run one after the other and reported separately:
-  *   - `JSONTestSuite`: the `test_parsing` documents of [[https://github.com/nst/JSONTestSuite]], grouped by
+  *   - `json-test-suite`: the `test_parsing` documents of [[https://github.com/nst/JSONTestSuite]], grouped by
   *     expectation
   *   - `json-dummy-data`: the documents of [[https://microsoftedge.github.io/Demos/json-dummy-data]], one by one
-  *   - `json_benchmark`: the sample documents of [[https://github.com/TkTech/json_benchmark]], with its methodology
+  *   - `json-benchmark`: the sample documents of [[https://github.com/TkTech/json_benchmark]], with its methodology
   *   - `nativejson-benchmark`: the Parse and Parse Validation benchmarks of
   *     [[https://github.com/miloyip/nativejson-benchmark]], with its methodology
   *
   * Run with `sbt "Test/runMain parrot.json.JsonBenchmark [--reference] [suite ...]"`; without suites, all suites run.
   * Only [[StrictParser]] is measured unless `--reference` adds [[ReferenceParser]] as the baseline it is compared with;
-  * the reference is slow, especially on the large documents of `json_benchmark`.
+  * the reference interpreter is slow on the large documents of `json-benchmark`.
   *
   * Memory is the number of bytes allocated on the heap by the parsing thread, also per byte of input, and the time
   * spent in garbage collection during the measured runs. Garbage is collected before each measured run, so that runs do
@@ -30,19 +30,23 @@ object JsonBenchmark {
   /** A named way to parse a whole JSON document, returning whether it was accepted. */
   final case class Interpreter(name: String, accepts: String => Boolean)
 
+  /** The [[ReferenceParser]] interpreter on [[JsonGrammar]]. */
   def reference: Interpreter = {
-    val grammar = JsonGrammar(ReferenceParser)
+    val parser  = new ReferenceParser {}
+    val grammar = JsonGrammar(parser)
     Interpreter(
       "ReferenceParser",
-      input => ReferenceParser.parse(grammar.json)(input).toOption.exists(_.offset == input.length),
+      input => parser.parse(grammar.json)(input).toOption.exists(_.offset == input.length),
     )
   }
 
+  /** The [[StrictParser]] interpreter on [[JsonGrammar]]. */
   def strict: Interpreter = {
-    val grammar = JsonGrammar(StrictParser)
+    val parser  = new StrictParser {}
+    val grammar = JsonGrammar(parser)
     Interpreter(
       "StrictParser",
-      input => StrictParser.parse(grammar.json)(input).toOption.exists(_.offset == input.length),
+      input => parser.parse(grammar.json)(input).toOption.exists(_.offset == input.length),
     )
   }
 
@@ -56,10 +60,6 @@ object JsonBenchmark {
     val name  = Path.of(path).nn.getFileName.nn.toString
     Fixture(name, input, raw.length)
   }
-
-  // ===========================================================================
-  // Measurement
-  // ===========================================================================
 
   /** The bytes allocated so far by the current thread. */
   private def allocatedBytes(): Long = {
@@ -114,14 +114,14 @@ object JsonBenchmark {
     * (counted in [[Measurement.gcMs]]) is only due to its own allocations.
     */
   def measure(work: () => Int, warmup: Int, runs: Int, minRunMs: Double = 0): Measurement = {
-    val warmupRuns           = (1 to warmup.max(1)).map { _ =>
+    val warmupRuns = (1 to warmup.max(1)).map { _ =>
       val start = System.nanoTime()
       val res   = work()
       (res, (System.nanoTime() - start) / 1e6)
     }
-    val slowest              = warmupRuns.map(_._2).max
-    val repetitions          = if slowest >= minRunMs then 1 else math.ceil(minRunMs / slowest.max(1e-3)).toInt
-    val measured             = (1 to runs).map { _ =>
+    val slowest     = warmupRuns.map(_._2).max
+    val repetitions = if slowest >= minRunMs then 1 else math.ceil(minRunMs / slowest.max(1e-3)).toInt
+    val measured    = (1 to runs).map { _ =>
       collectGarbage()
       val gcBefore = gcMillis()
       val bytes    = allocatedBytes()
@@ -168,16 +168,12 @@ object JsonBenchmark {
     else s"${decimal(bytes / 1e6, 1)} MB"
   }
 
-  // ===========================================================================
-  // JSONTestSuite
-  // ===========================================================================
-
   /** A group of fixtures, measured together. */
   final case class Group(label: String, fixtures: List[Fixture]) {
     val bytes: Long = fixtures.map(_.bytes.toLong).sum
   }
 
-  /** The `JSONTestSuite` fixtures in [[JsonFixtures]] that are valid UTF-8, grouped by expectation. */
+  /** The `json-test-suite` fixtures in [[JsonFixtures]] that are valid UTF-8, grouped by expectation. */
   def groups(names: List[String]): List[Group] = {
     val suite    = JsonFixtures.jsonTestSuiteSuite
     val fixtures = names.flatMap { name =>
@@ -234,7 +230,7 @@ object JsonBenchmark {
   ): Unit = {
     val suite = groups(JsonFixtures.jsonTestSuite)
     val bytes = suite.map(_.bytes).sum
-    heading("JSONTestSuite (github.com/nst/JSONTestSuite@1ef36fa, test_parsing)")
+    heading("json-test-suite (github.com/nst/JSONTestSuite@1ef36fa, test_parsing)")
     println(
       s"${suite.map(_.fixtures.size).sum} fixtures, ${size(bytes)}: " +
         s"median of $runs runs after $warmup warm-ups, per pass over the fixtures " +
@@ -269,10 +265,6 @@ object JsonBenchmark {
     }
   }
 
-  // ===========================================================================
-  // json_benchmark
-  // ===========================================================================
-
   /** [[https://github.com/TkTech/json_benchmark]]: complete loads of each sample document, reported per document by the
     * minimum, maximum and mean duration, as by `pytest-benchmark`.
     */
@@ -294,7 +286,7 @@ object JsonBenchmark {
     val source: String = "github.com/TkTech/json_benchmark@52d596b"
 
     def run(interpreters: List[Interpreter], warmup: Int = 1, runs: Int = 5, minRunMs: Double = 100): Unit = {
-      heading(s"json_benchmark ($source)")
+      heading(s"json-benchmark ($source)")
       println(
         s"complete load of each document: min, max and mean of $runs runs after $warmup warm-up, per load " +
           s"(runs repeat loads to at least ${minRunMs.toInt} ms; alloc: heap bytes allocated per load)"
@@ -350,12 +342,8 @@ object JsonBenchmark {
     }
   }
 
-  // ===========================================================================
-  // json-dummy-data
-  // ===========================================================================
-
   /** The documents of [[https://microsoftedge.github.io/Demos/json-dummy-data]], vendored in [[JsonFixtures]], loaded
-    * one by one and reported like `json_benchmark`.
+    * one by one and reported like `json-benchmark`.
     */
   def runJsonDummyData(
     interpreters: List[Interpreter],
@@ -376,10 +364,6 @@ object JsonBenchmark {
       loadEach(table, interpreters, name, document, warmup, runs, minRunMs)
     }
   }
-
-  // ===========================================================================
-  // nativejson-benchmark
-  // ===========================================================================
 
   /** [[https://github.com/miloyip/nativejson-benchmark]]:
     *   - Parse Validation: the JSON_checker documents `pass*.json` must be accepted and `fail*.json` rejected, except
@@ -480,14 +464,10 @@ object JsonBenchmark {
     }
   }
 
-  // ===========================================================================
-  // Entry point
-  // ===========================================================================
-
   val suites: List[(String, List[Interpreter] => Unit)] = List(
-    "JSONTestSuite"        -> (runJsonTestSuite(_)),
+    "json-test-suite"      -> (runJsonTestSuite(_)),
     "json-dummy-data"      -> (runJsonDummyData(_)),
-    "json_benchmark"       -> (TkTech.run(_)),
+    "json-benchmark"       -> (TkTech.run(_)),
     "nativejson-benchmark" -> (NativeJson.run(_)),
   )
 
