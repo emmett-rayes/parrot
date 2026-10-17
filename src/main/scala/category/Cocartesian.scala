@@ -85,7 +85,7 @@ trait Cocartesian extends Monoidal {
 
   extension [A, B](p: A ~> B)
     /** Alias for [[tensor]]. */
-    def +++[C, D](q: C ~> D): (A * C) ~> (B * D) = {
+    def +++[C, D](q: C ~> D): (A + C) ~> (B + D) = {
       Cocartesian.this.tensor(p, q)
     }
 
