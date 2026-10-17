@@ -17,7 +17,9 @@ import scala.annotation.targetName
 trait Cartesian extends Monoidal {
   override type Self[_, _]: Promonad as CartesianPromonad
 
-  override val SelfIsPromonad: Self is Promonad = CartesianPromonad
+  override given MonoidalPromonad: Self is Promonad = CartesianPromonad
+  override val SelfIsPromonad: Self is Promonad     = CartesianPromonad
+
   import SelfIsPromonad.*
 
   /** The unique morphism !: *A* ~> *I* to the terminal object. */
@@ -141,10 +143,11 @@ object Cartesian {
   def apply[P[_, _]: Cartesian]: P is Cartesian = summon
 
   /** Every object in a cartesian monoidal category is uniquely a comonoid object via the augment and diagonal. */
-  given TIsComonoid: [T, P[_, _]: {Cartesian on Function as C}] => T is Comonoid {
+  given TIsComonoid: [T, P[_, _]: {Cartesian on PureFunction as C}] => T is Comonoid {
     type In = P
 
-    override val InIsMonoidal: C.type = C
+    override given ComonoidInMonoidal: C.type = C
+    override val InIsMonoidal: C.type         = C
 
     import InIsMonoidal.*
     import InIsMonoidal.SelfIsPromonad.*

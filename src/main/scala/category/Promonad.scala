@@ -17,13 +17,12 @@ import scala.annotation.targetName
   *   - ∘ is the composition given by the multiplication *μ*
   */
 trait Promonad extends Profunctor {
-  type Self[_, _]
 
   /** The unit natural transformation *η*: *Hom* ⇒ *P*.
     *
-    * Maps a morphism *f*: *A* ==> *B* to an element *η*(*f*) in *A* ~> *B*.
+    * Maps a morphism *f*: *A* --> *B* to an element *η*(*f*) in *A* ~> *B*.
     */
-  def unit[A, B](f: A ==> B): A ~> B
+  def unit[A, B](f: A --> B): A ~> B
 
   /** The multiplication natural transformation *μ*: *P* ⋄ *P* ⇒ *P*.
     *
@@ -50,10 +49,10 @@ trait Promonad extends Profunctor {
     multiply(q, p)
   }
 
-  /** Maps a pair of morphisms *f*: *C* ==> *A*, *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*] via *P*(*f*,
-    * *g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*).
+  /** Maps a pair of morphisms *f*: *C* --> *A* and *g*: *B* --> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*] via
+    * *P*(*f*,*g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*).
     */
-  override def dimap[A, B, C, D](f: C ==> A, g: B ==> D)(p: A ~> B): C ~> D = {
+  override def dimap[A, B, C, D](f: C --> A, g: B --> D)(p: A ~> B): C ~> D = {
     unit(f) >>> p >>> unit(g)
   }
 
@@ -91,9 +90,9 @@ trait Promonad extends Profunctor {
       * *η*(*f*)(*h*,*k*) = *η*(*k* ∘ *f* ∘ *h*)
       */
     def unitNaturality[A, B, C, D](
-      f: A ==> B,
-      h: C ==> A,
-      k: B ==> D,
+      f: A --> B,
+      h: C --> A,
+      k: B --> D,
     )(using C ~> D is Eq): Boolean = {
       unit(f).dimap(h, k) === unit(h >>> f >>> k)
     }
@@ -105,8 +104,8 @@ trait Promonad extends Profunctor {
     def multiplicationNaturality[A, B, C, D, E](
       p: A ~> B,
       q: B ~> C,
-      h: D ==> A,
-      k: C ==> E,
+      h: D --> A,
+      k: C --> E,
     )(using D ~> E is Eq): Boolean = {
       multiply(q, p).dimap(h, k) === multiply(q.rmap(k), p.lmap(h))
     }
@@ -143,7 +142,7 @@ trait Promonad extends Profunctor {
       */
     def wedge[A, B, BPrime, C](
       q: B ~> C,
-      f: BPrime ==> B,
+      f: BPrime --> B,
       p: A ~> BPrime,
     )(using A ~> C is Eq): Boolean = {
       multiply(q.lmap(f), p) === multiply(q, p.rmap(f))
@@ -176,30 +175,15 @@ object Promonad {
     }
   }
 
-  /** `Promonad` instance for `PartialFunction` on the category **Type**, inducing the category of partial functions. */
-  given PartialFunctionIsPromonad: PartialFunction is Promonad {
-    type On = Function
-
-    override given ProfunctorOnPromonad: FunctionIsPromonad.type = FunctionIsPromonad
-    override val OnIsPromonad: FunctionIsPromonad.type           = FunctionIsPromonad
-
-    def unit[A, B](f: A => B): PartialFunction[A, B] = {
-      PartialFunction.fromFunction(f)
-    }
-
-    def multiply[A, B, C](q: PartialFunction[B, C], p: PartialFunction[A, B]): PartialFunction[A, C] = {
-      p andThen q
-    }
-  }
-
-  /** `Promonad` instance for `Function` on the category **Type**. */
+  /** `Promonad` instance for `Function` on the category **Type**, inducing the category of partial functions **pType**.
+    */
   given FunctionIsPromonad: Function is Promonad {
-    type On = Function
+    type On = PureFunction
 
-    override given ProfunctorOnPromonad: FunctionIsPromonad.type = FunctionIsPromonad
-    override val OnIsPromonad: FunctionIsPromonad.type           = FunctionIsPromonad
+    override given ProfunctorOnPromonad: PureFunction.PureFunctionIsPromonad.type = PureFunction.PureFunctionIsPromonad
+    override val OnIsPromonad: PureFunction.PureFunctionIsPromonad.type           = PureFunction.PureFunctionIsPromonad
 
-    def unit[A, B](f: A => B): A => B = {
+    def unit[A, B](f: A -> B): A => B = {
       f
     }
 

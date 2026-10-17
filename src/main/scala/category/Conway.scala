@@ -15,6 +15,7 @@ trait Conway {
   type Self[_, _]: Cartesian as ConwayCartesian
 
   val SelfIsCartesian: Self is Cartesian = ConwayCartesian
+
   import SelfIsCartesian.*
   import SelfIsCartesian.SelfIsPromonad.*
 
@@ -37,16 +38,16 @@ trait Conway {
     }
 
     /** Parameter naturality: (*f* ∘ (*h* ⊗ *id*))† = *f*† ∘ *h* */
-    def parameterNaturality[A0, A, C](f: (A * C) ~> C, h: A0 ==> A)(using (A0 ~> C) is Eq): Boolean = {
+    def parameterNaturality[A0, A, C](f: (A * C) ~> C, h: A0 --> A)(using (A0 ~> C) is Eq): Boolean = {
       ((unit(h) *** identity[C]) >>> f).dagger === (unit(h) >>> f.dagger)
     }
 
     /** Composition identity (dinaturality): *g* ∘ (*f* ∘ (*id* ⊗ *g*))† = (*g* ∘ *f*)† */
-    def composition[A, C, D](f: (A * C) ~> D, g: D ==> C)(using (A ~> C) is Eq): Boolean = {
+    def composition[A, C, D](f: (A * C) ~> D, g: D --> C)(using (A ~> C) is Eq): Boolean = {
       (f >>> unit(g)).dagger === (((identity[A] *** unit(g)) >>> f).dagger >>> unit(g))
     }
 
-    /** Double dagger identity (diagonality / Beki\u0107): (*f* ∘ ⟨*id*, \u03c0₂⟩)† = (*f*†)† */
+    /** Double dagger identity (diagonality / Bekić): (*f* ∘ ⟨*id*, π₂⟩)† = (*f*†)† */
     def doubleDagger[A, C](p: ((A * C) * C) ~> C)(using (A ~> C) is Eq): Boolean = {
       ((identity[A * C] &&& second[A, C]) >>> p).dagger === p.dagger.dagger
     }
@@ -62,10 +63,12 @@ object Conway {
   def apply[P[_, _]: Conway]: P is Conway = summon
 
   /** Every Conway promonad induces a cartesian traced promonad, where trace is derived from the Conway dagger operator:
-    * *tr*(*p*) = \u03c0₁ ∘ (*p* ∘ (*id* ⊗ \u03c0₂))†
+    * *tr*(*p*) = π₁ ∘ (*p* ∘ (*id* ⊗ π₂))†
     */
   given ConwayIsCartesianTraced: [P[_, _]: {Conway as C}]
-    => (K: C.SelfIsCartesian.SelfIsPromonad.On is Cartesian.`with`[C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor])
+    => (K: C.SelfIsCartesian.SelfIsPromonad.On is Cartesian.`with`[C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor] {
+      val SelfIsPromonad: C.SelfIsCartesian.SelfIsPromonad.OnIsPromonad.type
+    })
     => P is Traced.on[C.SelfIsCartesian.SelfIsPromonad.On, C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor] =
     new Traced {
       type Self[A, B] = P[A, B]
@@ -99,6 +102,7 @@ object Conway {
 
     override given ConwayCartesian: C.type = C
     override val SelfIsCartesian: C.type   = C
+
     import C.*
     import C.SelfIsPromonad.*
 

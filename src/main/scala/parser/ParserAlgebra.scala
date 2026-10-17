@@ -16,7 +16,7 @@ trait ParserAlgebra {
 
   /** Pure functions on semantic values. */
   type On[_, _]
-  final type ==> = On
+  final type --> = On
 
   /** The empty semantic value. */
   type Empty
@@ -45,13 +45,13 @@ trait ParserAlgebra {
   def regex(expected: Regex): P[Empty, String]
 
   /** Applies `f` to the semantic input without consuming anything. */
-  def pure[A, B](f: A ==> B): P[A, B]
+  def pure[A, B](f: A --> B): P[A, B]
 
   /** Applies `g` to the result of `self`. */
-  def map[A, B, D](self: P[A, B], g: B ==> D): P[A, D]
+  def map[A, B, D](self: P[A, B], g: B --> D): P[A, D]
 
   /** Applies `f` to the semantic input before passing it to `self`. */
-  def mapInput[A, B, C](self: P[A, B], f: C ==> A): P[C, B]
+  def mapInput[A, B, C](self: P[A, B], f: C --> A): P[C, B]
 
   /** Succeeds without consuming anything, returning its semantic input. */
   def success[A]: P[A, A]
@@ -151,13 +151,13 @@ trait ParserAlgebra {
 
     /** Infix extension for [[map]]. */
     @targetName("mapExt")
-    def map[D](g: B ==> D): P[A, D] = {
+    def map[D](g: B --> D): P[A, D] = {
       ParserAlgebra.this.map(self, g)
     }
 
     /** Infix extension for [[mapInput]]. */
     @targetName("mapInputExt")
-    def mapInput[C](f: C ==> A): P[C, B] = {
+    def mapInput[C](f: C --> A): P[C, B] = {
       ParserAlgebra.this.mapInput(self, f)
     }
 

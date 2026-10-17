@@ -17,6 +17,7 @@ lazy val root = rootProject
       "-language:experimental.genericNumberLiterals",
       "-language:experimental.modularity",
       "-language:experimental.pureFunctions",
+      "-language:experimental.saferExceptions",
       "-language:strictEquality",
       "-preview",
       "-source:future",

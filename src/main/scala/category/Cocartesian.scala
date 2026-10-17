@@ -17,7 +17,9 @@ import scala.annotation.targetName
 trait Cocartesian extends Monoidal {
   override type Self[_, _]: Promonad as CocartesianPromonad
 
-  override val SelfIsPromonad: Self is Promonad = CocartesianPromonad
+  override given MonoidalPromonad: Self is Promonad = CocartesianPromonad
+  override val SelfIsPromonad: Self is Promonad     = CocartesianPromonad
+
   import SelfIsPromonad.*
 
   /** The initial object *Z* in *Ob*(**C**). */
@@ -154,10 +156,11 @@ object Cocartesian {
   def apply[P[_, _]: Cocartesian]: P is Cocartesian = summon
 
   /** Every object in a cocartesian monoidal category is uniquely a monoid object via the initial morphism and fold. */
-  given TIsMonoid: [T, P[_, _]: {Cocartesian on Function as C}] => T is Monoid {
+  given TIsMonoid: [T, P[_, _]: {Cocartesian on PureFunction as C}] => T is Monoid {
     type In = P
 
-    override val InIsMonoidal: C.type = C
+    override given MonoidInMonoidal: C.type = C
+    override val InIsMonoidal: C.type       = C
 
     import C.{+, Z}
     import InIsMonoidal.*

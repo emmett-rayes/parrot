@@ -26,19 +26,19 @@ trait Enriched {
   object MonoidEnrichedLaws {
 
     /** P(f,g) ∘ η = η */
-    def unitHomomorphy[A, B, C, D, K[_, _], U, T[_, _]](f: C ==> A, g: B ==> D)(
+    def unitHomomorphy[A, B, C, D, K[_, _], U, T[_, _]](f: C --> A, g: B --> D)(
       using
       MonAB: (A ~> B) is Monoid.in[K, U, T],
       MonCD: (C ~> D) is Monoid.in[K, U, T],
       eq: K[U, C ~> D] is Eq,
     ): Boolean = {
       import MonAB.InIsMonoidal.SelfIsPromonad.{>>>, unit}
-      val h = unit(dimap(f, g))
+      val h = unit((p: A ~> B) => dimap(f, g)(p))
       (MonAB.unit >>> h) === MonCD.unit
     }
 
     /** P(f,g) ∘ μ = μ ∘ (P(f,g) ⊗ P(f,g)) */
-    def multiplicationHomomorphy[A, B, C, D, K[_, _], U, T[_, _]](f: C ==> A, g: B ==> D)(
+    def multiplicationHomomorphy[A, B, C, D, K[_, _], U, T[_, _]](f: C --> A, g: B --> D)(
       using
       MonAB: (A ~> B) is Monoid.in[K, U, T],
       MonCD: (C ~> D) is Monoid.in[K, U, T],
@@ -46,7 +46,7 @@ trait Enriched {
     ): Boolean = {
       import MonAB.InIsMonoidal.***
       import MonAB.InIsMonoidal.SelfIsPromonad.{>>>, unit}
-      val h = unit(dimap(f, g))
+      val h = unit((p: A ~> B) => dimap(f, g)(p))
       (MonAB.multiply >>> h) === ((h *** h) >>> MonCD.multiply)
     }
 

@@ -12,8 +12,8 @@ final class JsonGrammar(tracked val algebra: ParserAlgebra.Standard)(using Lift:
   import JsonGrammar.*
   import algebra.*
 
-  /** Lifts a pure Scala function `f` into the algebra's pure function type `==>`. */
-  def lift[A, B](f: A => B): A ==> B = {
+  /** Lifts a pure Scala function `f` into the algebra's pure function type `-->`. */
+  def lift[A, B](f: A => B): A --> B = {
     Lift.unit(f)
   }
 

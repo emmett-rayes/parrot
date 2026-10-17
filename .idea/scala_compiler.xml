@@ -18,6 +18,7 @@
         <parameter value="-language:experimental.genericNumberLiterals" />
         <parameter value="-language:experimental.modularity" />
         <parameter value="-language:experimental.pureFunctions" />
+        <parameter value="-language:experimental.saferExceptions" />
         <parameter value="-language:strictEquality" />
         <parameter value="-preview" />
         <parameter value="-source:future" />

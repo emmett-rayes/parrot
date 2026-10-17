@@ -13,9 +13,10 @@ import scala.annotation.targetName
   *   - *ρ*: *A* ⊗ *I* ⇒ *A* is the right unitor
   */
 trait Monoidal {
-  type Self[_, _]: Promonad
+  type Self[_, _]: Promonad as MonoidalPromonad
 
-  val SelfIsPromonad: Self is Promonad = summon
+  val SelfIsPromonad: Self is Promonad = MonoidalPromonad
+
   import SelfIsPromonad.*
 
   /** The unit object *I* in *Ob*(**C**). */
@@ -162,7 +163,8 @@ object Monoidal {
     type I      = Unit
     type Tensor = Tuple2
 
-    override val SelfIsPromonad: Self is Profunctor.on[Promonad, Function] = Promonad.FunctionIsPromonad
+    override given MonoidalPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
+    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type     = Promonad.FunctionIsPromonad
 
     def tensor[A, B, C, D](p: A => B, q: C => D): ((A, C)) => (B, D) = {
       (a, c) => (p(a), q(c))

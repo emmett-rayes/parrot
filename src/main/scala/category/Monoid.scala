@@ -56,7 +56,7 @@ object Monoid {
   /** Refines the `In` type of `Monoid` to the monoidal `K` with unit `U` and tensor `T`. */
   type in[K[_, _], U, T[_, _]] = Monoid {
     type In = K
-    val InIsMonoidal: K is Monoidal.`with`[U, T] on Function // currently, only `Function` is supported as base promonad
+    val InIsMonoidal: K is Monoidal.`with`[U, T] on PureFunction
   }
 
   /** Summons the `Monoid` instance of `M`. */

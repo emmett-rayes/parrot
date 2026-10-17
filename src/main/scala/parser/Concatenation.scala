@@ -32,10 +32,10 @@ trait Concatenation extends ParserAlgebra {
   }
 
   /** The empty collection. */
-  def nil[B]: Empty ==> Many[B]
+  def nil[B]: Empty --> Many[B]
 
   /** Appends a result to a collection. */
-  def snoc[B]: (Many[B] * B) ==> Many[B]
+  def snoc[B]: (Many[B] * B) --> Many[B]
 
   /** Pairs the semantic input with the empty collection. */
   private def start[A, B]: P[A, A * Many[B]] = {

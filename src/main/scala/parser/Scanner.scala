@@ -59,7 +59,7 @@ object Scanner {
   }
 
   /** Signalled when a regular expression uses constructs outside the supported fragment. */
-  private object Unsupported extends Exception with NoStackTrace
+  private object Unsupported extends RuntimeException with NoStackTrace
 
   private val lineTerminators = CharSet.of('\n', '\r', '\u0085', '\u2028', '\u2029')
   private val digit           = CharSet.range('0', '9')

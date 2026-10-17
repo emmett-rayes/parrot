@@ -19,21 +19,6 @@ abstract class CategorySuite extends AnyFunSuite with ScalaCheckPropertyChecks {
       }
     }
 
-  /** Extensional equality for partial functions (agreeing on domain and values) using ScalaCheck sampling. */
-  given ArbitraryPartialFunctionIsEq: [A, B] => (arbA: Arbitrary[A], eqB: B is Eq) => PartialFunction[A, B] is Eq =
-    new (PartialFunction[A, B] is Eq) {
-      def eq(f: PartialFunction[A, B], g: PartialFunction[A, B]): Boolean = {
-        val prop = Prop.forAll { (a: A) =>
-          (f.lift(a), g.lift(a)) match {
-            case (Some(x), Some(y)) => x === y
-            case (None, None)       => true
-            case _                  => false
-          }
-        }
-        Test.check(Test.Parameters.default, prop).passed
-      }
-    }
-
   /** Sharp generator for `Try[A]` covering varied successes and multiple distinct failure exceptions. */
   given ArbitraryTry: [A: Arbitrary] => Arbitrary[Try[A]] = Arbitrary {
     Gen.oneOf(

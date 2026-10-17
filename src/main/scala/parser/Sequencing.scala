@@ -11,7 +11,7 @@ trait Sequencing extends ParserAlgebra {
   val SelfIsPromonad: Self is Promonad on On = SequencingPromonad
   import SelfIsPromonad.*
 
-  override def pure[A, B](f: A ==> B): P[A, B] = {
+  override def pure[A, B](f: A --> B): P[A, B] = {
     unit(f)
   }
 
@@ -23,11 +23,11 @@ trait Sequencing extends ParserAlgebra {
     self >>> other
   }
 
-  override def map[A, B, D](self: P[A, B], g: B ==> D): P[A, D] = {
+  override def map[A, B, D](self: P[A, B], g: B --> D): P[A, D] = {
     self.rmap(g)
   }
 
-  override def mapInput[A, B, C](self: P[A, B], f: C ==> A): P[C, B] = {
+  override def mapInput[A, B, C](self: P[A, B], f: C --> A): P[C, B] = {
     self.lmap(f)
   }
 }

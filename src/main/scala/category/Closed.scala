@@ -13,6 +13,7 @@ trait Closed {
   type Self[_, _]: Monoidal as ClosedMonoidal
 
   val SelfIsMonoidal: Self is Monoidal = ClosedMonoidal
+
   import SelfIsMonoidal.*
   import SelfIsMonoidal.SelfIsPromonad.*
 

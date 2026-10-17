@@ -15,42 +15,52 @@ trait Profunctor {
 
   /** The promonad inducing the underlying category **C**. */
   type On[_, _]: Promonad as ProfunctorOnPromonad
-  final type ==> = On
+  final type --> = On
 
   val OnIsPromonad: On is Promonad = ProfunctorOnPromonad
+
   import OnIsPromonad.*
 
-  /** Maps a pair of morphisms *f*: *C* ==> *A*, *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*]. */
-  def dimap[A, B, C, D](f: C ==> A, g: B ==> D)(p: A ~> B): C ~> D
+  /** Maps a pair of morphisms *f*: *C* --> *A* and *g*: *B* --> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*].
+    *
+    * @note For the codomain of *P* to be **Type**, `dimap(f, g)` must be a total, pure function `(A ~> B) -> (C ~> D)`.
+    */
+  def dimap[A, B, C, D](f: C --> A, g: B --> D)(p: A ~> B): C ~> D
 
-  /** Maps a morphism *f*: *C* ==> *A* to a morphism *P*[*A*,*B*] → *P*[*C*,*B*]. */
-  def lmap[A, B, C](f: C ==> A)(p: A ~> B): C ~> B = {
+  /** Maps a morphism *f*: *C* --> *A* to a morphism *P*[*A*,*B*] → *P*[*C*,*B*].
+    *
+    * @note For the codomain of *P* to be **Type**, `lmap(f)` must be a total, pure function `(A ~> B) -> (C ~> B)`.
+    */
+  def lmap[A, B, C](f: C --> A)(p: A ~> B): C ~> B = {
     dimap(f, identity)(p)
   }
 
-  /** Maps a morphism *g*: *B* ==> *D* to a morphism *P*[*A*,*B*] → *P*[*A*,*D*]. */
-  def rmap[A, B, D](g: B ==> D)(p: A ~> B): A ~> D = {
+  /** Maps a morphism *g*: *B* --> *D* to a morphism *P*[*A*,*B*] → *P*[*A*,*D*].
+    *
+    * @note For the codomain of *P* to be **Type**, `rmap(g)` must be a total, pure function `(A ~> B) -> (A ~> D)`.
+    */
+  def rmap[A, B, D](g: B --> D)(p: A ~> B): A ~> D = {
     dimap(identity, g)(p)
   }
 
   extension [A, B](p: A ~> B)
     /** Infix extension for [[dimap]]. */
     @targetName("dimapExt")
-    def dimap[C, D](f: C ==> A, g: B ==> D): C ~> D = {
+    def dimap[C, D](f: C --> A, g: B --> D): C ~> D = {
       Profunctor.this.dimap(f, g)(p)
     }
 
   extension [A, B](p: A ~> B)
     /** Infix extension for [[lmap]]. */
     @targetName("lmapExt")
-    def lmap[C](f: C ==> A): C ~> B = {
+    def lmap[C](f: C --> A): C ~> B = {
       Profunctor.this.lmap(f)(p)
     }
 
   extension [A, B](p: A ~> B)
     /** Infix extension for [[rmap]]. */
     @targetName("rmapExt")
-    def rmap[D](g: B ==> D): A ~> D = {
+    def rmap[D](g: B --> D): A ~> D = {
       Profunctor.this.rmap(g)(p)
     }
 
@@ -63,14 +73,14 @@ trait Profunctor {
       p.dimap(OnIsPromonad.identity, OnIsPromonad.identity) === p
     }
 
-    /** *P*(*f2*,*g2*) ∘ *P*(*f1*,*g1*) = *P*(*f2* ∘ *f1*,*g1* ∘ *g2*)
+    /** *P*(*f*₂,*g*₂) ∘ *P*(*f*₁,*g*₁) = *P*(*f*₁ ∘ *f*₂,*g*₂ ∘ *g*₁)
       */
     def composition[A, B, C, D, E, F](
       p: A ~> B,
-      f1: C ==> A,
-      g1: B ==> D,
-      f2: E ==> C,
-      g2: D ==> F,
+      f1: C --> A,
+      g1: B --> D,
+      f2: E --> C,
+      g2: D --> F,
     )(using E ~> F is Eq): Boolean = {
       p.dimap(f1, g1).dimap(f2, g2) === p.dimap(f2 andThen f1, g1 andThen g2)
     }
@@ -93,20 +103,19 @@ object Profunctor {
     override val OnIsPromonad: Promonad.TypeEqIsPromonad.type           = Promonad.TypeEqIsPromonad
 
     def dimap[A, B, C, D](f: C =:= A, g: B =:= D)(p: A =:= B): C =:= D = {
-      f andThen p andThen g
+      g.substituteCo(p.substituteCo(f))
     }
   }
 
   /** `Profunctor` instance for `Function` on the category **Type**. */
   given FunctionIsProfunctor: Function is Profunctor {
-    type On = Function
+    type On = PureFunction
 
-    override given ProfunctorOnPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type           = Promonad.FunctionIsPromonad
+    override given ProfunctorOnPromonad: PureFunction.PureFunctionIsPromonad.type = PureFunction.PureFunctionIsPromonad
+    override val OnIsPromonad: PureFunction.PureFunctionIsPromonad.type           = PureFunction.PureFunctionIsPromonad
 
-    def dimap[A, B, C, D](f: C => A, g: B => D)(p: A => B): C => D = {
+    def dimap[A, B, C, D](f: C -> A, g: B -> D)(p: A => B): C => D = {
       f andThen p andThen g
     }
-
   }
 }

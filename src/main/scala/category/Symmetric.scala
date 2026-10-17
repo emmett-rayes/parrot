@@ -9,6 +9,8 @@ package category
 trait Symmetric extends Monoidal {
   override type Self[_, _]: Monoidal as SymmetricMonoidal
 
+  override given MonoidalPromonad: Self is Promonad = SymmetricMonoidal.SelfIsPromonad
+
   import SelfIsPromonad.*
 
   /** The braiding natural isomorphism *β*: *A* ⊗ *B* ~> *B* ⊗ *A*. */

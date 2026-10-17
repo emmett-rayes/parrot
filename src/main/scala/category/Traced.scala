@@ -44,23 +44,23 @@ trait Traced {
   /** Laws that any `Traced` profunctor must satisfy. */
   object TracedLaws {
 
-    /** *left*(*P*(*f* ⊗ *id*, *g* ⊗ *id*)(*p*)) = *P*(*f*, *g*)(*left*(*p*))
+    /** *left*(*P*(*f* ⊗ *id*,*g* ⊗ *id*)(*p*)) = *P*(*f*,*g*)(*left*(*p*))
       */
-    def leftNaturality[A, B, C, D, X](p: (A * X) ~> (B * X), f: C ==> A, g: B ==> D)(
+    def leftNaturality[A, B, C, D, X](p: (A * X) ~> (B * X), f: C --> A, g: B --> D)(
       using C ~> D is Eq
     ): Boolean = {
       p.dimap(f *** identity[X], g *** identity[X]).left === p.left.dimap(f, g)
     }
 
-    /** *right*(*P*(*id* ⊗ *f*, *id* ⊗ *g*)(*p*)) = *P*(*f*, *g*)(*right*(*p*))
+    /** *right*(*P*(*id* ⊗ *f*,*id* ⊗ *g*)(*p*)) = *P*(*f*,*g*)(*right*(*p*))
       */
-    def rightNaturality[A, B, C, D, X](p: (X * A) ~> (X * B), f: C ==> A, g: B ==> D)(
+    def rightNaturality[A, B, C, D, X](p: (X * A) ~> (X * B), f: C --> A, g: B --> D)(
       using C ~> D is Eq
     ): Boolean = {
       p.dimap(identity[X] *** f, identity[X] *** g).right === p.right.dimap(f, g)
     }
 
-    /** *left*(*P*(ρ, ρ⁻¹)(*p*)) = *p*
+    /** *left*(*P*(ρ,ρ⁻¹)(*p*)) = *p*
       */
     def leftUnitality[A, B](p: A ~> B)(
       using A ~> B is Eq
@@ -68,7 +68,7 @@ trait Traced {
       p.dimap(rightUnitor[A], rightUnitorInv[B]).left === p
     }
 
-    /** *right*(*P*(λ, λ⁻¹)(*p*)) = *p*
+    /** *right*(*P*(λ,λ⁻¹)(*p*)) = *p*
       */
     def rightUnitality[A, B](p: A ~> B)(
       using A ~> B is Eq
@@ -76,7 +76,7 @@ trait Traced {
       p.dimap(leftUnitor[A], leftUnitorInv[B]).right === p
     }
 
-    /** *left*(*left*(*p*)) = *left*(*P*(α⁻¹, α)(*p*))
+    /** *left*(*left*(*p*)) = *left*(*P*(α⁻¹,α)(*p*))
       */
     def leftAssociativity[A, B, C, D](p: ((A * C) * D) ~> ((B * C) * D))(
       using A ~> B is Eq
@@ -84,7 +84,7 @@ trait Traced {
       p.left.left === p.dimap(unassociate[A, C, D], associate[B, C, D]).left
     }
 
-    /** *right*(*right*(*p*)) = *right*(*P*(α, α⁻¹)(*p*))
+    /** *right*(*right*(*p*)) = *right*(*P*(α,α⁻¹)(*p*))
       */
     def rightAssociativity[A, B, C, D](p: (D * (C * A)) ~> (D * (C * B)))(
       using A ~> B is Eq
@@ -107,9 +107,9 @@ object Traced {
 
   /** `Function` is traced under its cartesian monoidal structure via fixed points. */
   given FunctionIsLazyCartesianTraced: Function is Traced {
-    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: Cartesian.FunctionIsLazyCartesian.type     = Cartesian.FunctionIsLazyCartesian
+    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type    = Profunctor.FunctionIsProfunctor
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type      = Profunctor.FunctionIsProfunctor
+    override val OnIsMonoidal: PureFunction.PureFunctionIsLazyCartesian.type = PureFunction.PureFunctionIsLazyCartesian
 
     def left[A, B, C](p: LazyTuple2[A, C] => LazyTuple2[B, C]): A => B = {
       a =>
@@ -130,9 +130,9 @@ object Traced {
 
   /** `Function` is traced under its cocartesian monoidal structure via tail-recursive iteration. */
   given FunctionIsCocartesianTraced: Function is Traced {
-    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type = Profunctor.FunctionIsProfunctor
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type   = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: Cocartesian.FunctionIsCocartesian.type     = Cocartesian.FunctionIsCocartesian
+    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type  = Profunctor.FunctionIsProfunctor
+    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type    = Profunctor.FunctionIsProfunctor
+    override val OnIsMonoidal: PureFunction.PureFunctionIsCocartesian.type = PureFunction.PureFunctionIsCocartesian
 
     def left[A, B, C](p: Either[A, C] => Either[B, C]): A => B = { a =>
       @annotation.tailrec

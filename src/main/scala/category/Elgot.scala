@@ -15,6 +15,7 @@ trait Elgot {
   type Self[_, _]: Cocartesian as ElgotCocartesian
 
   val SelfIsCocartesian: Self is Cocartesian = ElgotCocartesian
+
   import SelfIsCocartesian.SelfIsPromonad.*
   import SelfIsCocartesian.{+, +++, right, |||}
 
@@ -37,12 +38,12 @@ trait Elgot {
     }
 
     /** Parameter naturality: ((*h* ⊕ *id*) ∘ *f*)† = *h* ∘ *f*† */
-    def parameterNaturality[A, B, C](p: C ~> (A + C), h: A ==> B)(using (C ~> B) is Eq): Boolean = {
+    def parameterNaturality[A, B, C](p: C ~> (A + C), h: A --> B)(using (C ~> B) is Eq): Boolean = {
       (p >>> (unit(h) +++ identity[C])).dagger === (p.dagger >>> unit(h))
     }
 
     /** Composition identity (dinaturality): (*g* ∘ *f*)† = *g* ∘ ((*id* ⊕ *g*) ∘ *f*)† */
-    def composition[A, C, D](p: D ~> (A + C), g: C ==> D)(using (C ~> A) is Eq): Boolean = {
+    def composition[A, C, D](p: D ~> (A + C), g: C --> D)(using (C ~> A) is Eq): Boolean = {
       (unit(g) >>> p).dagger === (unit(g) >>> (p >>> (identity[A] +++ unit(g))).dagger)
     }
 
@@ -52,7 +53,7 @@ trait Elgot {
     }
 
     /** Uniformity law (Plotkin's principle): if (*id* ⊕ *h*) ∘ *f* = *g* ∘ *h*, then *f*† = *g*† ∘ *h* */
-    def uniformity[A, C, C0](f: C ~> (A + C), g: C0 ~> (A + C0), h: C ==> C0)(
+    def uniformity[A, C, C0](f: C ~> (A + C), g: C0 ~> (A + C0), h: C --> C0)(
       using
       (C ~> (A + C0)) is Eq,
       (C ~> A) is Eq,
@@ -76,7 +77,9 @@ object Elgot {
     */
   given ElgotIsCocartesianTraced: [P[_, _]: {Elgot as E}]
     => (K: E.SelfIsCocartesian.SelfIsPromonad.On is
-      Cocartesian.`with`[E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor])
+      Cocartesian.`with`[E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor] {
+        val SelfIsPromonad: E.SelfIsCocartesian.SelfIsPromonad.OnIsPromonad.type
+      })
     => P is Traced.on[E.SelfIsCocartesian.SelfIsPromonad.On, E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor] =
     new Traced {
       type Self[A, B] = P[A, B]

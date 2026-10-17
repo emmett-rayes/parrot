@@ -13,9 +13,9 @@ trait Comonoid {
   type Self
   final type M = Self
 
-  type In[_, _]: Monoidal on Function as ComonoidInMonoidal
+  type In[_, _]: Monoidal on PureFunction as ComonoidInMonoidal
 
-  val InIsMonoidal: In is Monoidal on Function = ComonoidInMonoidal
+  val InIsMonoidal: In is Monoidal on PureFunction = ComonoidInMonoidal
 
   import InIsMonoidal.*
   import InIsMonoidal.SelfIsPromonad.*
@@ -54,7 +54,7 @@ object Comonoid {
   /** Refines the `In` type of `Comonoid` to the monoidal `K` with unit `U` and tensor `T`. */
   type in[K[_, _], U, T[_, _]] = Comonoid {
     type In = K
-    val InIsMonoidal: (K is Monoidal.`with`[U, T]) on Function
+    val InIsMonoidal: (K is Monoidal.`with`[U, T]) on PureFunction
   }
 
   /** Summons the `Comonoid` instance of `M`. */
