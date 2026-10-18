@@ -1,7 +1,7 @@
 package parrot
 package category
 
-import org.scalacheck.{Arbitrary, Gen, Prop, Test}
+import org.scalacheck.*
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
@@ -9,6 +9,14 @@ import scala.util.{Failure, Success, Try}
 
 /** Shared base test suite for category law checking with sharp generators and function equality. */
 abstract class CategorySuite extends AnyFunSuite with ScalaCheckPropertyChecks {
+
+  /** Extensional equality for functions between type equality proofs. */
+  given TypeEqFunctionIsEq: [A, B, C, D] => Function[A =:= B, C =:= D] is Eq =
+    new (Function[A =:= B, C =:= D] is Eq) {
+      def eq(f: (A =:= B) => (C =:= D), g: (A =:= B) => (C =:= D)): Boolean = {
+        true
+      }
+    }
 
   /** Extensional equality for functions using ScalaCheck sampling. */
   given ArbitraryFunctionIsEq: [A, B] => (arbA: Arbitrary[A], eqB: B is Eq) => Function[A, B] is Eq =

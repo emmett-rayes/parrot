@@ -13,6 +13,7 @@ import scala.annotation.targetName
   *   - *μ*: *P* ⋄ *P* ⇒ *P* is the multiplication of the monoid
   *
   * Every promonad on **C** induces a category with objects *Ob*(**C**) and hom-sets *P*[*A*,*B*], where
+  *   - *J*: **C** → *P* = *f* ↦*η*(*f*) is the identity-on-objects functor given on morphisms by the unit *η*
   *   - *id* : *A* ~> *A* are the identity morphisms given by the unit *η*
   *   - ∘ is the composition given by the multiplication *μ*
   */
@@ -86,15 +87,13 @@ trait Promonad extends Profunctor {
   object PromonadLaws {
 
     /** *η* ∘ *P*(*h*,*k*) = *Hom*(*h*,*k*) ∘ *η*
-      *
-      * *η*(*f*)(*h*,*k*) = *η*(*k* ∘ *f* ∘ *h*)
       */
     def unitNaturality[A, B, C, D](
-      f: A --> B,
       h: C --> A,
       k: B --> D,
-    )(using C ~> D is Eq): Boolean = {
-      unit(f).dimap(h, k) === unit(h >>> f >>> k)
+    )(using ((A --> B) => (C ~> D)) is Eq): Boolean = {
+      val hom = (f: A --> B) => { h >>> f >>> k }
+      unit[A, B].andThen(dimap(h, k)) === hom.andThen(unit[C, D])
     }
 
     /** *P*(*h*,*k*) ∘ *μ* = *μ* ∘ (*P* ⋄ *P*)(*h*,*k*)

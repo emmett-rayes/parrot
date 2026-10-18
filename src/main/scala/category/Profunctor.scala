@@ -5,7 +5,7 @@ import scala.annotation.targetName
 
 /** A profunctor on an underlying category **C**.
   *
-  * Represents a functor *P*: **C**^op × **C** → **Type**, where
+  * Represents an endobifunctor *P*: **C**^op × **C** → **Type**, where
   *   - *P*[*A*,*B*] is the object part, contravariant in *A* and covariant in *B*
   *   - *P*(*f*,*g*) is the morphism part
   */
@@ -21,24 +21,15 @@ trait Profunctor {
 
   import OnIsPromonad.*
 
-  /** Maps a pair of morphisms *f*: *C* --> *A* and *g*: *B* --> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*].
-    *
-    * @note For the codomain of *P* to be **Type**, `dimap(f, g)` must be a total, pure function `(A ~> B) -> (C ~> D)`.
-    */
+  /** Maps a pair of morphisms *f*: *C* --> *A* and *g*: *B* --> *D* to a morphism *P*[*A*,*B*] → *P*[*C*,*D*]. */
   def dimap[A, B, C, D](f: C --> A, g: B --> D)(p: A ~> B): C ~> D
 
-  /** Maps a morphism *f*: *C* --> *A* to a morphism *P*[*A*,*B*] → *P*[*C*,*B*].
-    *
-    * @note For the codomain of *P* to be **Type**, `lmap(f)` must be a total, pure function `(A ~> B) -> (C ~> B)`.
-    */
+  /** Maps a morphism *f*: *C* --> *A* to a morphism *P*[*A*,*B*] → *P*[*C*,*B*]. */
   def lmap[A, B, C](f: C --> A)(p: A ~> B): C ~> B = {
     dimap(f, identity)(p)
   }
 
-  /** Maps a morphism *g*: *B* --> *D* to a morphism *P*[*A*,*B*] → *P*[*A*,*D*].
-    *
-    * @note For the codomain of *P* to be **Type**, `rmap(g)` must be a total, pure function `(A ~> B) -> (A ~> D)`.
-    */
+  /** Maps a morphism *g*: *B* --> *D* to a morphism *P*[*A*,*B*] → *P*[*A*,*D*]. */
   def rmap[A, B, D](g: B --> D)(p: A ~> B): A ~> D = {
     dimap(identity, g)(p)
   }
@@ -69,20 +60,19 @@ trait Profunctor {
 
     /** *P*(*id*,*id*) = *id*
       */
-    def identity[A, B](p: A ~> B)(using A ~> B is Eq): Boolean = {
-      p.dimap(OnIsPromonad.identity, OnIsPromonad.identity) === p
+    def identity[A, B](using ((A ~> B) => (A ~> B)) is Eq): Boolean = {
+      dimap(OnIsPromonad.identity[A], OnIsPromonad.identity[B]) === scala.Predef.identity[A ~> B]
     }
 
-    /** *P*(*f*₂,*g*₂) ∘ *P*(*f*₁,*g*₁) = *P*(*f*₁ ∘ *f*₂,*g*₂ ∘ *g*₁)
+    /** *P*(*f*₁ ∘ *f*₂,*g*₂ ∘ *g*₁) = *P*(*f*₂,*g*₂) ∘ *P*(*f*₁,*g*₁)
       */
     def composition[A, B, C, D, E, F](
-      p: A ~> B,
       f1: C --> A,
       g1: B --> D,
       f2: E --> C,
       g2: D --> F,
-    )(using E ~> F is Eq): Boolean = {
-      p.dimap(f1, g1).dimap(f2, g2) === p.dimap(f2 andThen f1, g1 andThen g2)
+    )(using ((A ~> B) => (E ~> F)) is Eq): Boolean = {
+      dimap(f2 andThen f1, g1 andThen g2) === dimap(f1, g1).andThen(dimap(f2, g2))
     }
   }
 }
@@ -115,7 +105,7 @@ object Profunctor {
     override val OnIsPromonad: PureFunction.PureFunctionIsPromonad.type           = PureFunction.PureFunctionIsPromonad
 
     def dimap[A, B, C, D](f: C -> A, g: B -> D)(p: A => B): C => D = {
-      f andThen p andThen g
+      f.andThen(p.andThen(g))
     }
   }
 }
