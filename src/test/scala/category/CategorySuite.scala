@@ -10,10 +10,10 @@ import scala.util.{Failure, Success, Try}
 /** Shared base test suite for category law checking with sharp generators and function equality. */
 abstract class CategorySuite extends AnyFunSuite with ScalaCheckPropertyChecks {
 
-  /** Extensional equality for functions between type equality proofs. */
-  given TypeEqFunctionIsEq: [A, B, C, D] => Function[A =:= B, C =:= D] is Eq =
-    new (Function[A =:= B, C =:= D] is Eq) {
-      def eq(f: (A =:= B) => (C =:= D), g: (A =:= B) => (C =:= D)): Boolean = {
+  /** Extensional equality for functions into type equality proofs. */
+  given TypeEqFunctionIsEq: [A, B, C] => Function[A, B =:= C] is Eq =
+    new (Function[A, B =:= C] is Eq) {
+      def eq(f: A => (B =:= C), g: A => (B =:= C)): Boolean = {
         true
       }
     }

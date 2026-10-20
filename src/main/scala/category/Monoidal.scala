@@ -13,11 +13,13 @@ import scala.annotation.targetName
   *   - *ρ*: *A* ⊗ *I* ⇒ *A* is the right unitor
   */
 trait Monoidal {
-  type Self[_, _]: Promonad as MonoidalPromonad
+  type Self[_, _]: Category as MonoidalCategory
 
-  val SelfIsPromonad: Self is Promonad = MonoidalPromonad
+  val SelfIsCategory: Self is Category = MonoidalCategory
 
-  import SelfIsPromonad.*
+  export SelfIsCategory.{Self as _, --> as _, *}
+
+  final type ~> = Self
 
   /** The unit object *I* in *Ob*(**C**). */
   type I
@@ -150,7 +152,7 @@ trait Monoidal {
 object Monoidal {
 
   /** Refines underlying category of `Monoidal` to `T`. */
-  infix type on[P <: Monoidal, T[_, _]] = P { val SelfIsPromonad: Self is Profunctor.on[Promonad, T] }
+  infix type on[P <: Monoidal, T[_, _]] = P { type Self = T }
 
   /** Type helper to refine `I` and `Tensor` simultaneously on `Monoidal`. */
   type `with`[U, T[_, _]] = Monoidal { type I = U; type Tensor = T }
@@ -163,8 +165,8 @@ object Monoidal {
     type I      = Unit
     type Tensor = Tuple2
 
-    override given MonoidalPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type     = Promonad.FunctionIsPromonad
+    override given MonoidalCategory: Category.FunctionIsCategory.type = Category.FunctionIsCategory
+    override val SelfIsCategory: Category.FunctionIsCategory.type     = Category.FunctionIsCategory
 
     def tensor[A, B, C, D](p: A => B, q: C => D): ((A, C)) => (B, D) = {
       (a, c) => (p(a), q(c))
