@@ -1,0 +1,7 @@
+[groups.default]
+resolve = "jvm:jvm-default"
+addresses = [
+  "src/main/scala::",
+  "src/test/scala::",
+]
+

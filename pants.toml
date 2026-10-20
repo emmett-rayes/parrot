@@ -1,0 +1,52 @@
+[GLOBAL]
+pants_version = "2.33.1"
+process_execution_local_enable_nailgun = false
+backend_packages = [
+  "pants.backend.experimental.scala",
+  "pants.backend.experimental.scala.bsp",
+  "pants.backend.experimental.scala.debug_goals",
+  "pants.backend.experimental.scala.lint.scalafmt",
+  "pants.backend.experimental.scala.lint.scalafix",
+]
+
+[source]
+root_patterns = ["src/main/scala", "src/test/scala"]
+
+[tailor]
+ignore_paths = ["**/BUILD"]
+
+[jvm]
+jdk = "temurin:1.25"
+resolves = { "jvm-default" = "3rdparty/jvm/default.lock" }
+default_resolve = "jvm-default"
+
+[scala]
+version_for_resolve = { "jvm-default" = "3.9.0" }
+
+[scalac]
+args = [
+  "-deprecation",
+  "-explain-types",
+  "-explain",
+  "-feature",
+  "-language:experimental.genericNumberLiterals",
+  "-language:experimental.modularity",
+  "-language:experimental.pureFunctions",
+  "-language:experimental.saferExceptions",
+  "-language:strictEquality",
+  "-preview",
+  "-source:future",
+  "-unchecked",
+  "-Wnonunit-statement",
+  "-Wsafe-init",
+  "-Wunused:all",
+  "-Wvalue-discard",
+  "-Xsemanticdb",
+  "-Yexplicit-nulls",
+]
+
+[scalafix]
+semantic_rules = true
+
+[experimental-bsp]
+groups_config_files = ["bsp-groups.toml"]
