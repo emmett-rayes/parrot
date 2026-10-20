@@ -55,6 +55,7 @@ trait Profunctor {
       Profunctor.this.rmap(g)(p)
     }
 
+/*
   /** Laws that any `Profunctor` must satisfy. */
   object ProfunctorLaws {
 
@@ -75,6 +76,7 @@ trait Profunctor {
       dimap(f2 andThen f1, g1 andThen g2) === dimap(f1, g1).andThen(dimap(f2, g2))
     }
   }
+*/
 }
 
 object Profunctor {
@@ -85,6 +87,7 @@ object Profunctor {
   /** Summons the `Profunctor` instance of `P`. */
   def apply[P[_, _]: Profunctor]: P is Profunctor = summon
 
+/*
   /** `Profunctor` instance for `=:=` on the discrete category *Ob*(**Type**). */
   given TypeEqIsProfunctor: =:= is Profunctor {
     type On = =:=
@@ -108,4 +111,5 @@ object Profunctor {
       f.andThen(p.andThen(g))
     }
   }
+  */
 }

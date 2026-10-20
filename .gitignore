@@ -12,11 +12,25 @@ target/
 ### Mac OS ###
 .DS_Store
 
-### Scala ###
+### BSP ###
 .bsp/
+
+### Scala ###
 .boot/
+.bloop/
 .sbtboot/
+
+### Metals ###
 .metals/
+.bloop/
+.ammonite/
+.scala-build/
+metals.sbt
+project/**/metals.sbt
+
+### Pants ###
+.pants.d
+dist/
 
 ### Agents ###
 .agents/
