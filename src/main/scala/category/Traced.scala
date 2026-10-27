@@ -1,155 +1,115 @@
 package parrot
 package category
 
-import scala.annotation.targetName
-
-/** A traced profunctor on an underlying monoidal category **C**.
+/** A trace on a Freyd category: feedback of the *U* part of an arrow into itself.
   *
-  * Represents a profunctor *P*: **C**^op × **C** → **Type** equipped with a tensorial trace (cotensorial strength) with
-  * respect to a monoidal category (**C**, ⊗, *I*), where
-  *   - *left*: *P*[*A* ⊗ *C*, *B* ⊗ *C*] → *P*[*A*, *B*] is the left trace
-  *   - *right*: *P*[*C* ⊗ *A*, *C* ⊗ *B*] → *P*[*A*, *B*] is the right trace
+  * Represents a traced premonoidal category, where
+  *   - *tr*: *P*(*A* ⊗ *U*,*B* ⊗ *U*) → *P*(*A*,*B*) feeds the *U* output back into the *U* input
+  *
+  * With ⊗ the coproduct, *tr*(*p*) runs *p* until it leaves through *B*: a loop. With ⊗ the product, *tr*(*p*) solves
+  * the equation *u* = *p*(*a*,*u*)₂: a recursive definition. The laws are those of traced monoidal categories, with
+  * dinaturality (sliding) and superposing restricted to pure arrows, which are central.
   */
-trait Traced {
-  type Self[_, _]: Profunctor as TracedProfunctor
+abstract class Traced(tracked val S: Strong { val P: Promonad }) extends caps.Pure {
+  import S.M.{*, given}
+  import S.P.{P, >>}
+  import S.P.K.{Obj, -->}
 
-  val SelfIsProfunctor: Self is Profunctor = TracedProfunctor
-  import SelfIsProfunctor.*
+  /** The trace *tr*: *P*(*A* ⊗ *U*,*B* ⊗ *U*) → *P*(*A*,*B*). */
+  def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B]
 
-  /** The monoidal structure of the underlying category **C**. */
-  val OnIsMonoidal: On is Monoidal
-  import OnIsMonoidal.*
-  import OnIsPromonad.identity
-
-  /** Left tensorial trace: *P*[*A* ⊗ *C*, *B* ⊗ *C*] → *P*[*A*, *B*]. */
-  def left[A, B, C](p: (A * C) ~> (B * C)): A ~> B
-
-  /** Right tensorial trace: *P*[*C* ⊗ *A*, *C* ⊗ *B*] → *P*[*A*, *B*]. */
-  def right[A, B, C](p: (C * A) ~> (C * B)): A ~> B
-
-  extension [A, B, C](p: (A * C) ~> (B * C))
-    /** Infix extension for [[left]]. */
-    @targetName("leftExt")
-    def left(using DummyImplicit): A ~> B = {
-      Traced.this.left(p)
-    }
-
-  extension [C, A, B](p: (C * A) ~> (C * B))
-    /** Infix extension for [[right]]. */
-    @targetName("rightExt")
-    def right(using DummyImplicit): A ~> B = {
-      Traced.this.right(p)
-    }
-
-  /** Laws that any `Traced` profunctor must satisfy. */
+  /** Laws that any `Traced` structure must satisfy. */
   object TracedLaws {
 
-    /** *left*(*P*(*f* ⊗ *id*,*g* ⊗ *id*)(*p*)) = *P*(*f*,*g*)(*left*(*p*))
+    /** *tr*(*first*(*f*) ⨾ *p* ⨾ *first*(*g*)) = *f* ⨾ *tr*(*p*) ⨾ *g*
       */
-    def leftNaturality[A, B, C, D, X](p: (A * X) ~> (B * X), f: C --> A, g: B --> D)(
-      using C ~> D is Eq
-    ): Boolean = {
-      p.dimap(f *** identity[X], g *** identity[X]).left === p.left.dimap(f, g)
+    def tightening[A0: Obj, A: Obj, B: Obj, B0: Obj, U: Obj](
+      f: P[A0, A],
+      p: P[A * U, B * U],
+      g: P[B, B0],
+    )(using P[A0, B0] is Observable): Boolean = {
+      trace(S.first[A0, A, U](f) >> p >> S.first[B, B0, U](g)) =?= (f >> trace(p) >> g)
     }
 
-    /** *right*(*P*(*id* ⊗ *f*,*id* ⊗ *g*)(*p*)) = *P*(*f*,*g*)(*right*(*p*))
+    /** *tr*(*p* ⨾ (*id* ⊗ *h*)) = *tr*((*id* ⊗ *h*) ⨾ *p*) for pure *h*: *U* → *V*
       */
-    def rightNaturality[A, B, C, D, X](p: (X * A) ~> (X * B), f: C --> A, g: B --> D)(
-      using C ~> D is Eq
-    ): Boolean = {
-      p.dimap(identity[X] *** f, identity[X] *** g).right === p.right.dimap(f, g)
+    def sliding[A: Obj, B: Obj, U: Obj, V: Obj](
+      p: P[A * V, B * U],
+      h: U --> V,
+    )(using P[A, B] is Observable): Boolean = {
+      trace[A, B, V](p >> S.P.unit(S.M.tensor(S.P.K.identity[B], h))) =?=
+        trace[A, B, U](S.P.unit(S.M.tensor(S.P.K.identity[A], h)) >> p)
     }
 
-    /** *left*(*P*(ρ,ρ⁻¹)(*p*)) = *p*
+    /** *tr*ᴵ(*p*) = *ρ*⁻¹ ⨾ *p* ⨾ *ρ*
       */
-    def leftUnitality[A, B](p: A ~> B)(
-      using A ~> B is Eq
+    def vanishingUnit[A: Obj, B: Obj](p: P[A * I, B * I])(
+      using P[A, B] is Observable
     ): Boolean = {
-      p.dimap(rightUnitor[A], rightUnitorInv[B]).left === p
+      trace(p) =?= (S.P.unit(S.M.rightUnitor[A].from) >> p >> S.P.unit(S.M.rightUnitor[B].to))
     }
 
-    /** *right*(*P*(λ,λ⁻¹)(*p*)) = *p*
+    /** *tr*ᵁ⊗ⱽ(*p*) = *tr*ᵁ(*tr*ⱽ(*α* ⨾ *p* ⨾ *α*⁻¹))
       */
-    def rightUnitality[A, B](p: A ~> B)(
-      using A ~> B is Eq
+    def vanishingTensor[A: Obj, B: Obj, U: Obj, V: Obj](p: P[A * (U * V), B * (U * V)])(
+      using P[A, B] is Observable
     ): Boolean = {
-      p.dimap(leftUnitor[A], leftUnitorInv[B]).right === p
+      val inner = S.P.unit(S.M.associator[A, U, V].to) >> p >> S.P.unit(S.M.associator[B, U, V].from)
+      trace[A, B, U * V](p) =?= trace[A, B, U](trace[A * U, B * U, V](inner))
     }
 
-    /** *left*(*left*(*p*)) = *left*(*P*(α⁻¹,α)(*p*))
+    /** *tr*(*α* ⨾ (*g* ⊗ *p*) ⨾ *α*⁻¹) = *g* ⊗ *tr*(*p*) for pure *g*
       */
-    def leftAssociativity[A, B, C, D](p: ((A * C) * D) ~> ((B * C) * D))(
-      using A ~> B is Eq
-    ): Boolean = {
-      p.left.left === p.dimap(unassociate[A, C, D], associate[B, C, D]).left
+    def superposing[A: Obj, B: Obj, C: Obj, D: Obj, U: Obj](
+      g: C --> D,
+      p: P[A * U, B * U],
+    )(using P[C * A, D * B] is Observable): Boolean = {
+      val lhs = S.P.unit(S.M.associator[C, A, U].to) >> S.first[C, D, A * U](S.P.unit(g)) >>
+        S.second[A * U, B * U, D](p) >> S.P.unit(S.M.associator[D, B, U].from)
+      trace[C * A, D * B, U](lhs) =?= (S.first[C, D, A](S.P.unit(g)) >> S.second[A, B, D](trace(p)))
     }
 
-    /** *right*(*right*(*p*)) = *right*(*P*(α,α⁻¹)(*p*))
+    /** *tr*(*β*) = *id*
       */
-    def rightAssociativity[A, B, C, D](p: (D * (C * A)) ~> (D * (C * B)))(
-      using A ~> B is Eq
+    def yanking[U: Obj](using P[U, U] is Observable): Boolean = {
+      trace[U, U, U](S.P.unit(S.M.braid[U, U])) =?= S.P.identity[U]
+    }
+
+    /** If *p* = *p*′, then *tr*(*p*) = *tr*(*p*′).
+      *
+      * @note The premise is not checked: *p*′ must be equal to *p* by construction.
+      */
+    def congruence[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U], p2: P[A * U, B * U])(
+      using P[A, B] is Observable
     ): Boolean = {
-      p.right.right === p.dimap(associate[D, C, A], unassociate[D, C, B]).right
+      trace(p) =?= trace(p2)
     }
   }
 }
 
 object Traced {
 
-  /** Refines the underlying category of `Traced` to the monoidal `K` with unit `U` and tensor `T`. */
-  type on[K[_, _], U, T[_, _]] = Traced {
-    val SelfIsProfunctor: Profunctor.on[Profunctor, K]
-    val OnIsMonoidal: K is Monoidal.`with`[U, T]
-  }
+  /** The trace of an iteration: *tr*(*p*) = *ι*₁ ⨾ (*p* ⨾ (*id* + *ι*₂))†, a loop that starts on the left. */
+  open class OfElgot(tracked val E: Elgot) extends Traced(E.S) {
+    import S.M.{+, given}
+    import S.P.{P, >>}
+    import S.P.K.Obj
 
-  /** Summons the `Traced` instance of `P`. */
-  def apply[P[_, _]: Traced]: P is Traced = summon
-
-  /** `Function` is traced under its cartesian monoidal structure via fixed points. */
-  given FunctionIsLazyCartesianTraced: Function is Traced {
-    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type    = Profunctor.FunctionIsProfunctor
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type      = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: PureFunction.PureFunctionIsLazyCartesian.type = PureFunction.PureFunctionIsLazyCartesian
-
-    def left[A, B, C](p: LazyTuple2[A, C] => LazyTuple2[B, C]): A => B = {
-      a =>
-        {
-          lazy val result: LazyTuple2[B, C] = p(LazyTuple2(a, result._2))
-          result._1
-        }
-    }
-
-    def right[A, B, C](p: LazyTuple2[C, A] => LazyTuple2[C, B]): A => B = {
-      a =>
-        {
-          lazy val result: LazyTuple2[C, B] = p(LazyTuple2(result._1, a))
-          result._2
-        }
+    def trace[A: Obj, B: Obj, U: Obj](p: P[A + U, B + U]): P[A, B] = {
+      val step = p >> S.P.unit(S.M.tensor(S.P.K.identity[B], S.M.inr[A, U]))
+      S.P.unit(S.M.inl[A, U]) >> E.iterate[B, A + U](step)
     }
   }
 
-  /** `Function` is traced under its cocartesian monoidal structure via tail-recursive iteration. */
-  given FunctionIsCocartesianTraced: Function is Traced {
-    override given TracedProfunctor: Profunctor.FunctionIsProfunctor.type  = Profunctor.FunctionIsProfunctor
-    override val SelfIsProfunctor: Profunctor.FunctionIsProfunctor.type    = Profunctor.FunctionIsProfunctor
-    override val OnIsMonoidal: PureFunction.PureFunctionIsCocartesian.type = PureFunction.PureFunctionIsCocartesian
+  /** The trace of a parameterized fixed point: *tr*(*p*) = ((*id* × *π*₂) ⨾ *p*)† ⨾ *π*₁. */
+  open class OfConway(tracked val C: Conway) extends Traced(C.S) {
+    import S.M.{*, given}
+    import S.P.{P, >>}
+    import S.P.K.Obj
 
-    def left[A, B, C](p: Either[A, C] => Either[B, C]): A => B = { a =>
-      @annotation.tailrec
-      def loop(curr: Either[A, C]): B = p(curr) match {
-        case Left(b)  => b
-        case Right(c) => loop(Right(c))
-      }
-      loop(Left(a))
-    }
-
-    def right[A, B, C](p: Either[C, A] => Either[C, B]): A => B = { a =>
-      @annotation.tailrec
-      def loop(curr: Either[C, A]): B = p(curr) match {
-        case Right(b) => b
-        case Left(c)  => loop(Left(c))
-      }
-      loop(Right(a))
+    def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B] = {
+      val step = S.P.unit(S.M.tensor(S.P.K.identity[A], S.M.snd[B, U])) >> p
+      C.fix[A, B * U](step) >> S.P.unit(S.M.fst[B, U])
     }
   }
 }

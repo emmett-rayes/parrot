@@ -1,127 +1,120 @@
 package parrot
 package category
 
-import scala.annotation.targetName
-
-/** A Conway promonad on an underlying category **C**.
+/** A parameterized fixed-point operator on a Freyd category over products.
   *
-  * Represents a promonad *P* whose induced category is cartesian with unit *I* and tensor ⊗ and is equipped with a
-  * parameterized Conway fixed-point operator, where
-  *   - _†: *P*[*A* ⊗ *C*, *C*] → *P*[*A*, *C*] is the parameterized Conway fixed-point operation.
+  * Represents a Conway operator, where
+  *   - *p*†: *P*(*A*,*X*) for *p*: *P*(*A* × *X*,*X*) satisfies *p*† = ⟨*id*,*p*†⟩ ⨾ *p*: a solution of *x* =
+  *     *p*(*a*,*x*)
   *
-  * @note Every Conway structure induces a cartesian traced promonad.
+  * In a strict language this column of the grid is nearly empty: computing *p*† means running *p*†, so the least
+  * solution is the nowhere-defined arrow, and useful recursion needs function types ([[Recursion]]) or guardedness.
+  * Conway operators are equivalent to traces for products ([[Traced.OfConway]], [[Conway.OfTraced]]) and dual to
+  * iteration: an Elgot operator is a Conway operator on the opposite category.
   */
-trait Conway {
-  type Self[_, _]: Cartesian as ConwayCartesian
+abstract class Conway(tracked val S: Strong { val P: Promonad; val M: Cartesian }) extends caps.Pure {
+  import S.M.{*, given}
+  import S.P.{P, >>}
+  import S.P.K.{Obj, -->}
 
-  val SelfIsCartesian: Self is Cartesian = ConwayCartesian
+  /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*). */
+  def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X]
 
-  import SelfIsCartesian.*
-  import SelfIsCartesian.SelfIsPromonad.*
-
-  /** Maps a morphism *p*: *A* ⊗ *C* ~> *C* to its Conway fixed-point morphism *p*†: *A* ~> *C*. */
-  def dagger[A, C](p: (A * C) ~> C): A ~> C
-
-  extension [A, C](p: (A * C) ~> C)
-    /** Infix extension for [[dagger]]. */
-    @targetName("daggerExt")
-    def dagger(using DummyImplicit): A ~> C = {
-      Conway.this.dagger(p)
-    }
-
-  /** Laws that any `Conway` must satisfy. */
+  /** Laws that any `Conway` operator must satisfy, with naturality and uniformity for pure arrows and dinaturality for
+    * all arrows.
+    */
   object ConwayLaws {
 
-    /** Fixed-point property: *f*† = *f* ∘ ⟨*id*, *f*†⟩ */
-    def fixedPoint[A, C](f: (A * C) ~> C)(using (A ~> C) is Eq): Boolean = {
-      ((identity[A] &&& f.dagger) >>> f) === f.dagger
+    /** *p*† = ⟨*id*,*p*†⟩ ⨾ *p*
+      */
+    def fixedPoint[A: Obj, X: Obj](p: P[A * X, X])(using P[A, X] is Observable): Boolean = {
+      fix(p) =?= (S.P.unit(S.M.diagonal[A]) >> S.second[A, X, A](fix(p)) >> p)
     }
 
-    /** Parameter naturality: (*f* ∘ (*h* ⊗ *id*))† = *f*† ∘ *h* */
-    def parameterNaturality[A0, A, C](f: (A * C) ~> C, h: A0 --> A)(using (A0 ~> C) is Eq): Boolean = {
-      ((unit(h) *** identity[C]) >>> f).dagger === (unit(h) >>> f.dagger)
+    /** ((*h* × *id*) ⨾ *p*)† = *h* ⨾ *p*† for pure *h* */
+    def parameterNaturality[A0: Obj, A: Obj, X: Obj](p: P[A * X, X], h: A0 --> A)(
+      using P[A0, X] is Observable
+    ): Boolean = {
+      fix(S.first[A0, A, X](S.P.unit(h)) >> p) =?= (S.P.unit(h) >> fix(p))
     }
 
-    /** Composition identity (dinaturality): *g* ∘ (*f* ∘ (*id* ⊗ *g*))† = (*g* ∘ *f*)† */
-    def composition[A, C, D](f: (A * C) ~> D, g: D --> C)(using (A ~> C) is Eq): Boolean = {
-      (f >>> unit(g)).dagger === (((identity[A] *** unit(g)) >>> f).dagger >>> unit(g))
+    /** (*f* ⨾ *g*)† = ((*id* × *g*) ⨾ *f*)† ⨾ *g* for pure *g* */
+    def composition[A: Obj, X: Obj, Y: Obj](f: P[A * X, Y], g: Y --> X)(
+      using P[A, X] is Observable
+    ): Boolean = {
+      fix[A, X](f >> S.P.unit(g)) =?= (fix[A, Y](S.second[Y, X, A](S.P.unit(g)) >> f) >> S.P.unit(g))
     }
 
-    /** Double dagger identity (diagonality / Bekić): (*f* ∘ ⟨*id*, π₂⟩)† = (*f*†)† */
-    def doubleDagger[A, C](p: ((A * C) * C) ~> C)(using (A ~> C) is Eq): Boolean = {
-      ((identity[A * C] &&& second[A, C]) >>> p).dagger === p.dagger.dagger
+    /** (⟨*π*₁,*g*⟩ ⨾ *f*)† = ⟨*id*,(⟨*π*₁,*f*⟩ ⨾ *g*)†⟩ ⨾ *f* for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*: a
+      * fixed point of two arrows that feed each other can be taken through either.
+      *
+      * ⟨*π*₁,*g*⟩ keeps the parameter and runs *g*; with effects it is ⟨*π*₁,*id*⟩ ⨾ *second*(*g*). [[composition]] is
+      * the special case of a pure *g*.
+      */
+    def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[A * Y, X], g: P[A * X, Y])(
+      using P[A, X] is Observable
+    ): Boolean = {
+      val keepG = S.P.unit(S.M.pair(S.M.fst[A, X], S.P.K.identity[A * X])) >> S.second[A * X, Y, A](g)
+      val keepF = S.P.unit(S.M.pair(S.M.fst[A, Y], S.P.K.identity[A * Y])) >> S.second[A * Y, X, A](f)
+      fix[A, X](keepG >> f) =?= (S.P.unit(S.M.diagonal[A]) >> S.second[A, Y, A](fix[A, Y](keepF >> g)) >> f)
+    }
+
+    /** (*p*†)† = (⟨*id*,*π*₂⟩ ⨾ *p*)† */
+    def doubleDagger[A: Obj, X: Obj](p: P[(A * X) * X, X])(
+      using P[A, X] is Observable
+    ): Boolean = {
+      fix[A, X](fix[A * X, X](p)) =?= fix[A, X](S.P.unit(S.M.pair(S.P.K.identity[A * X], S.M.snd[A, X])) >> p)
+    }
+
+    /** If (*id* × *h*) ⨾ *g* = *f* ⨾ *h* for pure *h*, then *f*† ⨾ *h* = *g*†.
+      *
+      * @note The premise is not checked: *g* must be built to satisfy it.
+      */
+    def uniformity[A: Obj, X: Obj, Y: Obj](
+      f: P[A * X, X],
+      g: P[A * Y, Y],
+      h: X --> Y,
+    )(using P[A, Y] is Observable): Boolean = {
+      (fix(f) >> S.P.unit(h)) =?= fix(g)
+    }
+
+    /** If *p* = *p*′, then *p*† = *p*′†.
+      *
+      * @note The premise is not checked: *p*′ must be equal to *p* by construction.
+      */
+    def congruence[A: Obj, X: Obj](p: P[A * X, X], p2: P[A * X, X])(
+      using P[A, X] is Observable
+    ): Boolean = {
+      fix(p) =?= fix(p2)
     }
   }
 }
 
 object Conway {
 
-  /** Refines the products of `Conway` to the terminal object `U` and product `T`. */
-  type `with`[U, T[_, _]] = Conway { val SelfIsCartesian: Cartesian.`with`[U, T] }
-
-  /** Summons the `Conway` instance of `P`. */
-  def apply[P[_, _]: Conway]: P is Conway = summon
-
-  /** Every Conway promonad induces a cartesian traced promonad, where trace is derived from the Conway dagger operator:
-    * *tr*(*p*) = π₁ ∘ (*p* ∘ (*id* ⊗ π₂))†
+  /** Iteration read backwards: an Elgot operator on *P* is a Conway operator on *P*ᵒᵖ, whose products are the
+    * coproducts of **K**. A step *P*(*X*,*A* + *X*) is an arrow *P*ᵒᵖ(*A* × *X*,*X*), and its iteration *P*(*X*,*A*) is
+    * the fixed point *P*ᵒᵖ(*A*,*X*).
     */
-  given ConwayIsCartesianTraced: [P[_, _]: {Conway as C}]
-    => (K: C.SelfIsCartesian.SelfIsPromonad.On is Cartesian.`with`[C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor] {
-      val SelfIsPromonad: C.SelfIsCartesian.SelfIsPromonad.OnIsPromonad.type
-    })
-    => P is Traced.on[C.SelfIsCartesian.SelfIsPromonad.On, C.SelfIsCartesian.I, C.SelfIsCartesian.Tensor] =
-    new Traced {
-      type Self[A, B] = P[A, B]
+  open class OfElgot(tracked val E: Elgot) extends Conway(Strong.OpOfCoproduct(E.S)) {
+    import S.M.*
+    import S.P.P
+    import S.P.K.Obj
 
-      override given TracedProfunctor: C.SelfIsCartesian.SelfIsPromonad.type = C.SelfIsCartesian.SelfIsPromonad
-      override val SelfIsProfunctor: C.SelfIsCartesian.SelfIsPromonad.type   = C.SelfIsCartesian.SelfIsPromonad
-      override val OnIsMonoidal: K.type                                      = K
-      import OnIsMonoidal.*
-      import SelfIsProfunctor.*
-
-      def left[A, B, C0](p: (A * C0) ~> (B * C0)): A ~> B = {
-        val f    = OnIsPromonad.identity[A] *** second[B, C0]
-        val step = lmap(f)(p)
-        rmap(first[B, C0])(C.dagger(step))
-      }
-
-      def right[A, B, C0](p: (C0 * A) ~> (C0 * B)): A ~> B = {
-        val braidIn  = second[A, C0] &&& first[A, C0]
-        val braidOut = second[C0, B] &&& first[C0, B]
-        left(dimap(braidIn, braidOut)(p))
-      }
-    }
-
-  /** Every cartesian traced promonad induces a Conway structure, where dagger is derived from the trace operator as:
-    * *p*† = *tr*(Δ ∘ *p*)
-    */
-  given CartesianTracedIsConway: [P[_, _]: {Cartesian as C}]
-    => (T: P is Traced.on[C.SelfIsPromonad.On, C.I, C.Tensor])
-    => P is Conway.`with`[C.I, C.Tensor] = new Conway {
-    type Self[A, B] = P[A, B]
-
-    override given ConwayCartesian: C.type = C
-    override val SelfIsCartesian: C.type   = C
-
-    import C.*
-    import C.SelfIsPromonad.*
-
-    def dagger[A, X](p: (A * X) ~> X): A ~> X = {
-      T.left[A, X, X](p >>> diagonal[X])
+    def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X] = {
+      E.iterate[A, X](p)
     }
   }
 
-  /** `Function` is a `Conway` category under lazy tuple products via knot-tying fixed points. */
-  given FunctionIsLazyCartesianConway: Function is Conway {
-    override given ConwayCartesian: Cartesian.FunctionIsLazyCartesian.type = Cartesian.FunctionIsLazyCartesian
-    override val SelfIsCartesian: Cartesian.FunctionIsLazyCartesian.type   = Cartesian.FunctionIsLazyCartesian
+  /** The fixed point of a trace on products: *p*† = *tr*(*p* ⨾ Δ). */
+  open class OfTraced(tracked val T: Traced { val S: Strong { val P: Promonad; val M: Cartesian } })
+      extends Conway(T.S) {
+    import S.M.{*, given}
+    import S.P.{P, >>}
+    import S.P.K.Obj
 
-    def dagger[A, C](p: LazyTuple2[A, C] => C): A => C = {
-      a =>
-        {
-          lazy val c: C = p(LazyTuple2(a, c))
-          c
-        }
+    def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X] = {
+      T.trace[A, X, X](p >> S.P.unit(S.M.diagonal[X]))
     }
   }
 }

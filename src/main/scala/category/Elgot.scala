@@ -1,141 +1,118 @@
 package parrot
 package category
 
-import scala.annotation.targetName
-
-/** An Elgot promonad on an underlying category **C**.
+/** An iteration operator on a Freyd category over coproducts.
   *
-  * Represents a promonad *P* whose induced category is cocartesian with unit *Z* and tensor ⊕ and is equipped with a
-  * parameterized Elgot fixed-point (iteration) operator, where
-  *   - _†: *P*[*C*, *A* ⊕ *C*] → *P*[*C*, *A*] is the parameterized Elgot fixed-point (iteration) operation.
+  * Represents an Elgot operator, where
+  *   - *p*†: *P*(*X*,*A*) for *p*: *P*(*X*,*A* + *X*) satisfies *p*† = *p* ⨾ [*id*,*p*†]: run *p*; on *A* stop, on *X*
+  *     run again
   *
-  * @note Every Elgot structure induces a cocartesian traced promonad.
+  * In 𝒫 this is the while loop, defined for every *p*. In 𝒮 it cannot be: deciding whether a loop stops is the
+  * halting problem. Total instances are guarded: they stop with failure on a step that makes no progress, and satisfy
+  * the laws for the steps that always make progress. Elgot operators are equivalent to traces for coproducts
+  * ([[Traced.OfElgot]], [[Elgot.OfTraced]]).
   */
-trait Elgot {
-  type Self[_, _]: Cocartesian as ElgotCocartesian
+abstract class Elgot(tracked val S: Strong { val P: Promonad; val M: Cocartesian }) extends caps.Pure {
+  import S.M.{+, given}
+  import S.P.{P, >>}
+  import S.P.K.{Obj, -->}
 
-  val SelfIsCocartesian: Self is Cocartesian = ElgotCocartesian
+  /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*). */
+  def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A]
 
-  import SelfIsCocartesian.SelfIsPromonad.*
-  import SelfIsCocartesian.{+, +++, right, |||}
-
-  /** Maps a morphism *p*: *C* ~> *A* ⊕ *C* to its Elgot fixed-point morphism *p*†: *C* ~> *A*. */
-  def dagger[A, C](p: C ~> (A + C)): C ~> A
-
-  extension [A, C](p: C ~> (A + C))
-    /** Infix extension for [[dagger]]. */
-    @targetName("daggerExt")
-    def dagger(using DummyImplicit): C ~> A = {
-      Elgot.this.dagger(p)
-    }
-
-  /** Laws that any `Elgot` must satisfy. */
+  /** Laws that any `Elgot` operator must satisfy: the Conway iteration laws, with naturality and uniformity for pure
+    * arrows and dinaturality for all arrows.
+    */
   object ElgotLaws {
 
-    /** Fixed-point property (unfolding): *f*† = [*id*, *f*†] ∘ *f* */
-    def fixedPoint[A, C](p: C ~> (A + C))(using (C ~> A) is Eq): Boolean = {
-      (p >>> (identity[A] ||| p.dagger)) === p.dagger
+    /** *p*† = *p* ⨾ [*id*,*p*†]
+      */
+    def fixedPoint[A: Obj, X: Obj](p: P[X, A + X])(using P[X, A] is Observable): Boolean = {
+      iterate(p) =?= (p >> S.second[X, A, A](iterate(p)) >> S.P.unit(S.M.codiagonal[A]))
     }
 
-    /** Parameter naturality: ((*h* ⊕ *id*) ∘ *f*)† = *h* ∘ *f*† */
-    def parameterNaturality[A, B, C](p: C ~> (A + C), h: A --> B)(using (C ~> B) is Eq): Boolean = {
-      (p >>> (unit(h) +++ identity[C])).dagger === (p.dagger >>> unit(h))
-    }
-
-    /** Composition identity (dinaturality): (*g* ∘ *f*)† = *g* ∘ ((*id* ⊕ *g*) ∘ *f*)† */
-    def composition[A, C, D](p: D ~> (A + C), g: C --> D)(using (C ~> A) is Eq): Boolean = {
-      (unit(g) >>> p).dagger === (unit(g) >>> (p >>> (identity[A] +++ unit(g))).dagger)
-    }
-
-    /** Double dagger identity (codiagonality / Bekić): (*f*†)† = ([*id*, ι₂] ∘ *f*)† */
-    def doubleDagger[A, C](p: C ~> ((A + C) + C))(using (C ~> A) is Eq): Boolean = {
-      (p >>> (identity[A + C] ||| right[A, C])).dagger === p.dagger.dagger
-    }
-
-    /** Uniformity law (Plotkin's principle): if (*id* ⊕ *h*) ∘ *f* = *g* ∘ *h*, then *f*† = *g*† ∘ *h* */
-    def uniformity[A, C, C0](f: C ~> (A + C), g: C0 ~> (A + C0), h: C --> C0)(
-      using
-      (C ~> (A + C0)) is Eq,
-      (C ~> A) is Eq,
+    /** (*p* ⨾ (*h* + *id*))† = *p*† ⨾ *h* for pure *h* */
+    def parameterNaturality[A: Obj, B: Obj, X: Obj](p: P[X, A + X], h: A --> B)(
+      using P[X, B] is Observable
     ): Boolean = {
-      val sim = (f >>> (identity[A] +++ unit(h))) === (unit(h) >>> g)
-      if sim then f.dagger === (unit(h) >>> g.dagger) else true
+      iterate(p >> S.first[A, B, X](S.P.unit(h))) =?= (iterate(p) >> S.P.unit(h))
+    }
+
+    /** (*g* ⨾ *p*)† = *g* ⨾ (*p* ⨾ (*id* + *g*))† for pure *g* */
+    def composition[A: Obj, X: Obj, Y: Obj](p: P[Y, A + X], g: X --> Y)(
+      using P[X, A] is Observable
+    ): Boolean = {
+      iterate[A, X](S.P.unit(g) >> p) =?= (S.P.unit(g) >> iterate[A, Y](p >> S.second[X, Y, A](S.P.unit(g))))
+    }
+
+    /** (*f* ⨾ [*ι*₁,*g*])† = *f* ⨾ [*id*,(*g* ⨾ [*ι*₁,*f*])†] for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*: a loop
+      * that alternates two steps can start with either.
+      *
+      * [*ι*₁,*g*] runs *g* on the right and passes *A* through; with effects it is *second*(*g*) ⨾ [*ι*₁,*id*].
+      * [[composition]] is the special case of a pure *g*.
+      */
+    def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[X, A + Y], g: P[Y, A + X])(
+      using P[X, A] is Observable
+    ): Boolean = {
+      val fg = f >> S.second[Y, A + X, A](g) >> S.P.unit(S.M.copair(S.M.inl[A, X], S.P.K.identity[A + X]))
+      val gf = g >> S.second[X, A + Y, A](f) >> S.P.unit(S.M.copair(S.M.inl[A, Y], S.P.K.identity[A + Y]))
+      iterate[A, X](fg) =?= (f >> S.second[Y, A, A](iterate[A, Y](gf)) >> S.P.unit(S.M.codiagonal[A]))
+    }
+
+    /** (*p*†)† = (*p* ⨾ [*id*,*ι*₂])† */
+    def doubleDagger[A: Obj, X: Obj](p: P[X, (A + X) + X])(
+      using P[X, A] is Observable
+    ): Boolean = {
+      iterate[A, X](iterate[A + X, X](p)) =?=
+        iterate[A, X](p >> S.P.unit(S.M.copair(S.P.K.identity[A + X], S.M.inr[A, X])))
+    }
+
+    /** If *f* ⨾ (*id* + *h*) = *h* ⨾ *g* for pure *h*, then *f*† = *h* ⨾ *g*†.
+      *
+      * @note The premise is not checked: *g* must be built to satisfy it.
+      */
+    def uniformity[A: Obj, X: Obj, Y: Obj](
+      f: P[X, A + X],
+      g: P[Y, A + Y],
+      h: X --> Y,
+    )(using P[X, A] is Observable): Boolean = {
+      iterate(f) =?= (S.P.unit(h) >> iterate(g))
+    }
+
+    /** If *p* = *p*′, then *p*† = *p*′†.
+      *
+      * @note The premise is not checked: *p*′ must be equal to *p* by construction.
+      */
+    def congruence[A: Obj, X: Obj](p: P[X, A + X], p2: P[X, A + X])(
+      using P[X, A] is Observable
+    ): Boolean = {
+      iterate(p) =?= iterate(p2)
     }
   }
 }
 
 object Elgot {
 
-  /** Refines the coproducts of `Elgot` to the initial object `U` and coproduct `T`. */
-  type `with`[U, T[_, _]] = Elgot { val SelfIsCocartesian: Cocartesian.`with`[U, T] }
+  /** Fixed points read backwards: a Conway operator on *P* is an Elgot operator on *P*ᵒᵖ. */
+  open class OfConway(tracked val C: Conway) extends Elgot(Strong.OpOfProduct(C.S)) {
+    import S.M.+
+    import S.P.P
+    import S.P.K.Obj
 
-  /** Summons the `Elgot` instance of `P`. */
-  def apply[P[_, _]: Elgot]: P is Elgot = summon
-
-  /** Every Elgot structure whose coproducts are inherited from the underlying category induces a cocartesian traced
-    * promonad, where trace is derived from the Elgot dagger operator: *trace*(*p*) = ((*p* ∘ (*id* ⊕ ι₂))†) ∘ ι₁
-    */
-  given ElgotIsCocartesianTraced: [P[_, _]: {Elgot as E}]
-    => (K: E.SelfIsCocartesian.SelfIsPromonad.On is
-      Cocartesian.`with`[E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor] {
-        val SelfIsPromonad: E.SelfIsCocartesian.SelfIsPromonad.OnIsPromonad.type
-      })
-    => P is Traced.on[E.SelfIsCocartesian.SelfIsPromonad.On, E.SelfIsCocartesian.Z, E.SelfIsCocartesian.Tensor] =
-    new Traced {
-      type Self[A, B] = P[A, B]
-
-      override given TracedProfunctor: E.SelfIsCocartesian.SelfIsPromonad.type = E.SelfIsCocartesian.SelfIsPromonad
-      override val SelfIsProfunctor: E.SelfIsCocartesian.SelfIsPromonad.type   = E.SelfIsCocartesian.SelfIsPromonad
-      override val OnIsMonoidal: K.type                                        = K
-      import OnIsMonoidal.*
-      import SelfIsProfunctor.*
-
-      def left[A, B, C0](p: (A + C0) ~> (B + C0)): A ~> B = {
-        val g    = OnIsPromonad.identity[B] +++ K.right[A, C0]
-        val step = rmap(g)(p)
-        lmap(K.left[A, C0])(E.dagger(step))
-      }
-
-      def right[A, B, C0](p: (C0 + A) ~> (C0 + B)): A ~> B = {
-        val braidIn  = K.right[C0, A] ||| K.left[C0, A]
-        val braidOut = K.right[B, C0] ||| K.left[B, C0]
-        left(dimap(braidIn, braidOut)(p))
-      }
-    }
-
-  /** Every cocartesian and traced promonad induces an Elgot structure, where dagger is derived from the trace operator:
-    * *p*† = *trace*(*p* ∘ ∇)
-    */
-  given CocartesianTracedIsElgot: [P[_, _]: {Cocartesian as C}]
-    => (T: P is Traced.on[C.SelfIsPromonad.On, C.Z, C.Tensor])
-    => P is Elgot.`with`[C.Z, C.Tensor] = new Elgot {
-    type Self[A, B] = P[A, B]
-
-    override given ElgotCocartesian: C.type = C
-    override val SelfIsCocartesian: C.type  = C
-    import C.*
-    import C.SelfIsPromonad.*
-
-    def dagger[A, X](p: X ~> (A + X)): X ~> A = {
-      T.left[X, A, X](fold[X] >>> p)
+    def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A] = {
+      C.fix[A, X](p)
     }
   }
 
-  /** `Function` is an `Elgot` category under disjoint sum coproducts via tail-recursive iteration. */
-  given FunctionIsCocartesianElgot: Function is Elgot {
-    override given ElgotCocartesian: Cocartesian.FunctionIsCocartesian.type = Cocartesian.FunctionIsCocartesian
-    override val SelfIsCocartesian: Cocartesian.FunctionIsCocartesian.type  = Cocartesian.FunctionIsCocartesian
+  /** The iteration of a trace on coproducts: *p*† = *tr*(∇ ⨾ *p*). */
+  open class OfTraced(tracked val T: Traced { val S: Strong { val P: Promonad; val M: Cocartesian } })
+      extends Elgot(T.S) {
+    import S.M.{+, given}
+    import S.P.{P, >>}
+    import S.P.K.Obj
 
-    def dagger[A, C](p: C => Either[A, C]): C => A = {
-      c =>
-        {
-          @annotation.tailrec
-          def loop(curr: C): A = p(curr) match {
-            case Left(a)     => a
-            case Right(next) => loop(next)
-          }
-          loop(c)
-        }
+    def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A] = {
+      T.trace[X, A, X](S.P.unit(S.M.codiagonal[X]) >> p)
     }
   }
 }
