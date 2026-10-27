@@ -2,17 +2,15 @@ scalaVersion := "3.9.0"
 
 lazy val root = rootProject
   .settings(
-    name             := "Parrot",
+    name              := "Parrot",
+    semanticdbEnabled := true,
+    semanticdbVersion := "4.17.4",
     scalacOptions ++= Seq(
-      "-Wnonunit-statement",
-      // "-Wsafe-init", // false positives on tracked parameters forwarded to a parent class (docs/DESIGN.md §10)
+      // "-Wsafe-init",      // false positives on tracked parameters forwarded to a parent class (docs/DESIGN.md §10)
       // "-Wunused:imports", // false positives on renamed type imports (docs/DESIGN.md §10)
-      "-Wunused:privates,locals,params,patvars",
-      "-Wvalue-discard",
-      "-Yexplicit-nulls",
       "-deprecation",
-      "-explain",
       "-explain-types",
+      "-explain",
       "-feature",
       "-language:experimental.captureChecking",
       "-language:experimental.genericNumberLiterals",
@@ -23,6 +21,10 @@ lazy val root = rootProject
       "-preview",
       "-source:future",
       "-unchecked",
+      "-Wnonunit-statement",
+      "-Wunused:privates,locals,params,patvars",
+      "-Wvalue-discard",
+      "-Yexplicit-nulls",
     ),
     // Tests run in their own JVM: the reference interpreter needs more than sbt's heap on the deepest JSON documents.
     Test / fork := true,
