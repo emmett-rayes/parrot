@@ -1,70 +1,83 @@
 package parrot
 package category
 
-import scala.annotation.targetName
+import scala.annotation.nowarn
 
-/** An endofunctor over **Type**.
+/** A functor *F*: **C** → **D**.
   *
-  * Represents a functor *F*: **Type** ⇒ **Type**, where
-  *   - *F*[*A*] is the object part
-  *   - *F*(*f*) is the morphism part
+  * Represents a functor, where
+  *   - *F*[*A*] = `F[A]` = `Self[A]` is the object part, a type constructor
+  *   - *F*(*f*): *F*[*A*] → *F*[*B*] is the morphism part, a program
+  *
+  * Morphisms of **C** are written `A --> B`, morphisms of **D** `A ->> B`.
   */
-trait Functor {
+// -Wunused false positive: renamed type imports count as unused even where used (scala/scala3, to be filed)
+@nowarn("msg=unused import")
+abstract class Functor(tracked val C: Category, tracked val D: Category) extends caps.Pure {
+  import C.-->
+  import D.{--> as ->>}
+
   type Self[_]
+
+  /** The object part *F*. */
   final type F = Self
 
-  /** Maps a morphism *f*: *A* ⇒ *B* to a morphism *F*[*A*] ⇒ *F*[*B*]. */
-  def map[A, B](fa: F[A])(f: A => B): F[B]
+  /** *F* maps objects to objects.
+    */
+  def objects[A: C.Obj]: F[A] is D.Obj
 
-  extension [A](fa: F[A])
-    /** Infix extension for [[map]]. */
-    @targetName("mapExt")
-    def map[B](f: A => B): F[B] = {
-      Functor.this.map(fa)(f)
-    }
+  /** The morphism part *F*(*f*). */
+  def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ->> F[B]
 
   /** Laws that any `Functor` must satisfy. */
   object FunctorLaws {
+    private given FIsObj: [A: C.Obj] => (F[A] is D.Obj) = objects[A]
 
     /** *F*(*id*) = *id*
       */
-    def identity[A](fa: F[A])(using F[A] is Eq): Boolean = {
-      fa.map(scala.Predef.identity) === fa
+    def identity[A: C.Obj](using (F[A] ->> F[A]) is Observable): Boolean = {
+      map(C.identity[A]) =?= D.identity[F[A]]
     }
 
     /** *F*(*g* ∘ *f*) = *F*(*g*) ∘ *F*(*f*)
       */
-    def composition[A, B, C](fa: F[A], f: A => B, g: B => C)(using F[C] is Eq): Boolean = {
-      fa.map(f).map(g) === fa.map(f andThen g)
+    def composition[A: C.Obj, B: C.Obj, E: C.Obj](f: A --> B, g: B --> E)(
+      using (F[A] ->> F[E]) is Observable
+    ): Boolean = {
+      map(C.compose(g, f)) =?= D.compose(map(g), map(f))
+    }
+
+    /** If *f* = *f*′, then *F*(*f*) = *F*(*f*′).
+      *
+      * @note The premise is not checked: *f*′ must be equal to *f* by construction.
+      */
+    def congruence[A: C.Obj, B: C.Obj](f: A --> B, f2: A --> B)(using (F[A] ->> F[B]) is Observable): Boolean = {
+      map(f) =?= map(f2)
     }
   }
 }
 
-object Functor {
-  import scala.util.Try
+/** An endofunctor on **K**: a functor from **K** to itself.
+  *
+  * Represents a functor *F*: **K** → **K**; monads ([[Monad]]) are structure on an endofunctor.
+  */
+abstract class Endofunctor(tracked val K: Category) extends Functor(K, K)
 
-  /** Summons the `Functor` instance of `F`. */
-  def apply[F[_]: Functor]: F is Functor = summon
+object Endofunctor {
 
-  /** `Option` is a functor *F* on **Type**, where
-    *   - *F*[*A*] = *A* + 1 is the object part
-    *   - *F*(*f*) = *f* + *id* is the morphism part
+  /** `Option` as an endofunctor on 𝒮, where
+    *   - *F*[*A*] = *A* + 1: a value or none
+    *   - *F*(*f*) applies *f* to a value and keeps none
     */
-  given OptionIsFunctor: Option is Functor {
-    def map[A, B](fa: Option[A])(f: A => B): Option[B] = {
-      fa.map(f)
+  object OptionIsEndofunctor extends Endofunctor(Total) {
+    type Self = Option
+
+    def objects[A: Type]: Option[A] is Type = {
+      Type.TIsType
     }
-  }
 
-  /** `Try` is a functor *F*, where
-    *   - *F*[*A*] = *A* + *E* is the object part
-    *   - *F*(*f*) = *f* + *id* is the morphism part
-    *
-    * Here *E* is the type of failures, i.e. `Throwable`.
-    */
-  given TryIsFunctor: Try is Functor {
-    def map[A, B](fa: Try[A])(f: A => B): Try[B] = {
-      fa.map(f)
+    def map[A: Type, B: Type](f: A -> B): Option[A] -> Option[B] = {
+      _.map(f)
     }
   }
 }
