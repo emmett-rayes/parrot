@@ -236,8 +236,8 @@ optics, general iterated enrichment, the delay monad.
 
 ## 10. Compiler issues to file
 
-Both have been verified with Scala 3.9.0. The first is worked around by turning `-Wsafe-init` off in `build.sbt`, the
-second locally with `@nowarn` and a comment.
+Both have been verified with Scala 3.9.0. Both are worked around by turning the flags (`-Wsafe-init`, `-Wunused:all`)
+off in `build.sbt`.
 
 **`-Wsafe-init` false positive when a `tracked` constructor parameter is forwarded to a parent class.** Options:
 `-source:future -language:experimental.modularity -Wsafe-init`.

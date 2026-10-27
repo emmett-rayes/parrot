@@ -1,8 +1,6 @@
 package parrot
 package category
 
-import scala.annotation.nowarn
-
 /** A bifunctor *F*: **C₁** × **C₂** → **D**: a functor of two arguments, one from each source category.
   *
   * Represents a bifunctor, where
@@ -13,8 +11,6 @@ import scala.annotation.nowarn
   * Morphisms of **C₁** are written `A --> B`, of **C₂** `A ->> B`, and of the target **D** `A ==> B`. The source and
   * target categories are parameters, so they are stable paths: their objects can be named as `C1.Obj`, `D.Obj`.
   */
-// -Wunused false positive: renamed type imports count as unused even where used (scala/scala3, to be filed)
-@nowarn("msg=unused import")
 abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tracked val D: Category)
     extends caps.Pure {
   import C1.-->
@@ -80,8 +76,6 @@ object Bifunctor {
     *   - *F*(*X*) = *F*(*X*₁,*X*₂) for a pair type *X*
     *   - *F*(*f*) = *F*(*f*₁,*f*₂) for a pair of morphisms *f*
     */
-  // -Wunused false positive: renamed type imports count as unused even where used (scala/scala3, to be filed)
-  @nowarn("msg=unused import")
   final class FromProduct(tracked val B: Bifunctor) extends Functor(Category.Product(B.C1, B.C2), B.D) {
     import C.-->
     import D.{--> as ->>}

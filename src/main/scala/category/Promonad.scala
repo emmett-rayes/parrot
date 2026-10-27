@@ -1,7 +1,7 @@
 package parrot
 package category
 
-import scala.annotation.{nowarn, targetName}
+import scala.annotation.targetName
 
 /** A promonad on **K** valued in 𝒮: a monoid in the endoprofunctors on **K**, i.e. a category of arrows built on top
   * of **K**.
@@ -14,8 +14,6 @@ import scala.annotation.{nowarn, targetName}
   * [[category]], with the objects of **K**, and *unit* is an identity-on-objects functor from **K** into it. Kleisli
   * categories and reified arrows such as parsers are promonads.
   */
-// -Wunused false positive: renamed type imports count as unused even where used (scala/scala3, to be filed)
-@nowarn("msg=unused import")
 abstract class Promonad(tracked override val K: Category) extends Profunctor(K, Total) {
   import K.{Obj, -->}
   import K.op.{--> as ~~>}

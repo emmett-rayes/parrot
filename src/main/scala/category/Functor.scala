@@ -1,8 +1,6 @@
 package parrot
 package category
 
-import scala.annotation.nowarn
-
 /** A functor *F*: **C** → **D**.
   *
   * Represents a functor, where
@@ -11,8 +9,6 @@ import scala.annotation.nowarn
   *
   * Morphisms of **C** are written `A --> B`, morphisms of **D** `A ->> B`.
   */
-// -Wunused false positive: renamed type imports count as unused even where used (scala/scala3, to be filed)
-@nowarn("msg=unused import")
 abstract class Functor(tracked val C: Category, tracked val D: Category) extends caps.Pure {
   import C.-->
   import D.{--> as ->>}

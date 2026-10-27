@@ -80,7 +80,7 @@ time of writing, JSON_checker 34/34). Use it after touching `StrictParser`, `Sca
 -language:experimental.saferExceptions
 -language:strictEquality                   # == needs CanEqual
 -Yexplicit-nulls                           # Java APIs return T | Null
--Wunused:all -Wvalue-discard -Wnonunit-statement   # -Wsafe-init is off: rule 11 of §4.1
+-Wvalue-discard -Wnonunit-statement   # -Wsafe-init and -Wunused:all are off (rules 11 and 14 of §4.1)
 -deprecation -feature -unchecked -explain -explain-types
 ```
 
@@ -172,8 +172,8 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside `object Partial` too). Bring the
     role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`, `import S.P.{P, >>}`,
     `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.{--> as ==>}`), never with new type
-    definitions. Renamed type imports trigger a false `-Wunused` warning: silence it on the class with
-    `@nowarn("msg=unused import")` and the comment used in `Functor.scala`. Parenthesize: `+`, `-->` and `->>` share a
+    definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:all` is commented
+    out in `build.sbt`. Parenthesize: `+`, `-->` and `->>` share a
     precedence level, so write `(A + B) --> C`; `*` binds tighter, `<->`, `==>` and `^` looser, `~>` and `~~>`
     tighter than `*`. Parenthesize arrows next to `->` and `is` as well: `(A ~> B) -> (A ~> B)`,
     `(X ~> Y) is Observable`.
@@ -331,7 +331,7 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - **`-Wnonunit-statement`**: in tests, every non-final `assert` is written `val _ = assert(...)`.
 - **`-language:strictEquality`**: `==` needs a `CanEqual`. Laws use `=?=`/`===`, not `==`.
 - **`-Yexplicit-nulls`**: Java APIs return `T | Null`; use `.nn`.
-- **`-Wunused:all`**: no unused imports/params/privates.
+- **`-Wunused:all`** is off (rule 14 of §4.1).
 - **`-Wsafe-init`** is off (rule 11 of §4.1); still use `lazy val` for forward references.
 
 ### Documentation style
@@ -446,9 +446,8 @@ Things that cost time once; check here before fighting the compiler.
   `M.K` = `M.F.K` = `Total`). A refinement that intersects instead (`Monad { val K: Total.type }` on a member already
   typed `F.K.type`) breaks the chain; refine the parameter the member comes from (`Monad.On`).
 - **Renamed type imports** (`import D.{--> as ==>}`) are reported unused even when used, in every variant tried
-  (renaming `-->`, `Hom` or `Self`, with or without other imports). Silence it per class with
-  `@nowarn("msg=unused import")`; `-Wunused` reports the annotation once the compiler is fixed. Use one `@nowarn` per
-  message filter (`Promonad.scala`).
+  (renaming `-->`, `Hom` or `Self`, with or without other imports), which is why `-Wunused:all` is commented out in
+  `build.sbt`.
 - **`export` of a stable member** (`export F.K`) creates a stable alias: `import K.{Obj, -->}` and singleton chains
   keep working. Moving `K` from a `val` to an export removed the `-Wsafe-init` warnings of `OptionT` and `StateT`.
 - **Infix types** follow the precedence of term operators by first character: `*` > `+`, `-` (`-->`, `->>`) > `=`
@@ -456,8 +455,6 @@ Things that cost time once; check here before fighting the compiler.
   arrows and tensors.
 - **`-Wsafe-init`** warns on `tracked` parameters forwarded to a parameterized parent from a class, never from an object,
   which is why it is off (rule 11 of §4.1).
-- **Incremental compiles** can report a warning at a parent class that carries a `@nowarn` for it (`Promonad`), because
-  the parent is not part of that compilation run; a from-scratch compile is the reference.
 - **No given whose `Self` is `Nothing`** (rule 12 of §4.1).
 - **Overlapping givens are ambiguous.** A generic given and a more specific one in the same object both match
   (`[A: Eq] => A is Observable` and `[A: Observable, B: Observable] => (A, B) is Observable` for `(Int, String)`),

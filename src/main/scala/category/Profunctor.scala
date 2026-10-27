@@ -1,8 +1,6 @@
 package parrot
 package category
 
-import scala.annotation.nowarn
-
 /** A profunctor *P*: **K**ᵒᵖ × **K** → **V**: a bifunctor that is contravariant in its first argument.
   *
   * Represents a profunctor, where
@@ -14,8 +12,6 @@ import scala.annotation.nowarn
   * as `A ~~> B`. A profunctor is the [[Bifunctor]] **K**ᵒᵖ × **K** → **V**; `dimap` is its morphism part with the
   * variance spelled out.
   */
-// -Wunused false positive: renamed type imports count as unused even where used (scala/scala3, to be filed)
-@nowarn("msg=unused import")
 abstract class Profunctor(tracked val K: Category, tracked val V: Category) extends Bifunctor(K.op, K, V) {
   import K.{Obj, -->}
   import V.{--> as ==>}
