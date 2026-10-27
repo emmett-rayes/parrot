@@ -1,0 +1,9 @@
+-source:future
+-preview
+-language:experimental.modularity
+-language:experimental.pureFunctions
+-language:experimental.captureChecking
+-language:strictEquality
+-Yexplicit-nulls
+-feature
+-deprecation
