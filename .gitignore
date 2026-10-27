@@ -27,6 +27,7 @@ target/
 .scala-build/
 metals.sbt
 project/**/metals.sbt
+*.semanticdb
 
 ### Pants ###
 .pants.d

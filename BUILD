@@ -1,9 +1,8 @@
 # --- Main ---
 
-# Excluded: Pants' scalameta parser can't handle `tracked`.
 scala_sources(
     name="main",
-    sources=["src/main/scala/**/*.scala", "!src/main/scala/json/JsonGrammar.scala"],
+    sources=["src/main/scala/**/*.scala"],
 )
 
 
