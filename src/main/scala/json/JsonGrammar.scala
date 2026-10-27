@@ -1,21 +1,12 @@
 package parrot
 package json
 
-import category.Profunctor.on
-import category.Promonad
 import parser.ParserAlgebra
 
-/** The JSON grammar, written against any [[ParserAlgebra.Standard]] algebra whose pure functions `On` form a promonad
-  * on `Function`.
-  */
-final class JsonGrammar(tracked val algebra: ParserAlgebra.Standard)(using Lift: algebra.On is Promonad on Function) {
+/** The JSON grammar, written once against any [[ParserAlgebra]]. */
+final class JsonGrammar(tracked val algebra: ParserAlgebra) {
   import JsonGrammar.*
   import algebra.*
-
-  /** Lifts a pure Scala function `f` into the algebra's pure function type `-->`. */
-  def lift[A, B](f: A => B): A --> B = {
-    Lift.unit(f)
-  }
 
   extension [A, B](self: P[A, B])
     /** Tries `self`, returning `Some` on success or `None` on failure. */

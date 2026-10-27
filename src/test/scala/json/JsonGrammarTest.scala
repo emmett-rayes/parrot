@@ -9,8 +9,8 @@ class JsonGrammarTest extends AnyFunSuite {
 
   given CanEqual[Any, Any] = CanEqual.derived
 
-  private val referenceParser = new ReferenceParser {}
-  private val strictParser    = new StrictParser {}
+  private val referenceParser = ReferenceParser()
+  private val strictParser    = StrictParser()
   private val reference       = JsonGrammar(referenceParser)
   private val strict          = JsonGrammar(strictParser)
 

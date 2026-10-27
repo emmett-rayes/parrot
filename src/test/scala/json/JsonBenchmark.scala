@@ -8,14 +8,12 @@ import java.nio.file.Path
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters.*
 
-/** Compares the throughput and memory usage of the interpreters on [[JsonGrammar]], with four offline suites in
-  * `src/test/resources/json` run one after the other and reported separately:
-  *   - `json-test-suite`: the `test_parsing` documents of [[https://github.com/nst/JSONTestSuite]], grouped by
-  *     expectation
-  *   - `json-dummy-data`: the documents of [[https://microsoftedge.github.io/Demos/json-dummy-data]], one by one
-  *   - `json-benchmark`: the sample documents of [[https://github.com/TkTech/json_benchmark]], with its methodology
-  *   - `nativejson-benchmark`: the Parse and Parse Validation benchmarks of
-  *     [[https://github.com/miloyip/nativejson-benchmark]], with its methodology
+/** Compares the throughput and memory usage of the interpreters on [[JsonGrammar]], with the four test sets of
+  * [[JsonFixtures]], run one after the other and reported separately:
+  *   - `json-test-suite`: grouped by expectation
+  *   - `json-dummy-data`: document by document
+  *   - `json-benchmark`: with the methodology of its upstream benchmark
+  *   - `nativejson-benchmark`: its Parse and Parse Validation benchmarks, with their methodology
   *
   * Run with `sbt "Test/runMain parrot.json.JsonBenchmark [--reference] [suite ...]"`; without suites, all suites run.
   * Only [[StrictParser]] is measured unless `--reference` adds [[ReferenceParser]] as the baseline it is compared with;
@@ -28,11 +26,11 @@ import scala.jdk.CollectionConverters.*
 object JsonBenchmark {
 
   /** A named way to parse a whole JSON document, returning whether it was accepted. */
-  final case class Interpreter(name: String, accepts: String => Boolean)
+  final case class Interpreter(name: String, accepts: String -> Boolean)
 
   /** The [[ReferenceParser]] interpreter on [[JsonGrammar]]. */
   def reference: Interpreter = {
-    val parser  = new ReferenceParser {}
+    val parser  = ReferenceParser()
     val grammar = JsonGrammar(parser)
     Interpreter(
       "ReferenceParser",
@@ -42,7 +40,7 @@ object JsonBenchmark {
 
   /** The [[StrictParser]] interpreter on [[JsonGrammar]]. */
   def strict: Interpreter = {
-    val parser  = new StrictParser {}
+    val parser  = StrictParser()
     val grammar = JsonGrammar(parser)
     Interpreter(
       "StrictParser",
@@ -237,20 +235,21 @@ object JsonBenchmark {
         s"(runs repeat passes to at least ${minRunMs.toInt} ms; alloc: heap bytes allocated per pass)"
     )
     groupTable.header()
-    val totals = for interpreter <- interpreters yield {
-      val measurements = suite.map { group =>
-        val pass = () => group.fixtures.count(fixture => interpreter.accepts(fixture.input))
-        val m    = measure(pass, warmup, runs, minRunMs)
-        val size = group.fixtures.size
-        reportGroup(interpreter, group.label, size, m.accepted, group.bytes, m.median, m.allocated, m.gcMs)
-        m
+    val totals =
+      for interpreter <- interpreters yield {
+        val measurements = suite.map { group =>
+          val pass = () => group.fixtures.count(fixture => interpreter.accepts(fixture.input))
+          val m    = measure(pass, warmup, runs, minRunMs)
+          val size = group.fixtures.size
+          reportGroup(interpreter, group.label, size, m.accepted, group.bytes, m.median, m.allocated, m.gcMs)
+          m
+        }
+        val (ms, allocated) = (measurements.map(_.median).sum, measurements.map(_.allocated).sum)
+        val fixtures        = suite.map(_.fixtures.size).sum
+        val accepted        = measurements.map(_.accepted).sum
+        reportGroup(interpreter, "total", fixtures, accepted, bytes, ms, allocated, measurements.map(_.gcMs).sum)
+        (ms, allocated)
       }
-      val (ms, allocated) = (measurements.map(_.median).sum, measurements.map(_.allocated).sum)
-      val fixtures        = suite.map(_.fixtures.size).sum
-      val accepted        = measurements.map(_.accepted).sum
-      reportGroup(interpreter, "total", fixtures, accepted, bytes, ms, allocated, measurements.map(_.gcMs).sum)
-      (ms, allocated)
-    }
     compare(interpreters, totals)
   }
 
@@ -404,21 +403,22 @@ object JsonBenchmark {
         s"Parse: minimum of $trials trials per document after $warmup warm-ups for the JIT " +
           s"(trials repeat parses to at least ${minRunMs.toInt} ms; alloc: heap bytes allocated per parse)"
       )
-      val parse  = documents.map(loadFixture(suite, _))
+      val parse = documents.map(loadFixture(suite, _))
       parseTable.header()
-      val totals = for interpreter <- interpreters yield {
-        val measurements = parse.map { document =>
-          val m = measure(() => if interpreter.accepts(document.input) then 1 else 0, warmup, trials, minRunMs)
-          report(interpreter, document.name, document.bytes.toLong, m.min, m.allocated, m.gcMs, m.accepted == 1)
-          m
+      val totals =
+        for interpreter <- interpreters yield {
+          val measurements = parse.map { document =>
+            val m = measure(() => if interpreter.accepts(document.input) then 1 else 0, warmup, trials, minRunMs)
+            report(interpreter, document.name, document.bytes.toLong, m.min, m.allocated, m.gcMs, m.accepted == 1)
+            m
+          }
+          val bytes = parse.map(_.bytes.toLong).sum
+          val ok    = measurements.forall(_.accepted == 1)
+          val gcMs  = measurements.map(_.gcMs).sum
+          val total = (measurements.map(_.min).sum, measurements.map(_.allocated).sum)
+          report(interpreter, "total", bytes, total._1, total._2, gcMs, ok)
+          total
         }
-        val bytes = parse.map(_.bytes.toLong).sum
-        val ok    = measurements.forall(_.accepted == 1)
-        val gcMs  = measurements.map(_.gcMs).sum
-        val total = (measurements.map(_.min).sum, measurements.map(_.allocated).sum)
-        report(interpreter, "total", bytes, total._1, total._2, gcMs, ok)
-        total
-      }
       compare(interpreters, totals)
     }
 
@@ -483,6 +483,8 @@ object JsonBenchmark {
         s"expected $referenceFlag and some of ${suites.map(_._1).mkString(", ")}",
     )
     val interpreters = if flags.contains(referenceFlag) then List(reference, strict) else List(strict)
-    for (name, run) <- suites if names.isEmpty || names.contains(name) do run(interpreters)
+    JsonFixtures.onDeepStack { () =>
+      for (name, run) <- suites if names.isEmpty || names.contains(name) do run(interpreters)
+    }
   }
 }

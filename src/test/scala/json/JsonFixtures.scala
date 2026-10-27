@@ -23,12 +23,30 @@ object JsonFixtures {
   val jsonBenchmarkSuite: String       = "json-benchmark"
   val nativeJsonBenchmarkSuite: String = "nativejson-benchmark"
 
-  /** Nesting too deep for the call stack. */
-  val excluded: Set[String] = Set(
-    "i_structure_500_nested_arrays.json",
-    "n_structure_100000_opening_arrays.json",
-    "n_structure_open_array_object.json",
-  )
+  /** The stack size of [[onDeepStack]]: enough for the most deeply nested documents of the test sets (100 000 opening
+    * brackets) on either interpreter, both of which recurse once per level of nesting.
+    */
+  val stackBytes: Long = 1L << 30
+
+  /** Runs `body` on a thread with a stack of [[stackBytes]], so that what the parsers accept does not depend on the
+    * stack size of the JVM.
+    */
+  def onDeepStack[A](body: () => A): A = {
+    var outcome: Either[Throwable, A] = Left(IllegalStateException("not run"))
+    val thread                        = Thread(
+      null,
+      () => {
+        outcome =
+          try Right(body())
+          catch { case error: Throwable => Left(error) }
+      },
+      "deep-stack",
+      stackBytes,
+    )
+    thread.start()
+    thread.join()
+    outcome.fold(error => throw error, identity)
+  }
 
   /** The `.json` file names directly inside `suite`, sorted. */
   def namesIn(suite: String): List[String] = {
@@ -42,9 +60,9 @@ object JsonFixtures {
     } finally stream.close()
   }
 
-  /** The `json-test-suite` fixtures that are not [[excluded]], sorted. */
+  /** The `json-test-suite` fixtures, sorted. */
   def jsonTestSuite: List[String] = {
-    namesIn(jsonTestSuiteSuite).filterNot(excluded.contains)
+    namesIn(jsonTestSuiteSuite)
   }
 
   /** The `json-dummy-data` documents, sorted. */
