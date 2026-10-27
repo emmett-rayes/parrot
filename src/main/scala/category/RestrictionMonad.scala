@@ -1,88 +1,84 @@
 package parrot
 package category
 
-import scala.annotation.targetName
-
-/** A restriction monad over **Type**.
+/** A restriction structure on a monad on 𝒮: a computation can be asked whether it succeeds, without its result.
   *
-  * Represents a monad *M* equipped with a restriction structure, where
-  *   - _̄: *M*[*A*] → *M*[Unit] is the restriction operation
+  * Represents a monad *M* with
+  *   - *m̄*: *M*[*A*] → *M*[1], the computation that succeeds where *m* succeeds and has no other effect
+  *
+  * The laws are those of the Kleisli restriction structure it induces, [[Kleisli.RestrictionOf]].
   */
-trait RestrictionMonad {
-  type Self[_]: Monad as RestrictionMonadMonad
-  final type M = Self
+abstract class RestrictionMonad(tracked val M: Monad.On[Total.type]) extends caps.Pure {
 
-  val SelfIsMonad: Self is Monad = RestrictionMonadMonad
+  /** The restriction *m̄* of *m*. */
+  def restrict[A](m: M.M[A]): M.M[Unit]
+}
 
-  /** Maps an element *m* in *M*[*A*] to its restriction idempotent *m̄* in *M*[Unit]. */
-  def restrict[A](m: M[A]): M[Unit]
+/** A classical restriction structure on a monad on 𝒮: success is decidable.
+  *
+  * Represents a monad *M* with
+  *   - 0: *M*[*A*], the computation that fails
+  *   - *m̄*ᶜ: *M*[1], which succeeds exactly where *m* fails
+  *   - *m* ⊳ *n*, which runs *m* and, where *m* fails, *n*
+  *   - *attempt*(*m*): *M*[1 + *A*], which never fails and says whether *m* did
+  *
+  * The laws are those of the Kleisli classical structure it induces, [[Kleisli.ClassicalOf]].
+  */
+abstract class ClassicalMonad(tracked override val M: Monad.On[Total.type]) extends RestrictionMonad(M) {
 
-  extension [A](m: M[A])
-    /** Infix extension for [[restrict]]. */
-    @targetName("restrictExt")
-    def restrict(using DummyImplicit): M[Unit] = {
-      RestrictionMonad.this.restrict(m)
-    }
+  /** The failing computation 0. */
+  def zero[A]: M.M[A]
 
-  /** Laws that any `RestrictionMonad` must satisfy. */
-  object RestrictionLaws {
-    import SelfIsMonad.{flatMap, unit}
+  /** The complement *m̄*ᶜ: succeeds exactly where *m* fails. */
+  def complement[A](m: M.M[A]): M.M[Unit]
 
-    /** Left Absorption: *m̄* >>= (_ ↦ *m*) = *m* */
-    def absorption[A](m: M[A])(using M[A] is Eq): Boolean = {
-      m.restrict.flatMap(_ => m) === m
-    }
+  /** Override *m* ⊳ *n*: *m*, or *n* where *m* fails. `n` is passed by name, and computed only where *m* fails. */
+  def orElse[A](m: M.M[A], n: -> M.M[A]): M.M[A]
 
-    /** Commutativity: *m̄* >>= (_ ↦ *n̄*) = *n̄* >>= (_ ↦ *m̄*) */
-    def commutativity[A, B](m: M[A], n: M[B])(using M[Unit] is Eq): Boolean = {
-      m.restrict.flatMap(_ => n.restrict) === n.restrict.flatMap(_ => m.restrict)
-    }
-
-    /** Unitality: *η*(*a*)̄ = *η*(()) */
-    def unitality[A](a: A)(using M[Unit] is Eq): Boolean = {
-      unit(a).restrict === unit(())
-    }
-
-    /** Idempotence: *m̄̄* = *m̄* */
-    def idempotence[A](m: M[A])(using M[Unit] is Eq): Boolean = {
-      m.restrict.restrict === m.restrict
-    }
+  /** *attempt*(*m*) = *M*(`Some`)(*m*) ⊳ *η*(`None`): the result of *m* if it succeeds.
+    */
+  def attempt[A](m: M.M[A]): M.M[Option[A]] = {
+    orElse(M.map[A, Option[A]](a => Some(a))(m), M.unit[Option[A]](None))
   }
 }
 
-object RestrictionMonad {
-  import scala.util.Try
+object ClassicalMonad {
 
-  /** Summons the `RestrictionMonad` instance of `M`. */
-  def apply[M[_]: RestrictionMonad]: M is RestrictionMonad = summon
-
-  /** `Option` is a restriction monad *M*, where
-    *   - *M*[*A*] = *A* + 1 are the elements
-    *   - *m̄* = *M*(_ ↦ ())(*m*) is the restriction operation
-    *
-    * Here 1 is the unit type (`None`).
-    */
-  given OptionIsRestrictionMonad: Option is RestrictionMonad {
-    override given RestrictionMonadMonad: Monad.OptionIsMonad.type = Monad.OptionIsMonad
-    override val SelfIsMonad: Monad.OptionIsMonad.type             = Monad.OptionIsMonad
+  /** `Option` is classical: `None` fails, and success can be tested. */
+  object OptionIsClassical extends ClassicalMonad(Monad.OptionIsMonad) {
 
     def restrict[A](m: Option[A]): Option[Unit] = {
       m.map(_ => ())
     }
-  }
 
-  /** `Try` is a restriction monad *M*, where
-    *   - *M*[*A*] = *A* + *E* are the elements
-    *   - *m̄* = *M*(_ ↦ ())(*m*) is the restriction operation
-    *
-    * Here *E* is the type of failures, i.e. `Throwable` shipping.
-    */
-  given TryIsRestrictionMonad: Try is RestrictionMonad {
-    override given RestrictionMonadMonad: Monad.TryIsMonad.type = Monad.TryIsMonad
-    override val SelfIsMonad: Monad.TryIsMonad.type             = Monad.TryIsMonad
+    def zero[A]: Option[A] = {
+      None
+    }
 
-    def restrict[A](m: Try[A]): Try[Unit] = {
-      m.map(_ => ())
+    def complement[A](m: Option[A]): Option[Unit] = {
+      if m.isEmpty then Some(()) else None
+    }
+
+    def orElse[A](m: Option[A], n: -> Option[A]): Option[A] = {
+      m.orElse(n)
+    }
+
+    override def attempt[A](m: Option[A]): Option[Option[A]] = {
+      Some(m)
     }
   }
+}
+
+/** An iteration operator on a monad on 𝒮.
+  *
+  * Represents a monad *M* with
+  *   - *f*†: *X* → *M*[*A*] for *f*: *X* → *M*[*A* + *X*], which runs *f* until it returns an *A*
+  *
+  * In 𝒮 an iteration operator is guarded: it must stop on its own (see [[StateT.GuardedIteration]]). The laws are
+  * those of the Kleisli iteration it induces, [[Kleisli.ElgotOf]].
+  */
+abstract class ElgotMonad(tracked val M: Monad.On[Total.type]) extends caps.Pure {
+
+  /** The iteration *f*† of *f*. */
+  def iterate[A, X](f: X -> M.M[Either[A, X]]): X -> M.M[A]
 }
