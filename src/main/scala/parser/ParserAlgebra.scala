@@ -4,421 +4,517 @@ package parser
 import category.*
 
 import scala.annotation.targetName
+import scala.util.Try
 import scala.util.matching.Regex
 
-/** An algebra of parsers.
+/** An algebra of parsers: the combinators of parsing expression grammars, derived from categorical structure.
   *
-  * A parser `P[A, B]` consumes a prefix of the input while turning a semantic input `A` into a *semantic result `B`.
+  * A parser `P[A, B]` consumes a prefix of the input while turning a semantic input `A` into a semantic result `B`. No
+  * combinator is primitive except those that read the input. Each of the others is an operation of one of the
+  * structures the algebra is built from, where
+  *   - `Arrows`: parsers form a promonad over the category `-->` of pure functions (`pure`, `>>`, `map`, `mapInput`)
+  *   - `Products` and `Coproducts`: pairs and tagged unions of semantic values, in `-->`
+  *   - `Zipping`: a strength over products, which makes parsers a Freyd category (`**`, `&&`, `*>`, `<*`)
+  *   - `Branching`: a strength over coproducts (`++`, `||`)
+  *   - `Choice`: a classical restriction structure (`failure`, `~`, `!`, `attempt`, `|>`, `+>`)
+  *   - `Loops`: guarded iteration (`iterate`, and the repetition combinators derived from it)
+  *   - `Knots`: guarded recursion at the types of parsers (`recursive`)
+  *
+  * Iteration and recursion are guarded by the input: a loop step that continues, or a recursive call, must come after
+  * input has been consumed; otherwise that step or call fails. So every parser terminates.
+  *
+  * Parsers report diagnostics: what they expected where they failed furthest ([[Expected]]), a writer effect produced
+  * on success and on failure. Lookahead and negation are silent: they report nothing about the parser they test.
+  *
+  * An interpreter chooses the structures and implements the primitives `lift`, `literal`, `regex`, `rule` and
+  * `diagnose`. It may override a derived combinator with a faster implementation of the same equation.
   */
-trait ParserAlgebra {
-  type Self[_, _]
-  final type P = Self
+abstract class ParserAlgebra(
+  tracked val Arrows: Promonad { val K: Category { type Obj = Type } },
+  tracked val Products: Cartesian {
+    val K: Arrows.K.type; type I = Unit; val T: Bifunctor { type Self = Tuple2 }
+  },
+  tracked val Coproducts: Cocartesian {
+    val K: Arrows.K.type; type I = Nothing; val T: Bifunctor { type Self = Either }
+  },
+  tracked val Zipping: Strong { val P: Arrows.type; val M: Products.type },
+  tracked val Branching: Strong { val P: Arrows.type; val M: Coproducts.type },
+  tracked val Choice: Classical { val P: Arrows.type; val C: Coproducts.type },
+  tracked val Loops: Elgot { val S: Branching.type },
+  tracked val Knots: Recursion { val P: Arrows.type },
+) extends caps.Pure {
+  import Arrows.K.>>>
+
+  /** Parsers from semantic input `A` to semantic result `B`. */
+  final type P = Arrows.P
 
   /** Pure functions on semantic values. */
-  type On[_, _]
-  final type --> = On
+  final type --> = Arrows.K.-->
 
-  /** The empty semantic value. */
-  type Empty
+  // ==== Primitives ====
 
-  /** Pairs of semantic values. */
-  type Pair[_, _]
-  final type * = Pair
+  /** Includes a pure Scala function among the pure functions of the algebra. */
+  def lift[A, B](f: A -> B): A --> B
 
-  /** The impossible semantic value. */
-  type None
-
-  /** Tagged alternatives of semantic values: `A + B` is either an `A` or a `B`. */
-  type Alternative[_, _]
-  final type + = Alternative
-
-  /** Collections of semantic values. */
-  type Many[_]
-
-  /** Names `self` as the rule `label`, for diagnostics, memoization, tracing etc. */
-  def rule[A, B](self: P[A, B], label: String): P[A, B]
+  /** Names `p` as the rule `label`, for diagnostics. It runs `p`; where `p` fails at or before its start, it reports
+    * that it expected `label` there, and otherwise it puts every expectation of `p` in the context of `label`.
+    */
+  def rule[A, B](p: P[A, B], label: String): P[A, B]
 
   /** Consumes `expected`. */
-  def literal(expected: String): P[Empty, String]
+  def literal(expected: String): P[Unit, String]
 
-  /** Consumes a match of `expected`. */
-  def regex(expected: Regex): P[Empty, String]
+  /** Consumes a match of `expected`, taken in context: `^` and `$` match only at the start and end of the whole input,
+    * and lookbehind and `\b` see the input before the current position.
+    */
+  def regex(expected: Regex): P[Unit, String]
 
-  /** Applies `f` to the semantic input without consuming anything. */
-  def pure[A, B](f: A --> B): P[A, B]
+  /** Runs `p` on semantic input `a` at the start of `source`: what it expected where it failed furthest, and its result
+    * and the offset after it, if it succeeds.
+    */
+  def diagnose[A, B](p: P[A, B])(a: A, source: String): (Expected, Option[(B, Int)])
 
-  /** Applies `g` to the result of `self`. */
-  def map[A, B, D](self: P[A, B], g: B --> D): P[A, D]
-
-  /** Applies `f` to the semantic input before passing it to `self`. */
-  def mapInput[A, B, C](self: P[A, B], f: C --> A): P[C, B]
-
-  /** Succeeds without consuming anything, returning its semantic input. */
-  def success[A]: P[A, A]
-
-  /** Runs `self`, then `other` on the remaining input with the result of `self` as its semantic input. */
-  def andThen[A, B, C](self: P[A, B], other: P[B, C]): P[A, C]
-
-  /** Runs `self` on the left of a pair of semantic inputs, then `other` on the right, pairing their results. */
-  def zip[A, B, C, D](self: P[A, B], other: P[C, D]): P[A * C, B * D]
-
-  /** Runs `self`, then `other`, on the same semantic input, pairing their results. */
-  def pair[A, B, C](self: P[A, B], other: P[A, C]): P[A, B * C]
-
-  /** Runs `self`, then `other`, keeping only the result of `other`. */
-  def skipThen[A, B, C](self: P[A, B], other: P[A, C]): P[A, C]
-
-  /** Runs `self`, then `other`, keeping only the result of `self`. */
-  def thenSkip[A, B, C](self: P[A, B], other: P[A, C]): P[A, B]
-
-  /** Runs `open`, `self`, then `close`, keeping the result of `self`. */
-  def between[A, B, C, D](self: P[A, B], open: P[A, C], close: P[A, D]): P[A, B]
-
-  /** Runs `self` on a left semantic input or `other` on a right one, tagging the result accordingly. */
-  def branch[A, B, C, D](self: P[A, B], other: P[C, D]): P[A + C, B + D]
-
-  /** Runs `self` on a left semantic input or `other` on a right one, into a common result. */
-  def merge[A, B, C](self: P[A, B], other: P[C, B]): P[A + C, B]
-
-  /** Always fails without consuming anything. */
-  def failure[A, B]: P[A, B]
-
-  /** Tries `self` and, only if it fails, `other` on the original input. */
-  def orElse[A, B](self: P[A, B], other: P[A, B]): P[A, B]
-
-  /** Tries `self` and, only if it fails, `other` on the original input, tagging the alternative that succeeded. */
-  def or[A, B, C](self: P[A, B], other: P[A, C]): P[A, B + C]
-
-  /** Tries `self`; if it fails, succeeds without consuming anything, returning the semantic input on the right. */
-  def optional[A, B](self: P[A, B]): P[A, B + A] = {
-    self +> success
+  /** Runs `p` on semantic input `a` at the start of `source`: its result and the offset after it, if it succeeds. */
+  def run[A, B](p: P[A, B])(a: A, source: String): Option[(B, Int)] = {
+    diagnose(p)(a, source)._2
   }
 
-  /** Succeeds if and only if `self` succeeds, consuming nothing and returning the semantic input. */
-  def lookahead[A, B](self: P[A, B]): P[A, A]
+  extension [B](p: P[Unit, B]) {
 
-  /** Succeeds if and only if `self` fails, consuming nothing and returning the semantic input.
-    */
-  def not[A, B](self: P[A, B]): P[A, A] = {
-    (~self +> success) >> (failure || success)
-  }
+    /** Runs `p` on a prefix of `source`, reporting what was expected where it failed furthest if it fails. */
+    def parse(source: String): Try[(result: B, offset: Int)] = {
+      diagnose(p)((), source) match {
+        case (_, Some((result, offset))) => scala.util.Success((result = result, offset = offset))
+        case (expected, scala.None)      => scala.util.Failure(ParseError(expected))
+      }
+    }
 
-  /** Runs `self` repeatedly, feeding each right result back as the next semantic input, until it yields a left result.
-    */
-  def iterate[A, B](self: P[A, B + A]): P[A, B]
-
-  /** Runs `self` zero or more times until it fails, collecting the results. */
-  def repeated[A, B](self: P[A, B]): P[A, Many[B]]
-
-  /** Runs `self` exactly `n` times, collecting the results. */
-  def times[A, B](self: P[A, B], n: Int): P[A, Many[B]]
-
-  /** Runs `self` at least `n` times until it fails, collecting the results. */
-  def atLeast[A, B](self: P[A, B], n: Int): P[A, Many[B]]
-
-  /** Runs `self` one or more times separated by `separator`, collecting the results. */
-  def separatedBy[A, B, C](self: P[A, B], separator: P[A, C]): P[A, Many[B]]
-
-  /** The parser defined recursively by `f`, which receives the parser being defined. */
-  def recursive[A, B](f: P[A, B] => P[A, B]): P[A, B]
-
-  /** A tuple of mutually recursive parsers, solved one parser at a time via Bekić's theorem.
-    *
-    * fix(*x*, *y*) = (fix *x* . *f₁*(*x*, *y₀*), *y₀*) where *y₀* = fix *y* . *f₂*(fix *x*. *f₁*(*x*, *y*), *y*).
-    */
-  inline def recursive[T <: Tuple](f: T => T): T = {
-    inline compiletime.erasedValue[T] match {
-      case _: EmptyTuple     => EmptyTuple.asInstanceOf[T]
-      case _: (head *: tail) =>
-        def solveHead(t: tail): head = {
-          recursive[Any, Any](h =>
-            f((h.asInstanceOf[head] *: t).asInstanceOf[T]).productElement(0).asInstanceOf[P[Any, Any]]
-          ).asInstanceOf[head]
-        }
-
-        val solvedTail = recursive[tail](t => f((solveHead(t) *: t).asInstanceOf[T]).drop(1).asInstanceOf[tail])
-        val solvedHead = solveHead(solvedTail)
-        (solvedHead *: solvedTail).asInstanceOf[T]
+    /** Runs `p` on the whole of `source`. */
+    def parseAll(source: String): Try[(result: B, offset: Int)] = {
+      diagnose(p)((), source) match {
+        case (_, Some((result, offset))) if offset == source.length =>
+          scala.util.Success((result = result, offset = offset))
+        case (expected, Some((_, offset))) =>
+          scala.util.Failure(ParseError(expected.join(Expected.at(offset, "end of input"))))
+        case (expected, scala.None) => scala.util.Failure(ParseError(expected))
+      }
     }
   }
 
-  extension [A, B](self: P[A, B])
-    /** Infix extension for [[rule]]. */
+  // ==== Sequencing: the promonad ====
+
+  /** From the promonad: `pure(f)` applies `f` to the semantic input without consuming anything, *unit*(*f*), and
+    * `success` succeeds without consuming anything, returning its semantic input: the identity arrow.
+    */
+  export Arrows.{identity as success, unit as pure}
+
+  /** Runs `p`, then `q` on the remaining input with the result of `p` as its semantic input. */
+  def andThen[A, B, C](p: P[A, B], q: P[B, C]): P[A, C] = {
+    Arrows.multiply(q, p)
+  }
+
+  /** Applies `g` to the result of `p`. */
+  def map[A, B, C](p: P[A, B], g: B --> C): P[A, C] = {
+    andThen(p, pure(g))
+  }
+
+  /** Applies `f` to the semantic input before passing it to `p`. */
+  def mapInput[A, B, C](p: P[A, B], f: C --> A): P[C, B] = {
+    andThen(pure(f), p)
+  }
+
+  // ==== Zipping and branching: the strengths ====
+
+  /** Runs `p` on the left of a pair of semantic inputs, then `q` on the right: *first*(*p*) ⨾ *second*(*q*). */
+  def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
+    andThen(Zipping.first[A, B, C](p), Zipping.second[C, D, B](q))
+  }
+
+  /** Runs `p` on a left semantic input or `q` on a right one, tagging the result: *p* + *q*. */
+  def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
+    andThen(Branching.first[A, B, C](p), Branching.second[C, D, B](q))
+  }
+
+  /** Runs `p` on a left semantic input or `q` on a right one, into a common result: [*p*,*q*]. */
+  def merge[A, B, C](p: P[A, C], q: P[B, C]): P[Either[A, B], C] = {
+    map(branch(p, q), Coproducts.codiagonal[C])
+  }
+
+  // ==== Choice: the classical restriction structure ====
+
+  /** From the classical restriction structure:
+    *   - `failure` fails without consuming anything: the restriction zero 0
+    *   - `lookahead(p)` succeeds if and only if `p` succeeds, consuming nothing and returning the semantic input: *p̄*
+    *   - `not(p)` succeeds if and only if `p` fails, consuming nothing and returning the semantic input: *p̄*ᶜ
+    *   - `attempt(p)`, also called `optional(p)`, never fails: the result of `p` on the left, or the untouched semantic
+    *     input on the right where `p` fails
+    *   - `orElse(p, q)` tries `p` and, only where it fails, `q` on the original input: *p* ⊳ *q*, PEG ordered choice
+    */
+  export Choice.{attempt, attempt as optional, complement as not, orElse, restrict as lookahead, zero as failure}
+
+  /** Ordered choice that tags the alternative that succeeded. */
+  def or[A, B, C](p: P[A, B], q: P[A, C]): P[A, Either[B, C]] = {
+    orElse(map(p, Coproducts.inl[B, C]), map(q, Coproducts.inr[B, C]))
+  }
+
+  // ==== Iteration and recursion ====
+
+  /** Runs `p` repeatedly, feeding each right result back as the next semantic input, until it yields a left result. A
+    * step that yields a right result without consuming input fails the whole loop.
+    */
+  def iterate[A, B](p: P[A, Either[B, A]]): P[A, B] = {
+    Loops.iterate[B, A](p)
+  }
+
+  /** The parser defined recursively by `f`, which receives the parser being defined. A recursive call that is not
+    * preceded by consumed input fails.
+    */
+  def recursive[A, B](f: P[A, B] -> P[A, B]): P[A, B] = {
+    Knots.fix(f)
+  }
+
+  /** A tuple of mutually recursive parsers: `f` receives the tuple being defined and returns its definition. Each
+    * component is a knot of [[Knots]]' family fixed point, so a call that is not preceded by consumed input fails, and
+    * `f` is applied once per application of the family. The tuple may contain only parsers.
+    */
+  inline def recursive[T <: Tuple](f: T -> T)(using Parsers[T]): T = {
+    val n      = compiletime.constValue[Tuple.Size[T]]
+    val family = Knots.fixFamily[Any, Any](n) { knots =>
+      lazy val solved: T =
+        f(Tuple.fromArray(Array.tabulate[Object](n)(i => knots(i).asInstanceOf[Object])).asInstanceOf[T])
+      i => solved.productElement(i).asInstanceOf[P[Any, Any]]
+    }
+    Tuple.fromArray(Array.tabulate[Object](n)(i => family(i).asInstanceOf[Object])).asInstanceOf[T]
+  }
+
+  /** Evidence that every component of the tuple type `T` is a parser type `P[A, B]`. */
+  final class Parsers[T <: Tuple] private[ParserAlgebra] ()
+
+  object Parsers {
+
+    /** The empty tuple has no other components. */
+    given EmptyIsParsers: Parsers[EmptyTuple] = Parsers()
+
+    /** A parser followed by parsers. */
+    given ConsIsParsers: [A, B, Rest <: Tuple] => Parsers[Rest] => Parsers[P[A, B] *: Rest] = Parsers()
+  }
+
+  // ==== Concatenation: derived from the products of `-->` ====
+
+  /** Runs `p`, then `q`, on the same semantic input, pairing their results: *Δ* ⨾ (*p* ** *q*). */
+  def pair[A, B, C](p: P[A, B], q: P[A, C]): P[A, (B, C)] = {
+    mapInput(zip(p, q), Products.diagonal[A])
+  }
+
+  /** Runs `p`, then `q`, keeping only the result of `q`. */
+  def skipThen[A, B, C](p: P[A, B], q: P[A, C]): P[A, C] = {
+    map(pair(p, q), Products.snd[B, C])
+  }
+
+  /** Runs `p`, then `q`, keeping only the result of `p`. */
+  def thenSkip[A, B, C](p: P[A, B], q: P[A, C]): P[A, B] = {
+    map(pair(p, q), Products.fst[B, C])
+  }
+
+  /** Runs `open`, `p`, then `close`, keeping the result of `p`. */
+  def between[A, B, C, D](p: P[A, B], open: P[A, C], close: P[A, D]): P[A, B] = {
+    thenSkip(skipThen(open, p), close)
+  }
+
+  // ==== Repetition: derived from iteration ====
+
+  /** Pairs the semantic input with the empty collection. */
+  private def start[A, B]: P[A, (A, Vector[B])] = {
+    pure(Products.pair(Arrows.K.identity[A], lift[A, Vector[B]](_ => Vector.empty)))
+  }
+
+  /** Runs `item` once, appending its result: (*a*,*bs*) ↦ (*a*,*bs* :+ *item*(*a*)). */
+  private def step[A, B](item: P[A, B]): P[(A, Vector[B]), (A, Vector[B])] = {
+    val reshape =
+      Products.pair(Products.fst[A, Vector[B]], Products.pair(Products.snd[A, Vector[B]], Products.fst[A, Vector[B]]))
+    val finish = Products.tensor(Arrows.K.identity[A], lift[(Vector[B], B), Vector[B]]((bs, b) => bs :+ b))
+    map(mapInput(zip(success[A], zip(success[Vector[B]], item)), reshape), finish)
+  }
+
+  /** Runs `seed`, then `item` until it fails, collecting the results. */
+  private def repeat[A, B](seed: P[A, (A, Vector[B])], item: P[A, B]): P[A, Vector[B]] = {
+    val next = map(step(item), Coproducts.inr[Vector[B], (A, Vector[B])])
+    val done = pure(Products.snd[A, Vector[B]] >>> Coproducts.inl[Vector[B], (A, Vector[B])])
+    andThen(seed, iterate(orElse(next, done)))
+  }
+
+  /** Runs `item` exactly `n` times. */
+  private def unrolled[A, B](item: P[A, B], n: Int): P[A, (A, Vector[B])] = {
+    require(n >= 0, "n must be non-negative")
+    (0 until n).foldLeft(start[A, B])((acc, _) => andThen(acc, step(item)))
+  }
+
+  /** Runs `p` until it fails, collecting the results. If `p` succeeds without consuming input, the repetition fails. */
+  def repeated[A, B](p: P[A, B]): P[A, Vector[B]] = {
+    repeat(start[A, B], p)
+  }
+
+  /** Runs `p` exactly `n` times, collecting the results. */
+  def times[A, B](p: P[A, B], n: Int): P[A, Vector[B]] = {
+    map(unrolled(p, n), Products.snd[A, Vector[B]])
+  }
+
+  /** Runs `p` at least `n` times, until it fails, collecting the results. */
+  def atLeast[A, B](p: P[A, B], n: Int): P[A, Vector[B]] = {
+    repeat(unrolled(p, n), p)
+  }
+
+  /** Runs `p` one or more times, separated by `separator`, collecting the results. */
+  def separatedBy[A, B, C](p: P[A, B], separator: P[A, C]): P[A, Vector[B]] = {
+    repeat(unrolled(p, 1), skipThen(separator, p))
+  }
+
+  // ==== Syntax ====
+
+  extension [A, B](self: P[A, B]) {
+
+    /** Infix form of [[rule]]. */
     @targetName("ruleExt")
-    def rule(label: String): P[A, B] = {
-      ParserAlgebra.this.rule(self, label)
-    }
+    final def rule(label: String): P[A, B] = ParserAlgebra.this.rule(self, label)
 
-    /** Infix extension for [[map]]. */
+    /** Infix form of [[map]]. */
     @targetName("mapExt")
-    def map[D](g: B --> D): P[A, D] = {
-      ParserAlgebra.this.map(self, g)
-    }
+    final def map[C](g: B --> C): P[A, C] = ParserAlgebra.this.map(self, g)
 
-    /** Infix extension for [[mapInput]]. */
+    /** Infix form of [[mapInput]]. */
     @targetName("mapInputExt")
-    def mapInput[C](f: C --> A): P[C, B] = {
-      ParserAlgebra.this.mapInput(self, f)
-    }
+    final def mapInput[C](f: C --> A): P[C, B] = ParserAlgebra.this.mapInput(self, f)
 
-    /** Infix extension for [[andThen]]. */
-    @targetName("andThenExt")
-    def andThen[C](other: P[B, C]): P[A, C] = {
-      ParserAlgebra.this.andThen(self, other)
-    }
+    /** Infix form of [[andThen]]. */
+    final def >>[C](other: P[B, C]): P[A, C] = ParserAlgebra.this.andThen(self, other)
 
-    /** Infix extension for [[zip]]. */
-    @targetName("zipExt")
-    def zip[C, D](other: P[C, D]): P[A * C, B * D] = {
-      ParserAlgebra.this.zip(self, other)
-    }
+    /** Infix form of [[zip]]. */
+    final def **[C, D](other: P[C, D]): P[(A, C), (B, D)] = ParserAlgebra.this.zip(self, other)
 
-    /** Infix extension for [[pair]]. */
-    @targetName("pairExt")
-    def pair[C](other: P[A, C]): P[A, B * C] = {
-      ParserAlgebra.this.pair(self, other)
-    }
+    /** Infix form of [[pair]]. */
+    final def &&[C](other: P[A, C]): P[A, (B, C)] = ParserAlgebra.this.pair(self, other)
 
-    /** Infix extension for [[skipThen]]. */
-    @targetName("skipThenExt")
-    def skipThen[C](other: P[A, C]): P[A, C] = {
-      ParserAlgebra.this.skipThen(self, other)
-    }
+    /** Infix form of [[skipThen]]. */
+    final def *>[C](other: P[A, C]): P[A, C] = ParserAlgebra.this.skipThen(self, other)
 
-    /** Infix extension for [[thenSkip]]. */
-    @targetName("thenSkipExt")
-    def thenSkip[C](other: P[A, C]): P[A, B] = {
-      ParserAlgebra.this.thenSkip(self, other)
-    }
+    /** Infix form of [[thenSkip]]. */
+    final def <*[C](other: P[A, C]): P[A, B] = ParserAlgebra.this.thenSkip(self, other)
 
-    /** Infix extension for [[between]]. */
+    /** Infix form of [[between]]. */
     @targetName("betweenExt")
-    def between[C, D](open: P[A, C], close: P[A, D]): P[A, B] = {
-      ParserAlgebra.this.between(self, open, close)
-    }
+    final def between[C, D](open: P[A, C], close: P[A, D]): P[A, B] = ParserAlgebra.this.between(self, open, close)
 
-    /** Infix extension for [[branch]]. */
-    @targetName("branchExt")
-    def branch[C, D](other: P[C, D]): P[A + C, B + D] = {
-      ParserAlgebra.this.branch(self, other)
-    }
+    /** Infix form of [[branch]]. */
+    final def ++[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = ParserAlgebra.this.branch(self, other)
 
-    /** Infix extension for [[merge]]. */
-    @targetName("mergeExt")
-    def merge[C](other: P[C, B]): P[A + C, B] = {
-      ParserAlgebra.this.merge(self, other)
-    }
+    /** Infix form of [[merge]]. */
+    final def ||[C](other: P[C, B]): P[Either[A, C], B] = ParserAlgebra.this.merge(self, other)
 
-    /** Infix extension for [[orElse]]. */
-    @targetName("orElseExt")
-    def orElse(other: P[A, B]): P[A, B] = {
-      ParserAlgebra.this.orElse(self, other)
-    }
+    /** Infix form of [[orElse]]. */
+    final def |>(other: P[A, B]): P[A, B] = ParserAlgebra.this.orElse(self, other)
 
-    /** Infix extension for [[or]]. */
-    @targetName("orExt")
-    def or[C](other: P[A, C]): P[A, B + C] = {
-      ParserAlgebra.this.or(self, other)
-    }
+    /** Infix form of [[or]]. */
+    final def +>[C](other: P[A, C]): P[A, Either[B, C]] = ParserAlgebra.this.or(self, other)
 
-    /** Infix extension for [[optional]]. */
+    /** Prefix form of [[lookahead]]. */
+    final def unary_~ : P[A, A] = ParserAlgebra.this.lookahead(self)
+
+    /** Prefix form of [[not]]. */
+    final def unary_! : P[A, A] = ParserAlgebra.this.not(self)
+
+    /** Postfix form of [[attempt]]. */
+    @targetName("attemptExt")
+    final def attempt(using DummyImplicit): P[A, Either[B, A]] = ParserAlgebra.this.attempt(self)
+
+    /** Postfix form of [[optional]]. */
     @targetName("optionalExt")
-    def optional(using DummyImplicit): P[A, B + A] = {
-      ParserAlgebra.this.optional(self)
-    }
+    final def optional(using DummyImplicit): P[A, Either[B, A]] = ParserAlgebra.this.optional(self)
 
-    /** Infix extension for [[lookahead]]. */
-    @targetName("lookaheadExt")
-    def lookahead(using DummyImplicit): P[A, A] = {
-      ParserAlgebra.this.lookahead(self)
-    }
-
-    /** Infix extension for [[not]]. */
-    @targetName("notExt")
-    def not(using DummyImplicit): P[A, A] = {
-      ParserAlgebra.this.not(self)
-    }
-
-    /** Infix extension for [[repeated]]. */
+    /** Postfix form of [[repeated]]. */
     @targetName("repeatedExt")
-    def repeated(using DummyImplicit): P[A, Many[B]] = {
-      ParserAlgebra.this.repeated(self)
-    }
+    final def repeated(using DummyImplicit): P[A, Vector[B]] = ParserAlgebra.this.repeated(self)
 
-    /** Infix extension for [[times]]. */
+    /** Infix form of [[times]]. */
     @targetName("timesExt")
-    def times(n: Int): P[A, Many[B]] = {
-      ParserAlgebra.this.times(self, n)
-    }
+    final def times(n: Int): P[A, Vector[B]] = ParserAlgebra.this.times(self, n)
 
-    /** Infix extension for [[atLeast]]. */
+    /** Infix form of [[atLeast]]. */
     @targetName("atLeastExt")
-    def atLeast(n: Int): P[A, Many[B]] = {
-      ParserAlgebra.this.atLeast(self, n)
-    }
+    final def atLeast(n: Int): P[A, Vector[B]] = ParserAlgebra.this.atLeast(self, n)
 
-    /** Infix extension for [[separatedBy]]. */
+    /** Infix form of [[separatedBy]]. */
     @targetName("separatedByExt")
-    def separatedBy[C](separator: P[A, C]): P[A, Many[B]] = {
-      ParserAlgebra.this.separatedBy(self, separator)
-    }
+    final def separatedBy[C](separator: P[A, C]): P[A, Vector[B]] = ParserAlgebra.this.separatedBy(self, separator)
+  }
 
-  extension [A, B](self: P[A, B + A])
-    /** Infix extension for [[iterate]]. */
-    @targetName("loopExt")
-    def iterate(using DummyImplicit): P[A, B] = {
-      ParserAlgebra.this.iterate(self)
-    }
+  extension [A, B](self: P[A, Either[B, A]])
+    /** Postfix form of [[iterate]]. */
+    @targetName("iterateExt")
+    final def iterate(using DummyImplicit): P[A, B] = ParserAlgebra.this.iterate(self)
 
-  extension [A, B](self: P[A, B])
-    /** Alias for [[andThen]]. */
-    def >>[C](other: P[B, C]): P[A, C] = self.andThen(other)
-
-    /** Alias for [[zip]]. */
-    def **[C, D](other: P[C, D]): P[A * C, B * D] = self.zip(other)
-
-    /** Alias for [[pair]]. */
-    def &&[C](other: P[A, C]): P[A, B * C] = self.pair(other)
-
-    /** Alias for [[skipThen]]. */
-    def *>[C](other: P[A, C]): P[A, C] = self.skipThen(other)
-
-    /** Alias for [[thenSkip]]. */
-    def <*[C](other: P[A, C]): P[A, B] = self.thenSkip(other)
-
-    /** Alias for [[branch]]. */
-    def ++[C, D](other: P[C, D]): P[A + C, B + D] = self.branch(other)
-
-    /** Alias for [[merge]]. */
-    def ||[C](other: P[C, B]): P[A + C, B] = self.merge(other)
-
-    /** Alias for [[orElse]]. */
-    def |>(other: P[A, B]): P[A, B] = self.orElse(other)
-
-    /** Alias for [[or]]. */
-    def +>[C](other: P[A, C]): P[A, B + C] = self.or(other)
-
-    /** Alias for [[lookahead]]. */
-    def unary_~ : P[A, A] = self.lookahead
-
-    /** Alias for [[not]]. */
-    def unary_! : P[A, A] = self.not
-
-  /** Equations between deterministic, backtracking (PEG-style) parsers. */
+  /** The equations of parsing expression grammars, in the vocabulary of parsers. Most are laws of the structures the
+    * algebra is built from; checking them on the combinators also checks the overrides of interpreters.
+    *
+    * The laws come in two tiers. Equations hold for results, offsets and diagnostics, observed with an [[Observable]].
+    * Inequations *p* ⊑ *q* say that *p* and *q* have the same results and offsets and that *q* reports at least what
+    * *p* reports, observed with a [[Preorder]]: they are the equations that only hold up to diagnostics, because a
+    * silent lookahead or a failure forgets what the parser before it expected. Every combinator preserves ⊑, so parsers
+    * are enriched over preorders.
+    */
   object ParserLaws {
 
-    /** Running `success` first changes nothing. */
-    def leftIdentity[A, B](p: P[A, B])(using P[A, B] is Eq): Boolean = {
-      (success >> p) === p
+    /** `success >> p` = `p` */
+    def leftIdentity[A, B](p: P[A, B])(using P[A, B] is Observable): Boolean = {
+      (success[A] >> p) =?= p
     }
 
-    /** Running `success` last changes nothing. */
-    def rightIdentity[A, B](p: P[A, B])(using P[A, B] is Eq): Boolean = {
-      (p >> success) === p
+    /** `p >> success` = `p` */
+    def rightIdentity[A, B](p: P[A, B])(using P[A, B] is Observable): Boolean = {
+      (p >> success[B]) =?= p
     }
 
-    /** Sequencing is associative. */
-    def associativity[A, B, C, D](p: P[A, B], q: P[B, C], r: P[C, D])(using P[A, D] is Eq): Boolean = {
-      ((p >> q) >> r) === (p >> (q >> r))
+    /** `(p >> q) >> r` = `p >> (q >> r)` */
+    def associativity[A, B, C, D](p: P[A, B], q: P[B, C], r: P[C, D])(using P[A, D] is Observable): Boolean = {
+      ((p >> q) >> r) =?= (p >> (q >> r))
     }
 
-    /** Zipping two `success` parsers is `success` on pairs. */
-    def zipIdentity[A, C](using P[A * C, A * C] is Eq): Boolean = {
-      (success ** success) === success
+    /** `success ** success` = `success` */
+    def zipIdentity[A, C](using P[(A, C), (A, C)] is Observable): Boolean = {
+      (success[A] ** success[C]) =?= success[(A, C)]
     }
 
-    /** Nothing runs after a failure. */
-    def leftZero[A, B, C](p: P[B, C])(using P[A, C] is Eq): Boolean = {
-      (failure >> p) === failure
+    /** `failure >> p` = `failure`: nothing runs after a failure. */
+    def leftZero[A, B, C](p: P[B, C])(using P[A, C] is Observable): Boolean = {
+      (failure[A, B] >> p) =?= failure[A, C]
     }
 
-    /** A failure at the end fails the whole sequence. */
-    def rightZero[A, B, C](p: P[A, B])(using P[A, C] is Eq): Boolean = {
-      (p >> failure) === failure
+    /** `failure` ⊑ `p >> failure`: a failure at the end fails the whole sequence, which still reports what `p`
+      * expected.
+      */
+    def rightZero[A, B, C](p: P[A, B])(using P[A, C] is Preorder): Boolean = {
+      failure[A, C] <~ (p >> failure[B, C])
     }
 
-    /** A failing first alternative is skipped. */
-    def choiceLeftIdentity[A, B](p: P[A, B])(using P[A, B] is Eq): Boolean = {
-      (failure |> p) === p
+    /** `failure |> p` = `p` = `p |> failure` */
+    def choiceIdentity[A, B](p: P[A, B])(using P[A, B] is Observable): Boolean = {
+      ((failure[A, B] |> p) =?= p) && ((p |> failure[A, B]) =?= p)
     }
 
-    /** A failing last alternative is never needed. */
-    def choiceRightIdentity[A, B](p: P[A, B])(using P[A, B] is Eq): Boolean = {
-      (p |> failure) === p
+    /** `(p |> q) |> r` = `p |> (q |> r)` */
+    def choiceAssociativity[A, B](p: P[A, B], q: P[A, B], r: P[A, B])(using P[A, B] is Observable): Boolean = {
+      ((p |> q) |> r) =?= (p |> (q |> r))
     }
 
-    /** Ordered choice is associative. */
-    def choiceAssociativity[A, B](p: P[A, B], q: P[A, B], r: P[A, B])(using P[A, B] is Eq): Boolean = {
-      ((p |> q) |> r) === (p |> (q |> r))
+    /** `h >> (p |> q)` = `(h >> p) |> (h >> q)`: choice distributes over what comes before it. */
+    def choicePrecomposition[A, B, C](h: P[A, B], p: P[B, C], q: P[B, C])(using P[A, C] is Observable): Boolean = {
+      (h >> (p |> q)) =?= ((h >> p) |> (h >> q))
     }
 
-    /** Checking that `p` would succeed before running it changes nothing. */
-    def lookaheadIdentity[A, B](p: P[A, B])(using P[A, B] is Eq): Boolean = {
-      (~p >> p) === p
+    /** `p |> q` = `attempt(p) >> (success || q)`: ordered choice is an attempt followed by a merge. */
+    def choiceByAttempt[A, B](p: P[A, B], q: P[A, B])(using P[A, B] is Observable): Boolean = {
+      (p |> q) =?= (attempt(p) >> (success[B] || q))
     }
 
-    /** Lookaheads commute. */
-    def lookaheadCommutativity[A, B, C](p: P[A, B], q: P[A, C])(using P[A, A] is Eq): Boolean = {
-      (~p >> ~q) === (~q >> ~p)
+    /** `~p >> p` ⊑ `p` (**R1**, up to diagnostics): where `p` fails, the silent lookahead reports nothing. */
+    def lookaheadIdentity[A, B](p: P[A, B])(using P[A, B] is Preorder): Boolean = {
+      (~p >> p) <~ p
     }
 
-    /** Looking ahead at a guarded parser is looking ahead at the guard and the parser. */
-    def lookaheadCompose[A, B, C](p: P[A, B], q: P[A, C])(using P[A, A] is Eq): Boolean = {
-      ~(~p >> q) === (~p >> ~q)
+    /** `~p >> ~q` = `~q >> ~p` (**R2**) */
+    def lookaheadCommutativity[A, B, C](p: P[A, B], q: P[A, C])(using P[A, A] is Observable): Boolean = {
+      (~p >> ~q) =?= (~q >> ~p)
     }
 
-    /** Looking ahead after `p` is looking ahead at `p` followed by its continuation, then running `p`. */
-    def lookaheadPrecompose[A, B, C](p: P[A, B], q: P[B, C])(using P[A, B] is Eq): Boolean = {
-      (p >> ~q) === (~(p >> q) >> p)
+    /** `~(~p >> q)` = `~p >> ~q` (**R3**) */
+    def lookaheadCompose[A, B, C](p: P[A, B], q: P[A, C])(using P[A, A] is Observable): Boolean = {
+      ~(~p >> q) =?= (~p >> ~q)
     }
 
-    /** A double negative lookahead is a positive lookahead. */
-    def doubleNegation[A, B](p: P[A, B])(using P[A, A] is Eq): Boolean = {
-      !(!p) === ~p
+    /** `~(p >> q) >> p` ⊑ `p >> ~q` (**R4**, up to diagnostics): on the left, `p` runs only inside the silent lookahead
+      * when `q` fails.
+      */
+    def lookaheadPrecompose[A, B, C](p: P[A, B], q: P[B, C])(using P[A, B] is Preorder): Boolean = {
+      (~(p >> q) >> p) <~ (p >> ~q)
     }
 
-    /** A parser cannot both succeed and fail. */
-    def negationExclusion[A, B](p: P[A, B])(using P[A, A] is Eq): Boolean = {
-      (~p >> !p) === failure
+    /** `!!p` = `~p` */
+    def doubleNegation[A, B](p: P[A, B])(using P[A, A] is Observable): Boolean = {
+      !(!p) =?= ~p
     }
 
-    /** A recursive parser is its own unfolding. */
-    def recursionUnfolding[A, B](f: P[A, B] => P[A, B])(using P[A, B] is Eq): Boolean = {
-      recursive(f) === f(recursive(f))
+    /** `~p >> !p` = `failure`: a parser cannot both succeed and fail. */
+    def negationExclusion[A, B](p: P[A, B])(using P[A, A] is Observable): Boolean = {
+      (~p >> !p) =?= failure[A, A]
     }
 
-    /** A loop is one step followed by either stopping or looping again. */
-    def loopUnfolding[A, B](p: P[A, B + A])(using P[A, B] is Eq): Boolean = {
-      p.iterate === (p >> (success || p.iterate))
+    /** `~p |> !p` = `success`: a parser either succeeds or fails. */
+    def negationCover[A, B](p: P[A, B])(using P[A, A] is Observable): Boolean = {
+      (~p |> !p) =?= success[A]
+    }
+
+    /** `p.iterate` = `p >> (success || p.iterate)`, for a guarded `p`. */
+    def loopUnfolding[A, B](p: P[A, Either[B, A]])(using P[A, B] is Observable): Boolean = {
+      p.iterate =?= (p >> (success[B] || p.iterate))
+    }
+
+    /** `recursive(f)` = `f(recursive(f))`, for a guarded `f`. */
+    def recursionUnfolding[A, B](f: P[A, B] -> P[A, B])(using P[A, B] is Observable): Boolean = {
+      recursive(f) =?= f(recursive(f))
+    }
+
+    /** `rule(p, label)` ≡ `p`: rules change diagnostics only. Observed without diagnostics. */
+    def ruleTransparent[A, B](p: P[A, B], label: String)(using P[A, B] is Observable): Boolean = {
+      p.rule(label) =?= p
+    }
+
+    /** If `p` ⊑ `p2` and `q` ⊑ `q2`, then `p >> q` ⊑ `p2 >> q2`.
+      *
+      * @note The premise is not checked: `p2` and `q2` must be built to report more than `p` and `q`.
+      */
+    def andThenMonotone[A, B, C](p: P[A, B], p2: P[A, B], q: P[B, C], q2: P[B, C])(
+      using P[A, C] is Preorder
+    ): Boolean = {
+      (p >> q) <~ (p2 >> q2)
+    }
+
+    /** If `p` ⊑ `p2` and `q` ⊑ `q2`, then `p |> q` ⊑ `p2 |> q2`. */
+    def orElseMonotone[A, B](p: P[A, B], p2: P[A, B], q: P[A, B], q2: P[A, B])(using P[A, B] is Preorder): Boolean = {
+      (p |> q) <~ (p2 |> q2)
+    }
+
+    /** If `p` ⊑ `p2` and `q` ⊑ `q2`, then `p ** q` ⊑ `p2 ** q2`. */
+    def zipMonotone[A, B, C, D](p: P[A, B], p2: P[A, B], q: P[C, D], q2: P[C, D])(
+      using P[(A, C), (B, D)] is Preorder
+    ): Boolean = {
+      (p ** q) <~ (p2 ** q2)
+    }
+
+    /** If `p` ⊑ `p2`, then `rule(p, label)` ⊑ `rule(p2, label)`. */
+    def ruleMonotone[A, B](p: P[A, B], p2: P[A, B], label: String)(using P[A, B] is Preorder): Boolean = {
+      p.rule(label) <~ p2.rule(label)
+    }
+
+    /** `p.repeated` = `((p && p.repeated) map cons) |> pure(empty)`, for a `p` that consumes when it succeeds. */
+    def repeatedUnfolding[A, B](p: P[A, B])(using P[A, Vector[B]] is Observable): Boolean = {
+      val cons  = lift[(B, Vector[B]), Vector[B]]((b, bs) => b +: bs)
+      val empty = lift[A, Vector[B]](_ => Vector.empty)
+      p.repeated =?= ((p && p.repeated).map(cons) |> pure(empty))
     }
   }
 }
 
-/** Utilities and mixins for [[ParserAlgebra]]. */
-object ParserAlgebra {
+/** A parse failure, reported as what was `expected` where it failed furthest.
+  *
+  * A parse can fail without expecting anything, for instance at `failure` or at a negation whose parser succeeded,
+  * since those are silent. Its diagnostics are then ⊥, and it is reported as a failure at the start.
+  */
+final case class ParseError(expected: Expected) extends Exception with scala.util.control.NoStackTrace {
 
-  /** A [[ParserAlgebra]] equipped with all the categorical mixins. */
-  trait CanonicalParser
-      extends ParserAlgebra,
-        Sequencing,
-        Zipping,
-        Branching,
-        Alternation,
-        Lookahead,
-        Concatenation,
-        Recursion,
-        Iteration
+  /** The furthest position at which something failed, or the start if nothing was expected. */
+  def offset: Int = expected.position.max(0)
 
-  /** An algebra whose semantic values are the standard Scala ones: `Unit`, `Tuple2`, `Either`, `Nothing` and `Vector`.
-    */
-  type Standard = ParserAlgebra {
-    type Empty       = Unit
-    type Pair        = Tuple2
-    type None        = Nothing
-    type Alternative = Either
-    type Many        = Vector
+  override def getMessage: String = {
+    if expected.expectations.isEmpty then s"no parse at position $offset"
+    else s"expected ${expected.describe} at position $offset"
   }
-
-  /** Summons the `ParserAlgebra` instance of `P`. */
-  def apply[P[_, _]: ParserAlgebra]: P is ParserAlgebra = summon
 }
