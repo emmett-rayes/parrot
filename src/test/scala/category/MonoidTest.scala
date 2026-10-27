@@ -1,204 +1,188 @@
 package parrot
 package category
 
-import org.scalacheck.{Arbitrary, Gen}
+import Sample.given
 
-import scala.util.{Failure, Success, Try}
+/** Strings under concatenation: a monoid in 𝒮 that is neither commutative nor idempotent. */
+object StringConcat extends Monoid(Total.Product) {
+  type Self = String
 
-class MonoidTest extends CategorySuite {
+  def carrier: String is Type = Type.TIsType
 
-  // =========================================================================
-  // Option[Int] Additive & Monoid Object
-  // =========================================================================
-
-  private val optionAdditive = Monoid.Additive[Option[Int]]
-
-  test("Option[Int] has Monoid.Additive instance") {
-    import optionAdditive.+
-    val one: Option[Int]  = Some(1)
-    val two: Option[Int]  = Some(2)
-    val none: Option[Int] = None
-    val _                 = assert(optionAdditive.zero === None)
-    val _                 = assert(optionAdditive.plus(one, two) === Some(1))
-    val _                 = assert((one + two) === Some(1))
-    val _                 = assert((none + two) === Some(2))
-    assert((none + none) === None)
+  def unit: Unit -> String = {
+    _ => ""
   }
 
-  test("Option[Int] conforms to internal Monoid object") {
-    val mObj = optionAdditive
-    val _    = assert((mObj.unit(()): Option[Int]) === None)
-    val _    = assert((mObj.multiply((Some(1), Some(2))): Option[Int]) === Some(1))
-    val _    = assert((mObj.multiply((None, Some(2))): Option[Int]) === Some(2))
-    assert((mObj.multiply((None, None)): Option[Int]) === None)
-  }
-
-  test("Option[Int] satisfies Monoid left identity law") {
-    assert(optionAdditive.MonoidLaws.leftIdentity)
-  }
-
-  test("Option[Int] satisfies Monoid right identity law") {
-    assert(optionAdditive.MonoidLaws.rightIdentity)
-  }
-
-  test("Option[Int] satisfies Monoid associativity law") {
-    assert(optionAdditive.MonoidLaws.associativity)
-  }
-
-  // =========================================================================
-  // Try[Int] Additive & Monoid Object (Quotient Equality on Errors)
-  // =========================================================================
-
-  private val tryAdditive = Monoid.Additive[Try[Int]]
-
-  test("Try[Int] has Monoid.Additive instance") {
-    import tryAdditive.+
-    val s1: Try[Int]    = Success(1)
-    val s2: Try[Int]    = Success(2)
-    val fErr1: Try[Int] = Failure(new IllegalArgumentException("arg"))
-    val fErr2: Try[Int] = Failure(new NoSuchElementException("element"))
-
-    val _ = assert(tryAdditive.zero.isFailure)
-    val _ = assert((s1 + s2) === Success(1))
-    val _ = assert((fErr1 + s2) === Success(2))
-    // Verifies quotient equivalence where distinct failures are identified
-    assert(Eq[Try[Int]].eq(fErr1 + fErr2, tryAdditive.zero))
-  }
-
-  test("Try[Int] conforms to internal Monoid object") {
-    val mObj         = tryAdditive
-    val s1: Try[Int] = Success(1)
-    val s2: Try[Int] = Success(2)
-    val _            = assert(mObj.unit(()).isFailure)
-    val _            = assert((mObj.multiply((s1, s2)): Try[Int]) === Success(1))
-    assert((mObj.multiply((Failure(new RuntimeException("err")), s2)): Try[Int]) === Success(2))
-  }
-
-  test("Try[Int] satisfies Monoid left identity law") {
-    assert(tryAdditive.MonoidLaws.leftIdentity)
-  }
-
-  test("Try[Int] satisfies Monoid right identity law") {
-    assert(tryAdditive.MonoidLaws.rightIdentity)
-  }
-
-  test("Try[Int] satisfies Monoid associativity law") {
-    assert(tryAdditive.MonoidLaws.associativity)
-  }
-
-  // =========================================================================
-  // Set[Int] Additive & Monoid Object (Commutative Enrichment)
-  // =========================================================================
-
-  private val setAdditive = Monoid.Additive[Set[Int]]
-
-  test("Set[Int] has Monoid.Additive instance") {
-    import setAdditive.+
-    val s1 = Set(1, 2)
-    val s2 = Set(2, 3)
-    val _  = assert(setAdditive.zero === Set.empty[Int])
-    val _  = assert(setAdditive.plus(s1, s2) === Set(1, 2, 3))
-    val _  = assert((s1 + s2) === Set(1, 2, 3))
-    assert((setAdditive.zero + s1) === s1)
-  }
-
-  test("Set[Int] conforms to internal Monoid object") {
-    val mObj = setAdditive
-    val s1   = Set(1, 2)
-    val s2   = Set(3, 4)
-    val _    = assert((mObj.unit(()): Set[Int]) === Set.empty[Int])
-    assert((mObj.multiply((s1, s2)): Set[Int]) === Set(1, 2, 3, 4))
-  }
-
-  test("Set[Int] satisfies Monoid left identity law") {
-    assert(setAdditive.MonoidLaws.leftIdentity)
-  }
-
-  test("Set[Int] satisfies Monoid right identity law") {
-    assert(setAdditive.MonoidLaws.rightIdentity)
-  }
-
-  test("Set[Int] satisfies Monoid associativity law") {
-    assert(setAdditive.MonoidLaws.associativity)
-  }
-
-  // =========================================================================
-  // Function Additive & Monoid Object
-  // =========================================================================
-
-  private def functionAdditive = Monoid.Additive[Int => Option[String]]
-
-  given arbIntOptStr: Arbitrary[Int => Option[String]] = Arbitrary {
-    Gen.oneOf(
-      Gen.const((i: Int) => if i > 0 then Some(s"pos:$i") else None),
-      Gen.const((i: Int) => if i % 2 == 0 then Some(s"even:$i") else None),
-      Gen.const((i: Int) => if i == 0 then Some("zero") else None),
-      Gen.const((i: Int) => Some(s"all:$i")),
-      Gen.const((_: Int) => None),
-    )
-  }
-
-  test("Function[Int, Option[String]] has Monoid.Additive instance") {
-    val zeroFn = functionAdditive.zero
-    val _      = assert(zeroFn(42) === None)
-    assert(zeroFn(-1) === None)
-  }
-
-  test("Function[Int, Option[String]] conforms to internal Monoid object") {
-    val mObj = functionAdditive
-    val u    = mObj.unit(())
-    assert(u(42) === None)
-  }
-
-  test("Function[Int, Option[String]] satisfies Monoid left identity law") {
-    assert(functionAdditive.MonoidLaws.leftIdentity)
-  }
-
-  test("Function[Int, Option[String]] satisfies Monoid right identity law") {
-    assert(functionAdditive.MonoidLaws.rightIdentity)
-  }
-
-  test("Function[Int, Option[String]] satisfies Monoid associativity law") {
-    assert(functionAdditive.MonoidLaws.associativity)
-  }
-
-  // =========================================================================
-  // Multiplicative & Monoid Object (Int Product & Function)
-  // =========================================================================
-
-  private val intMultiplicative = Monoid.Multiplicative[Int]
-
-  test("Int Product has Monoid.Multiplicative instance") {
-    import intMultiplicative.*
-    val _ = assert(intMultiplicative.one === 1)
-    val _ = assert(intMultiplicative.times(3, 4) === 12)
-    val _ = assert((3 * 4) === 12)
-    assert((1 * 5) === 5)
-  }
-
-  test("Int Product conforms to internal Monoid object") {
-    val mObj = intMultiplicative
-    val _    = assert((mObj.unit(()): Int) === 1)
-    assert((mObj.multiply((3, 4)): Int) === 12)
-  }
-
-  test("Int Product satisfies Monoid left identity law") {
-    assert(intMultiplicative.MonoidLaws.leftIdentity)
-  }
-
-  test("Int Product satisfies Monoid right identity law") {
-    assert(intMultiplicative.MonoidLaws.rightIdentity)
-  }
-
-  test("Int Product satisfies Monoid associativity law") {
-    assert(intMultiplicative.MonoidLaws.associativity)
-  }
-
-  private val functionMultiplicative = Monoid.Multiplicative[Int => Int]
-
-  test("Function[Int, Int] has Monoid.Multiplicative instance") {
-    val oneFn = functionMultiplicative.one
-    val _     = assert(oneFn(42) === 1)
-    assert(oneFn(-10) === 1)
+  def multiply: ((String, String)) -> String = {
+    (a, b) => a + b
   }
 }
+
+/** Booleans under disjunction: a semilattice with least element `false`. */
+object BooleanOr extends Semilattice(Total.Product) {
+  type Self = Boolean
+
+  def carrier: Boolean is Type = Type.TIsType
+
+  def unit: Unit -> Boolean = {
+    _ => false
+  }
+
+  def multiply: ((Boolean, Boolean)) -> Boolean = {
+    (a, b) => a || b
+  }
+}
+
+/** Integers under maximum: a semilattice with least element `Int.MinValue`. */
+object IntMax extends Semilattice(Total.Product) {
+  type Self = Int
+
+  def carrier: Int is Type = Type.TIsType
+
+  def unit: Unit -> Int = {
+    _ => Int.MinValue
+  }
+
+  def multiply: ((Int, Int)) -> Int = {
+    (a, b) => a.max(b)
+  }
+}
+
+/** String concatenation, wrongly claimed to be a semilattice; the counterexample tests refute the claim. */
+object ConcatClaimedSemilattice extends Semilattice(Total.Product) {
+  type Self = String
+
+  def carrier: String is Type = Type.TIsType
+
+  def unit: Unit -> String = StringConcat.unit
+
+  def multiply: ((String, String)) -> String = StringConcat.multiply
+}
+
+/** The laws of [[Monoid]] for monoids in 𝒮 with pairs. */
+abstract class MonoidSpec(name: String, tracked val W: Monoid { val V: Total.Product.type })(
+  using S: Sample[W.M]
+) extends LawSuite("Monoid", name) {
+  import W.MonoidLaws.*
+
+  law("leftUnit") {
+    val observations = TotalFixture.observe[(Unit, W.M), W.M]
+    forAll(observations) { observe =>
+      given ((((Unit, W.M)) -> W.M) is Observable) = observe
+      leftUnit
+    }
+  }
+
+  law("rightUnit") {
+    val observations = TotalFixture.observe[(W.M, Unit), W.M]
+    forAll(observations) { observe =>
+      given ((((W.M, Unit)) -> W.M) is Observable) = observe
+      rightUnit
+    }
+  }
+
+  law("associativity") {
+    val observations = TotalFixture.observe[((W.M, W.M), W.M), W.M]
+    forAll(observations) { observe =>
+      given (((((W.M, W.M), W.M)) -> W.M) is Observable) = observe
+      associativity
+    }
+  }
+}
+
+/** The laws of [[Semilattice]] for semilattices in 𝒮. */
+abstract class SemilatticeSpec(name: String, tracked val W: Semilattice { val V: Total.Product.type })(
+  using S: Sample[W.M]
+) extends LawSuite("Semilattice", name) {
+  import W.SemilatticeLaws.*
+
+  law("commutativity") {
+    val observations = TotalFixture.observe[(W.M, W.M), W.M]
+    forAll(observations) { observe =>
+      given ((((W.M, W.M)) -> W.M) is Observable) = observe
+      commutativity
+    }
+  }
+
+  law("idempotence") {
+    val observations = TotalFixture.observe[W.M, W.M]
+    forAll(observations) { observe =>
+      given ((W.M -> W.M) is Observable) = observe
+      idempotence
+    }
+  }
+}
+
+class StringConcatIsMonoidTest extends MonoidSpec("String concatenation", StringConcat)
+
+class BooleanOrIsMonoidTest extends MonoidSpec("Boolean disjunction", BooleanOr)
+
+class BooleanOrIsSemilatticeTest extends SemilatticeSpec("Boolean disjunction", BooleanOr)
+
+class IntMaxIsMonoidTest extends MonoidSpec("Int maximum", IntMax)
+
+class IntMaxIsSemilatticeTest extends SemilatticeSpec("Int maximum", IntMax)
+
+class StringConcatIsNotSemilatticeTest extends LawSuite("Semilattice", "String concatenation") {
+  import ConcatClaimedSemilattice.SemilatticeLaws.*
+
+  counterexample("commutativity") {
+    val observations = TotalFixture.observe[(String, String), String]
+    forAll(observations) { observe =>
+      given ((((String, String)) -> String) is Observable) = observe
+      commutativity
+    }
+  }
+
+  counterexample("idempotence") {
+    val observations = TotalFixture.observe[String, String]
+    forAll(observations) { observe =>
+      given ((String -> String) is Observable) = observe
+      idempotence
+    }
+  }
+}
+
+/** The laws of [[Comonoid]], for comonoids in a monoidal structure on the category of a fixture. */
+abstract class ComonoidSpec(
+  name: String,
+  tracked val F: Fixture,
+  tracked val W: Comonoid { val V: Monoidal { val K: F.K.type } },
+)(using
+  S: Sample[W.C],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[W.V.*[X, Y]],
+  unit: Sample[W.V.I],
+) extends LawSuite("Comonoid", name) {
+  import W.ComonoidLaws.*
+  import F.K.-->
+
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[W.V.*[X, Y]] = tensor[X, Y]
+
+  law("leftCounit") {
+    val observations = F.observe[W.C, W.V.*[W.V.I, W.C]]
+    forAll(observations) { observe =>
+      given ((W.C --> W.V.*[W.V.I, W.C]) is Observable) = observe
+      leftCounit
+    }
+  }
+
+  law("rightCounit") {
+    val observations = F.observe[W.C, W.V.*[W.C, W.V.I]]
+    forAll(observations) { observe =>
+      given ((W.C --> W.V.*[W.C, W.V.I]) is Observable) = observe
+      rightCounit
+    }
+  }
+
+  law("coassociativity") {
+    val observations = F.observe[W.C, W.V.*[W.C, W.V.*[W.C, W.C]]]
+    forAll(observations) { observe =>
+      given ((W.C --> W.V.*[W.C, W.V.*[W.C, W.C]]) is Observable) = observe
+      coassociativity
+    }
+  }
+}
+
+class TotalProductComonoidTest extends ComonoidSpec("Int, by Δ and ! in 𝒮", TotalFixture, Total.Product.comonoid[Int])
+class PartialProductComonoidTest
+    extends ComonoidSpec("Int, by copying and deleting in 𝒫", PartialFixture, Partial.Product.comonoid[Int])

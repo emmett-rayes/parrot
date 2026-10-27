@@ -1,41 +1,461 @@
 package parrot
 package category
 
-class RestrictionTest extends CategorySuite {
+import org.scalacheck.Gen
 
-  // =========================================================================
-  // 1. Restriction on Function
-  // =========================================================================
+import Sample.given
 
-  private val FunctionInstance = Restriction.FunctionIsRestriction
-  private val FunctionLaws     = FunctionInstance.RestrictionLaws
+/** The laws of [[Restriction]]. */
+abstract class RestrictionSpec(
+  name: String,
+  tracked val PF: PromonadFixture,
+  tracked val R: Restriction { val P: PF.P.type }
+)(using types: SampleTypes) extends LawSuite("Restriction", name) {
+  import types.{T1, T2, T3, given}
+  import PF.P
+  import P.P
+  import R.RestrictionLaws.*
 
-  test("Function is Restriction: every morphism is total") {
-    val p: Int => String = i => s"val:$i"
-    val r                = FunctionInstance.restrict(p)
-    assert(r(-3) == -3 && r(0) == 0 && r(42) == 42)
+  law("r1") {
+    val observations = PF.observe[T1, T2]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T2] is Observable) = observe
+      r1(p)
+    }
   }
 
-  test("Function is Restriction satisfies restrictionIdentity law (R1)") {
-    val p: Int => String = i => if i >= 0 then s"pos:$i" else s"neg:$i"
-    assert(FunctionLaws.restrictionIdentity(p))
+  law("r2") {
+    val observations = PF.observe[T1, T1]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T1, T3]
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given (P[T1, T1] is Observable) = observe
+      r2(p, q)
+    }
   }
 
-  test("Function is Restriction satisfies restrictionCommutativity law (R2)") {
-    val p: Int => String  = i => s"val:$i"
-    val q: Int => Boolean = _ % 2 == 0
-    assert(FunctionLaws.restrictionCommutativity(p, q))
+  law("r3") {
+    val observations = PF.observe[T1, T1]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T1, T3]
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given (P[T1, T1] is Observable) = observe
+      r3(p, q)
+    }
   }
 
-  test("Function is Restriction satisfies restrictionCompose law (R3)") {
-    val p: Int => String  = i => s"val:$i"
-    val q: Int => Boolean = _ % 2 == 0
-    assert(FunctionLaws.restrictionCompose(p, q))
+  law("r4") {
+    val observations = PF.observe[T1, T2]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T2, T3]
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given (P[T1, T2] is Observable) = observe
+      r4(p, q)
+    }
   }
 
-  test("Function is Restriction satisfies restrictionPrecompose law (R4)") {
-    val p: Int => String     = i => s"val:$i"
-    val q: String => Boolean = _.length > 5
-    assert(FunctionLaws.restrictionPrecompose(p, q))
+  law("pureTotal") {
+    val observations = PF.observe[T1, T1]
+    val fs           = PF.base.arrow[T1, T2]
+    forAll(observations, fs) { (observe, f) =>
+      given (P[T1, T1] is Observable) = observe
+      pureTotal(f)
+    }
+  }
+
+  law("congruence") {
+    val observations = PF.observe[T1, T1]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T1] is Observable) = observe
+      congruence(p, PF.variant(p))
+    }
+  }
+}
+
+/** The laws of [[Classical]], for classical structures over the coproducts of 𝒮. */
+abstract class ClassicalSpec(
+  name: String,
+  tracked val PF: PromonadFixture,
+  tracked val C: Classical {
+    val P: PF.P.type; val C: Cocartesian { val T: Bifunctor { type Self = Either } }
+  },
+)(using types: SampleTypes) extends LawSuite("Classical", name) {
+  import types.{T1, T2, T3, given}
+  import PF.P
+  import P.P
+  import C.ClassicalLaws.*
+
+  law("zeroRestriction") {
+    val observations = PF.observe[T1, T1]
+    forAll(observations) { observe =>
+      given (P[T1, T1] is Observable) = observe
+      zeroRestriction[T1, T2]
+    }
+  }
+
+  law("zeroLeft") {
+    val observations = PF.observe[T1, T3]
+    val ps           = PF.arrow[T2, T3]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T3] is Observable) = observe
+      zeroLeft[T1, T2, T3](p)
+    }
+  }
+
+  law("zeroRight") {
+    val observations = PF.observe[T1, T3]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T3] is Observable) = observe
+      zeroRight[T1, T2, T3](p)
+    }
+  }
+
+  law("overrideZero") {
+    val observations = PF.observe[T1, T2]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T2] is Observable) = observe
+      overrideZero(p)
+    }
+  }
+
+  law("overrideAssociativity") {
+    val observations = PF.observe[T1, T2]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T1, T2]
+    val rs           = PF.arrow[T1, T2]
+    forAll(observations, ps, qs, rs) { (observe, p, q, r) =>
+      given (P[T1, T2] is Observable) = observe
+      overrideAssociativity(p, q, r)
+    }
+  }
+
+  law("overrideRestricted") {
+    val observations = PF.observe[T1, T2]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T1, T2]
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given (P[T1, T2] is Observable) = observe
+      overrideRestricted(p, q)
+    }
+  }
+
+  law("overrideRestricting") {
+    val observations = PF.observe[T1, T2]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T1, T3]
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given (P[T1, T2] is Observable) = observe
+      overrideRestricting(p, q)
+    }
+  }
+
+  law("overridePrecomposition") {
+    val observations = PF.observe[T1, T3]
+    val hs           = PF.arrow[T1, T2]
+    val ps           = PF.arrow[T2, T3]
+    val qs           = PF.arrow[T2, T3]
+    forAll(observations, hs, ps, qs) { (observe, h, p, q) =>
+      given (P[T1, T3] is Observable) = observe
+      overridePrecomposition(h, p, q)
+    }
+  }
+
+  law("overrideRestriction") {
+    val observations = PF.observe[T1, T3]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T1, T2]
+    val hs           = PF.arrow[T1, T3]
+    forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
+      given (P[T1, T3] is Observable) = observe
+      overrideRestriction(p, q, h)
+    }
+  }
+
+  law("complementExclusion") {
+    val observations = PF.observe[T1, T1]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T1] is Observable) = observe
+      complementExclusion(p)
+    }
+  }
+
+  law("complementCover") {
+    val observations = PF.observe[T1, T1]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T1] is Observable) = observe
+      complementCover(p)
+    }
+  }
+
+  law("complementRestriction") {
+    val observations = PF.observe[T1, T1]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T1] is Observable) = observe
+      complementRestriction(p)
+    }
+  }
+
+  law("doubleComplement") {
+    val observations = PF.observe[T1, T1]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T1] is Observable) = observe
+      doubleComplement(p)
+    }
+  }
+
+  law("attemptDefinition") {
+    val observations = PF.observe[T1, Either[T2, T1]]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, Either[T2, T1]] is Observable) = observe
+      attemptDefinition(p)
+    }
+  }
+
+  law("congruence") {
+    val ps = PF.arrow[T1, T2]
+    val qs = PF.arrow[T1, T2]
+    forAll(Gen.zip(PF.observe[T1, T2], PF.observe[T1, T1]), ps, qs) { case ((o1, o2), p, q) =>
+      given O1: (P[T1, T2] is Observable) = o1
+      given O2: (P[T1, T1] is Observable)    = o2
+      congruence(p, PF.variant(p), q, PF.variant(q))
+    }
+  }
+
+  counterexample("overridePostcomposition", "(p ⊳ q) ⨾ h = (p ⨾ h) ⊳ (q ⨾ h) fails: ⊳ commits") {
+    val observations = PF.observe[T1, T3]
+    val ps           = PF.arrow[T1, T2]
+    val qs           = PF.arrow[T1, T2]
+    val hs           = PF.arrow[T2, T3]
+    forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
+      given (P[T1, T3] is Observable) = observe
+      P.multiply(h, C.orElse(p, q)) =?= C.orElse(P.multiply(h, p), P.multiply(h, q))
+    }
+  }
+}
+
+/** 𝒫 at its total programs, as a promonad over itself. */
+object PartialProgramsFixture extends PromonadFixture("Partial", Partial.Programs) {
+  val base: PartialFixture.type = PartialFixture
+
+  def arrow[X: Sample, Y: Sample]: Gen[X ~> Y] = PartialFixture.arrow[X, Y]
+
+  def variant[X: Sample, Y: Sample](p: X ~> Y): X ~> Y = PartialFixture.variant(p)
+
+  def observe[X: Sample, Y: Sample]: Gen[(X ~> Y) is Observable] = PartialFixture.observe[X, Y]
+}
+
+class OptionKleisliIsRestrictionTest
+    extends RestrictionSpec("Kleisli[Option]", OptionKleisliFixture, Kleisli.OptionDomains)
+
+class OptionKleisliIsClassicalTest extends ClassicalSpec("Kleisli[Option]", OptionKleisliFixture, Kleisli.OptionDomains)
+
+class PartialIsRestrictionTest
+    extends RestrictionSpec("Partial (total programs)", PartialProgramsFixture, Partial.Domains)
+
+class StringStateIsRestrictionTest
+    extends RestrictionSpec("Kleisli[State[String, Option]]", StringStateFixture, StringStateDomains)
+
+class StringStateIsClassicalTest
+    extends ClassicalSpec("Kleisli[State[String, Option]]", StringStateFixture, StringStateDomains)
+
+// ==== Failure over a writer: restrictions that keep the output ====
+
+/** The writer of the maximum, a semilattice. */
+object MaxWriter extends Writer(IntMax)
+
+/** Computations that output a number, combined by maximum, and may fail. */
+object MaxOutcome extends OptionT(MaxWriter)
+
+/** The Kleisli arrows of [[MaxOutcome]]. */
+object MaxOutcomeKleisli extends Kleisli(MaxOutcome)
+
+/** Failure and choice for [[MaxOutcome]], keeping the output of what is tested. */
+object MaxOutcomeClassical extends OptionT.ClassicalOf(MaxOutcome)
+
+/** The restriction structure of [[MaxOutcomeKleisli]], keeping the output of what is tested. */
+object MaxOutcomeDomains extends Kleisli.ClassicalOf(MaxOutcomeKleisli, MaxOutcomeClassical)
+
+object MaxOutcomeFixture extends PromonadFixture("Kleisli[OptionT[Writer[max]]]", MaxOutcomeKleisli) {
+  val base: TotalFixture.type = TotalFixture
+
+  /** Arrows that output a small number, and fail or succeed. */
+  def arrow[X: Sample, Y: Sample]: Gen[X -> (Int, Option[Y])] = {
+    val results = Gen.zip(Gen.choose(-1, 3), Gen.frequency(1 -> Gen.const(None), 3 -> Y.gen.map(Some(_))))
+    Gen.function1[X, (Int, Option[Y])](results)(using X.cogen)
+  }
+
+  def variant[X: Sample, Y: Sample](p: X -> (Int, Option[Y])): X -> (Int, Option[Y]) = {
+    x => p(x)
+  }
+
+  def observe[X: Sample, Y: Sample]: Gen[(X -> (Int, Option[Y])) is Observable] = {
+    TotalFixture.observe[X, (Int, Option[Y])]
+  }
+}
+
+/** Keeping the output satisfies **R1**, **R3** and **R4**, but not **R2**: a failing test stops the output after it.
+  * Nor the laws of zero and complement: 0 outputs nothing, while *p* ⨾ 0 and *p̄* ⨾ *p̄*ᶜ output what *p* does, and
+  * *p̄* ⊳ *p̄*ᶜ outputs what *p* does where the identity outputs nothing.
+  */
+class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT[Writer[max]]] (output kept)") {
+  import MaxOutcomeDomains.RestrictionLaws.*
+  import MaxOutcomeDomains.ClassicalLaws.*
+  import MaxOutcomeFixture.{arrow, observe}
+
+  law("r1") {
+    val observations = observe[Int, String]
+    val ps           = arrow[Int, String]
+    forAll(observations, ps) { (o, p) =>
+      given ((Int -> (Int, Option[String])) is Observable) = o
+      r1(p)
+    }
+  }
+
+  counterexample("r2", "a failing test stops the output after it") {
+    val observations = observe[Int, Int]
+    val ps           = arrow[Int, String]
+    val qs           = arrow[Int, Boolean]
+    forAll(observations, ps, qs) { (o, p, q) =>
+      given ((Int -> (Int, Option[Int])) is Observable) = o
+      r2(p, q)
+    }
+  }
+
+  law("r3") {
+    val observations = observe[Int, Int]
+    val ps           = arrow[Int, String]
+    val qs           = arrow[Int, Boolean]
+    forAll(observations, ps, qs) { (o, p, q) =>
+      given ((Int -> (Int, Option[Int])) is Observable) = o
+      r3(p, q)
+    }
+  }
+
+  law("r4") {
+    val observations = observe[Int, String]
+    val ps           = arrow[Int, String]
+    val qs           = arrow[String, Boolean]
+    forAll(observations, ps, qs) { (o, p, q) =>
+      given ((Int -> (Int, Option[String])) is Observable) = o
+      r4(p, q)
+    }
+  }
+
+  also("Classical") {
+    law("overridePrecomposition", "h runs twice; its output is idempotent") {
+      val observations = observe[Int, Boolean]
+      val hs           = arrow[Int, String]
+      val ps           = arrow[String, Boolean]
+      val qs           = arrow[String, Boolean]
+      forAll(observations, hs, ps, qs) { (o, h, p, q) =>
+        given ((Int -> (Int, Option[Boolean])) is Observable) = o
+        overridePrecomposition(h, p, q)
+      }
+    }
+
+    counterexample("zeroRight", "p ⨾ 0 keeps the output of p") {
+      val observations = observe[Int, Boolean]
+      val ps           = arrow[Int, String]
+      forAll(observations, ps) { (o, p) =>
+        given ((Int -> (Int, Option[Boolean])) is Observable) = o
+        zeroRight[Int, String, Boolean](p)
+      }
+    }
+
+    counterexample("complementExclusion", "the test outputs what p does") {
+      val observations = observe[Int, Int]
+      val ps           = arrow[Int, String]
+      forAll(observations, ps) { (o, p) =>
+        given ((Int -> (Int, Option[Int])) is Observable) = o
+        complementExclusion(p)
+      }
+    }
+
+    counterexample("complementCover", "the test outputs what p does") {
+      val observations = observe[Int, Int]
+      val ps           = arrow[Int, String]
+      forAll(observations, ps) { (o, p) =>
+        given ((Int -> (Int, Option[Int])) is Observable) = o
+        complementCover(p)
+      }
+    }
+  }
+}
+
+/** Failure over the writer of string concatenation, which is not a semilattice. */
+object ConcatOutcome extends OptionT(StringWriter)
+
+/** The Kleisli arrows of [[ConcatOutcome]]. */
+object ConcatOutcomeKleisli extends Kleisli(ConcatOutcome)
+
+/** Failure and choice for [[ConcatOutcome]], keeping the output of what is tested. */
+object ConcatOutcomeClassical extends OptionT.ClassicalOf(ConcatOutcome)
+
+/** The restriction structure of [[ConcatOutcomeKleisli]], keeping the output of what is tested. */
+object ConcatOutcomeDomains extends Kleisli.ClassicalOf(ConcatOutcomeKleisli, ConcatOutcomeClassical)
+
+/** Keeping an output that cannot be copied or reordered breaks the restriction laws, and backtracking repeats the
+  * output of what came before the choice.
+  */
+class ConcatOutcomeIsNotRestrictionTest
+    extends LawSuite("Restriction", "Kleisli[OptionT[Writer[String]]] (output kept)") {
+  import ConcatOutcomeDomains.RestrictionLaws.*
+
+  private def arrow[X: Sample, Y: Sample]: Gen[X -> (String, Option[Y])] = {
+    val results = Gen.zip(Gen.oneOf("", "a", "b"), Gen.frequency(1 -> Gen.const(None), 3 -> Y.gen.map(Some(_))))
+    Gen.function1[X, (String, Option[Y])](results)(using X.cogen)
+  }
+
+  counterexample("r1", "the output is not idempotent: p̄ ⨾ p outputs twice") {
+    val observations = TotalFixture.observe[Int, (String, Option[String])]
+    val ps           = arrow[Int, String]
+    forAll(observations, ps) { (observe, p) =>
+      given ((Int -> (String, Option[String])) is Observable) = observe
+      r1(p)
+    }
+  }
+
+  also("Classical") {
+    counterexample("overridePrecomposition", "h runs twice, and outputs twice") {
+      val observations = TotalFixture.observe[Int, (String, Option[Boolean])]
+      val hs           = arrow[Int, String]
+      val ps           = arrow[String, Boolean]
+      forAll(observations, hs, ps) { (observe, h, p) =>
+        given ((Int -> (String, Option[Boolean])) is Observable) = observe
+        ConcatOutcomeDomains.ClassicalLaws.overridePrecomposition(h, p, p)
+      }
+    }
+  }
+
+  counterexample("r2", "the output is not commutative, and a failing test stops it") {
+    val observations = TotalFixture.observe[Int, (String, Option[Int])]
+    val ps           = arrow[Int, String]
+    val qs           = arrow[Int, Boolean]
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given ((Int -> (String, Option[Int])) is Observable) = observe
+      r2(p, q)
+    }
+  }
+}
+
+/** Override computes its second argument only where the first fails. */
+class ClassicalMonadOrElseIsLazyTest extends org.scalatest.funsuite.AnyFunSuite {
+
+  test("Option: the second argument is not computed where the first succeeds") {
+    assert(ClassicalMonad.OptionIsClassical.orElse(Some(1), sys.error("computed")).contains(1))
+  }
+
+  test("State over Option: the second computation is not run where the first succeeds") {
+    val first: String -> Option[(Int, String)] = s => Some((1, s))
+    assert(StringStateClassical.orElse(first, sys.error("computed"))("x").contains((1, "x")))
   }
 }

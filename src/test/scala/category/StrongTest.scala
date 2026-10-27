@@ -1,136 +1,172 @@
 package parrot
 package category
 
-class StrongTest extends CategorySuite {
+import org.scalacheck.Gen
 
-  // =========================================================================
-  // 1. Strong Laws on Function
-  // =========================================================================
+/** The laws of [[Strong]] and [[Freyd]], for strong promonads over 𝒮. */
+abstract class StrongSpec(
+  name: String,
+  tracked val PF: PromonadFixture,
+  tracked val S: Strong { val P: PF.P.type },
+)(using
+  types: SampleTypes,
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[S.M.Tensor[X, Y]],
+) extends LawSuite("Strong", name) {
+  import types.{T1, T2, T3, T4, given}
+  import PF.P
+  import P.P
+  import S.StrongLaws.*
 
-  private val FunctionLaws = Strong.FunctionIsStrong.StrongLaws
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[S.M.Tensor[X, Y]] = tensor[X, Y]
 
-  test("Function is Strong: first naturality law") {
-    val p: Int => String    = i => s"val:$i"
-    val f: Boolean => Int   = if _ then 1 else 0
-    val g: String => Double = _.length.toDouble
-    val _                   = assert(FunctionLaws.firstNaturality[Int, String, Boolean, Double, Int](p, f, g))
-    assert(FunctionLaws.firstNaturality[Int, String, Boolean, Double, String](p, f, g))
+  private type T[X, Y] = S.M.Tensor[X, Y]
+
+  private lazy val F = Freyd(S)
+
+  law("naturality") {
+    val observations = PF.observe[T[T4, T3], T[T3, T3]]
+    val ps           = PF.arrow[T1, T2]
+    val fs           = PF.base.arrow[T4, T1]
+    val gs           = PF.base.arrow[T2, T3]
+    forAll(observations, ps, fs, gs) { (observe, p, f, g) =>
+      given (P[T[T4, T3], T[T3, T3]] is Observable) = observe
+      naturality[T1, T2, T4, T3, T3](p, f, g)
+    }
   }
 
-  test("Function is Strong: second naturality law") {
-    val p: Int => String    = i => s"val:$i"
-    val f: Boolean => Int   = if _ then 1 else 0
-    val g: String => Double = _.length.toDouble
-    val _                   = assert(FunctionLaws.secondNaturality[Int, String, Boolean, Double, Int](p, f, g))
-    assert(FunctionLaws.secondNaturality[Int, String, Boolean, Double, String](p, f, g))
+  law("dinaturality") {
+    val observations = PF.observe[T[T1, T4], T[T2, T3]]
+    val ps           = PF.arrow[T1, T2]
+    val hs           = PF.base.arrow[T4, T3]
+    forAll(observations, ps, hs) { (observe, p, h) =>
+      given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
+      dinaturality(p, h)
+    }
   }
 
-  test("Function is Strong: first unitality law") {
-    val p1: Int => String = i => s"num:$i"
-    val p2: String => Int = _.length
-    val _                 = assert(FunctionLaws.firstUnitality(p1))
-    assert(FunctionLaws.firstUnitality(p2))
+  law("unitality") {
+    val observations = PF.observe[T1, T2]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T1, T2] is Observable) = observe
+      unitality(p)
+    }
   }
 
-  test("Function is Strong: second unitality law") {
-    val p1: Int => String = i => s"num:$i"
-    val p2: String => Int = _.length
-    val _                 = assert(FunctionLaws.secondUnitality(p1))
-    assert(FunctionLaws.secondUnitality(p2))
+  law("associativity") {
+    val observations = PF.observe[T[T1, T[T4, T3]], T[T2, T[T4, T3]]]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T[T1, T[T4, T3]], T[T2, T[T4, T3]]] is Observable) = observe
+      associativity[T1, T2, T4, T3](p)
+    }
   }
 
-  test("Function is Strong: first associativity law") {
-    val p: Int => String = i => s"num:$i"
-    val _                = assert(FunctionLaws.firstAssociativity[Int, String, Boolean, Double](p))
-    assert(FunctionLaws.firstAssociativity[Int, String, String, Int](p))
+  law("secondByBraiding") {
+    val observations = PF.observe[T[T4, T1], T[T4, T2]]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T[T4, T1], T[T4, T2]] is Observable) = observe
+      secondByBraiding[T1, T2, T4](p)
+    }
   }
 
-  test("Function is Strong: second associativity law") {
-    val p: Int => String = i => s"num:$i"
-    val _                = assert(FunctionLaws.secondAssociativity[Int, String, Boolean, Double](p))
-    assert(FunctionLaws.secondAssociativity[Int, String, String, Int](p))
+  law("firstCongruence") {
+    val observations = PF.observe[T[T1, T4], T[T2, T4]]
+    val ps           = PF.arrow[T1, T2]
+    forAll(observations, ps) { (observe, p) =>
+      given (P[T[T1, T4], T[T2, T4]] is Observable) = observe
+      firstCongruence[T1, T2, T4](p, PF.variant(p))
+    }
   }
 
-  // =========================================================================
-  // 2. Strong Laws on Function (Lazy Cartesian / LazyTuple2)
-  // =========================================================================
+  also("Freyd") {
+    import F.FreydLaws.*
 
-  private val LazyFunctionInstance = Strong.FunctionIsLazyStrong
-  private val LazyFunctionLaws     = LazyFunctionInstance.StrongLaws
+    law("unit") {
+      val observations = PF.observe[T[T1, T4], T[T2, T4]]
+      val fs           = PF.base.arrow[T1, T2]
+      forAll(observations, fs) { (observe, f) =>
+        given (P[T[T1, T4], T[T2, T4]] is Observable) = observe
+        unit[T1, T2, T4](f)
+      }
+    }
 
-  test("Function is Lazy Strong: first and second evaluation") {
-    val p: Int => String                                                 = i => s"val:$i"
-    val lazyFirst: LazyTuple2[Int, String] => LazyTuple2[String, String] =
-      LazyFunctionInstance.first[Int, String, String](p)
-    val lazySecond: LazyTuple2[String, Int] => LazyTuple2[String, String] =
-      LazyFunctionInstance.second[Int, String, String](p)
+    law("multiply") {
+      val observations = PF.observe[T[T1, T4], T[T3, T4]]
+      val ps           = PF.arrow[T1, T2]
+      val qs           = PF.arrow[T2, T3]
+      forAll(observations, ps, qs) { (observe, p, q) =>
+        given (P[T[T1, T4], T[T3, T4]] is Observable) = observe
+        multiply[T1, T2, T3, T4](p, q)
+      }
+    }
 
-    val t1 = LazyTuple2(10, "hello")
-    val r1 = lazyFirst(t1)
-    val _  = assert(r1._1 == "val:10" && r1._2 == "hello")
-
-    val t2 = LazyTuple2("hello", 10)
-    val r2 = lazySecond(t2)
-    assert(r2._1 == "hello" && r2._2 == "val:10")
+    law("centrality") {
+      val observations = PF.observe[T[T1, T4], T[T2, T3]]
+      val fs           = PF.base.arrow[T1, T2]
+      val qs           = PF.arrow[T4, T3]
+      forAll(observations, fs, qs) { (observe, f, q) =>
+        given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
+        centrality(f, q)
+      }
+    }
   }
 
-  test("Function is Lazy Strong: laziness preservation in first and second") {
-    val p: Int => String                                                 = i => s"val:$i"
-    val lazyFirst: LazyTuple2[Int, String] => LazyTuple2[String, String] =
-      LazyFunctionInstance.first[Int, String, String](p)
-    val lazySecond: LazyTuple2[String, Int] => LazyTuple2[String, String] =
-      LazyFunctionInstance.second[Int, String, String](p)
-
-    var evaluated1 = false
-    val t1         = LazyTuple2(10, { evaluated1 = true; "side-effect" })
-    val r1         = lazyFirst(t1)
-    val _          = assert(!evaluated1 && r1._1 == "val:10")
-
-    var evaluated2 = false
-    val t2         = LazyTuple2({ evaluated2 = true; "side-effect" }, 10)
-    val r2         = lazySecond(t2)
-    assert(!evaluated2 && r2._2 == "val:10")
+  /** Interchange: running *p* and *q* side by side in either order gives the same result. It holds when the effect is
+    * commutative and fails otherwise; it is not a law of Freyd categories.
+    */
+  protected def interchange: Gen[Boolean] = {
+    for {
+      observe <- PF.observe[T[T1, T4], T[T2, T3]]
+      p       <- PF.arrow[T1, T2]
+      q       <- PF.arrow[T4, T3]
+    } yield {
+      given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
+      P.multiply(S.second[T4, T3, T2](q), S.first[T1, T2, T4](p)) =?=
+        P.multiply(S.first[T1, T2, T3](p), S.second[T4, T3, T1](q))
+    }
   }
+}
 
-  test("Function is Lazy Strong: first naturality law") {
-    val p: Int => String    = i => s"val:$i"
-    val f: Boolean => Int   = if _ then 1 else 0
-    val g: String => Double = _.length.toDouble
-    val _                   = assert(LazyFunctionLaws.firstNaturality[Int, String, Boolean, Double, Int](p, f, g))
-    assert(LazyFunctionLaws.firstNaturality[Int, String, Boolean, Double, String](p, f, g))
+class OptionKleisliProductIsStrongTest
+    extends StrongSpec("Kleisli[Option] on Product", OptionKleisliFixture, Kleisli.OptionProduct) {
+  also("Freyd") {
+    law("interchange", "holds: Option is a commutative monad") {
+      forAll(interchange)(holds => holds)
+    }
   }
+}
 
-  test("Function is Lazy Strong: second naturality law") {
-    val p: Int => String    = i => s"val:$i"
-    val f: Boolean => Int   = if _ then 1 else 0
-    val g: String => Double = _.length.toDouble
-    val _                   = assert(LazyFunctionLaws.secondNaturality[Int, String, Boolean, Double, Int](p, f, g))
-    assert(LazyFunctionLaws.secondNaturality[Int, String, Boolean, Double, String](p, f, g))
+class OptionKleisliCoproductIsStrongTest
+    extends StrongSpec("Kleisli[Option] on Coproduct", OptionKleisliFixture, Kleisli.OptionCoproduct) {
+  also("Freyd") {
+    law("interchange", "holds: only one side runs") {
+      forAll(interchange)(holds => holds)
+    }
   }
+}
 
-  test("Function is Lazy Strong: first unitality law") {
-    val p1: Int => String = i => s"num:$i"
-    val p2: String => Int = _.length
-    val _                 = assert(LazyFunctionLaws.firstUnitality(p1))
-    assert(LazyFunctionLaws.firstUnitality(p2))
+/** The string writer's arrows, run side by side on pairs. */
+object StringWriterProduct extends Kleisli.ProductStrength(StringWriterKleisli)
+
+/** The string writer's arrows, run on one side of a tagged union. */
+object StringWriterCoproduct extends Kleisli.CoproductStrength(StringWriterKleisli)
+
+class StringWriterKleisliProductIsStrongTest
+    extends StrongSpec("Kleisli[Writer[String]] on Product", StringWriterKleisliFixture, StringWriterProduct) {
+  also("Freyd") {
+    counterexample("interchange", "logs are not commutative") {
+      forAll(interchange)(holds => holds)
+    }
   }
+}
 
-  test("Function is Lazy Strong: second unitality law") {
-    val p1: Int => String = i => s"num:$i"
-    val p2: String => Int = _.length
-    val _                 = assert(LazyFunctionLaws.secondUnitality(p1))
-    assert(LazyFunctionLaws.secondUnitality(p2))
-  }
-
-  test("Function is Lazy Strong: first associativity law") {
-    val p: Int => String = i => s"num:$i"
-    val _                = assert(LazyFunctionLaws.firstAssociativity[Int, String, Boolean, Double](p))
-    assert(LazyFunctionLaws.firstAssociativity[Int, String, String, Int](p))
-  }
-
-  test("Function is Lazy Strong: second associativity law") {
-    val p: Int => String = i => s"num:$i"
-    val _                = assert(LazyFunctionLaws.secondAssociativity[Int, String, Boolean, Double](p))
-    assert(LazyFunctionLaws.secondAssociativity[Int, String, String, Int](p))
+class StringWriterKleisliCoproductIsStrongTest
+    extends StrongSpec("Kleisli[Writer[String]] on Coproduct", StringWriterKleisliFixture, StringWriterCoproduct) {
+  also("Freyd") {
+    law("interchange", "holds: only one side runs") {
+      forAll(interchange)(holds => holds)
+    }
   }
 }
