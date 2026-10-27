@@ -1,224 +1,147 @@
 package parrot
 package category
 
-import scala.annotation.targetName
-import scala.util.{Failure, Try}
-
-/** A monoid object in an underlying monoidal category **C**.
+/** A monoid object in a monoidal category (**V**, ⊗, *I*): an object with a unit and an associative multiplication,
+  * both morphisms of **V**.
   *
-  * Represents a monoid object (*M*, *μ*, *η*) in (**C**, ⊗, *I*), where
-  *   - *η*: *I* ~> *M* is the unit morphism
-  *   - *μ*: *M* ⊗ *M* ~> *M* is the multiplication morphism
+  * Represents a monoid (*M*, *η*, *μ*), where
+  *   - *M* = `M` = `Self` is an object of **V**
+  *   - *η*: *I* → *M* is the unit
+  *   - *μ*: *M* ⊗ *M* → *M* is the multiplication
+  *
+  * In 𝒮 with pairs, this is an ordinary monoid: an element `unit(())` and a binary operation. In the endofunctors with
+  * composition it would be a monad, which Scala cannot state with the same class (see [[Monad]]). The dual is
+  * [[Comonoid]].
   */
-trait Monoid {
+abstract class Monoid(tracked val V: Monoidal) extends caps.Pure {
+  import V.{*, given}
+  import V.K.{Obj, -->, >>>}
+
   type Self
+
+  /** The carrier *M*. */
   final type M = Self
 
-  type In[_, _]: Monoidal as MonoidInMonoidal
+  /** *M* is an object of **V**.
+    */
+  def carrier: M is Obj
 
-  val InIsMonoidal: In is Monoidal = MonoidInMonoidal
+  private given MIsObj: (M is Obj) = carrier
 
-  import InIsMonoidal.*
-  import InIsMonoidal.SelfIsPromonad.*
+  /** The unit *η*: *I* → *M*. */
+  def unit: I --> M
 
-  /** The unit morphism *η*: *I* ~> *M*. */
-  def unit: I ~> M
-
-  /** The multiplication morphism *μ*: *M* ⊗ *M* ~> *M*. */
-  def multiply: (M * M) ~> M
+  /** The multiplication *μ*: *M* ⊗ *M* → *M*. */
+  def multiply: (M * M) --> M
 
   /** Laws that any `Monoid` must satisfy. */
   object MonoidLaws {
 
-    /** *μ* ∘ (*η* ⊗ *id*_M) = *λ*_M
+    /** *μ* ∘ (*η* ⊗ *id*) = *λ*
       */
-    def leftIdentity(using (I * M) ~> M is Eq): Boolean = {
-      ((unit *** identity[M]) >>> multiply) === leftUnitor[M]
+    def leftUnit(using ((I * M) --> M) is Observable): Boolean = {
+      ((unit *** V.K.identity[M]) >>> multiply) =?= V.leftUnitor[M].to
     }
 
-    /** *μ* ∘ (*id*_M ⊗ *η*) = *ρ*_M
+    /** *μ* ∘ (*id* ⊗ *η*) = *ρ*
       */
-    def rightIdentity(using (M * I) ~> M is Eq): Boolean = {
-      ((identity[M] *** unit) >>> multiply) === rightUnitor[M]
+    def rightUnit(using ((M * I) --> M) is Observable): Boolean = {
+      ((V.K.identity[M] *** unit) >>> multiply) =?= V.rightUnitor[M].to
     }
 
-    /** *μ* ∘ (*μ* ⊗ *id*_M) = *μ* ∘ (*id*_M ⊗ *μ*) ∘ *α*_{M,M,M}
+    /** *μ* ∘ (*μ* ⊗ *id*) = *μ* ∘ (*id* ⊗ *μ*) ∘ *α*
       */
-    def associativity(using ((M * M) * M) ~> M is Eq): Boolean = {
-      ((multiply *** identity[M]) >>> multiply) === (associate[M, M, M] >>> (identity[M] *** multiply) >>> multiply)
+    def associativity(using (((M * M) * M) --> M) is Observable): Boolean = {
+      ((multiply *** V.K.identity[M]) >>> multiply) =?=
+        (V.associator[M, M, M].to >>> (V.K.identity[M] *** multiply) >>> multiply)
     }
   }
 }
 
-object Monoid {
-  import Monoidal.on
+/** A semilattice in a cartesian category: a commutative monoid whose multiplication is idempotent.
+  *
+  * Represents a monoid (*M*, ⊥, ⊔), where
+  *   - ⊔ ∘ *β* = ⊔: the order of arguments does not matter
+  *   - ⊔ ∘ Δ = *id*: combining a value with itself changes nothing
+  *
+  * The induced preorder *a* ⊑ *b* ⇔ *a* ⊔ *b* = *b* has ⊔ as join and the unit ⊥ as least element: a join-semilattice
+  * is a preorder with finite coproducts.
+  */
+abstract class Semilattice(tracked override val V: Cartesian) extends Monoid(V) {
+  import V.{*, given}
+  import V.K.{Obj, -->, >>>}
 
-  /** Refines the `In` type of `Monoid` to the monoidal `K` with unit `U` and tensor `T`. */
-  type in[K[_, _], U, T[_, _]] = Monoid {
-    type In = K
-    val InIsMonoidal: K is Monoidal.`with`[U, T] on PureFunction
+  private given MIsObj: (M is Obj) = carrier
+
+  /** Laws that a `Semilattice` must satisfy beyond those of a [[Monoid]]. */
+  object SemilatticeLaws {
+
+    /** ⊔ ∘ *β* = ⊔ */
+    def commutativity(using ((M * M) --> M) is Observable): Boolean = {
+      (V.braid[M, M] >>> multiply) =?= multiply
+    }
+
+    /** ⊔ ∘ Δ = *id* */
+    def idempotence(using (M --> M) is Observable): Boolean = {
+      (V.diagonal[M] >>> multiply) =?= V.K.identity[M]
+    }
   }
+}
 
-  /** Summons the `Monoid` instance of `M`. */
-  def apply[M: Monoid]: M is Monoid = summon
+/** A comonoid object in a monoidal category (**V**, ⊗, *I*): the dual of a [[Monoid]], an object that can be deleted
+  * and copied.
+  *
+  * Represents a comonoid (*C*, *ε*, *δ*), where
+  *   - *C* = `C` = `Self` is an object of **V**
+  *   - *ε*: *C* → *I* is the counit, which deletes
+  *   - *δ*: *C* → *C* ⊗ *C* is the comultiplication, which copies
+  *
+  * In a cartesian category every object is a comonoid in exactly one way, by ! and Δ ([[Cartesian.comonoid]]). The
+  * converse is Fox's theorem: a symmetric monoidal category is cartesian when every object has a comonoid structure
+  * that every morphism preserves. Pairs in 𝒫 have the comonoids ([[Partial.Product.comonoid]]) but not the
+  * preservation: a program that does not terminate cannot be deleted.
+  */
+abstract class Comonoid(tracked val V: Monoidal) extends caps.Pure {
+  import V.{*, given}
+  import V.K.{Obj, -->, >>>}
 
-  /** An additive monoid (*M*, +, 0) internal to (**Type**, ×, Unit). */
-  trait Additive extends Monoid.in[Function, Unit, Tuple2] {
-    type Self
-    type In = Function
+  type Self
 
-    override given MonoidInMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
-    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type       = Monoidal.FunctionIsMonoidal
+  /** The carrier *C*. */
+  final type C = Self
 
-    import InIsMonoidal.*
-    import InIsMonoidal.SelfIsPromonad.*
+  /** *C* is an object of **V**.
+    */
+  def carrier: C is Obj
 
-    /** The unit element 0 of *M*. */
-    def zero: M
+  private given CIsObj: (C is Obj) = carrier
 
-    /** Combines two elements in *M*. */
-    def plus(x: M, y: M): M
+  /** The counit *ε*: *C* → *I*. */
+  def counit: C --> I
 
-    override def unit: I ~> M = {
-      _ => zero
-    }
+  /** The comultiplication *δ*: *C* → *C* ⊗ *C*. */
+  def comultiply: C --> (C * C)
 
-    override def multiply: (M * M) ~> M = {
-      case (x, y) => plus(x, y)
-    }
+  /** Laws that any `Comonoid` must satisfy. */
+  object ComonoidLaws {
 
-    extension (x: M)
-      /** Infix extension for [[plus]]. */
-      @targetName("plusExt")
-      def plus(y: M): M = {
-        Additive.this.plus(x, y)
-      }
-
-    extension (x: M)
-      /** Alias for [[plus]]. */
-      def +(y: M): M = {
-        x.plus(y)
-      }
-  }
-
-  object Additive {
-
-    /** Summons the `Additive` instance of `M`. */
-    def apply[M: Additive]: M is Additive = summon
-
-    /** `Option[A]` is a `Monoid.Additive` under `orElse` with `None` as zero. */
-    given OptionIsAdditive: [A] => Option[A] is Additive {
-      def zero: Option[A] = {
-        None
-      }
-
-      def plus(x: Option[A], y: Option[A]): Option[A] = {
-        x.orElse(y)
-      }
-    }
-
-    /** `Try[A]` is a `Monoid.Additive` under `orElse` with `Failure` as zero.
-      *
-      * @note Under standard runtime equality, `Try[A]` is a monoid object strictly under the quotient equivalence
-      *   relation defined by `Eq.TryIsEq`, which identifies all `Failure` states.
+    /** (*ε* ⊗ *id*) ∘ *δ* = *λ*⁻¹
       */
-    given TryIsAdditive: [A] => Try[A] is Additive {
-      def zero: Try[A] = {
-        Failure(Exception())
-      }
-
-      def plus(x: Try[A], y: Try[A]): Try[A] = {
-        x.orElse(y)
-      }
+    def leftCounit(using (C --> (I * C)) is Observable): Boolean = {
+      (comultiply >>> (counit *** V.K.identity[C])) =?= V.leftUnitor[C].from
     }
 
-    /** `Set[A]` is a `Monoid.Additive` under `union` with `Set.empty` as zero. */
-    given SetIsAdditive: [A] => Set[A] is Additive {
-      def zero: Set[A] = {
-        Set.empty
-      }
-
-      def plus(x: Set[A], y: Set[A]): Set[A] = {
-        x.union(y)
-      }
+    /** (*id* ⊗ *ε*) ∘ *δ* = *ρ*⁻¹
+      */
+    def rightCounit(using (C --> (C * I)) is Observable): Boolean = {
+      (comultiply >>> (V.K.identity[C] *** counit)) =?= V.rightUnitor[C].from
     }
 
-    /** `A => B` is a `Monoid.Additive` if `B` is a `Monoid.Additive`. */
-    given FunctionIsAdditive: [A, B: Additive] => Function[A, B] is Additive {
-      def zero: A => B = {
-        _ => Additive[B].zero
-      }
-
-      def plus(f: A => B, g: A => B): A => B = {
-        a => f(a) + g(a)
-      }
-    }
-  }
-
-  /** A multiplicative monoid (*M*, *, 1) internal to (**Type**, ×, Unit). */
-  trait Multiplicative extends Monoid.in[Function, Unit, Tuple2] {
-    type Self
-    type In = Function
-
-    override given MonoidInMonoidal: Monoidal.FunctionIsMonoidal.type = Monoidal.FunctionIsMonoidal
-    override val InIsMonoidal: Monoidal.FunctionIsMonoidal.type       = Monoidal.FunctionIsMonoidal
-
-    import InIsMonoidal.*
-    import InIsMonoidal.SelfIsPromonad.*
-
-    /** The unit element 1 of *M*. */
-    def one: M
-
-    /** Combines two elements in *M*. */
-    def times(x: M, y: M): M
-
-    override def unit: I ~> M = {
-      _ => one
-    }
-
-    override def multiply: (M * M) ~> M = {
-      case (x, y) => times(x, y)
-    }
-
-    extension (x: M)
-      /** Infix extension for [[times]]. */
-      @targetName("timesExt")
-      def times(y: M): M = {
-        Multiplicative.this.times(x, y)
-      }
-
-    extension (x: M)
-      /** Alias for [[times]]. */
-      def *(y: M): M = {
-        x.times(y)
-      }
-  }
-
-  object Multiplicative {
-
-    /** Summons the `Multiplicative` instance of `M`. */
-    def apply[M: Multiplicative]: M is Multiplicative = summon
-
-    /** `Int` is a `Monoid.Multiplicative` under multiplication with `1` as one. */
-    given IntIsMultiplicative: Int is Multiplicative {
-      def one: Int = {
-        1
-      }
-
-      def times(x: Int, y: Int): Int = {
-        x * y
-      }
-    }
-
-    /** `A => B` is a `Monoid.Multiplicative` if `B` is a `Monoid.Multiplicative`. */
-    given FunctionIsMultiplicative: [A, B: Multiplicative] => Function[A, B] is Multiplicative {
-      def one: A => B = {
-        _ => Multiplicative[B].one
-      }
-
-      def times(f: A => B, g: A => B): A => B = {
-        a => f(a) * g(a)
-      }
+    /** *α* ∘ (*δ* ⊗ *id*) ∘ *δ* = (*id* ⊗ *δ*) ∘ *δ*
+      */
+    def coassociativity(using (C --> (C * (C * C))) is Observable): Boolean = {
+      (comultiply >>> (comultiply *** V.K.identity[C]) >>> V.associator[C, C, C].to) =?=
+        (comultiply >>> (V.K.identity[C] *** comultiply))
     }
   }
 }
