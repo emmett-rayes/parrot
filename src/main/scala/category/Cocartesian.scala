@@ -3,217 +3,162 @@ package category
 
 import scala.annotation.targetName
 
-/** A cocartesian monoidal profunctor on an underlying category **C**.
+/** A cocartesian monoidal structure on a category **K**: the tensor is the coproduct and the unit is an initial object.
   *
-  * Represents a cocartesian monoidal profunctor *P* on **C**, where
-  *   - ⊕ is the categorical coproduct
-  *   - *Z* is the initial object
-  *   - *ι*₁: *A* ⇒ *A* ⊕ *B* is the left injection
-  *   - *ι*₂: *B* ⇒ *A* ⊕ *B* is the right injection
-  *   - [-, -] is the universal copairing from the coproduct
-  *   - ¡: *Z* ⇒ *A* is the unique morphism from the initial object
-  *   - ∇: *A* ⊕ *A* ⇒ *A* is the fold morphism
+  * Represents a category with finite coproducts, the dual of [[Cartesian]], where
+  *   - *A* + *B* is the coproduct, with injections *ι*₁ = `inl` and *ι*₂ = `inr`
+  *   - [*f*,*g*] = `copair`, infix `|||`, is the unique morphism with [*f*,*g*] ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
+  *   - *I* is initial, with the unique morphism ¡: *I* → *A* = `absurd`
+  *   - ∇ = [*id*,*id*] merges
+  *
+  * The unitors, the associator and the braiding are derived from the injections and copairing.
   */
-trait Cocartesian extends Monoidal {
-  override type Self[_, _]: Promonad as CocartesianPromonad
+abstract class Cocartesian(
+  tracked override val K: Category,
+  tracked override val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
+) extends Symmetric(K, T) {
+  import K.{Obj, -->, <->, >>>}
 
-  override given MonoidalPromonad: Self is Promonad = CocartesianPromonad
-  override val SelfIsPromonad: Self is Promonad     = CocartesianPromonad
+  /** Infix alias for [[Tensor]]: the coproduct *A* + *B*. */
+  final type + = Tensor
 
-  import SelfIsPromonad.*
+  /** The left injection *ι*₁: *A* → *A* + *B*. */
+  def inl[A: Obj, B: Obj]: A --> (A + B)
 
-  /** The initial object *Z* in *Ob*(**C**). */
-  type Z
-  override type I = Z
+  /** The right injection *ι*₂: *B* → *A* + *B*. */
+  def inr[A: Obj, B: Obj]: B --> (A + B)
 
-  /** The coproduct ⊕ on objects. */
-  final type +[A, B] = Tensor[A, B]
+  /** The copairing [*f*,*g*]: *A* + *B* → *X* of *f*: *A* → *X* and *g*: *B* → *X*. */
+  def copair[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X): (A + B) --> X
 
-  /** The unique morphism ¡: *Z* ~> *A* from the initial object. */
-  def absurd[A]: Z ~> A
+  /** The unique morphism ¡: *I* → *A* out of the initial object. */
+  def absurd[A: Obj]: I --> A
 
-  /** The left injection morphism *ι*₁: *A* ~> *A* ⊕ *B*. */
-  def left[A, B]: A ~> (A + B)
+  /** The codiagonal ∇ = [*id*,*id*]: *A* + *A* → *A*. */
+  final def codiagonal[A: Obj]: (A + A) --> A = {
+    copair(K.identity[A], K.identity[A])
+  }
 
-  /** The right injection morphism *ι*₂: *B* ~> *A* ⊕ *B*. */
-  def right[A, B]: B ~> (A + B)
+  extension [A: Obj, X: Obj](f: A --> X)
+    /** Infix form of [[copair]]: [*f*,*g*]. */
+    @targetName("copairExt")
+    final def |||[B: Obj](g: B --> X): (A + B) --> X = {
+      copair(f, g)
+    }
 
-  /** Maps two morphisms *f*: *A* ~> *C* and *g*: *B* ~> *C* to the universal copairing morphism [*f*, *g*]: *A* ⊕ *B*
-    * ~> *C*.
+  extension [A: Obj, B: Obj](f: A --> B)
+    /** Infix form of [[tensor]] for coproducts: *f* + *g*. */
+    final def +++[C: Obj, D: Obj](g: C --> D): (A + C) --> (B + D) = {
+      tensor(f, g)
+    }
+
+  /** *β* = [*ι*₂,*ι*₁]
     */
-  def sum[A, B, C](f: A ~> C, g: B ~> C): (A + B) ~> C
-
-  /** The fold (codiagonal) morphism ∇: *A* ⊕ *A* ~> *A*. */
-  def fold[A]: (A + A) ~> A = {
-    identity[A] ||| identity[A]
+  def braid[A: Obj, B: Obj]: (A + B) --> (B + A) = {
+    copair(inr[B, A], inl[B, A])
   }
 
-  /** The tensor product of two morphisms *p* ⊕ *q* = [*p* ∘ *ι*₁, *q* ∘ *ι*₂]. */
-  override def tensor[A, B, C, D](p: A ~> B, q: C ~> D): (A + C) ~> (B + D) = {
-    (p >>> left[B, D]) ||| (q >>> right[B, D])
-  }
-
-  /** The left unitor morphism *λ*: *Z* ⊕ *A* ~> *A* = [¡, *id*]. */
-  override def leftUnitor[A]: (Z + A) ~> A = {
-    absurd[A] ||| identity[A]
-  }
-
-  /** The inverse left unitor morphism *λ*⁻¹: *A* ~> *Z* ⊕ *A* = *ι*₂. */
-  override def leftUnitorInv[A]: A ~> (Z + A) = {
-    right[Z, A]
-  }
-
-  /** The right unitor morphism *ρ*: *A* ⊕ *Z* ~> *A* = [*id*, ¡]. */
-  override def rightUnitor[A]: (A + Z) ~> A = {
-    identity[A] ||| absurd[A]
-  }
-
-  /** The inverse right unitor morphism *ρ*⁻¹: *A* ~> *A* ⊕ *Z* = *ι*₁. */
-  override def rightUnitorInv[A]: A ~> (A + Z) = {
-    left[A, Z]
-  }
-
-  /** The associator morphism *α*: (*A* ⊕ *B*) ⊕ *C* ~> *A* ⊕ (*B* ⊕ *C*) = [[*ι*₁, *ι*₁ ∘ *ι*₂], *ι*₂ ∘ *ι*₂]. */
-  override def associate[A, B, C]: ((A + B) + C) ~> (A + (B + C)) = {
-    (left[A, B + C] ||| (left[B, C] >>> right[A, B + C])) ||| (right[B, C] >>> right[A, B + C])
-  }
-
-  /** The inverse associator morphism *α*⁻¹: *A* ⊕ (*B* ⊕ *C*) ~> (*A* ⊕ *B*) ⊕ *C* = [*ι*₁ ∘ *ι*₁, [*ι*₂ ∘ *ι*₁,
-    * *ι*₂]].
+  /** *λ* = [¡,*id*], with inverse *ι*₂
     */
-  override def unassociate[A, B, C]: (A + (B + C)) ~> ((A + B) + C) = {
-    (left[A, B] >>> left[A + B, C]) ||| ((right[A, B] >>> left[A + B, C]) ||| right[A + B, C])
+  def leftUnitor[A: Obj]: (I + A) <-> A = {
+    K.Iso(copair(absurd[A], K.identity[A]), inr[I, A])
   }
 
-  extension [A, B](p: A ~> B)
-    /** Alias for [[tensor]]. */
-    def +++[C, D](q: C ~> D): (A + C) ~> (B + D) = {
-      Cocartesian.this.tensor(p, q)
-    }
+  /** *ρ* = [*id*,¡], with inverse *ι*₁
+    */
+  def rightUnitor[A: Obj]: (A + I) <-> A = {
+    K.Iso(copair(K.identity[A], absurd[A]), inl[A, I])
+  }
 
-  extension [A, C](f: A ~> C)
-    /** Infix extension for [[sum]]. */
-    @targetName("sumExt")
-    def sum[B](g: B ~> C): (A + B) ~> C = {
-      Cocartesian.this.sum(f, g)
-    }
+  /** *α* = [[*ι*₁,*ι*₂ ∘ *ι*₁],*ι*₂ ∘ *ι*₂], with the symmetric inverse
+    */
+  def associator[A: Obj, B: Obj, C: Obj]: ((A + B) + C) <-> (A + (B + C)) = {
+    val to   = (inl[A, B + C] ||| (inl[B, C] >>> inr[A, B + C])) ||| (inr[B, C] >>> inr[A, B + C])
+    val from = (inl[A, B] >>> inl[A + B, C]) ||| ((inr[A, B] >>> inl[A + B, C]) ||| inr[A + B, C])
+    K.Iso(to, from)
+  }
 
-  extension [A, C](f: A ~> C)
-    /** Alias for [[sum]]. */
-    def |||[B](g: B ~> C): (A + B) ~> C = {
-      f.sum(g)
-    }
-
-  /** Laws that any `Cocartesian` monoidal profunctor must satisfy. */
+  /** Laws that any `Cocartesian` structure must satisfy: the universal property of coproducts and of the initial
+    * object.
+    */
   object CocartesianLaws {
 
-    /** [*f*, *g*] ∘ *ι*₁ = *f*
-      */
-    def leftInjection[A, B, C](f: A ~> C, g: B ~> C)(using (A ~> C) is Eq): Boolean = {
-      (left[A, B] >>> (f ||| g)) === f
+    /** [*f*,*g*] ∘ *ι*₁ = *f* */
+    def copairInl[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X)(
+      using (A --> X) is Observable
+    ): Boolean = {
+      (inl[A, B] >>> (f ||| g)) =?= f
     }
 
-    /** [*f*, *g*] ∘ *ι*₂ = *g*
-      */
-    def rightInjection[A, B, C](f: A ~> C, g: B ~> C)(using (B ~> C) is Eq): Boolean = {
-      (right[A, B] >>> (f ||| g)) === g
+    /** [*f*,*g*] ∘ *ι*₂ = *g* */
+    def copairInr[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X)(
+      using (B --> X) is Observable
+    ): Boolean = {
+      (inr[A, B] >>> (f ||| g)) =?= g
     }
 
-    /** [*ι*₁, *ι*₂] = *id*
-      */
-    def sumUniqueness[A, B](using (A + B) ~> (A + B) is Eq): Boolean = {
-      (left[A, B] ||| right[A, B]) === identity[A + B]
+    /** [*h* ∘ *ι*₁,*h* ∘ *ι*₂] = *h*: a morphism out of a coproduct is determined by its injections. */
+    def copairUniqueness[A: Obj, B: Obj, X: Obj](h: (A + B) --> X)(
+      using ((A + B) --> X) is Observable
+    ): Boolean = {
+      ((inl[A, B] >>> h) ||| (inr[A, B] >>> h)) =?= h
     }
 
-    /* *Z* ~> *A*, *f* = ¡ */
-    def initialUniqueness[A](f: Z ~> A)(using (Z ~> A) is Eq): Boolean = {
-      f === absurd[A]
+    /** *f* = ¡ for every *f*: *I* → *A*
+      */
+    def absurdUniqueness[A: Obj](f: I --> A)(using (I --> A) is Observable): Boolean = {
+      f =?= absurd[A]
     }
 
-    /** ∇ ∘ *ι*₁ = *id*
+    /** *f* + *g* = [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*]: the tensor is the coproduct.
       */
-    def foldLeft[A](using (A ~> A) is Eq): Boolean = {
-      (left[A, A] >>> fold[A]) === identity[A]
+    def tensorIsCoproduct[A: Obj, B: Obj, C: Obj, D: Obj](f: A --> B, g: C --> D)(
+      using ((A + C) --> (B + D)) is Observable
+    ): Boolean = {
+      (f +++ g) =?= ((f >>> inl[B, D]) ||| (g >>> inr[B, D]))
     }
 
-    /** ∇ ∘ *ι*₂ = *id*
+    /** If *f* = *f*′ and *g* = *g*′, then [*f*,*g*] = [*f*′,*g*′].
+      *
+      * @note The premise is not checked: *f*′ and *g*′ must be equal to *f* and *g* by construction.
       */
-    def foldRight[A](using (A ~> A) is Eq): Boolean = {
-      (right[A, A] >>> fold[A]) === identity[A]
+    def copairCongruence[A: Obj, B: Obj, X: Obj](
+      f: A --> X,
+      f2: A --> X,
+      g: B --> X,
+      g2: B --> X,
+    )(using ((A + B) --> X) is Observable): Boolean = {
+      (f ||| g) =?= (f2 ||| g2)
     }
   }
 }
 
 object Cocartesian {
 
-  /** Refines underlying category of `Cocartesian` to `T`. */
-  infix type on[P <: Cocartesian, T[_, _]] = P { val SelfIsPromonad: Self is Profunctor.on[Promonad, T] }
+  /** The coproducts of **K**, read in **K**ᵒᵖ: products, with injections as projections and copairing as pairing. */
+  final class Op(tracked val C: Cocartesian) extends Cartesian(C.K.op, Cartesian.Tensor(C)) {
+    import K.{Obj, -->}
 
-  /** Refines the `Z` and `Tensor` types of `Cocartesian` to `U` and `T`. */
-  type `with`[U, T[_, _]] = Cocartesian { type Z = U; type Tensor = T }
+    type I = C.I
 
-  /** Summons the `Cocartesian` instance of `P`. */
-  def apply[P[_, _]: Cocartesian]: P is Cocartesian = summon
-
-  /** Every object in a cocartesian monoidal category is uniquely a monoid object via the initial morphism and fold. */
-  given TIsMonoid: [T, P[_, _]: {Cocartesian on PureFunction as C}] => T is Monoid {
-    type In = P
-
-    override given MonoidInMonoidal: C.type = C
-    override val InIsMonoidal: C.type       = C
-
-    import C.{+, Z}
-    import InIsMonoidal.*
-    import InIsMonoidal.SelfIsPromonad.*
-
-    def unit: Z ~> T = absurd
-
-    def multiply: (T + T) ~> T = fold
-  }
-
-  /** Every cocartesian monoidal category induces a symmetric monoidal category, where
-    *   - *β* = [*ι*₂, *ι*₁] is the braiding
-    */
-  given CocartesianIsSymmetric: [P[_, _]: {Promonad, Cocartesian as C}] => P is Symmetric {
-    override given SymmetricMonoidal: C.type = C
-
-    export C.{
-      Self as _,
-      rightUnitor as _,
-      rightUnitorInv as _,
-      unassociate as _,
-      *,
+    def unitObject: I is Obj = {
+      C.unitObject
     }
 
-    import C.SelfIsPromonad.*
-
-    def braid[A, B]: (A * B) ~> (B * A) = {
-      right[B, A] ||| left[B, A]
-    }
-  }
-
-  /** `Cocartesian` instance for `Function` on the category **Type**. */
-  given FunctionIsCocartesian: Function is Cocartesian {
-    type Z      = Nothing
-    type Tensor = Either
-
-    override given CocartesianPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type        = Promonad.FunctionIsPromonad
-
-    def absurd[A]: Nothing => A = {
-      n => n
+    def fst[A: Obj, B: Obj]: (A * B) --> A = {
+      C.inl[A, B]
     }
 
-    def left[A, B]: A => Either[A, B] = {
-      Left(_)
+    def snd[A: Obj, B: Obj]: (A * B) --> B = {
+      C.inr[A, B]
     }
 
-    def right[A, B]: B => Either[A, B] = {
-      Right(_)
+    def pair[X: Obj, A: Obj, B: Obj](f: X --> A, g: X --> B): X --> (A * B) = {
+      C.copair(f, g)
     }
 
-    def sum[A, B, C](f: A => C, g: B => C): Either[A, B] => C = {
-      _.fold(f, g)
+    def discard[A: Obj]: A --> I = {
+      C.absurd[A]
     }
   }
 }

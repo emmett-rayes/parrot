@@ -1,197 +1,119 @@
 package parrot
 package category
 
-import scala.annotation.targetName
-
-/** A monoidal promonad on an underlying category **C**.
+/** A monoidal structure on a category **K**: a tensor ⊗ that combines objects and morphisms, with a unit *I*.
   *
-  * Represents a monoidal promonad *P* on **C**, where
-  *   - ⊗ is the tensor product
+  * Represents a monoidal category (**K**, ⊗, *I*), where
+  *   - ⊗: **K** × **K** → **K** is the tensor, the bifunctor *T*, written `A * B` on objects and `f *** g` on morphisms
   *   - *I* is the unit object
-  *   - *α*: (*A* ⊗ *B*) ⊗ *C* ⇒ *A* ⊗ (*B* ⊗ *C*) is the associator
-  *   - *λ*: *I* ⊗ *A* ⇒ *A* is the left unitor
-  *   - *ρ*: *A* ⊗ *I* ⇒ *A* is the right unitor
+  *   - *λ*: *I* ⊗ *A* ≅ *A* is the left unitor
+  *   - *ρ*: *A* ⊗ *I* ≅ *A* is the right unitor
+  *   - *α*: (*A* ⊗ *B*) ⊗ *C* ≅ *A* ⊗ (*B* ⊗ *C*) is the associator
+  *
+  * Isomorphisms are written `A <-> B` (see [[Category.Iso]]).
+  *
+  * A monoidal structure is structure *on* **K**, not a new kind of category: one category can carry several (products
+  * and coproducts on 𝒮), so instances are named, not found by the carrier.
   */
-trait Monoidal {
-  type Self[_, _]: Promonad as MonoidalPromonad
+abstract class Monoidal(
+  tracked val K: Category,
+  tracked val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
+) extends caps.Pure {
+  import K.{Obj, -->, <->, >>>}
 
-  val SelfIsPromonad: Self is Promonad = MonoidalPromonad
+  /** The tensor of objects *A* ⊗ *B*. */
+  final type Tensor = T.F
 
-  import SelfIsPromonad.*
-
-  /** The unit object *I* in *Ob*(**C**). */
-  type I
-
-  /** The tensor product ⊗ on objects. */
-  type Tensor[_, _]
+  /** Infix alias for [[Tensor]]. */
   final type * = Tensor
 
-  /** Maps two morphisms *p*: *A* ~> *B* and *q*: *C* ~> *D* to a morphism *p* ⊗ *q*: *A* ⊗ *C* ~> *B* ⊗ *D* in the
-    * category induced by *P*.
+  /** The unit object *I*. */
+  type I
+
+  /** The unit is an object. */
+  def unitObject: I is Obj
+
+  /** Evidence that *I* is an object, for clients of the structure. */
+  given IIsObj: (I is Obj) = unitObject
+
+  /** Evidence that tensors of objects are objects, for clients of the structure. */
+  given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]
+
+  /** *λ*: *I* ⊗ *A* ≅ *A*
     */
-  def tensor[A, B, C, D](p: A ~> B, q: C ~> D): (A * C) ~> (B * D)
+  def leftUnitor[A: Obj]: (I * A) <-> A
 
-  /** The left unitor morphism *λ*: *I* ⊗ *A* ~> *A*. */
-  def leftUnitor[A]: (I * A) ~> A
+  /** *ρ*: *A* ⊗ *I* ≅ *A*
+    */
+  def rightUnitor[A: Obj]: (A * I) <-> A
 
-  /** The inverse left unitor morphism *λ*⁻¹: *A* ~> *I* ⊗ *A*. */
-  def leftUnitorInv[A]: A ~> (I * A)
+  /** *α*: (*A* ⊗ *B*) ⊗ *C* ≅ *A* ⊗ (*B* ⊗ *C*)
+    */
+  def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C))
 
-  /** The right unitor morphism *ρ*: *A* ⊗ *I* ~> *A*. */
-  def rightUnitor[A]: (A * I) ~> A
+  /** The tensor of morphisms *f* ⊗ *g*. */
+  final def tensor[A: Obj, B: Obj, C: Obj, D: Obj](f: A --> B, g: C --> D): (A * C) --> (B * D) = {
+    T.bimap(f, g)
+  }
 
-  /** The inverse right unitor morphism *ρ*⁻¹: *A* ~> *A* ⊗ *I*. */
-  def rightUnitorInv[A]: A ~> (A * I)
-
-  /** The associator morphism *α*: (*A* ⊗ *B*) ⊗ *C* ~> *A* ⊗ (*B* ⊗ *C*) = ((A * B) * C) ~> (A * (B * C)). */
-  def associate[A, B, C]: ((A * B) * C) ~> (A * (B * C))
-
-  /** The inverse associator morphism *α*⁻¹: *A* ⊗ (*B* ⊗ *C*) ~> (*A* ⊗ *B*) ⊗ *C*. */
-  def unassociate[A, B, C]: (A * (B * C)) ~> ((A * B) * C)
-
-  extension [A, B](p: A ~> B)
-    /** Infix extension for [[tensor]]. */
-    @targetName("tensorExt")
-    def tensor[C, D](q: C ~> D): (A * C) ~> (B * D) = {
-      Monoidal.this.tensor(p, q)
+  extension [A: Obj, B: Obj](f: A --> B)
+    /** Infix form of [[tensor]]: *f* ⊗ *g*. */
+    final def ***[C: Obj, D: Obj](g: C --> D): (A * C) --> (B * D) = {
+      tensor(f, g)
     }
 
-  extension [A, B](p: A ~> B)
-    /** Alias for [[tensor]]. */
-    def ***[C, D](q: C ~> D): (A * C) ~> (B * D) = {
-      p.tensor(q)
-    }
-
-  /** Laws that any `Monoidal` must satisfy. */
+  /** Laws that any `Monoidal` structure must satisfy, beyond the [[Bifunctor.BifunctorLaws]] of ⊗. */
   object MonoidalLaws {
 
-    /** *id* ⊗ *id* = *id*
+    /** *λ*, *ρ* and *α* are isomorphisms.
       */
-    def tensorIdentity[A, B](using (A * B) ~> (A * B) is Eq): Boolean = {
-      (identity[A] *** identity[B]) === identity[A * B]
-    }
-
-    /** (*f2* ∘ *f1*) ⊗ (*g2* ∘ *g1*) = (*f2* ⊗ *g2*) ∘ (*f1* ⊗ *g1*)
-      */
-    def tensorComposition[A, B, C, D, E, F](
-      f1: A ~> B,
-      f2: B ~> C,
-      g1: D ~> E,
-      g2: E ~> F,
-    )(using (A * D) ~> (C * F) is Eq): Boolean = {
-      ((f1 >>> f2) *** (g1 >>> g2)) === ((f1 *** g1) >>> (f2 *** g2))
-    }
-
-    /** (*f* ⊗ (*g* ⊗ *h*)) ∘ *α* = *α* ∘ ((*f* ⊗ *g*) ⊗ *h*)
-      */
-    def associatorNaturality[A1, A2, B1, B2, C1, C2](
-      f: A1 ~> A2,
-      g: B1 ~> B2,
-      h: C1 ~> C2,
-    )(using ((A1 * B1) * C1) ~> (A2 * (B2 * C2)) is Eq): Boolean = {
-      (associate[A1, B1, C1] >>> (f *** (g *** h))) === (((f *** g) *** h) >>> associate[A2, B2, C2])
+    def isomorphisms[A: Obj, B: Obj, C: Obj](
+      using
+      ((I * A) --> (I * A)) is Observable,
+      (A --> A) is Observable,
+      ((A * I) --> (A * I)) is Observable,
+      (((A * B) * C) --> ((A * B) * C)) is Observable,
+      ((A * (B * C)) --> (A * (B * C))) is Observable,
+    ): Boolean = {
+      K.CategoryLaws.isomorphism(leftUnitor[A]) &&
+      K.CategoryLaws.isomorphism(rightUnitor[A]) &&
+      K.CategoryLaws.isomorphism(associator[A, B, C])
     }
 
     /** *f* ∘ *λ* = *λ* ∘ (*id* ⊗ *f*)
       */
-    def leftUnitorNaturality[A, B](f: A ~> B)(using (I * A) ~> B is Eq): Boolean = {
-      (leftUnitor[A] >>> f) === ((identity[I] *** f) >>> leftUnitor[B])
+    def leftUnitorNaturality[A: Obj, B: Obj](f: A --> B)(using ((I * A) --> B) is Observable): Boolean = {
+      (leftUnitor[A].to >>> f) =?= ((K.identity[I] *** f) >>> leftUnitor[B].to)
     }
 
     /** *f* ∘ *ρ* = *ρ* ∘ (*f* ⊗ *id*)
       */
-    def rightUnitorNaturality[A, B](f: A ~> B)(using (A * I) ~> B is Eq): Boolean = {
-      (rightUnitor[A] >>> f) === ((f *** identity[I]) >>> rightUnitor[B])
+    def rightUnitorNaturality[A: Obj, B: Obj](f: A --> B)(using ((A * I) --> B) is Observable): Boolean = {
+      (rightUnitor[A].to >>> f) =?= ((f *** K.identity[I]) >>> rightUnitor[B].to)
     }
 
-    /** (*id* ⊗ *λ*) ∘ *α* = *ρ* ⊗ *id*
-      */
-    def triangle[A, B](using ((A * I) * B) ~> (A * B) is Eq): Boolean = {
-      val lhs = associate[A, I, B] >>> (identity[A] *** leftUnitor[B])
-      val rhs = rightUnitor[A] *** identity[B]
-      lhs === rhs
+    /** (*f* ⊗ (*g* ⊗ *h*)) ∘ *α* = *α* ∘ ((*f* ⊗ *g*) ⊗ *h*) */
+    def associatorNaturality[A: Obj, B: Obj, C: Obj, D: Obj, E: Obj, F: Obj](
+      f: A --> B,
+      g: C --> D,
+      h: E --> F,
+    )(using (((A * C) * E) --> (B * (D * F))) is Observable): Boolean = {
+      (associator[A, C, E].to >>> (f *** (g *** h))) =?= (((f *** g) *** h) >>> associator[B, D, F].to)
     }
 
-    /** (*id* ⊗ *α*) ∘ *α* ∘ (*α* ⊗ *id*) = *α* ∘ *α*
-      */
-    def pentagon[A, B, C, D](using (((A * B) * C) * D) ~> (A * (B * (C * D))) is Eq): Boolean = {
-      val lhs = (associate[A, B, C] *** identity[D]) >>> associate[A, B * C, D] >>> (identity[A] *** associate[B, C, D])
-      val rhs = associate[A * B, C, D] >>> associate[A, B, C * D]
-      lhs === rhs
+    /** (*id* ⊗ *λ*) ∘ *α* = *ρ* ⊗ *id* */
+    def triangle[A: Obj, B: Obj](using (((A * I) * B) --> (A * B)) is Observable): Boolean = {
+      (associator[A, I, B].to >>> (K.identity[A] *** leftUnitor[B].to)) =?= (rightUnitor[A].to *** K.identity[B])
     }
 
-    /** *λ* ∘ *λ*⁻¹ = *id* and *λ*⁻¹ ∘ *λ* = *id*
-      */
-    def leftUnitorIsomorphism[A](using (I * A) ~> (I * A) is Eq, A ~> A is Eq): Boolean = {
-      ((leftUnitorInv[A] >>> leftUnitor[A]) === identity[A]) &&
-      ((leftUnitor[A] >>> leftUnitorInv[A]) === identity[I * A])
-    }
-
-    /** *ρ* ∘ *ρ*⁻¹ = *id* and *ρ*⁻¹ ∘ *ρ* = *id*
-      */
-    def rightUnitorIsomorphism[A](using (A * I) ~> (A * I) is Eq, A ~> A is Eq): Boolean = {
-      ((rightUnitorInv[A] >>> rightUnitor[A]) === identity[A]) &&
-      ((rightUnitor[A] >>> rightUnitorInv[A]) === identity[A * I])
-    }
-
-    /** *α* ∘ *α*⁻¹ = *id* and *α*⁻¹ ∘ *α* = *id*
-      */
-    def associatorIsomorphism[A, B, C](
-      using
-      ((A * B) * C) ~> ((A * B) * C) is Eq,
-      (A * (B * C)) ~> (A * (B * C)) is Eq,
+    /** (*id* ⊗ *α*) ∘ *α* ∘ (*α* ⊗ *id*) = *α* ∘ *α* */
+    def pentagon[A: Obj, B: Obj, C: Obj, D: Obj](
+      using ((((A * B) * C) * D) --> (A * (B * (C * D)))) is Observable
     ): Boolean = {
-      ((associate[A, B, C] >>> unassociate[A, B, C]) === identity[(A * B) * C]) &&
-      ((unassociate[A, B, C] >>> associate[A, B, C]) === identity[A * (B * C)])
-    }
-  }
-}
-
-object Monoidal {
-
-  /** Refines underlying category of `Monoidal` to `T`. */
-  infix type on[P <: Monoidal, T[_, _]] = P { val SelfIsPromonad: Self is Profunctor.on[Promonad, T] }
-
-  /** Type helper to refine `I` and `Tensor` simultaneously on `Monoidal`. */
-  type `with`[U, T[_, _]] = Monoidal { type I = U; type Tensor = T }
-
-  /** Summons the `Monoidal` instance of `P`. */
-  def apply[P[_, _]: Monoidal]: P is Monoidal = summon
-
-  /** `Monoidal` instance for `Function` on the category **Type**. */
-  given FunctionIsMonoidal: Function is Monoidal {
-    type I      = Unit
-    type Tensor = Tuple2
-
-    override given MonoidalPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val SelfIsPromonad: Promonad.FunctionIsPromonad.type     = Promonad.FunctionIsPromonad
-
-    def tensor[A, B, C, D](p: A => B, q: C => D): ((A, C)) => (B, D) = {
-      (a, c) => (p(a), q(c))
-    }
-
-    def leftUnitor[A]: ((Unit, A)) => A = {
-      (_, a) => a
-    }
-
-    def leftUnitorInv[A]: A => (Unit, A) = {
-      a => ((), a)
-    }
-
-    def rightUnitor[A]: ((A, Unit)) => A = {
-      (a, _) => a
-    }
-
-    def rightUnitorInv[A]: A => (A, Unit) = {
-      a => (a, ())
-    }
-
-    def associate[A, B, C]: (((A, B), C)) => (A, (B, C)) = {
-      case ((a, b), c) => (a, (b, c))
-    }
-
-    def unassociate[A, B, C]: ((A, (B, C))) => ((A, B), C) = {
-      case (a, (b, c)) => ((a, b), c)
+      val lhs = (associator[A, B, C].to *** K.identity[D]) >>> associator[A, B * C, D].to >>>
+        (K.identity[A] *** associator[B, C, D].to)
+      val rhs = associator[A * B, C, D].to >>> associator[A, B, C * D].to
+      lhs =?= rhs
     }
   }
 }
