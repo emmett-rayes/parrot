@@ -92,13 +92,13 @@ trusted to be pure. **Keep the build warning-free.**
 ## 3. Repository layout
 
 ```
-build.sbt, project/                sbt 2 build (idePackagePrefix := "parrot")
+build.sbt, project/                sbt 2 build
 .scalafmt.conf                     scalafmt 3.11.3, dialect scala3Future, maxColumn 120
-src/main/scala/
+src/main/scala/parrot/
   category/   (package parrot.category)   the categorical library
   parser/     (package parrot.parser)     ParserAlgebra, Expected, the two interpreters, Fn, Scanner, CharSet
   json/       (package parrot.json)       JsonGrammar
-src/test/scala/
+src/test/scala/parrot/
   category/   LawSuite (law runner + law status table), Fixture/Sample (generators, observations), one spec per structure
   parser/     Grammars (random grammars), law and agreement tests, interpreter tests, ScannerTest
   json/       JsonGrammarTest, JsonCorporaTest (every corpus document), JsonFixtures, JsonBenchmark (a `main`)
@@ -110,8 +110,7 @@ docs/
   tutorial/                        the snippet checker for the tutorial
 ```
 
-**Package/directory mismatch is intentional.** Because of `idePackagePrefix := Some("parrot")`, sources live in
-`src/main/scala/<pkg>/` but declare chained package clauses:
+Sources live in `src/{main,test}/scala/parrot/<pkg>/` and declare chained package clauses:
 
 ```scala
 package parrot
@@ -421,10 +420,10 @@ and for library changes that the tutorial uses, run the snippet checker (§2).
 ## 10. Quick recipes
 
 **Add a new categorical structure `Foo`:**
-1. `src/main/scala/category/Foo.scala`: a scaladoc'd `abstract class Foo(tracked val …) extends caps.Pure` (or a
+1. `src/main/scala/parrot/category/Foo.scala`: a scaladoc'd `abstract class Foo(tracked val …) extends caps.Pure` (or a
    refinement forwarding its parameters), its operations with infix extensions, and `object FooLaws`.
 2. Instances as `object`s (concrete) or `open class`es (generic) in the companion or next to their carrier.
-3. `src/test/scala/category/FooTest.scala`: an abstract `FooSpec(fixture, structure)` with one `law(...)` per law, and
+3. `src/test/scala/parrot/category/FooTest.scala`: an abstract `FooSpec(fixture, structure)` with one `law(...)` per law, and
    one test class per instance.
 
 **Add a new parser interpreter:** choose the structures (a promonad over a category with `Obj = Type`, products and

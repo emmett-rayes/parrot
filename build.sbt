@@ -3,7 +3,6 @@ scalaVersion := "3.9.0"
 lazy val root = rootProject
   .settings(
     name             := "Parrot",
-    idePackagePrefix := Some("parrot"),
     scalacOptions ++= Seq(
       "-Wnonunit-statement",
       // "-Wsafe-init", // false positives on tracked parameters forwarded to a parent class (docs/DESIGN.md §10)
