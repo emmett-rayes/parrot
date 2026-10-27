@@ -1,122 +1,145 @@
 package parrot
 package category
 
-import category.Valued.over
+import scala.annotation.unused
 
-/** The state transformer of a monad *M* with state *S* over **Type**.
+/** A measure on a type of states: a natural number that guarded iteration and recursion must decrease.
   *
-  * Represents a functor *T*: **Type** → **Type**, where
-  *   - *T*[*A*] = *S* → *M*[*A* × *S*] is the object part
-  *   - *T*(*f*) = - ; *M*(*f* × *id*) is the morphism part
+  * For a parser the state is the remaining input and its measure is its length: a loop step or a recursive call that
+  * consumes input makes progress, and since the measure cannot decrease forever, guarded computations stop.
   */
-type StateT[S, M[_]] = [A] =>> S => M[(result: A, state: S)]
+trait Measure extends Type {
+
+  /** The size of *s*, a natural number. */
+  def measure(s: Self): Int
+}
+
+/** The state monad transformer: computations that read and update a state *S*, with the effects of a monad *M* on 𝒮.
+  *
+  * Represents a monad *T* on 𝒮, where
+  *   - *T*[*A*] = *S* → *M*[*A* × *S*] ([[StateT.FunctorOf]])
+  *   - *η*(*a*) = *s* ↦ *η*′(*a*,*s*)
+  *   - *μ*(*m*) = *s* ↦ (((*n*,*s*′) ↦ *n*(*s*′))\*′)(*m*(*s*)): run the outer computation, then the inner one from the
+  *     state it left
+  *
+  * It is the monad of the adjunction (− × *S*) ⊣ (*S* ⇒ −), with the effects of *M* in between.
+  */
+open class StateT[S](tracked val M: Monad.On[Total.type]) extends Monad(StateT.FunctorOf[S](M)) {
+
+  def unit[A: Type]: A -> S -> M.M[(A, S)] = {
+    a => s => M.unit[(A, S)]((a, s))
+  }
+
+  def flatten[A: Type]: (S -> M.M[(S -> M.M[(A, S)], S)]) -> S -> M.M[(A, S)] = {
+    m => s => M.bind[(S -> M.M[(A, S)], S), (A, S)]((n, s2) => n(s2))(m(s))
+  }
+}
 
 object StateT {
 
-  /** Every functor *F* induces a functor *T*, where
-    *   - *T*[*A*] = *S* → *F*[*A* × *S*] is the object part
-    *   - *T*(*f*) = - ; *F*(*f* × *id*) is the morphism part
-    */
-  given StateTIsFunctor: [S, K[_]] => (K: K is Functor) => StateT[S, K] is Functor = new Functor {
-    type Self = StateT[S, K]
+  /** The endofunctor of the state transformer: *S* → *M*[− × *S*], which maps the result and keeps the state. */
+  final class FunctorOf[S](tracked val M: Monad.On[Total.type]) extends Endofunctor(Total) {
+    type Self[A] = S -> M.M[(A, S)]
 
-    import K.map
+    def objects[A: Type]: (S -> M.M[(A, S)]) is Type = {
+      Type.TIsType
+    }
 
-    def map[A, B](fa: StateT[S, K][A])(f: A => B): StateT[S, K][B] = {
-      s => fa(s).map((result, state) => (result = f(result), state = state))
+    def map[A: Type, B: Type](f: A -> B): (S -> M.M[(A, S)]) -> S -> M.M[(B, S)] = {
+      m => s => M.map[(A, S), (B, S)]((a, s2) => (f(a), s2))(m(s))
     }
   }
 
-  /** Every monad *M* induces a monad *T*, where
-    *   - *T*[*A*] = *S* → *M*[*A* × *S*] are the elements
-    *   - *η*(*a*) = ⟨*a*,*id*⟩ ; *η*' is the unit
-    *   - *μ*(*t*) = *t* ; *M*(*ev*) ; *μ*' is the multiplication
+  /** A classical structure on *M* lifts to the state transformer, where
+    *   - *m̄* and *m̄*ᶜ keep the state they started with: they test without consuming
+    *   - *m* ⊳ *n* runs *n* from the original state where *m* fails: it backtracks
+    *   - *attempt*(*m*) keeps the new state on success and the original state on failure
+    */
+  open class ClassicalOf[S](tracked val T: StateT[S], tracked val R: ClassicalMonad { val M: T.M.type })
+      extends ClassicalMonad(T) {
+
+    def restrict[A](m: S -> T.M.M[(A, S)]): S -> T.M.M[(Unit, S)] = {
+      s => T.M.map[Unit, (Unit, S)](_ => ((), s))(R.restrict(m(s)))
+    }
+
+    def zero[A]: S -> T.M.M[(A, S)] = {
+      _ => R.zero
+    }
+
+    def complement[A](m: S -> T.M.M[(A, S)]): S -> T.M.M[(Unit, S)] = {
+      s => T.M.map[Unit, (Unit, S)](_ => ((), s))(R.complement(m(s)))
+    }
+
+    def orElse[A](m: S -> T.M.M[(A, S)], n: -> S -> T.M.M[(A, S)]): S -> T.M.M[(A, S)] = {
+      s => R.orElse(m(s), n(s))
+    }
+
+    override def attempt[A](m: S -> T.M.M[(A, S)]): S -> T.M.M[(Option[A], S)] = {
+      s =>
+        T.M.map[Option[(A, S)], (Option[A], S)] {
+          case Some((a, s2)) => (Some(a), s2)
+          case None          => (None, s)
+        }(R.attempt(m(s)))
+    }
+  }
+
+  /** Guarded iteration for the state transformer over a classical monad, where
+    *   - *f*† runs *f* while it returns *X*, and fails as soon as a step returns *X* without decreasing the measure of
+    *     the state
     *
-    * Here *η*' and *μ*' are the unit and the multiplication of *M* and *ev*: *T*[*A*] × *S* → *M*[*A* × *S*] is the
-    * underlying function.
+    * Every run stops, since the measure cannot decrease forever. For guarded *f*, whose steps returning *X* always
+    * decrease the measure, *f*† is the iteration of *f* and satisfies the laws of [[Elgot]].
     */
-  given StateTIsMonad: [S, K[_]] => (K: K is Monad) => StateT[S, K] is Monad = {
-    new Monad {
-      type Self = StateT[S, K]
+  open class GuardedIteration[S](tracked val T: StateT[S], tracked val R: ClassicalMonad { val M: T.M.type })(
+    using size: S is Measure
+  ) extends ElgotMonad(T) {
 
-      override given MonadFunctor: StateT[S, K] is Functor = StateTIsFunctor[S, K](using K.SelfIsFunctor)
-
-      import K.flatMap
-
-      def unit[A](a: A): StateT[S, K][A] = {
-        s => K.unit((result = a, state = s))
+    def iterate[A, X](f: X -> S -> T.M.M[(Either[A, X], S)]): X -> S -> T.M.M[(A, S)] = {
+      def loop(x: X, s: S): T.M.M[(A, S)] = {
+        T.M.bind[(Either[A, X], S), (A, S)] {
+          case (Left(a), s2)                                         => T.M.unit[(A, S)]((a, s2))
+          case (Right(x2), s2) if size.measure(s2) < size.measure(s) => loop(x2, s2)
+          case _                                                     => R.zero
+        }(f(x)(s))
       }
-
-      def flatten[A](m: StateT[S, K][StateT[S, K][A]]): StateT[S, K][A] = {
-        s => m(s).flatMap((result, state) => result(state))
-      }
+      x => s => loop(x, s)
     }
   }
 
-  /** Every **V**-valued functor *F* with pointwise function types induces a **V**-valued state transformer *T*, where
-    *   - *T*[*A*] = *S* → *F*[*A* × *S*] are in **V**
-    */
-  given StateTIsValued: [S, K[_], O <: Any { type Self }] => (
-    K: K is (Valued over O),
-    P: O is Pointwise,
-  ) => StateT[S, K] is (Valued over O) = {
-    new Valued {
-      type Self = StateT[S, K]
-      type Over = O
-
-      override given ValuedFunctor: StateT[S, K] is Functor = StateTIsFunctor[S, K](using K.SelfIsFunctor)
-
-      override given FIsV: [A] => (Self[A] is Over) = {
-        P.FunctionIsV[S, K[(result: A, state: S)]](using K.FIsV[(result: A, state: S)])
-      }
-    }
-  }
-
-  /** Every restriction monad *M* with state *S* induces a restriction monad *T*, where
-    *   - *T*[*A*] = *S* → *M*[*A* × *S*] are the elements
-    *   - *t̄* = *s* ↦ *M*(_ ↦ ⟨(),*s*⟩)(*t*(*s*)̄') is the restriction operation
+  /** Guarded recursion for the Kleisli arrows of the state transformer over a classical monad, where
+    *   - *fix*(*f*) runs *f* applied to itself, and a call of the argument fails unless the measure of the state has
+    *     decreased since the enclosing call began
     *
-    * Here *m̄'* is the restriction operation of *M*.
+    * Every run stops, since the nesting of calls is bounded by the measure. For guarded *f*, which call their argument
+    * only after decreasing the measure, *fix*(*f*) = *f*(*fix*(*f*)). A left-recursive *f* calls its argument without
+    * progress, so that call fails: its other alternatives still run. The arrows of a family share the bound, so a call
+    * of any of them must follow progress since the enclosing call of any other.
     */
-  given StateTIsRestrictionMonad: [S, K[_]] => (K: K is RestrictionMonad) => StateT[S, K] is RestrictionMonad = {
-    new RestrictionMonad {
-      type Self = StateT[S, K]
+  open class GuardedRecursion[S](
+    tracked override val P: Kleisli { val M: StateT[S] },
+    tracked val R: ClassicalMonad { val M: P.M.M.type },
+  )(using size: S is Measure)
+      extends Recursion(P) {
 
-      override given RestrictionMonadMonad: StateT[S, K] is Monad = StateTIsMonad[S, K](using K.SelfIsMonad)
-
-      import K.SelfIsMonad.SelfIsFunctor.map
-      import K.restrict
-
-      def restrict[A](m: StateT[S, K][A]): StateT[S, K][Unit] = {
-        state => m(state).restrict.map(_ => (result = (), state = state))
+    def fix[A: Type, B: Type](f: (A -> S -> P.M.M.M[(B, S)]) -> (A -> S -> P.M.M.M[(B, S)]))
+      : A -> S -> P.M.M.M[(B, S)] = {
+      def knot(bound: Int): A -> S -> P.M.M.M[(B, S)] = {
+        a => s =>
+          val m = size.measure(s)
+          if m < bound then f(knot(m))(a)(s) else R.zero
       }
+      knot(Int.MaxValue)
     }
-  }
 
-  /** Every Elgot monad *M* with state *S* induces an Elgot monad *T*, where
-    *   - *t*† = *s* ↦ *f*(*a*)(*s*)†' is the iteration operation
-    *
-    * Here *m*†' is the iteration operation of *M*.
-    */
-  given StateTIsElgotMonad: [S, K[_]] => (K: K is ElgotMonad) => StateT[S, K] is ElgotMonad = {
-    new ElgotMonad {
-      type Self = StateT[S, K]
-
-      override given ElgotMonadMonad: StateT[S, K] is Monad = StateTIsMonad[S, K](using K.SelfIsMonad)
-
-      import K.SelfIsMonad.SelfIsFunctor.map
-
-      def iterate[A, B](f: A => StateT[S, K][Either[B, A]]): A => StateT[S, K][B] = {
-        val step: ((result: A, state: S)) => K[Either[(result: B, state: S), (result: A, state: S)]] = {
-          case (result, state) =>
-            f(result)(state).map {
-              case (Left(b), state2)  => Left((result = b, state = state2))
-              case (Right(a), state2) => Right((result = a, state = state2))
-            }
-        }
-
-        a => s => K.iterate(step)((result = a, state = s))
+    def fixFamily[A: Type, B: Type](@unused n: Int)(
+      f: (Int -> A -> S -> P.M.M.M[(B, S)]) -> Int -> A -> S -> P.M.M.M[(B, S)]
+    ): Int -> A -> S -> P.M.M.M[(B, S)] = {
+      def knots(bound: Int): Int -> A -> S -> P.M.M.M[(B, S)] = {
+        i => a => s =>
+          val m = size.measure(s)
+          if m < bound then f(knots(m))(i)(a)(s) else R.zero
       }
+      knots(Int.MaxValue)
     }
   }
 }

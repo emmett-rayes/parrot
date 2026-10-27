@@ -1,140 +1,94 @@
 package parrot
 package category
 
-import scala.annotation.targetName
-
-/** A monad over **Type**.
+/** A monad on a category **K**: structure on an endofunctor *M*, a monoid in the endofunctors on **K**.
   *
-  * Represents a monoid in the monoidal category of endofunctors **End** over **Type**, where
-  *   - *Id*, the identity functor, is the unit object of **End**
-  *   - ∘ is the tensor product of **End**
-  *   - *η*: *Id* ⇒ *M* is the unit of the monoid
-  *   - *μ*: *M* ∘ *M* ⇒ *M* is the multiplication of the monoid, presented here via `flatten`
+  * Represents a monad (*M*, *η*, *μ*), where
+  *   - *M* = `M` is the endofunctor [[F]], with action *M*(*f*) = `map`
+  *   - *η*: *A* → *M*[*A*], the unit, returns a value without effect
+  *   - *μ*: *M*[*M*[*A*]] → *M*[*A*], the multiplication `flatten`, merges two layers of effects into one
+  *
+  * The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*] is derived (`bind`); its arrows *A*
+  * → *M*[*B*] form the [[Kleisli]] promonad. The unit and multiplication are the unit and multiplication of a monoid
+  * (compare [[Monoid]]), with composition of endofunctors as the tensor.
   */
-trait Monad {
-  type Self[_]: Functor as MonadFunctor
-  final type M = Self
+abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
 
-  val SelfIsFunctor: Self is Functor = MonadFunctor
-
-  /** The unit natural transformation *η*: *Id* ⇒ *M*.
-    *
-    * Maps an element *a* in *A* to an element *η*(*a*) in *M*[*A*].
+  /** From the endofunctor: the category **K** the monad is on, the object part *M* = `M`, its action *M*(*f*) =
+    * `map(f)` on morphisms, and `objects`, which says that *M* maps objects to objects.
     */
-  def unit[A](a: A): M[A]
+  export F.{F as M, K, map, objects}
 
-  /** The multiplication natural transformation *μ*: *M* ∘ *M* ⇒ *M*.
-    *
-    * Maps an element *m* in *M*[*M*[*A*]] to an element *μ*(*m*) in *M*[*A*].
+  import K.{Obj, -->, >>>}
+
+  private given MIsObj: [A: Obj] => (M[A] is Obj) = objects[A]
+
+  /** The unit *η*: *A* → *M*[*A*]. */
+  def unit[A: Obj]: A --> M[A]
+
+  /** The multiplication *μ*: *M*[*M*[*A*]] → *M*[*A*]. */
+  def flatten[A: Obj]: M[M[A]] --> M[A]
+
+  /** The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*]. */
+  final def bind[A: Obj, B: Obj](f: A --> M[B]): M[A] --> M[B] = {
+    map(f) >>> flatten[B]
+  }
+
+  /** Laws that any `Monad` must satisfy beyond the [[Functor.FunctorLaws]] of *M*: those of a monoid, and the
+    * naturality of *η* and *μ*.
     */
-  def flatten[A](m: M[M[A]]): M[A]
-
-  extension [A](m: M[M[A]])
-    /** Infix extension for [[flatten]]. */
-    @targetName("flattenExt")
-    def flatten(using DummyImplicit): M[A] = {
-      Monad.this.flatten(m)
-    }
-
-  extension [A](m: M[A])
-    /** Maps a morphism *f*: *A* ⇒ *M*[*B*] over an element *m* in *M*[*A*] and flattens the result (sequences *m* with
-      * the continuation *f*).
-      */
-    def flatMap[B](f: A => M[B]): M[B] = {
-      Monad.this.flatten(m.map(f))
-    }
-
-  /** Laws that any `Monad` must satisfy. */
   object MonadLaws {
 
-    /** Left identity: *η*(*a*) >>= *f* = *f*(*a*) */
-    def leftIdentity[A, B](a: A, f: A => M[B])(using M[B] is Eq): Boolean = {
-      unit(a).flatMap(f) === f(a)
+    /** *μ* ∘ *η*_*M* = *id*
+      */
+    def leftUnit[A: Obj](using (M[A] --> M[A]) is Observable): Boolean = {
+      (unit[M[A]] >>> flatten[A]) =?= K.identity[M[A]]
     }
 
-    /** Right identity: *m* >>= *η* = *m* */
-    def rightIdentity[A](m: M[A])(using M[A] is Eq): Boolean = {
-      m.flatMap(unit) === m
+    /** *μ* ∘ *M*(*η*) = *id*
+      */
+    def rightUnit[A: Obj](using (M[A] --> M[A]) is Observable): Boolean = {
+      (map(unit[A]) >>> flatten[A]) =?= K.identity[M[A]]
     }
 
-    /** Associativity: (*m* >>= *f*) >>= *g* = *m* >>= (*a* ↦ *f*(*a*) >>= *g*) */
-    def associativity[A, B, C](m: M[A], f: A => M[B], g: B => M[C])(using M[C] is Eq): Boolean = {
-      m.flatMap(f).flatMap(g) === m.flatMap(a => f(a).flatMap(g))
+    /** *μ* ∘ *μ*_*M* = *μ* ∘ *M*(*μ*)
+      */
+    def associativity[A: Obj](using (M[M[M[A]]] --> M[A]) is Observable): Boolean = {
+      (flatten[M[A]] >>> flatten[A]) =?= (map(flatten[A]) >>> flatten[A])
     }
 
-    /** Unit naturality: *M*(*f*)(*η*(*a*)) = *η*(*f*(*a*)) */
-    def unitNaturality[A, B](a: A, f: A => B)(using M[B] is Eq): Boolean = {
-      unit(a).map(f) === unit(f(a))
+    /** *M*(*f*) ∘ *η* = *η* ∘ *f*
+      */
+    def unitNaturality[A: Obj, B: Obj](f: A --> B)(using (A --> M[B]) is Observable): Boolean = {
+      (unit[A] >>> map(f)) =?= (f >>> unit[B])
     }
 
-    /** Left unitality: *μ*(*η*(*m*)) = *m* */
-    def leftUnitality[A](m: M[A])(using M[A] is Eq): Boolean = {
-      unit(m).flatten === m
-    }
-
-    /** Right unitality: *μ*(*M*(*η*)(*m*)) = *m* */
-    def rightUnitality[A](m: M[A])(using M[A] is Eq): Boolean = {
-      m.map(unit).flatten === m
-    }
-
-    /** Multiplication naturality: *M*(*f*)(*μ*(*m*)) = *μ*(*M*(*M*(*f*))(*m*)) */
-    def multiplicationNaturality[A, B](m: M[M[A]], f: A => B)(using M[B] is Eq): Boolean = {
-      m.flatten.map(f) === m.map(_.map(f)).flatten
-    }
-
-    /** Multiplication associativity: *μ*(*μ*(*m*)) = *μ*(*M*(*μ*)(*m*)) */
-    def multiplicationAssociativity[A](m: M[M[M[A]]])(using M[A] is Eq): Boolean = {
-      m.flatten.flatten === m.map(_.flatten).flatten
+    /** *M*(*f*) ∘ *μ* = *μ* ∘ *M*(*M*(*f*))
+      */
+    def flattenNaturality[A: Obj, B: Obj](f: A --> B)(using (M[M[A]] --> M[B]) is Observable): Boolean = {
+      (flatten[A] >>> map(f)) =?= (map(map(f)) >>> flatten[B])
     }
   }
 }
 
 object Monad {
-  import scala.util.{Failure, Success, Try}
 
-  /** Summons the `Monad` instance of `M`. */
-  def apply[M[_]: Monad]: M is Monad = summon
+  /** The monads on **C**: refines the endofunctor, so that the category of a monad *M* is known as `M.K`. */
+  type On[C <: Category] = Monad { val F: Endofunctor { val K: C } }
 
-  /** `Option` is a monad *M*, where
-    *   - *M*[*A*] = *A* + 1 are the elements
-    *   - *η*(*a*) = *ι*₁(*a*) is the unit (`Some(a)`)
-    *   - *μ* = [*id*, *ι*₂] is the multiplication
-    *
-    * Here 1 is the unit type (`None`) and *ι*₁ and *ι*₂ are the injections into `Option`, i.e. `Some` and `None`.
+  /** `Option` is a monad on 𝒮, where
+    *   - *M*[*A*] = *A* + 1: a result or none
+    *   - *η* = `Some`
+    *   - *μ* keeps the inner result, or none
     */
-  given OptionIsMonad: Option is Monad {
-    override given MonadFunctor: Functor.OptionIsFunctor.type = Functor.OptionIsFunctor
-    override val SelfIsFunctor: Functor.OptionIsFunctor.type  = Functor.OptionIsFunctor
+  object OptionIsMonad extends Monad(Endofunctor.OptionIsEndofunctor) {
 
-    def unit[A](a: A): Option[A] = {
-      Some(a)
+    def unit[A: Type]: A -> Option[A] = {
+      a => Some(a)
     }
 
-    def flatten[A](m: Option[Option[A]]): Option[A] = m match {
-      case Some(a) => a
-      case None    => None
-    }
-  }
-
-  /** `Try` is a monad *M*, where
-    *   - *M*[*A*] = *A* + *E* are the elements
-    *   - *η*(*a*) = *ι*₁(*a*) is the unit (`Success(a)`)
-    *   - *μ* = [*id*, *ι*₂] is the multiplication
-    *
-    * Here *E* is the type of failures, i.e. `Throwable` and *ι*₁ and *ι*₂ are the injections into `Try`, i.e. `Success`
-    * and `Failure`.
-    */
-  given TryIsMonad: Try is Monad {
-    override given MonadFunctor: Functor.TryIsFunctor.type = Functor.TryIsFunctor
-    override val SelfIsFunctor: Functor.TryIsFunctor.type  = Functor.TryIsFunctor
-
-    def unit[A](a: A): Try[A] = {
-      Success(a)
-    }
-
-    def flatten[A](m: Try[Try[A]]): Try[A] = m match {
-      case Success(a) => a
-      case Failure(e) => Failure(e)
+    def flatten[A: Type]: Option[Option[A]] -> Option[A] = {
+      _.flatten
     }
   }
 }

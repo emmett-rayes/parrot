@@ -1,173 +1,125 @@
 package parrot
 package category
 
-import category.Enriched.over
-import category.Profunctor.on
-
-/** The Kleisli profunctor of a functor *F* on **Type**, where
-  *   - *K*[*A*, *B*] = *A* → *F*[*B*] is the object part
-  *   - *K*(*f*, *g*) = *f* ⨾ - ⨾ *F*(*g*) is the morphism part
+/** The Kleisli promonad of a monad *M* on **K**: effectful arrows *A* → *M*[*B*].
+  *
+  * Represents a promonad over **K**, where
+  *   - *P*(*A*,*B*) = **K**(*A*,*M*[*B*])
+  *   - *unit*(*f*) = *η* ∘ *f* embeds the pure morphisms
+  *   - *multiply*(*g*,*f*) = *g*\* ∘ *f* runs *f*, then *g* on its result
   */
-type Kleisli[F[_]] = [A, B] =>> A => F[B]
+open class Kleisli(tracked val M: Monad) extends Promonad(M.K) {
+  import M.K.{Obj, -->, >>>}
+
+  type Self[A, B] = A --> M.M[B]
+
+  private given MIsObj: [A: Obj] => (M.M[A] is Obj) = M.objects[A]
+
+  def unit[A: Obj, B: Obj](f: A --> B): A --> M.M[B] = {
+    f >>> M.unit[B]
+  }
+
+  def multiply[A: Obj, B: Obj, C: Obj](g: B --> M.M[C], f: A --> M.M[B]): A --> M.M[C] = {
+    f >>> M.bind(g)
+  }
+}
 
 object Kleisli {
 
-  /** Every functor *F* induces a Kleisli profunctor *K* on **Type**, where
-    *   - *K*[*A*, *B*] = *A* → *F*[*B*] is the object part
-    *   - *K*(*f*, *g*) = *f* ⨾ - ⨾ *F*(*g*) is the morphism part
-    */
-  given KleisliIsProfunctor: [F[_]: Functor] => Kleisli[F] is Profunctor on Function = new Profunctor {
-    type Self[A, B] = A => F[B]
-    type On         = Function
-
-    override given ProfunctorOnPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type           = Promonad.FunctionIsPromonad
-
-    def dimap[A, B, C, D](f: C => A, g: B => D)(p: A => F[B]): C => F[D] = {
-      c => p(f(c)).map(g)
-    }
-  }
-
-  /** Every monad *M* induces a Kleisli promonad *K* on **Type**, where
-    *   - *K*[*A*, *B*] = *A* → *M*[*B*] are the morphisms
-    *   - *η*(*f*) = *f* ⨾ *η*' is the unit
-    *   - *μ*(*q*, *p*) = *p* ⨾ *M*(*q*) ⨾ *μ*' = *a* ↦ *p*(*a*) >>= *q* is the multiplication
+  /** Every Kleisli promonad of a monad on 𝒮 is strong for products, where
+    *   - *first*(*p*) = (*a*,*c*) ↦ *M*(*b* ↦ (*b*,*c*))(*p*(*a*))
     *
-    * Here *η*' and *μ*' are the unit and the multiplication of *F*.
+    * The effect of *p* happens; *c* is passed along unchanged.
     */
-  given KleisliIsPromonad: [M[_]: Monad] => Kleisli[M] is Promonad on Function = new Promonad {
-    type Self[A, B] = A => M[B]
-    type On         = Function
-
-    override given ProfunctorOnPromonad: Promonad.FunctionIsPromonad.type = Promonad.FunctionIsPromonad
-    override val OnIsPromonad: Promonad.FunctionIsPromonad.type           = Promonad.FunctionIsPromonad
-
-    def unit[A, B](f: A => B): A => M[B] = {
-      a => M.unit(f(a))
-    }
-
-    def multiply[A, B, C](q: B => M[C], p: A => M[B]): A => M[C] = {
-      a => p(a).flatMap(q)
+  open class ProductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
+      extends Strong(P, Total.Product) {
+    def first[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): ((A, C)) -> P.M.M[(B, C)] = {
+      (a, c) => P.M.map[B, (B, C)](b => (b, c))(p(a))
     }
   }
 
-  /** Every functor *F* induces a cartesian strong Kleisli profunctor *K* on **Type**, where
-    *   - *first*(*p*) = (*a*, *c*) ↦ *F*(− × *c*)(*p*(*a*)) is the left strength
-    *   - *second*(*p*) = (*c*, *a*) ↦ *F*(*c* × −)(*p*(*a*)) is the right strength
-    */
-  given KleisliIsStrong: [F[_]: Functor] => Kleisli[F] is Strong.on[Function, Unit, Tuple2] = new Strong {
-    type Self[A, B] = A => F[B]
-
-    override given StrongProfunctor: (Kleisli[F] is Profunctor on Function) = KleisliIsProfunctor[F]
-    override val SelfIsProfunctor: Kleisli[F] is Profunctor on Function     = KleisliIsProfunctor[F]
-    override val OnIsMonoidal: Monoidal.FunctionIsMonoidal.type             = Monoidal.FunctionIsMonoidal
-
-    def first[A, B, C](p: A => F[B]): ((A, C)) => F[(B, C)] = {
-      (a, c) => p(a).map((_, c))
-    }
-
-    def second[A, B, C](p: A => F[B]): ((C, A)) => F[(C, B)] = {
-      (c, a) => p(a).map((c, _))
-    }
-  }
-
-  /** The Kleisli promonad inherits the coproducts of **Type**, where
-    *   - *ι*₁ = *a* ↦ *η*(Left(*a*)) is the left injection
-    *   - *ι*₂ = *b* ↦ *η*(Right(*b*)) is the right injection
-    *   - [*f*, *g*] = *e* ↦ *e*.fold(*f*, *g*) is the copairing morphism
-    *   - *absurd* = *id* is the unique morphism from the initial object
+  /** Every Kleisli promonad of a monad on 𝒮 is strong for coproducts, where
+    *   - *first*(*p*) = [*M*(*ι*₁) ∘ *p*,*η* ∘ *ι*₂]
     *
-    * Here *η* is the unit of *F*.
+    * On the left the arrow runs; on the right the value passes through without effect.
     */
-  given KleisliIsCocartesian: [M[_]: Monad] => Kleisli[M] is Cocartesian.`with`[Nothing, Either] = new Cocartesian {
-    type Self[A, B] = A => M[B]
-    type Z          = Nothing
-    type Tensor     = Either
-
-    override given CocartesianPromonad: Kleisli[M] is Promonad on Function = KleisliIsPromonad[M]
-
-    def absurd[A]: Nothing => M[A] = {
-      n => n
-    }
-
-    def left[A, B]: A => M[Either[A, B]] = {
-      a => M.unit(Left(a))
-    }
-
-    def right[A, B]: B => M[Either[A, B]] = {
-      b => M.unit(Right(b))
-    }
-
-    def sum[A, B, C](f: A => M[C], g: B => M[C]): Either[A, B] => M[C] = {
-      _.fold(f, g)
+  open class CoproductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
+      extends Strong(P, Total.Coproduct) {
+    def first[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): Either[A, C] -> P.M.M[Either[B, C]] = {
+      case Left(a)  => P.M.map[B, Either[B, C]](b => Left(b))(p(a))
+      case Right(c) => P.M.unit[Either[B, C]](Right(c))
     }
   }
 
-  /** Hom-sets are function types and thus have fixed points by eta-expansion: fix(*f*) = *g* where *g* = *f*(*a* ↦
-    * *g*(*a*)).
+  /** The restriction structure of a Kleisli promonad over a restriction monad, where
+    *   - *p̄*(*a*) = *M*(_ ↦ *a*)(*p*(*a*)‾): run the test of *p*, then return the input
     */
-  given KleisliIsFixedEnriched
-    : [M[_]: Monad] => Kleisli[M] is Enriched over Fixed.in[Function, Unit, LazyTuple2, Function] = new Enriched {
-    type Self[A, B] = A => M[B]
-    type Over       = Fixed.in[Function, Unit, LazyTuple2, Function]
+  open class RestrictionOf(
+    tracked override val P: Kleisli { val M: Monad.On[Total.type] },
+    tracked val R: RestrictionMonad { val M: P.M.type },
+  ) extends Restriction(P) {
 
-    override given EnrichedPromonad: Kleisli[M] is Promonad on Function = KleisliIsPromonad[M]
-
-    override given HomIsV: [A, B] => ((A => M[B]) is Fixed.in[Function, Unit, LazyTuple2, Function]) =
-      Fixed.FunctionIsFixed[A, M[B]]
-  }
-
-  /** Every restriction monad *M* induces a restriction Kleisli promonad, where
-    *   - *p̄* = *a* ↦ *F*(_ ↦ *a*)(*p*(*a*)̄') is the restriction operation
-    *
-    * Here *m̄'* is the restriction operation of *M*.\
-    */
-  given KleisliIsRestriction: [M[_]: RestrictionMonad] => Kleisli[M] is Restriction = {
-    import M.SelfIsMonad.SelfIsFunctor.*
-
-    given M.SelfIsMonad.type = M.SelfIsMonad
-
-    new Restriction {
-      type Self[A, B] = A => M[B]
-
-      override given RestrictionPromonad: Kleisli[M] is Promonad on Function = KleisliIsPromonad[M]
-
-      def restrict[A, B](p: A => M[B]): A => M[A] = {
-        a => p(a).restrict.map(_ => a)
-      }
+    def restrict[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
+      a => P.M.map[Unit, A](_ => a)(R.restrict(p(a)))
     }
   }
 
-  given KleisliIsValuedEnriched
-    : [M[_]: {Monad, Valued as V}] => (P: V.V is Pointwise) => Kleisli[M] is Enriched over V.V =
-    new Enriched {
-      type Self[A, B] = A => M[B]
-      type Over       = V.V
+  /** The classical structure of a Kleisli promonad over a classical monad, where
+    *   - 0 = _ ↦ 0′, *p̄*ᶜ(*a*) = *M*(_ ↦ *a*)(*p*(*a*)‾ᶜ′) and (*p* ⊳ *q*)(*a*) = *p*(*a*) ⊳′ *q*(*a*)
+    *   - *attempt*(*p*)(*a*) tags the result of *p*(*a*), or returns *a* on the right where *p*(*a*) fails
+    */
+  open class ClassicalOf(
+    tracked override val P: Kleisli { val M: Monad.On[Total.type] },
+    tracked val R: ClassicalMonad { val M: P.M.type },
+  ) extends Classical(P, Total.Coproduct) {
 
-      override given EnrichedPromonad: Kleisli[M] is Promonad on Function = KleisliIsPromonad[M]
-
-      override given HomIsV: [A, B] => ((A => M[B]) is V) = {
-        P.FunctionIsV[A, M[B]]
-      }
+    def restrict[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
+      a => P.M.map[Unit, A](_ => a)(R.restrict(p(a)))
     }
 
-  /** Every Elgot monad *M* induces an Elgot iteration on the Kleisli category, where
-    *   - *p*† = *p*†' is the iteration operation
-    *
-    * Here *p*†' is the iteration operation of *M*.
-    */
-  given KleisliIsElgot: [F[_]: ElgotMonad] => Kleisli[F] is Elgot.`with`[Nothing, Either] = {
-    given F.SelfIsMonad.type = F.SelfIsMonad
+    def zero[A: Type, B: Type]: A -> P.M.M[B] = {
+      _ => R.zero[B]
+    }
 
-    new Elgot {
-      type Self[A, B] = A => F[B]
+    def complement[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
+      a => P.M.map[Unit, A](_ => a)(R.complement(p(a)))
+    }
 
-      override given ElgotCocartesian: Kleisli[F] is Cocartesian.`with`[Nothing, Either] = KleisliIsCocartesian[F]
-      override val SelfIsCocartesian: Kleisli[F] is Cocartesian.`with`[Nothing, Either]  = ElgotCocartesian
+    def orElse[A: Type, B: Type](p: A -> P.M.M[B], q: A -> P.M.M[B]): A -> P.M.M[B] = {
+      a => R.orElse(p(a), q(a))
+    }
 
-      def dagger[A, C](p: C => F[Either[A, C]]): C => F[A] = {
-        F.iterate(p)
-      }
+    override def attempt[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[Either[B, A]] = {
+      a =>
+        P.M.map[Option[B], Either[B, A]] {
+          case Some(b) => Left(b)
+          case None    => Right(a)
+        }(R.attempt(p(a)))
     }
   }
+
+  /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */
+  open class ElgotOf(
+    tracked override val S: Strong {
+      val P: Kleisli { val M: Monad.On[Total.type] }; val M: Total.Coproduct.type
+    },
+    tracked val E: ElgotMonad { val M: S.P.M.type },
+  ) extends Elgot(S) {
+
+    def iterate[A: Type, X: Type](p: X -> S.P.M.M[Either[A, X]]): X -> S.P.M.M[A] = {
+      E.iterate(p)
+    }
+  }
+
+  /** The Kleisli promonad of `Option` on 𝒮: functions that may fail. */
+  object OptionKleisli extends Kleisli(Monad.OptionIsMonad)
+
+  /** Functions that may fail, run side by side on pairs. */
+  object OptionProduct extends ProductStrength(OptionKleisli)
+
+  /** Functions that may fail, run on one side of a tagged union. */
+  object OptionCoproduct extends CoproductStrength(OptionKleisli)
+
+  /** Functions that may fail: a classical restriction category, with failure as zero and ordered choice as override. */
+  object OptionDomains extends ClassicalOf(OptionKleisli, ClassicalMonad.OptionIsClassical)
 }
