@@ -80,7 +80,7 @@ time of writing, JSON_checker 34/34). Use it after touching `StrictParser`, `Sca
 -language:experimental.saferExceptions
 -language:strictEquality                   # == needs CanEqual
 -Yexplicit-nulls                           # Java APIs return T | Null
--Wvalue-discard -Wnonunit-statement   # -Wsafe-init and -Wunused:all are off (rules 11 and 14 of §4.1)
+-Wunused:privates,locals,params,patvars -Wvalue-discard -Wnonunit-statement   # -Wunused:imports is off (rule 14 of §4.1); -Wsafe-init is off (rule 11 of §4.1)
 -deprecation -feature -unchecked -explain -explain-types
 ```
 
@@ -331,7 +331,7 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - **`-Wnonunit-statement`**: in tests, every non-final `assert` is written `val _ = assert(...)`.
 - **`-language:strictEquality`**: `==` needs a `CanEqual`. Laws use `=?=`/`===`, not `==`.
 - **`-Yexplicit-nulls`**: Java APIs return `T | Null`; use `.nn`.
-- **`-Wunused:all`** is off (rule 14 of §4.1).
+- **`-Wunused`**: `-Wunused:privates,locals,params,patvars` is enabled; `imports` is off (rule 14 of §4.1).
 - **`-Wsafe-init`** is off (rule 11 of §4.1); still use `lazy val` for forward references.
 
 ### Documentation style

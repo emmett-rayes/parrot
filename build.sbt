@@ -7,7 +7,8 @@ lazy val root = rootProject
     scalacOptions ++= Seq(
       "-Wnonunit-statement",
       // "-Wsafe-init", // false positives on tracked parameters forwarded to a parent class (docs/DESIGN.md §10)
-      // "-Wunused:all", // false positives on renamed type imports (docs/DESIGN.md §10)
+      // "-Wunused:imports", // false positives on renamed type imports (docs/DESIGN.md §10)
+      "-Wunused:privates,locals,params,patvars",
       "-Wvalue-discard",
       "-Yexplicit-nulls",
       "-deprecation",
