@@ -12,6 +12,10 @@ import scala.util.matching.Regex
   * Atoms are matched greedily without backtracking. This agrees with [[Regex]] semantics because [[Scanner.compile]]
   * only accepts expressions where every quantified atom is disjoint from all subsequent atoms, so no character it
   * consumes could ever be matched by a later atom.
+  *
+  * Like [[Regex]], the scanner matches code points, not `Char`s: a surrogate pair is one character. Patterns may not
+  * contain surrogates themselves, so an atom's set contains the high surrogates exactly when the atom matches the
+  * supplementary code points (`.`, negated classes and escapes); such an atom consumes a whole pair.
   */
 final class Scanner private (atoms: Array[Scanner.Atom]) {
 
@@ -19,9 +23,19 @@ final class Scanner private (atoms: Array[Scanner.Atom]) {
   def scan(source: String, offset: Int): Int = {
     val length = source.length
 
+    /** The length of the code point at `pos`: 2 for a surrogate pair, otherwise 1. */
+    def width(pos: Int): Int = {
+      if Character.isHighSurrogate(source.charAt(pos)) && pos + 1 < length
+        && Character.isLowSurrogate(source.charAt(pos + 1))
+      then 2
+      else 1
+    }
+
+    /** Consumes up to `max` code points in `set` from `pos`, and returns where it stopped. */
     @tailrec
-    def advance(set: CharSet, pos: Int, limit: Int): Int = {
-      if pos < limit && set.contains(source.charAt(pos)) then advance(set, pos + 1, limit)
+    def advance(set: CharSet, pos: Int, count: Int, max: Int): Int = {
+      if count < max && pos < length && set.contains(source.charAt(pos)) then
+        advance(set, pos + width(pos), count + 1, max)
       else pos
     }
 
@@ -29,10 +43,9 @@ final class Scanner private (atoms: Array[Scanner.Atom]) {
     def loop(i: Int, pos: Int): Int = {
       if i >= atoms.length then pos
       else {
-        val atom  = atoms(i)
-        val limit = if atom.max == 1 then math.min(length, pos + 1) else length
-        val end   = advance(atom.set, pos, limit)
-        if end - pos < atom.min then -1
+        val atom = atoms(i)
+        val end  = advance(atom.set, pos, 0, atom.max)
+        if end == pos && atom.min > 0 then -1
         else loop(i + 1, end)
       }
     }
@@ -50,8 +63,19 @@ final class Scanner private (atoms: Array[Scanner.Atom]) {
 
 object Scanner {
 
-  /** A single-character pattern `set` repeated between `min` and `max` times. */
+  /** A single-character pattern `set` repeated between `min` (0 or 1) and `max` times. */
   final private case class Atom(set: CharSet, min: Int, max: Int)
+
+  /** Where a match of `regex` that starts at `offset` in `source` ends, or `-1` if there is none.
+    *
+    * The match is taken in context, as a parser sees the input: `^` and `$` match only at the start and end of the
+    * whole input, and lookbehind and `\b` see the characters before `offset`. The input is not copied.
+    */
+  def matchAt(regex: Regex, source: String, offset: Int): Int = {
+    val matcher = regex.pattern.matcher(source).nn.region(offset, source.length).nn
+    val _       = matcher.useTransparentBounds(true).nn.useAnchoringBounds(false)
+    if matcher.lookingAt() then matcher.end() else -1
+  }
 
   /** Compiles `regex` into a [[Scanner]] if it belongs to the supported fragment. */
   def compile(regex: Regex): Option[Scanner] = {
@@ -105,7 +129,9 @@ object Scanner {
         val hex = source.slice(pos, pos + 4)
         if hex.length != 4 || !hex.forall(hexDigit.contains) then throw Unsupported
         pos += 4
-        hex.foldLeft(0)((n, d) => (n << 4) + d.asDigit).toChar
+        val char = hex.foldLeft(0)((n, d) => (n << 4) + d.asDigit).toChar
+        if Character.isSurrogate(char) then throw Unsupported
+        char
       case c if !c.isLetterOrDigit => c
       case _                       => throw Unsupported
     }
@@ -168,6 +194,7 @@ object Scanner {
 
     /** Compiles `source` into a [[Scanner]], or throws [[Unsupported]]. */
     def result(): Scanner = {
+      if source.exists(Character.isSurrogate) then throw Unsupported
       if source.startsWith("(?s)") then {
         dotAll = true
         pos = 4
