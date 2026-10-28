@@ -13,10 +13,10 @@ final case class Expectation(label: String, context: List[String]) derives CanEq
   }
 }
 
-/** What a parse expected at the furthest `position` where something failed: the diagnostics of a parse.
+/** What a parse expected at the furthest position where something failed: the diagnostics of a parse.
   *
   * Diagnostics form a join-semilattice, where
-  *   - ⊥ = (−1, ∅): nothing was expected
+  *   - ⊥ = (−1,∅): nothing was expected
   *   - (*p*,*X*) ⊔ (*q*,*Y*) keeps the further position, and unites the expectations at equal positions
   *
   * The laws of parsers force most of this structure: ordered choice is associative only if ⊔ is, and choice distributes

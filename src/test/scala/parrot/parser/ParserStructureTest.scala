@@ -184,7 +184,7 @@ object ParserSteps {
       Grammars.interpret(alg)(term).map(lift(out)) |> (Grammars.consume(alg)("(") *> rec <* Grammars.consume(alg)(")"))
   }
 
-  /** A left-recursive rule: `rule = rule "a" | term`. */
+  /** A left-recursive rule: *rule* = *rule* "a" | *term*. */
   def leftRecursive(alg: ParserAlgebra)(term: Term): alg.P[Int, Int] -> alg.P[Int, Int] = {
     import alg.*
     rec => (rec <* Grammars.consume(alg)("a")).map(lift(_ + 1)) |> Grammars.interpret(alg)(term)

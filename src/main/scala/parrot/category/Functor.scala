@@ -4,10 +4,8 @@ package category
 /** A functor *F*: **C** → **D**.
   *
   * Represents a functor, where
-  *   - *F*[*A*] = `F[A]` = `Self[A]` is the object part, a type constructor
+  *   - *F*[*A*] is the object part, a type constructor
   *   - *F*(*f*): *F*[*A*] → *F*[*B*] is the morphism part, a program
-  *
-  * Morphisms of **C** are written `A --> B`, morphisms of **D** `A ->> B`.
   */
 abstract class Functor(tracked val C: Category, tracked val D: Category) extends caps.Pure {
   import C.-->

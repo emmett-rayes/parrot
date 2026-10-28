@@ -7,9 +7,9 @@ import scala.annotation.targetName
   * object.
   *
   * Represents a category with finite products, where
-  *   - *A* ⊗ *B* is the product, with projections *π*₁ = `fst` and *π*₂ = `snd`
-  *   - ⟨*f*,*g*⟩ = `pair`, infix `&&&`, is the unique morphism with *π*₁ ∘ ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
-  *   - *I* is terminal, with the unique morphism !: *A* → *I* = `discard`
+  *   - *A* ⊗ *B* is the product, with projections *π*₁ and *π*₂
+  *   - ⟨*f*,*g*⟩ is the unique morphism with *π*₁ ∘ ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
+  *   - *I* is terminal, with the unique morphism !: *A* → *I*
   *   - Δ = ⟨*id*,*id*⟩ copies and ! deletes
   *
   * The unitors, the associator and the braiding are derived from the projections and pairing.

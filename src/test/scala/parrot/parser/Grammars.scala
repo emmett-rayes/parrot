@@ -157,7 +157,7 @@ object FnsFixture extends Fixture("Fn", Fns) {
   */
 object ParserGen {
 
-  /** Parsers *X* → *Y*: *X* is hashed to an `Int`, a random grammar runs, and its result is mapped to *Y*. */
+  /** Parsers *X* → *Y*: *X* is hashed to an integer, a random grammar runs, and its result is mapped to *Y*. */
   def arrow[X: Sample, Y: Sample](alg: ParserAlgebra): Gen[alg.P[X, Y]] = {
     import alg.*
     for {

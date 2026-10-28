@@ -48,7 +48,7 @@ object Descent {
         }
   }
 
-  /** Feedback steps on *A* + `Int`: from *A*, exit or enter the loop anywhere; inside, exit or move closer to 0. */
+  /** Feedback steps on *A* + ℤ: from *A*, exit or enter the loop anywhere; inside, exit or move closer to 0. */
   def loop[A: Sample, B: Sample]: Gen[Either[A, Int] -> Either[B, Int]] = {
     for {
       exit  <- Sample.function[A, Either[B, Int]]
@@ -59,7 +59,7 @@ object Descent {
     }
   }
 
-  /** Feedback steps on *A* + (`Int` + `Int`), ordered lexicographically: the left loop may move to the right one. */
+  /** Feedback steps on *A* + (ℤ + ℤ), ordered lexicographically: the left loop may move to the right one. */
   def loop2[A: Sample, B: Sample]: Gen[Either[A, Either[Int, Int]] -> Either[B, Either[Int, Int]]] = {
     for {
       exit  <- Sample.function[A, Either[B, Either[Int, Int]]]
@@ -194,16 +194,16 @@ abstract class TracedSpec(
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X + Y] = tensor[X, Y]
 
-  /** Feedback steps on *A* ⊗ `Int` whose loop[T1, T2] stop. */
+  /** Feedback steps on *A* ⊗ ℤ whose loops stop. */
   def loop[A: Sample, B: Sample]: Gen[P[A + Int, B + Int]]
 
-  /** Feedback steps on *A* ⊗ (`Int` ⊗ `Int`) whose loop[T1, T2] stop. */
+  /** Feedback steps on *A* ⊗ (ℤ ⊗ ℤ) whose loops stop. */
   def loop2[A: Sample, B: Sample]: Gen[P[A + (Int + Int), B + (Int + Int)]]
 
   /** Arrows on *A* ⊗ *I*, which cannot loop. */
   def straight[A: Sample, B: Sample]: Gen[P[A + T.S.M.I, B + T.S.M.I]]
 
-  /** A pure map that keeps loop[T1, T2] stopping. */
+  /** A pure map that keeps loops stopping. */
   def shrink: Int --> Int
 
   /** Whether the trace is guarded: then it rejects feedback without progress, such as the braiding. */

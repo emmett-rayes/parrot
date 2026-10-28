@@ -1,11 +1,10 @@
 package parrot
 package category
 
-/** A law-checking oracle for a preorder ⊑ on *Self*: the inequational counterpart of [[Observable]].
+/** A law-checking oracle for a preorder: the inequational counterpart of [[Observable]].
   *
-  * Represents a test of *a* ⊑ *b*, where
-  *   - `below` returns `false` only if *a* ⊑ *b* fails for some observation
-  *   - `<~` is its infix form
+  * Represents a test of order, where
+  *   - ⊑ is a decidable preorder that fails only if some observation orders the two values apart
   *
   * Inequational laws, such as "running a parser before a failure only adds information", are checked with it.
   */
@@ -42,7 +41,7 @@ trait Preorder extends caps.Pure {
       (a <~ a2) && (a2 <~ a)
     }
 
-    /** If *a* =?= *b*, then *a* ⊑ *b*: an equation that holds also holds as an inequation.
+    /** If *a* ≟ *b*, then *a* ⊑ *b*: an equation that holds also holds as an inequation.
       *
       * @note The `Observable` must make the observations of the preorder, at the same sample points: agreement at some
       *   points says nothing about the order at others.

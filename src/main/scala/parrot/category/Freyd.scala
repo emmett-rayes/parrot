@@ -8,9 +8,9 @@ import scala.annotation.targetName
   * Represents a strong promonad, where
   *   - *first*(*unit*(*f*)) = *unit*(*f* ⊗ *id*): pure morphisms act as their tensor
   *   - *first*(*q* ∘ *p*) = *first*(*q*) ∘ *first*(*p*): the strength respects sequencing
-  *   - *p* `**` *q* = *second*(*q*) ∘ *first*(*p*) runs *p*, then *q*, side by side
+  *   - *p* ⋉ *q* = *second*(*q*) ∘ *first*(*p*) runs *p*, then *q*, side by side
   *
-  * `**` is not a bifunctor in general: running *q* first can give a different result when both have effects, so the
+  * ⋉ is not a bifunctor in general: running *q* first can give a different result when both have effects, so the
   * arrows form a premonoidal category. Pure arrows commute with every arrow ([[FreydLaws.centrality]]). A Freyd
   * category is not a new structure but the combination of a [[Promonad]] and a [[Strong]] profunctor, so it is a bundle
   * of the two with the laws that connect them.
@@ -21,7 +21,7 @@ final class Freyd(tracked val S: Strong { val P: Promonad }) {
   import S.P.K.{Obj, -->}
 
   extension [A: Obj, B: Obj](p: P[A, B])
-    /** Runs *p*, then *q*, side by side: *second*(*q*) ∘ *first*(*p*). */
+    /** Runs *p*, then *q*, side by side: *p* ⋉ *q* = *second*(*q*) ∘ *first*(*p*). */
     @targetName("parallelExt")
     final def **[C: Obj, D: Obj](q: P[C, D]): P[A * C, B * D] = {
       S.P.multiply(S.second[C, D, B](q), S.first[A, B, C](p))

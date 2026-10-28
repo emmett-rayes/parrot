@@ -52,7 +52,7 @@ object Kleisli {
   }
 
   /** The restriction structure of a Kleisli promonad over a restriction monad, where
-    *   - *p̄*(*a*) = *M*(_ ↦ *a*)(*p*(*a*)‾): run the test of *p*, then return the input
+    *   - *p̄*(*a*) = *M*(*x* ↦ *a*)(*p*(*a*)‾): run the test of *p*, then return the input
     */
   open class RestrictionOf(
     tracked override val P: Kleisli { val M: Monad.On[Total.type] },
@@ -65,7 +65,7 @@ object Kleisli {
   }
 
   /** The classical structure of a Kleisli promonad over a classical monad, where
-    *   - 0 = _ ↦ 0′, *p̄*ᶜ(*a*) = *M*(_ ↦ *a*)(*p*(*a*)‾ᶜ′) and (*p* ⊳ *q*)(*a*) = *p*(*a*) ⊳′ *q*(*a*)
+    *   - 0 = *a* ↦ 0′, *p̄*ᶜ(*a*) = *M*(*x* ↦ *a*)(*p*(*a*)‾ᶜ′) and (*p* ⊳ *q*)(*a*) = *p*(*a*) ⊳′ *q*(*a*)
     *   - *attempt*(*p*)(*a*) tags the result of *p*(*a*), or returns *a* on the right where *p*(*a*) fails
     */
   open class ClassicalOf(

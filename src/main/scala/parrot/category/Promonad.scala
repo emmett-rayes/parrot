@@ -46,7 +46,7 @@ abstract class Promonad(tracked override val K: Category) extends Profunctor(K, 
   final lazy val category: Promonad.Underlying { val P: Promonad.this.type } = Promonad.Underlying(this)
 
   extension [A: Obj, B: Obj](p: P[A, B])
-    /** Sequences arrows in diagrammatic order: *p* `>>` *q* = *multiply*(*q*,*p*). */
+    /** Sequences arrows in diagrammatic order: *p* ⨾ *q* = *multiply*(*q*,*p*). */
     @targetName("sequenceExt")
     final def >>[C: Obj](q: P[B, C]): P[A, C] = {
       multiply(q, p)

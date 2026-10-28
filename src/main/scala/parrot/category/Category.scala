@@ -3,14 +3,13 @@ package category
 
 import scala.annotation.targetName
 
-/** A category whose objects are the types with evidence `Obj` and whose morphisms *A* → *B* are the values of
-  * `Self[A, B]`.
+/** A category whose objects are types and whose morphisms are values.
   *
   * Represents a category **C**, where
-  *   - `Obj` selects the objects: a type *A* is an object when `A is Obj` can be found
-  *   - **C**(*A*,*B*) = `Hom[A, B]` = `Self[A, B]` are the morphisms, with the infix alias `A --> B`
+  *   - the objects are the types *A* with evidence that *A* is an object
+  *   - **C**(*A*,*B*) are the morphisms *f*: *A* → *B*
   *   - *id*: *A* → *A* is the identity
-  *   - ∘ is the composition, with the diagrammatic infix form `>>>`
+  *   - ∘ is the composition
   *
   * Identity and composition are single polymorphic programs, so the category is uniform: they may use the evidence of
   * their objects, but they cannot inspect the objects themselves. Equality of morphisms is semantic equality, which the
@@ -22,7 +21,7 @@ abstract class Category extends caps.Pure {
   /** The morphisms **C**(*A*,*B*). */
   final type Hom = Self
 
-  /** Infix alias for [[Hom]]: `A --> B`. */
+  /** Infix alias for [[Hom]]. */
   final type --> = Hom
 
   /** The type class selecting the objects: any refinement of [[Type]]. */
@@ -37,14 +36,14 @@ abstract class Category extends caps.Pure {
   /** An isomorphism between *A* and *B*: two morphisms, inverse to each other by [[CategoryLaws.isomorphism]]. */
   final case class Iso[A, B](to: A --> B, from: B --> A)
 
-  /** Infix alias for [[Iso]]: *A* ≅ *B* is `A <-> B`. */
+  /** Infix alias for [[Iso]]: *A* ≅ *B*. */
   final type <-> = Iso
 
   /** The opposite category **C**ᵒᵖ: the same objects, with every morphism reversed. */
   final lazy val op: Category.Op { val K: Category.this.type } = Category.Op(this)
 
   extension [A: Obj, B: Obj](f: A --> B)
-    /** Composes in diagrammatic order: *f* `>>>` *g* = *g* ∘ *f*. */
+    /** Composes in diagrammatic order: *f* ⨾ *g* = *g* ∘ *f*. */
     @targetName("andThenExt")
     final def >>>[C: Obj](g: B --> C): A --> C = {
       Category.this.compose(g, f)
@@ -114,10 +113,10 @@ object Category {
     *   - (**C₁** × **C₂**)(*X*,*Y*) = **C₁**(*X*₁,*Y*₁) × **C₂**(*X*₂,*Y*₂)
     *   - *id* = (*id*,*id*) and (*g*₁,*g*₂) ∘ (*f*₁,*f*₂) = (*g*₁ ∘ *f*₁,*g*₂ ∘ *f*₂)
     *
-    * A morphism type is computed from two object types, so the components *X*₁ = `Fst[X]` and *X*₂ = `Snd[X]` of a pair
-    * type are taken apart by the match types [[Product.Fst]] and [[Product.Snd]]. The object evidence ([[Components]])
+    * A morphism type is computed from two object types, so the components of a pair type *X* are taken apart by the
+    * match types [[Product.Fst]] and [[Product.Snd]]. The object evidence ([[Components]])
     * is stated about the components themselves, so generic code never needs a match type to reduce; on a pair type
-    * `(A1, A2)` they reduce to `A1` and `A2`. A [[Bifunctor]] is a functor out of a product category,
+    * (*A*₁,*A*₂) they reduce to *A*₁ and *A*₂. A [[Bifunctor]] is a functor out of a product category,
     * [[Bifunctor.functor]].
     */
   final class Product(tracked val C1: Category, tracked val C2: Category) extends Category {

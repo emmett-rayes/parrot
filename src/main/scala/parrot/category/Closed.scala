@@ -4,7 +4,7 @@ package category
 /** A closed structure on a monoidal category: internal homs, the categorical form of function types.
   *
   * Represents a monoidal closed category, where
-  *   - *A* ⇒ *B* = `Exp[A, B]`, infix `B ^ A` as in the exponential *B*ᴬ, is the internal hom, an object
+  *   - *A* ⇒ *B*, also written as the exponential *B*ᴬ, is the internal hom, an object
   *   - *ev*: (*A* ⇒ *B*) ⊗ *A* → *B* is evaluation
   *   - Λ(*f*): *C* → (*A* ⇒ *B*) is the curried form of *f*: *C* ⊗ *A* → *B*, the unique morphism with *ev* ∘ (Λ(*f*) ⊗
   *     *id*) = *f*
@@ -16,7 +16,7 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
   /** The internal hom *A* ⇒ *B*. */
   type Exp[A, B]
 
-  /** Infix alias for [[Exp]], in the order of the exponential *B*ᴬ: *A* ⇒ *B* is `B ^ A`. */
+  /** Infix alias for [[Exp]], in the order of the exponential *B*ᴬ = *A* ⇒ *B*. */
   final type ^[B, A] = Exp[A, B]
 
   /** Internal homs of objects are objects. */

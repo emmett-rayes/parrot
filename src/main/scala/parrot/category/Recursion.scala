@@ -23,7 +23,7 @@ abstract class Recursion(tracked val P: Promonad) extends caps.Pure {
   /** The fixed point *fix*(*f*) of *f*: *P*(*A*,*B*) → *P*(*A*,*B*). */
   def fix[A: Obj, B: Obj](f: P[A, B] -> P[A, B]): P[A, B]
 
-  /** The fixed point of *f* on families of *n* arrows *P*(*A*,*B*), indexed by `0 until n`: *n* arrows that may refer
+  /** The fixed point of *f* on families of *n* arrows *P*(*A*,*B*), indexed by 0 ≤ *i* < *n*: *n* arrows that may refer
     * to each other.
     */
   def fixFamily[A: Obj, B: Obj](n: Int)(f: (Int -> P[A, B]) -> Int -> P[A, B]): Int -> P[A, B]

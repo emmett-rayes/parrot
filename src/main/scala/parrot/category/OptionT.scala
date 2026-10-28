@@ -5,7 +5,7 @@ package category
   *
   * Represents a monad *T* on 𝒮, where
   *   - *T*[*A*] = *M*[1 + *A*]: the effects of *M*, then a result or none ([[OptionT.FunctorOf]])
-  *   - *η*(*a*) = *η*′(`Some`(*a*))
+  *   - *η*(*a*) = *η*′(*Some*(*a*))
   *   - *μ* runs the inner computation of a result and keeps a failure, with the effects of *M* in both cases
   *
   * Over a writer, *T*[*A*] = *W* × (1 + *A*): the output is produced whether or not the computation fails. This is the
@@ -41,7 +41,7 @@ object OptionT {
   }
 
   /** The classical structure of the failure transformer, where
-    *   - 0 = *η*′(`None`), *m̄* and *m̄*ᶜ keep the effects of *m* and forget or invert its result
+    *   - 0 = *η*′(*None*), *m̄* and *m̄*ᶜ keep the effects of *m* and forget or invert its result
     *   - *m* ⊳ *n* keeps the effects of *m*, and where *m* fails adds those of *n*
     *
     * For a writer whose monoid is a [[Semilattice]], **R1**, **R3** and **R4** hold. **R2** does not, for any writer

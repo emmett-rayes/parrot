@@ -8,10 +8,10 @@ import scala.util.matching.Regex
 /** The reference interpreter of [[ParserAlgebra]]: the specification against which other interpreters are checked.
   *
   * A parser is a Kleisli arrow of a monad built from the library's transformers: the state transformer over the failure
-  * transformer over the writer of [[Expected]], so `P[A, B]` = `A -> Input -> (Expected, Option[(B, Input)])`. Every
-  * structure is derived from that monad: backtracking choice and silent lookahead from the classical structure
-  * [[ReferenceParser.Silent]] lifted through the state, iteration and recursion guarded by the length of the remaining
-  * input. It is slow and not stack-safe on deep nesting; it is meant to be obviously right.
+  * transformer over the writer of [[Expected]], with semantic input *A* and result *B*. Every structure is derived
+  * from that monad: backtracking choice and silent lookahead from the classical structure [[ReferenceParser.Silent]]
+  * lifted through the state, iteration and recursion guarded by the length of the remaining input. It is slow and not
+  * stack-safe on deep nesting; it is meant to be obviously right.
   */
 class ReferenceParser
     extends ParserAlgebra(

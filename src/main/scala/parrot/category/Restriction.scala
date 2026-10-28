@@ -9,8 +9,8 @@ import scala.annotation.targetName
   *   - *p̄*: *A* → *A*, the restriction of *p*: *A* → *B*, is the partial identity on the inputs where *p* is defined
   *   - *p* is total when *p̄* = *id*; the pure arrows *unit*(*f*) are total
   *
-  * In 𝒫, *p̄* runs *p* and returns its input; in the Kleisli category of `Option`, it succeeds where *p* succeeds. For
-  * parsers, *p̄* is positive lookahead.
+  * In 𝒫, *p̄* runs *p* and returns its input; in the Kleisli category of the option monad, it succeeds where *p*
+  * succeeds. For parsers, *p̄* is positive lookahead.
   */
 abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
   import P.P
@@ -88,8 +88,8 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
   *
   * In a classical restriction category the override operator is unique (Lemay and Nester, Theorem 43), and on
   * compatible arrows it is their join. Precomposition distributes over ⊳; postcomposition does not, since *p* ⊳ *q*
-  * commits to *p* where *p* is defined, whatever comes after. The Kleisli category of `Option` is classical; 𝒫 is not,
-  * because the complement of "this program terminates" is not computable.
+  * commits to *p* where *p* is defined, whatever comes after. The Kleisli category of the option monad is classical;
+  * 𝒫 is not, because the complement of "this program terminates" is not computable.
   */
 abstract class Classical(tracked override val P: Promonad, tracked val C: Cocartesian { val K: P.K.type })
     extends Restriction(P) {

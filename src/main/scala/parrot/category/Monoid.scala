@@ -5,11 +5,11 @@ package category
   * both morphisms of **V**.
   *
   * Represents a monoid (*M*, *η*, *μ*), where
-  *   - *M* = `M` = `Self` is an object of **V**
+  *   - *M* is an object of **V**
   *   - *η*: *I* → *M* is the unit
   *   - *μ*: *M* ⊗ *M* → *M* is the multiplication
   *
-  * In 𝒮 with pairs, this is an ordinary monoid: an element `unit(())` and a binary operation. In the endofunctors with
+  * In 𝒮 with pairs, this is an ordinary monoid: an element *η*(()) and a binary operation. In the endofunctors with
   * composition it would be a monad, which Scala cannot state with the same class (see [[Monad]]). The dual is
   * [[Comonoid]].
   */
@@ -92,7 +92,7 @@ abstract class Semilattice(tracked override val V: Cartesian) extends Monoid(V) 
   * and copied.
   *
   * Represents a comonoid (*C*, *ε*, *δ*), where
-  *   - *C* = `C` = `Self` is an object of **V**
+  *   - *C* is an object of **V**
   *   - *ε*: *C* → *I* is the counit, which deletes
   *   - *δ*: *C* → *C* ⊗ *C* is the comultiplication, which copies
   *

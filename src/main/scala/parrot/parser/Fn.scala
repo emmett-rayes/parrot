@@ -43,7 +43,7 @@ object Fn {
     def apply(a: A): C = g(f(a))
   }
 
-  /** The unique morphism !: *A* → `Unit` to the terminal object. */
+  /** The unique morphism !: *A* → 1 to the terminal object. */
   final case class Bang[A]() extends Fn[A, Unit] {
     def apply(a: A): Unit = ()
   }
@@ -58,27 +58,27 @@ object Fn {
     def apply(ab: (A, B)): B = ab._2
   }
 
-  /** The universal pairing morphism ⟨*f*, *g*⟩: *A* → *B* × *C*. */
+  /** The universal pairing morphism ⟨*f*,*g*⟩: *A* → *B* × *C*. */
   final case class Fanout[A, B, C](f: Fn[A, B], g: Fn[A, C]) extends Fn[A, (B, C)] {
     def apply(a: A): (B, C) = (f(a), g(a))
   }
 
-  /** The unique morphism ¡: `Nothing` → *A* from the initial object. */
+  /** The unique morphism ¡: 0 → *A* from the initial object. */
   final case class Absurd[A]() extends Fn[Nothing, A] {
     def apply(a: Nothing): A = a
   }
 
-  /** The left injection morphism *ι*₁: *A* → `Either`[*A*, *B*]. */
+  /** The left injection morphism *ι*₁: *A* → *A* + *B*. */
   final case class Inl[A, B]() extends Fn[A, Either[A, B]] {
     def apply(a: A): Either[A, B] = Left(a)
   }
 
-  /** The right injection morphism *ι*₂: *B* → `Either`[*A*, *B*]. */
+  /** The right injection morphism *ι*₂: *B* → *A* + *B*. */
   final case class Inr[A, B]() extends Fn[B, Either[A, B]] {
     def apply(b: B): Either[A, B] = Right(b)
   }
 
-  /** The universal copairing morphism [*f*, *g*]: `Either`[*A*, *B*] → *C*. */
+  /** The universal copairing morphism [*f*,*g*]: *A* + *B* → *C*. */
   final case class Copair[A, B, C](f: Fn[A, C], g: Fn[B, C]) extends Fn[Either[A, B], C] {
     def apply(ab: Either[A, B]): C = ab.fold(f.apply, g.apply)
   }
@@ -94,7 +94,7 @@ object Fn {
     compose(f, g)
   }
 
-  /** Normalizing pairing ⟨*f*, *g*⟩. */
+  /** Normalizing pairing ⟨*f*,*g*⟩. */
   def fanout[A, B, C](f: Fn[A, B], g: Fn[A, C]): Fn[A, (B, C)] = {
     (f, g) match {
       case (Proj1(), Proj2()) => Id()
@@ -102,7 +102,7 @@ object Fn {
     }
   }
 
-  /** Normalizing copairing [*f*, *g*]. */
+  /** Normalizing copairing [*f*,*g*]. */
   def copair[A, B, C](f: Fn[A, C], g: Fn[B, C]): Fn[Either[A, B], C] = {
     (f, g) match {
       case (Inl(), Inr()) => Id()
@@ -129,7 +129,7 @@ object Fn {
 /** The category of reified pure functions, with objects all types.
   *
   * Represents a category equivalent to 𝒮 on the types it is used with, where
-  *   - *id* = `Fn.Id` and ∘ is the normalizing composition of [[Fn.andThen]]
+  *   - *id* is [[Fn.Id]] and ∘ is the normalizing composition [[Fn.andThen]]
   *   - [[Product]] and [[Coproduct]] are reified, so that parsers can inspect them
   */
 object Fns extends Category {
@@ -195,7 +195,7 @@ object Fns extends Category {
     }
   }
 
-  /** Reified coproducts: `Either`, with injections and copairing as data. */
+  /** Reified coproducts: tagged unions, with injections and copairing as data. */
   object Coproduct extends Cocartesian(Fns, EitherIsBifunctor) {
     type I = Nothing
 

@@ -4,18 +4,18 @@ package category
 /** A monad on a category **K**: structure on an endofunctor *M*, a monoid in the endofunctors on **K**.
   *
   * Represents a monad (*M*, *η*, *μ*), where
-  *   - *M* = `M` is the endofunctor [[F]], with action *M*(*f*) = `map`
+  *   - *M* is the endofunctor [[F]], with action *M*(*f*) on morphisms
   *   - *η*: *A* → *M*[*A*], the unit, returns a value without effect
-  *   - *μ*: *M*[*M*[*A*]] → *M*[*A*], the multiplication `flatten`, merges two layers of effects into one
+  *   - *μ*: *M*[*M*[*A*]] → *M*[*A*], the multiplication, merges two layers of effects into one
   *
-  * The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*] is derived (`bind`); its arrows *A*
-  * → *M*[*B*] form the [[Kleisli]] promonad. The unit and multiplication are the unit and multiplication of a monoid
+  * The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*] is derived; its arrows *A* →
+  * *M*[*B*] form the [[Kleisli]] promonad. The unit and multiplication are the unit and multiplication of a monoid
   * (compare [[Monoid]]), with composition of endofunctors as the tensor.
   */
 abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
 
-  /** From the endofunctor: the category **K** the monad is on, the object part *M* = `M`, its action *M*(*f*) =
-    * `map(f)` on morphisms, and `objects`, which says that *M* maps objects to objects.
+  /** From the endofunctor: the category **K** the monad is on, the object part *M*, its action *M*(*f*) on morphisms,
+    * and the evidence that *M* maps objects to objects.
     */
   export F.{F as M, K, map, objects}
 
@@ -73,12 +73,12 @@ abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
 
 object Monad {
 
-  /** The monads on **C**: refines the endofunctor, so that the category of a monad *M* is known as `M.K`. */
+  /** The monads on **C**: refines the endofunctor, so that the category of a monad *M* is known as **C**. */
   type On[C <: Category] = Monad { val F: Endofunctor { val K: C } }
 
   /** `Option` is a monad on 𝒮, where
     *   - *M*[*A*] = *A* + 1: a result or none
-    *   - *η* = `Some`
+    *   - *η* = *Some*
     *   - *μ* keeps the inner result, or none
     */
   object OptionIsMonad extends Monad(Endofunctor.OptionIsEndofunctor) {

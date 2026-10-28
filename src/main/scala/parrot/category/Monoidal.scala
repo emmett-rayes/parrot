@@ -4,13 +4,11 @@ package category
 /** A monoidal structure on a category **K**: a tensor ⊗ that combines objects and morphisms, with a unit *I*.
   *
   * Represents a monoidal category (**K**, ⊗, *I*), where
-  *   - ⊗: **K** × **K** → **K** is the tensor, the bifunctor *T*, written `A * B` on objects and `f *** g` on morphisms
+  *   - ⊗: **K** × **K** → **K** is the tensor, the bifunctor *T*
   *   - *I* is the unit object
   *   - *λ*: *I* ⊗ *A* ≅ *A* is the left unitor
   *   - *ρ*: *A* ⊗ *I* ≅ *A* is the right unitor
   *   - *α*: (*A* ⊗ *B*) ⊗ *C* ≅ *A* ⊗ (*B* ⊗ *C*) is the associator
-  *
-  * Isomorphisms are written `A <-> B` (see [[Category.Iso]]).
   *
   * A monoidal structure is structure *on* **K**, not a new kind of category: one category can carry several (products
   * and coproducts on 𝒮), so instances are named, not found by the carrier.

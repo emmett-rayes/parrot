@@ -14,16 +14,16 @@ import scala.util.{Try, Failure as TryFailure, Success as TrySuccess}
   * Parsers are reified terms ([[StrictParser.Node]]) over reified pure functions ([[Fn]]). The structures on nodes are
   * implemented by smart constructors that rewrite towards a normal form, so the derived combinators collapse into
   * specialized nodes:
-  *   - `p.pair(q)` = `p.zip(q).mapInput(Δ)` becomes `Pair(p, q)`: the input is never duplicated into a tuple
-  *   - `p.skipThen(q)` = `Pair(p, q).map(π₂)` becomes `SkipThen(p, q)`: no result tuple is built
-  *   - `p.merge(q)` = `p.branch(q).map(∇)` becomes `Merge(p, q)`, and `p.branch(q).map([f,g])` becomes
-  *     `Merge(p.map(f), q.map(g))`: no intermediate `Either` is built
-  *   - `(p orElse q).map(f)` becomes `p.map(f) orElse q.map(f)`
+  *   - ⟨*p*,*q*⟩ = Δ ⨾ (*p* ⋉ *q*) becomes [[StrictParser.Node.Pair]]: the input is never duplicated into a pair
+  *   - ⟨*p*,*q*⟩ ⨾ *π*₂ becomes [[StrictParser.Node.SkipThen]]: no result pair is built
+  *   - [*p*,*q*] = (*p* + *q*) ⨾ ∇ becomes [[StrictParser.Node.Merge]], and (*p* + *q*) ⨾ [*f*,*g*] becomes
+  *     [*p* ⨾ *f*,*q* ⨾ *g*]: no intermediate tagged union is built
+  *   - (*p* ⊳ *q*) ⨾ *f* becomes (*p* ⨾ *f*) ⊳ (*q* ⨾ *f*)
   *
   * Regular expressions in the single-character-atom fragment are compiled to a [[Scanner]]; other expressions fall back
   * to `java.util.regex`, matched in context ([[Scanner.matchAt]]). Nested ordered choices are flattened into a single
   * [[StrictParser.Node.Choice]] that dispatches on the next character using static first-set and nullability analysis
-  * ([[StrictParser.Info]]). `recursive` ties a knot ([[StrictParser.Node.Rec]]).
+  * ([[StrictParser.Info]]). Recursion ties a knot ([[StrictParser.Node.Rec]]).
   *
   * It agrees with [[ReferenceParser]] on every grammar, with one extension: where a recursive parser calls itself with
   * the same semantic input at the same position, the reference fails the call, while this interpreter supports left

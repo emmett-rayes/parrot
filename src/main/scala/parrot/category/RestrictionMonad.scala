@@ -32,10 +32,10 @@ abstract class ClassicalMonad(tracked override val M: Monad.On[Total.type]) exte
   /** The complement *m̄*ᶜ: succeeds exactly where *m* fails. */
   def complement[A](m: M.M[A]): M.M[Unit]
 
-  /** Override *m* ⊳ *n*: *m*, or *n* where *m* fails. `n` is passed by name, and computed only where *m* fails. */
+  /** Override *m* ⊳ *n*: *m*, or *n* where *m* fails. *n* is passed by name, and computed only where *m* fails. */
   def orElse[A](m: M.M[A], n: -> M.M[A]): M.M[A]
 
-  /** *attempt*(*m*) = *M*(`Some`)(*m*) ⊳ *η*(`None`): the result of *m* if it succeeds.
+  /** *attempt*(*m*) = *M*(*Some*)(*m*) ⊳ *η*(*None*): the result of *m* if it succeeds.
     */
   def attempt[A](m: M.M[A]): M.M[Option[A]] = {
     orElse(M.map[A, Option[A]](a => Some(a))(m), M.unit[Option[A]](None))

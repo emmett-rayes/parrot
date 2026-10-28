@@ -6,9 +6,9 @@ import scala.annotation.targetName
 /** A cocartesian monoidal structure on a category **K**: the tensor is the coproduct and the unit is an initial object.
   *
   * Represents a category with finite coproducts, the dual of [[Cartesian]], where
-  *   - *A* + *B* is the coproduct, with injections *ι*₁ = `inl` and *ι*₂ = `inr`
-  *   - [*f*,*g*] = `copair`, infix `|||`, is the unique morphism with [*f*,*g*] ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
-  *   - *I* is initial, with the unique morphism ¡: *I* → *A* = `absurd`
+  *   - *A* + *B* is the coproduct, with injections *ι*₁ and *ι*₂
+  *   - [*f*,*g*] is the unique morphism with [*f*,*g*] ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
+  *   - *I* is initial, with the unique morphism ¡: *I* → *A*
   *   - ∇ = [*id*,*id*] merges
   *
   * The unitors, the associator and the braiding are derived from the injections and copairing.

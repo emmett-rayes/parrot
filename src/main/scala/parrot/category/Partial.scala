@@ -9,19 +9,20 @@ import scala.annotation.unused
   */
 opaque type Partial[A, B] = A -> B
 
-/** The morphisms of 𝒫 written infix: `A ~> B` is `Partial[A, B]`, as `A -> B` is a morphism of 𝒮. */
+/** Infix alias for [[Partial]]: the morphisms *A* → *B* of 𝒫. */
 type ~> = Partial
 
 /** The category 𝒫 of pure Scala programs that may diverge.
   *
   * Represents 𝒫, where
   *   - the objects are all types
-  *   - 𝒫(*A*,*B*) = `A ~> B`: pure programs, total or not
+  *   - 𝒫(*A*,*B*) are the pure programs *A* → *B*, total or not
   *   - *id* and ∘ are those of functions, evaluated strictly
   *
-  * 𝒮 is the subcategory of total programs: `Partial(f)` includes a morphism of 𝒮, and [[Partial.assumeTotal]] is the
-  * one place where a program of 𝒫 is promised to be total. Pairs are not products in 𝒫, since a diverging component
-  * makes the whole pair diverge; they form the symmetric monoidal structure [[Product]]. `Either` is still a coproduct.
+  * 𝒮 is the subcategory of total programs: [[Partial.apply]] includes a morphism of 𝒮, and [[Partial.assumeTotal]] is
+  * the one place where a program of 𝒫 is promised to be total. Pairs are not products in 𝒫, since a diverging
+  * component makes the whole pair diverge; they form the symmetric monoidal structure [[Product]]. Tagged unions are
+  * still coproducts.
   */
 object Partial extends Category {
   type Self = Partial
@@ -126,7 +127,7 @@ object Partial extends Category {
     }
   }
 
-  /** The coproducts of 𝒫: `Either`, with `Nothing` as initial object. */
+  /** The coproducts of 𝒫: tagged unions, with the empty type 0 as initial object. */
   object Coproduct extends Cocartesian(Partial, EitherIsBifunctor) {
     type I = Nothing
 

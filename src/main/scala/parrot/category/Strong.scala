@@ -10,7 +10,7 @@ import scala.annotation.targetName
   *   - *first*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*), natural in *A* and *B* and dinatural in *C*
   *   - *second*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*) = *P*(*β*,*β*) ∘ *first*
   *
-  * With ⊗ the product this is the `first` of arrows; with ⊗ the coproduct it is their `left`, often called *choice*. A
+  * With ⊗ the product this is the *first* of arrows; with ⊗ the coproduct it is their *left*, often called *choice*. A
   * strong promonad whose *unit* and *multiply* preserve the strength is a Freyd category, see [[Freyd]].
   */
 abstract class Strong(tracked val P: Profunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })

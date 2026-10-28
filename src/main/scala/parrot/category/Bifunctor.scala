@@ -4,12 +4,9 @@ package category
 /** A bifunctor *F*: **C₁** × **C₂** → **D**: a functor of two arguments, one from each source category.
   *
   * Represents a bifunctor, where
-  *   - *F*[*A*,*B*] = `F[A, B]` = `Self[A, B]` is the object part
+  *   - *F*[*A*,*B*] is the object part
   *   - *F*(*f*,*g*): *F*[*A*,*B*] → *F*[*A*₂,*B*₂] is the morphism part, for *f*: *A* → *A*₂ in **C₁** and *g*: *B* →
   *     *B*₂ in **C₂**
-  *
-  * Morphisms of **C₁** are written `A --> B`, of **C₂** `A ->> B`, and of the target **D** `A ==> B`. The source and
-  * target categories are parameters, so they are stable paths: their objects can be named as `C1.Obj`, `D.Obj`.
   */
 abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tracked val D: Category)
     extends caps.Pure {

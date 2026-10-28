@@ -5,10 +5,10 @@ package category
   *
   * Represents 𝒮, where
   *   - the objects are all types
-  *   - 𝒮(*A*,*B*) = `A -> B` are the pure functions, which the programmer promises to be total
-  *   - *id* = `a => a` and *g* ∘ *f* = `a => g(f(a))`
+  *   - 𝒮(*A*,*B*) are the pure functions *A* → *B*, which the programmer promises to be total
+  *   - *id* = *a* ↦ *a* and *g* ∘ *f* = *a* ↦ *g*(*f*(*a*))
   *
-  * Capture checking makes `->` the type of pure functions. Totality is a promise: a function that may diverge belongs
+  * Capture checking makes functions pure. Totality is a promise: a function that may diverge belongs
   * to [[Partial]] instead. 𝒮 is bicartesian closed: [[Product]], [[Coproduct]], [[Exponential]].
   */
 object Total extends Category {
@@ -50,7 +50,7 @@ object Total extends Category {
     }
   }
 
-  /** The products of 𝒮: pairs, with `Unit` as terminal object. */
+  /** The products of 𝒮: pairs, with the unit type 1 as terminal object. */
   object Product extends Cartesian(Total, Tuple2IsBifunctor) {
     type I = Unit
 
@@ -75,7 +75,7 @@ object Total extends Category {
     }
   }
 
-  /** The coproducts of 𝒮: `Either`, with `Nothing` as initial object. */
+  /** The coproducts of 𝒮: tagged unions, with the empty type 0 as initial object. */
   object Coproduct extends Cocartesian(Total, EitherIsBifunctor) {
     type I = Nothing
 

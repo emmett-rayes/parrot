@@ -16,7 +16,7 @@ abstract class ParserLawSpec(name: String, tracked val alg: ParserAlgebra) exten
   private lazy val semantic: Gen[P[Int, Int] is Observable] = ParserGen.observe[Int, Int](alg)
   private lazy val order: Gen[P[Int, Int] is Preorder]      = ParserGen.order[Int, Int](alg)
 
-  /** A parser and one that reports at least as much: where `p` fails, it also runs `q` and fails. */
+  /** A parser and one that reports at least as much: where *p* fails, it also runs *q* and fails. */
   private lazy val refined: Gen[(P[Int, Int], P[Int, Int])] = {
     Gen.zip(parsers, parsers).map((p, q) => (p, p |> (q >> failure[Int, Int])))
   }
