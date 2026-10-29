@@ -1,15 +1,18 @@
 package parrot
 package category
 
-/** The category 𝒮 of total, pure Scala programs: the ground of the library.
+/** The category 𝒮 of total, pure Scala programs.
   *
   * Represents 𝒮, where
   *   - the objects are all types
-  *   - 𝒮(*A*,*B*) are the pure functions *A* → *B*, which the programmer promises to be total
-  *   - *id* = *a* ↦ *a* and *g* ∘ *f* = *a* ↦ *g*(*f*(*a*))
+  *   - 𝒮(*A*,*B*) are the total, pure functions *A* → *B*
+  *   - *id* = *a* ↦ *a*
+  *   - *g* ∘ *f* = *a* ↦ *g*(*f*(*a*))
   *
-  * Capture checking makes functions pure. Totality is a promise: a function that may diverge belongs
-  * to [[Partial]] instead. 𝒮 is bicartesian closed: [[Product]], [[Coproduct]], [[Exponential]].
+  * 𝒮 is bicartesian closed. See [[Product]], [[Coproduct]], [[Exponential]].
+  *
+  * @note Capture checking makes functions pure. Totality is promised by the user. A function that may diverge belongs
+  *   to 𝒫 instead. See [[Partial]].
   */
 object Total extends Category {
   type Self[A, B] = A -> B
@@ -22,6 +25,9 @@ object Total extends Category {
   def compose[A: Type, B: Type, C: Type](g: B -> C, f: A -> B): A -> C = {
     a => g(f(a))
   }
+
+  /** 𝒮 as a promonad over itself: its arrows are its morphisms. */
+  object Functions extends Promonad.Hom(Total)
 
   /** Pairs as a bifunctor *A* × *B* on 𝒮. */
   object Tuple2IsBifunctor extends Bifunctor(Total, Total, Total) {
@@ -117,7 +123,4 @@ object Total extends Category {
       c => a => f((c, a))
     }
   }
-
-  /** 𝒮 as a promonad over itself: its arrows are its morphisms. */
-  object Functions extends Promonad.Hom(Total)
 }

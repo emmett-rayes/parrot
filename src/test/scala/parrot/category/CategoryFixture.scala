@@ -44,7 +44,11 @@ object CategoryFixture {
   }
 }
 
-/** 𝒮: generated pure functions, observed by application. */
+/** [[CategoryFixture]] for [[Total]].
+  *   - generates morphisms as pure functions
+  *   - builds variants by η-expansion
+  *   - observes morphisms by application to sample points
+  */
 object TotalFixture extends CategoryFixture("Total", Total) {
 
   def arrow[X: Sample, Y: Sample]: Gen[X -> Y] = {
