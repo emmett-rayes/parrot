@@ -9,7 +9,7 @@ package category
   *   - *δ*: *C* → *C* ⊗ *C* is the comultiplication
   */
 abstract class Comonoid(tracked val V: Monoidal) extends caps.Pure {
-  import V.{*, given}
+  import V.{I, `*`, ***, given}
   import V.K.{Obj, -->, >>>}
 
   type Self

@@ -9,7 +9,7 @@ package category
   *   - Λ(*f*): *C* → (*A* ⇒ *B*) is the curried form of *f*: *C* ⊗ *A* → *B*
   */
 abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
-  import M.{*, given}
+  import M.{`*`, ***, given}
   import M.K.{Obj, -->, >>>}
 
   /** The internal hom *A* ⇒ *B*. */

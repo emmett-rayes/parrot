@@ -13,7 +13,7 @@ package category
   * iteration: an Elgot operator is a Conway operator on the opposite category.
   */
 abstract class Conway(tracked val S: Strong { val P: Promonad; val M: Cartesian }) extends caps.Pure {
-  import S.M.{*, given}
+  import S.M.{`*`, given}
   import S.P.{P, >>}
   import S.P.K.{Obj, -->}
 
@@ -97,7 +97,7 @@ object Conway {
     * the fixed point *P*ᵒᵖ(*A*,*X*).
     */
   open class OfElgot(tracked val E: Elgot) extends Conway(Strong.OpOfCoproduct(E.S)) {
-    import S.M.*
+    import S.M.`*`
     import S.P.P
     import S.P.K.Obj
 
@@ -109,7 +109,7 @@ object Conway {
   /** The fixed point of a trace on products: *p*† = *tr*(*p* ⨾ Δ). */
   open class OfTraced(tracked val T: Traced { val S: Strong { val P: Promonad; val M: Cartesian } })
       extends Conway(T.S) {
-    import S.M.{*, given}
+    import S.M.{`*`, given}
     import S.P.{P, >>}
     import S.P.K.Obj
 

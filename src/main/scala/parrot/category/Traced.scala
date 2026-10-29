@@ -11,7 +11,7 @@ package category
   * dinaturality (sliding) and superposing restricted to pure arrows, which are central.
   */
 abstract class Traced(tracked val S: Strong { val P: Promonad }) extends caps.Pure {
-  import S.M.{*, given}
+  import S.M.{I, `*`, given}
   import S.P.{P, >>}
   import S.P.K.{Obj, -->}
 
@@ -103,7 +103,7 @@ object Traced {
 
   /** The trace of a parameterized fixed point: *tr*(*p*) = ((*id* × *π*₂) ⨾ *p*)† ⨾ *π*₁. */
   open class OfConway(tracked val C: Conway) extends Traced(C.S) {
-    import S.M.{*, given}
+    import S.M.{`*`, given}
     import S.P.{P, >>}
     import S.P.K.Obj
 

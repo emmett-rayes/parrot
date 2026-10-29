@@ -543,7 +543,7 @@ Things that cost time once; check here before fighting the compiler.
   `Eq.structural`, never derived from `CanEqual` by a given.
 - **Extensions shadowing methods** with the same signature need `(using DummyImplicit)` on the nullary extension.
 - **Wildcards**: `import M.{*, given}` imports everything; `import M.{*, ***}` is an error, since `*` already imports
-  `***`.
+  `***`. To import a structure's infix alias `*` alone, backtick it: ``import M.{I, `*`, given}``.
 - **Capture checking in tests**: a lambda inside ScalaTest's `assert(...)` macro can fail with "Illegal capture
   reference"; compute the value outside the macro (`StrictParserTest.result`). Lambda parameters whose types come from
   ScalaCheck (`Gen.zip(...).map((f, g) => ...)`) are inferred as capturing; annotate them with pure types. A method of

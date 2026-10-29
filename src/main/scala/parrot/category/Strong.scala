@@ -15,7 +15,7 @@ import scala.annotation.targetName
   */
 abstract class Strong(tracked val P: Profunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })
     extends caps.Pure {
-  import M.{*, given}
+  import M.{I, `*`, given}
   import P.P
   import P.K.{Obj, -->}
 
@@ -109,7 +109,7 @@ object Strong {
     */
   final class OpOfCoproduct(tracked val S: Strong { val P: Promonad; val M: Cocartesian })
       extends Strong(Promonad.Op(S.P), Cocartesian.Op(S.M)) {
-    import M.*
+    import M.`*`
     import P.P
     import P.K.Obj
 
@@ -122,7 +122,7 @@ object Strong {
     */
   final class OpOfProduct(tracked val S: Strong { val P: Promonad; val M: Cartesian })
       extends Strong(Promonad.Op(S.P), Cartesian.Op(S.M)) {
-    import M.*
+    import M.`*`
     import P.P
     import P.K.Obj
 
@@ -136,7 +136,7 @@ object Strong {
     */
   open class OfHom(tracked override val P: Promonad.Hom, tracked override val M: Symmetric { val K: P.K.type })
       extends Strong(P, M) {
-    import M.*
+    import M.`*`
     import P.K.{Obj, -->}
 
     def first[A: Obj, B: Obj, C: Obj](p: A --> B): (A * C) --> (B * C) = {

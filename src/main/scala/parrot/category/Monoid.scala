@@ -9,7 +9,7 @@ package category
   *   - *μ*: *M* ⊗ *M* → *M* is the multiplication
   */
 abstract class Monoid(tracked val V: Monoidal) extends caps.Pure {
-  import V.{*, given}
+  import V.{I, `*`, ***, given}
   import V.K.{Obj, -->, >>>}
 
   type Self

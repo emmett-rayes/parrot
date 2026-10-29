@@ -16,7 +16,7 @@ import scala.annotation.targetName
   * of the two with the laws that connect them.
   */
 final class Freyd(tracked val S: Strong { val P: Promonad }) {
-  import S.M.{*, given}
+  import S.M.{`*`, given}
   import S.P.P
   import S.P.K.{Obj, -->}
 
