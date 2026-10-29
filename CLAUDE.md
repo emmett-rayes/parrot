@@ -274,7 +274,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Strong`, `Freyd` | strength on a profunctor; Freyd laws and `**` | `first`, `second` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.OfHom`, `Strong.OpOf…` |
 | `Restriction`, `Classical` | restriction category; zero, complement, override, attempt | `restrict`, `zero`, `complement`, `orElse`/`|>`, `attempt` | `Partial.Domains`, `Kleisli.RestrictionOf`/`ClassicalOf` |
 | `Traced`, `Conway`, `Elgot`, `Recursion` | the trace/fixed-point grid; recursion at arrow types | `trace`, `fix`, `iterate` | `Partial.Loops`/`Feedback`/`Knots`, bridges `OfElgot`/`OfConway`/`OfTraced`, guarded state |
-| `Monoid`, `Semilattice`, `Comonoid` (all in `Monoid.scala`) | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
+| `Monoid`, `Semilattice`, `Comonoid` | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
 | `Monad`, `Kleisli`, `Writer`, `OptionT`, `StateT` | monads on an endofunctor; the Kleisli promonad; transformers | `unit`, `flatten`; derived `map`, `bind` | `Monad.OptionIsMonad`, `Kleisli.OptionKleisli` |
 | `RestrictionMonad`, `ClassicalMonad`, `ElgotMonad`, `Measure` | monad-level presentations whose laws are the Kleisli ones | `restrict`, `orElse`, `attempt`, `iterate` | `ClassicalMonad.OptionIsClassical`, `StateT.ClassicalOf`, `OptionT.ClassicalOf` |
 
