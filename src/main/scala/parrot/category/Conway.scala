@@ -32,10 +32,10 @@ abstract class Conway(tracked val S: Strong { val P: Promonad; val M: Cartesian 
     }
 
     /** ((*h* × *id*) ⨾ *p*)† = *h* ⨾ *p*† for pure *h* */
-    def parameterNaturality[A0: Obj, A: Obj, X: Obj](p: P[A * X, X], h: A0 --> A)(
+    def parameterNaturality[A0: Obj, A1: Obj, X: Obj](p: P[A1 * X, X], h: A0 --> A1)(
       using P[A0, X] is Observable
     ): Boolean = {
-      fix(S.first[A0, A, X](S.P.unit(h)) >> p) =?= (S.P.unit(h) >> fix(p))
+      fix(S.first[A0, A1, X](S.P.unit(h)) >> p) =?= (S.P.unit(h) >> fix(p))
     }
 
     /** (*f* ⨾ *g*)† = ((*id* × *g*) ⨾ *f*)† ⨾ *g* for pure *g* */

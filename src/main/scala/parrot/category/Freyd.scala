@@ -40,10 +40,10 @@ final class Freyd(tracked val S: Strong { val P: Promonad }) {
 
     /** *first*(*q* ∘ *p*) = *first*(*q*) ∘ *first*(*p*)
       */
-    def multiply[A: Obj, B: Obj, B2: Obj, C: Obj](p: P[A, B], q: P[B, B2])(
+    def multiply[A: Obj, B1: Obj, B2: Obj, C: Obj](p: P[A, B1], q: P[B1, B2])(
       using P[A * C, B2 * C] is Observable
     ): Boolean = {
-      S.first[A, B2, C](S.P.multiply(q, p)) =?= S.P.multiply(S.first[B, B2, C](q), S.first[A, B, C](p))
+      S.first[A, B2, C](S.P.multiply(q, p)) =?= S.P.multiply(S.first[B1, B2, C](q), S.first[A, B1, C](p))
     }
 
     /** *first*(*unit*(*f*)) ⨾ *second*(*q*) = *second*(*q*) ⨾ *first*(*unit*(*f*)): pure arrows are central.

@@ -23,12 +23,12 @@ abstract class Traced(tracked val S: Strong { val P: Promonad }) extends caps.Pu
 
     /** *tr*(*first*(*f*) ⨾ *p* ⨾ *first*(*g*)) = *f* ⨾ *tr*(*p*) ⨾ *g*
       */
-    def tightening[A0: Obj, A: Obj, B: Obj, B0: Obj, U: Obj](
-      f: P[A0, A],
-      p: P[A * U, B * U],
-      g: P[B, B0],
+    def tightening[A0: Obj, A1: Obj, B1: Obj, B0: Obj, U: Obj](
+      f: P[A0, A1],
+      p: P[A1 * U, B1 * U],
+      g: P[B1, B0],
     )(using P[A0, B0] is Observable): Boolean = {
-      trace(S.first[A0, A, U](f) >> p >> S.first[B, B0, U](g)) =?= (f >> trace(p) >> g)
+      trace(S.first[A0, A1, U](f) >> p >> S.first[B1, B0, U](g)) =?= (f >> trace(p) >> g)
     }
 
     /** *tr*(*p* ⨾ (*id* ⊗ *h*)) = *tr*((*id* ⊗ *h*) ⨾ *p*) for pure *h*: *U* → *V*

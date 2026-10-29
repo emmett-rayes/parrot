@@ -49,22 +49,22 @@ abstract class Strong(tracked val P: Profunctor { val V: Total.type }, tracked v
 
     /** *first*(*P*(*f*,*g*)(*p*)) = *P*(*f* ⊗ *id*,*g* ⊗ *id*)(*first*(*p*))
       */
-    def naturality[A: Obj, B: Obj, A2: Obj, B2: Obj, C: Obj](
-      p: P[A, B],
-      f: A2 --> A,
-      g: B --> B2,
+    def naturality[A1: Obj, B1: Obj, A2: Obj, B2: Obj, C: Obj](
+      p: P[A1, B1],
+      f: A2 --> A1,
+      g: B1 --> B2,
     )(using P[A2 * C, B2 * C] is Observable): Boolean = {
       first[A2, B2, C](P.dimap(f, g)(p)) =?=
-        P.dimap(M.tensor(f, P.K.identity[C]), M.tensor(g, P.K.identity[C]))(first[A, B, C](p))
+        P.dimap(M.tensor(f, P.K.identity[C]), M.tensor(g, P.K.identity[C]))(first[A1, B1, C](p))
     }
 
     /** *P*(*id* ⊗ *h*,*id*)(*first*(*p*)) = *P*(*id*,*id* ⊗ *h*)(*first*(*p*)), dinaturality in *C*
       */
-    def dinaturality[A: Obj, B: Obj, C: Obj, C2: Obj](p: P[A, B], h: C --> C2)(
-      using P[A * C, B * C2] is Observable
+    def dinaturality[A: Obj, B: Obj, C1: Obj, C2: Obj](p: P[A, B], h: C1 --> C2)(
+      using P[A * C1, B * C2] is Observable
     ): Boolean = {
       P.dimap(M.tensor(P.K.identity[A], h), P.K.identity[B * C2])(first[A, B, C2](p)) =?=
-        P.dimap(P.K.identity[A * C], M.tensor(P.K.identity[B], h))(first[A, B, C](p))
+        P.dimap(P.K.identity[A * C1], M.tensor(P.K.identity[B], h))(first[A, B, C1](p))
     }
 
     /** *P*(*ρ*⁻¹,*ρ*)(*first*(*p*)) = *p*
