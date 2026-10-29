@@ -37,7 +37,7 @@ object Total extends Category {
       Type.TIsType
     }
 
-    def bimap[A: Type, B: Type, A2: Type, B2: Type](f: A -> A2, g: B -> B2): ((A, B)) -> (A2, B2) = {
+    def bimap[A1: Type, B1: Type, A2: Type, B2: Type](f: A1 -> A2, g: B1 -> B2): ((A1, B1)) -> (A2, B2) = {
       (a, b) => (f(a), g(b))
     }
   }
@@ -50,7 +50,7 @@ object Total extends Category {
       Type.TIsType
     }
 
-    def bimap[A: Type, B: Type, A2: Type, B2: Type](f: A -> A2, g: B -> B2): Either[A, B] -> Either[A2, B2] = {
+    def bimap[A1: Type, B1: Type, A2: Type, B2: Type](f: A1 -> A2, g: B1 -> B2): Either[A1, B1] -> Either[A2, B2] = {
       case Left(a)  => Left(f(a))
       case Right(b) => Right(g(b))
     }

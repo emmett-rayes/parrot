@@ -38,7 +38,7 @@ class ReferenceBranchingIsStrongTest
 
 class ReferenceLoopsIsElgotTest
     extends ElgotSpec("ReferenceParser (guarded)", Interpreters.reference.Loops) {
-  import PF.P.P
+  import promonad.P.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.reference)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.reference)
   def shrink: Int -> Int                                         = _ / 2
@@ -47,11 +47,11 @@ class ReferenceLoopsIsElgotTest
 
 class ReferenceKnotsIsRecursionTest
     extends RecursionSpec("ReferenceParser (guarded)", Interpreters.reference.Knots) {
-  import PF.P.P
+  import promonad.P.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.reference)
 
   counterexample("fixedPoint", "for left-recursive rules: the call fails") {
-    val observations = PF.observe[Int, Int]
+    val observations = promonad.observe[Int, Int]
 
     forAll(observations, Grammars.terms) { (o, term) =>
       given (P[Int, Int] is Observable) = o
@@ -102,7 +102,7 @@ class StrictBranchingIsStrongTest
 }
 
 class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpreters.strict.Loops) {
-  import PF.P.P
+  import promonad.P.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.strict)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.strict)
   def shrink: Fn[Int, Int]                                       = Fn.lift(_ / 2)
@@ -111,11 +111,11 @@ class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpr
 
 class StrictKnotsIsRecursionTest
     extends RecursionSpec("StrictParser (guarded)", Interpreters.strict.Knots) {
-  import PF.P.P
+  import promonad.P.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.strict)
 
   counterexample("fixedPoint", "for left-recursive rules: seed growing") {
-    val observations = PF.observe[Int, Int]
+    val observations = promonad.observe[Int, Int]
 
     forAll(observations, Grammars.terms) { (o, term) =>
       given (P[Int, Int] is Observable) = o

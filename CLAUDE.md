@@ -138,7 +138,7 @@ pants dependencies <path-to-file>        # inspect inferred dependencies for a f
 > [!NOTE]
 > `-Wsafe-init` and `-Wunused:imports` are deliberately disabled in both `build.sbt` and `pants.toml` due to compiler false positives:
 > - `-Wsafe-init`: False positives when a `tracked` constructor parameter is forwarded to a parent class (see §4.1 Rule 11 and `docs/DESIGN.md` §10).
-> - `-Wunused:imports`: False positives on renamed type imports like `import D.{--> as ==>}` (see §4.1 Rule 14 and `docs/DESIGN.md` §10).
+> - `-Wunused:imports`: False positives on renamed type imports like `import D.--> as ==>` (see §4.1 Rule 14 and `docs/DESIGN.md` §10).
 
 Tests are compiled **with** capture checking too. ScalaCheck is not capture-checked, so its generated functions are
 trusted to be pure. **Keep the build warning-free.**
@@ -228,7 +228,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     opposite category. These three-symbol arrows name roles; the two concrete categories have two-symbol arrows,
     `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside `object Partial` too). Bring the
     role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`, `import S.P.{P, >>}`,
-    `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.{--> as ==>}`), never with new type
+    `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.--> as ==>`), never with new type
     definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:imports` is commented
     out in `build.sbt` and `pants.toml`. Parenthesize: `+`, `-->` and `->>` share a
     precedence level, so write `(A + B) --> C`; `*` binds tighter, `<->`, `==>` and `^` looser, `~>` and `~~>`
@@ -382,6 +382,7 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - Aligned `=` / `:` / `=>` columns in consecutive declarations and match cases.
 - Method bodies are wrapped in `{ ... }`. Scala 3 `if … then … else`, `for … do`, `match` with braces. Trailing
   commas in multi-line argument/parameter lists.
+- Braces in imports only around several selectors: `import K.-->`, `import D.--> as ==>`, but `import K.{Obj, -->}`.
 
 ### Compiler-flag-driven idioms
 
@@ -441,10 +442,11 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   code. The default given `SampleTypes.Standard` is `Int`, `String`, `Boolean`, `Long`, four distinct types, so call
   sites name no types. Types that a generator forces stay concrete: the `Int` states of loops and recursion, the
   parser's `Int` semantics.
-- **Law bodies**: a spec imports its fixture (`import F.*`) and its laws (`import M.MonadLaws.*`; those of an `also`
-  structure inside its block), and each law binds its generators to local vals named after what they sample,
-  `observations` for the observer and the plural of the lambda parameter otherwise: `val fs = arrow[T1, T2]`, then,
-  after a blank line, `forAll(observations, fs, gs) { (observe, f, g) => ... }`.
+- **Law bodies**: a spec imports its fixture (`import category.*`, `import promonad.*`), its carrier where it has one
+  (`import M.M`), and its laws (`import M.MonadLaws.*`; those of an `also` structure inside its block), and each law
+  binds its generators to local vals named after what they sample, `observations` for the observer and the plural of
+  the lambda parameter otherwise: `val fs = arrow[T1, T2]`, then, after a blank line,
+  `forAll(observations, fs, gs) { (observe, f, g) => ... }`.
 - **Instance names from types**: a spec whose instance is named after a type takes a `TypeName[T]` (a macro, resolved
   where the test class is declared), so that callers pass only types: `class IntIsEqTest extends EqSpec[Int]`,
   `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
@@ -459,8 +461,9 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   sample points per property**.
 - **Specs take their subject, not a fixture**: the category or structure is a `tracked` parameter whose type states
   what the laws need (`tracked val M: Symmetric { val K: Category { type Obj = Type } }`), and the fixture is found
-  from it as a given, `using F: CategoryFixture.On[M.K.type]` (`PromonadFixture.On[S.P.type]` for promonads), a `val`
-  only where a test class uses it.
+  from it as a given, `using category: CategoryFixture.On[M.K.type]` (`promonad: PromonadFixture.On[S.P.type]` for
+  promonads), a `val` only where a test class uses it. The fixture's name names the category in test names, so a spec
+  needs no `TypeName` of its category.
   There is one given fixture per category or promonad, in the companions `CategoryFixture` and `PromonadFixture` (the
   parser's in `ParserFixtures`, imported). Derived categories (`Total.op`, `P.category`) need givens of their own:
   implicit search cannot get from `Total.op` back to `Total`. `FunctorSpec` finds two fixtures, `source` for the
@@ -516,7 +519,7 @@ Things that cost time once; check here before fighting the compiler.
 - **Singleton chains.** Path-dependent code type-checks when every link is declared with a singleton type (`P.K` =
   `M.K` = `M.F.K` = `Total`). A refinement that intersects instead (`Monad { val K: Total.type }` on a member already
   typed `F.K.type`) breaks the chain; refine the parameter the member comes from (`Monad.On`).
-- **Renamed type imports** (`import D.{--> as ==>}`) are reported unused even when used, in every variant tried
+- **Renamed type imports** (`import D.--> as ==>`) are reported unused even when used, in every variant tried
   (renaming `-->`, `Hom` or `Self`, with or without other imports), which is why `-Wunused:imports` is commented out in
   `build.sbt` and `pants.toml`.
 - **`export` of a stable member** (`export F.K`) creates a stable alias: `import K.{Obj, -->}` and singleton chains

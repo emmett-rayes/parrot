@@ -13,7 +13,7 @@ package category
   */
 abstract class Profunctor(tracked val K: Category, tracked val V: Category) extends Bifunctor(K.op, K, V) {
   import K.{Obj, -->}
-  import V.{--> as ==>}
+  import V.--> as ==>
 
   /** The object part *P*. */
   final type P = Self

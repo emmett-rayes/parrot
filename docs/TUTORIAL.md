@@ -2421,7 +2421,7 @@ val pipeline: Int -> String    = both >>> h
 val parallel: ((Int, Int)) -> (Int, String) = f *** g
 ```
 
-**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in a second one, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A --> A2, g: B ->> B2): F[A, B] ==> F[A2, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import M.K.{Obj, -->}` or `import D.{--> as ==>}`, so that `M.K.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
+**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in a second one, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A --> A2, g: B ->> B2): F[A, B] ==> F[A2, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import M.K.{Obj, -->}` or `import D.--> as ==>`, so that `M.K.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
 
 ### 11.5 Laws, tests and the status table
 
@@ -2435,7 +2435,7 @@ The encoding rests on experimental features: the `is` syntax and `tracked` param
 
 - **A false warning.** The compiler's initialization checker (`-Wsafe-init`) warns that a `tracked` parameter "may be accessed before it is initialized" when a *class* passes it on to a parent class that has parameters. At run time it is always initialized. Objects do not trigger the warning. The library's build turns the checker off rather than silencing it on each class where it appears **[Checked: Scala 3.10.0]**.
 - **A surprising given.** An instance whose `Self` is `Nothing`, such as an `Eq` for the empty type, is found by the compiler for *every* query of the same type class, because `Nothing` is a subtype of everything. The library therefore offers `Eq.NothingIsEq` as a plain value, not as a given **[Checked: Scala 3.10.0]**.
-- **A false unused warning.** A type imported under a new name, as in `import D.{--> as ==>}`, is reported as unused even where signatures use it. The library's build leaves imports out of the unused checks rather than silencing the warning on each renamed import **[Checked: Scala 3.10.0]**.
+- **A false unused warning.** A type imported under a new name, as in `import D.--> as ==>`, is reported as unused even where signatures use it. The library's build leaves imports out of the unused checks rather than silencing the warning on each renamed import **[Checked: Scala 3.10.0]**.
 - **Tool support.** Not every tool that parses Scala understands `tracked` yet out of the box; Pants requires the in-repo `scala_override` plugin to parse `tracked` parameters **[Checked]**.
 
 None of these is a cost of the mathematics. Each is the price of using a language feature early.
@@ -2467,7 +2467,7 @@ import parrot.category.{Category, Type}
 
 abstract class Functor(tracked val C: Category, tracked val D: Category):
   import C.-->
-  import D.{--> as ->>}                             // the arrows of the target category
+  import D.--> as ->>                               // the arrows of the target category
   type Self[_]
   final type F = Self                               // the object map
   def objects[A: C.Obj]: F[A] is D.Obj              // objects go to objects

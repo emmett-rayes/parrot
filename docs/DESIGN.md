@@ -271,13 +271,13 @@ written without `tracked`, produces no warning.
 trait Box { type T }
 
 class Uses(val b: Box) {
-  import b.{T as U} // warning: unused import
+  import b.T as U // warning: unused import
   def f(u: U): U = u
 }
 ```
 
 Without the rename (`import b.T` and `T` in the signature) there is no warning. The same happens for type aliases and
-abstract type members, and with or without other imports in scope.
+abstract type members, with or without braces around the selector, and with or without other imports in scope.
 
 **Capture checking mis-types patterns of case classes without fields.** New in Scala 3.10.0, and still in 3.10.1-RC1.
 Options: `-language:experimental.captureChecking`.

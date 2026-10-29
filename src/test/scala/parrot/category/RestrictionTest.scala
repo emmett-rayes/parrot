@@ -10,11 +10,11 @@ abstract class RestrictionSpec(
   name: String,
   tracked val R: Restriction { val P: Promonad { val K: Category { type Obj = Type } } },
 )(using
-  PF: PromonadFixture.On[R.P.type],
+  promonad: PromonadFixture.On[R.P.type],
   types: SampleTypes,
 ) extends LawSuite("Restriction", name) {
   import types.{T1, T2, T3, given}
-  import PF.*
+  import promonad.*
   import R.P
   import P.P
   import R.RestrictionLaws.*
@@ -91,11 +91,11 @@ abstract class ClassicalSpec(
     val C: Cocartesian { val T: Bifunctor { type Self = Either } }
   },
 )(using
-  PF: PromonadFixture.On[C.P.type],
+  promonad: PromonadFixture.On[C.P.type],
   types: SampleTypes,
 ) extends LawSuite("Classical", name) {
   import types.{T1, T2, T3, given}
-  import PF.*
+  import promonad.*
   import C.P
   import P.P
   import C.ClassicalLaws.*

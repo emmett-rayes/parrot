@@ -9,11 +9,11 @@ import Sample.given
   * satisfies the [[Bifunctor]] laws.
   */
 abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj = Type } })(using
-  PF: PromonadFixture.On[P.type],
+  promonad: PromonadFixture.On[P.type],
   types: SampleTypes,
-) extends LawSuite("Promonad", PF.name) {
+) extends LawSuite("Promonad", promonad.name) {
   import types.{T1, T2, T3, T4, given}
-  import PF.*
+  import promonad.*
   import P.P
   import P.PromonadLaws.*
 

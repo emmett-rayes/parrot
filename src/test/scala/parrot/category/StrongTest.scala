@@ -8,12 +8,12 @@ abstract class StrongSpec(
   name: String,
   tracked val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } },
 )(using
-  PF: PromonadFixture.On[S.P.type],
+  promonad: PromonadFixture.On[S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[S.M.Tensor[X, Y]],
 ) extends LawSuite("Strong", name) {
   import types.{T1, T2, T3, T4, given}
-  import PF.*
+  import promonad.*
   import S.P
   import P.P
   import S.StrongLaws.*

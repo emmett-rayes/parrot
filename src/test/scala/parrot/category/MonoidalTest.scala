@@ -5,15 +5,14 @@ import org.scalacheck.Gen
 
 /** The laws of [[Monoidal]] and [[Symmetric]], for structures on a category whose objects are all types. */
 abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type Obj = Type } })(using
-  F: CategoryFixture.On[M.K.type],
+  category: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
-  category: TypeName[M.K.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Symmetric", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
-  import F.*
+  import category.*
   import M.K.-->
   import M.SymmetricLaws.*
 
@@ -126,15 +125,14 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
 
 /** The laws of [[Cartesian]]: the universal property of products. */
 abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type Obj = Type } })(using
-  F: CategoryFixture.On[M.K.type],
+  category: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
-  category: TypeName[M.K.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Cartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
-  import F.*
+  import category.*
   import M.K.-->
   import M.CartesianLaws.*
 
@@ -207,15 +205,14 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
 
 /** The laws of [[Cocartesian]]: the universal property of coproducts. */
 abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { type Obj = Type } })(using
-  F: CategoryFixture.On[M.K.type],
+  category: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
-  category: TypeName[M.K.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Cocartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
-  import F.*
+  import category.*
   import M.K.-->
   import M.CocartesianLaws.*
 

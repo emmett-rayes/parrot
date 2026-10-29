@@ -179,7 +179,7 @@ object Cartesian {
       M.TensorIsObj[A, B]
     }
 
-    def bimap[A: Obj, B: Obj, A2: Obj, B2: Obj](f: A2 --> A, g: B2 --> B): F[A2, B2] --> F[A, B] = {
+    def bimap[A1: Obj, B1: Obj, A2: Obj, B2: Obj](f: A2 --> A1, g: B2 --> B1): F[A2, B2] --> F[A1, B1] = {
       M.tensor(f, g)
     }
   }

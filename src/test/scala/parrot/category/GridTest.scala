@@ -83,12 +83,12 @@ abstract class ElgotSpec(
   name: String,
   tracked val E: Elgot { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
-  val PF: PromonadFixture.On[E.S.P.type],
+  val promonad: PromonadFixture.On[E.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[E.S.M.Tensor[X, Y]],
 ) extends LawSuite("Elgot", name) {
   import types.{T2, T3, given}
-  import PF.*
+  import promonad.*
   import E.S.P
   import P.P
   import E.ElgotLaws.*
@@ -188,12 +188,12 @@ abstract class TracedSpec(
   name: String,
   tracked val T: Traced { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
-  PF: PromonadFixture.On[T.S.P.type],
+  promonad: PromonadFixture.On[T.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[T.S.M.Tensor[X, Y]],
 ) extends LawSuite("Traced", name) {
   import types.{T1, T2, T3, T4, given}
-  import PF.*
+  import promonad.*
   import T.S.P
   import P.P
   import T.TracedLaws.*
@@ -299,11 +299,11 @@ abstract class RecursionSpec(
   name: String,
   tracked val R: Recursion { val P: Promonad { val K: Category { type Obj = Type } } },
 )(using
-  val PF: PromonadFixture.On[R.P.type],
+  val promonad: PromonadFixture.On[R.P.type],
   types: SampleTypes,
 ) extends LawSuite("Recursion", name) {
   import types.{T2, given}
-  import PF.*
+  import promonad.*
   import R.P
   import P.P
   import R.RecursionLaws.*
@@ -338,12 +338,12 @@ abstract class ConwaySpec(
   name: String,
   tracked val C: Conway { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
-  PF: PromonadFixture.On[C.S.P.type],
+  promonad: PromonadFixture.On[C.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[C.S.M.Tensor[X, Y]],
 ) extends LawSuite("Conway", name) {
   import types.{T2, T3, given}
-  import PF.*
+  import promonad.*
   import C.S.P
   import P.P
   import C.ConwayLaws.*

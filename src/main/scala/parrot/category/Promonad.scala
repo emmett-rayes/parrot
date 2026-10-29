@@ -16,7 +16,7 @@ import scala.annotation.targetName
   */
 abstract class Promonad(tracked override val K: Category) extends Profunctor(K, Total) {
   import K.{Obj, -->}
-  import K.op.{--> as ~~>}
+  import K.op.--> as ~~>
 
   /** *unit*: **K**(*A*,*B*) → *P*(*A*,*B*).
     */
@@ -38,8 +38,8 @@ abstract class Promonad(tracked override val K: Category) extends Profunctor(K, 
 
   /** *P*(*f*,*g*)(*p*) = *unit*(*g*) ∘ *p* ∘ *unit*(*f*)
     */
-  override def bimap[A: Obj, B: Obj, A2: Obj, B2: Obj](f: A ~~> A2, g: B --> B2): P[A, B] -> P[A2, B2] = {
-    p => multiply(unit(g), multiply(p, unit[A2, A](f)))
+  override def bimap[A1: Obj, B1: Obj, A2: Obj, B2: Obj](f: A1 ~~> A2, g: B1 --> B2): P[A1, B1] -> P[A2, B2] = {
+    p => multiply(unit(g), multiply(p, unit[A2, A1](f)))
   }
 
   /** The category of arrows: the objects of **K**, morphisms *P*(*A*,*B*), identity and composition of *P*. */

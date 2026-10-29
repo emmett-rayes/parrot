@@ -152,7 +152,7 @@ object Fns extends Category {
       Type.TIsType
     }
 
-    def bimap[A: Type, B: Type, A2: Type, B2: Type](f: Fn[A, A2], g: Fn[B, B2]): Fn[(A, B), (A2, B2)] = {
+    def bimap[A1: Type, B1: Type, A2: Type, B2: Type](f: Fn[A1, A2], g: Fn[B1, B2]): Fn[(A1, B1), (A2, B2)] = {
       Fn.fanout(Fn.andThen(Fn.Proj1(), f), Fn.andThen(Fn.Proj2(), g))
     }
   }
@@ -165,7 +165,8 @@ object Fns extends Category {
       Type.TIsType
     }
 
-    def bimap[A: Type, B: Type, A2: Type, B2: Type](f: Fn[A, A2], g: Fn[B, B2]): Fn[Either[A, B], Either[A2, B2]] = {
+    def bimap[A1: Type, B1: Type, A2: Type, B2: Type](f: Fn[A1, A2], g: Fn[B1, B2])
+      : Fn[Either[A1, B1], Either[A2, B2]] = {
       Fn.copair(Fn.andThen(f, Fn.Inl()), Fn.andThen(g, Fn.Inr()))
     }
   }

@@ -16,7 +16,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
   /** The functor's object part *F*. */
   final type F = Self
 
-  /** *F* maps objects of **C** to objects of **D**.
+  /** *F* maps an object of **C** to an object of **D**.
     */
   def objects[A: C.Obj]: F[A] is D.Obj
 
