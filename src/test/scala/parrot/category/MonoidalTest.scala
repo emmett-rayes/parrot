@@ -5,7 +5,7 @@ import org.scalacheck.Gen
 
 /** The laws of [[Monoidal]] and [[Symmetric]], for structures on a category whose objects are all types. */
 abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type Obj = Type } })(using
-  val F: Fixture.On[M.K.type],
+  val F: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
@@ -117,7 +117,7 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
 
 /** The laws of [[Cartesian]]: the universal property of products. */
 abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type Obj = Type } })(using
-  val F: Fixture.On[M.K.type],
+  val F: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
@@ -191,7 +191,7 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
 
 /** The laws of [[Cocartesian]]: the universal property of coproducts. */
 abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { type Obj = Type } })(using
-  val F: Fixture.On[M.K.type],
+  val F: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,

@@ -3,7 +3,7 @@ package category
 
 /** The laws of [[Category]], for a category whose objects are all types. */
 abstract class CategorySpec(tracked val K: Category { type Obj = Type })(using
-  val F: Fixture.On[K.type],
+  val F: CategoryFixture.On[K.type],
   types: SampleTypes,
 ) extends LawSuite("Category", F.name) {
   import types.{T1, T2, T3, T4, given}

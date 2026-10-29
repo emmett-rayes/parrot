@@ -8,7 +8,7 @@ abstract class BifunctorSpec(
   tracked val K: Category { type Obj = Type },
   tracked val B: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
 )(using
-  val F: Fixture.On[K.type],
+  val F: CategoryFixture.On[K.type],
   bifunctor: TypeName[B.Self],
   category: TypeName[K.type],
   types: SampleTypes,

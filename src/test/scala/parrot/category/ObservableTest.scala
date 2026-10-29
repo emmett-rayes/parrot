@@ -6,7 +6,7 @@ import org.scalacheck.Gen
 /** The laws of [[Observable]], for the observations of a fixture's arrows *T1* → *T2*, sampled afresh for every case.
   * Pairs and triples are sampled so that agreeing arrows occur often: an arrow, its variant and the variant of that.
   */
-abstract class ObservableSpec(F: Fixture)(using types: SampleTypes) extends LawSuite("Observable", F.name) {
+abstract class ObservableSpec(F: CategoryFixture)(using types: SampleTypes) extends LawSuite("Observable", F.name) {
   import types.{T1, T2, given}
   import F.K.-->
 

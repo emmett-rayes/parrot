@@ -148,7 +148,7 @@ abstract class ComonoidSpec(
   name: String,
   tracked val W: Comonoid { val V: Monoidal { val K: Category { type Obj = Type } } },
 )(using
-  val F: Fixture.On[W.V.K.type],
+  val F: CategoryFixture.On[W.V.K.type],
   S: Sample[W.C],
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[W.V.*[X, Y]],
   unit: Sample[W.V.I],

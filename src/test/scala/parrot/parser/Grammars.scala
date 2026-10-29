@@ -137,7 +137,7 @@ object Interpreters {
 }
 
 /** The morphisms of [[Fns]]: lifted functions, observed by application. */
-object FnsFixture extends Fixture("Fn", Fns) {
+object FnsFixture extends CategoryFixture("Fn", Fns) {
 
   def arrow[X: Sample, Y: Sample]: Gen[Fn[X, Y]] = Sample.function[X, Y].map(Fn.lift(_))
 
@@ -273,7 +273,8 @@ object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict
 }
 
 /** [[ReferenceFixture]], observed with diagnostics and varied by an identity that reports nothing. */
-object ReferenceDiagnosticsFixture extends Fixture("ReferenceParser (with diagnostics)", ReferenceFixture.P.category) {
+object ReferenceDiagnosticsFixture
+    extends CategoryFixture("ReferenceParser (with diagnostics)", ReferenceFixture.P.category) {
   import K.-->
 
   def arrow[X: Sample, Y: Sample]: Gen[X --> Y] = ReferenceFixture.arrow[X, Y]
@@ -284,7 +285,7 @@ object ReferenceDiagnosticsFixture extends Fixture("ReferenceParser (with diagno
 }
 
 /** [[StrictFixture]], observed with diagnostics and varied by an identity that reports nothing. */
-object StrictDiagnosticsFixture extends Fixture("StrictParser (with diagnostics)", StrictFixture.P.category) {
+object StrictDiagnosticsFixture extends CategoryFixture("StrictParser (with diagnostics)", StrictFixture.P.category) {
   import K.-->
 
   def arrow[X: Sample, Y: Sample]: Gen[X --> Y] = StrictFixture.arrow[X, Y]
@@ -301,7 +302,7 @@ object ParserFixtures {
   given ReferenceIsFixture: PromonadFixture.On[Interpreters.reference.Arrows.type] = ReferenceFixture
 
   /** [[ReferenceFixture]], for the category of `ReferenceParser`. */
-  given ReferenceCategoryIsFixture: Fixture.On[Interpreters.reference.Arrows.category.type] = {
+  given ReferenceCategoryIsFixture: CategoryFixture.On[Interpreters.reference.Arrows.category.type] = {
     ReferenceFixture.category
   }
 
@@ -309,5 +310,5 @@ object ParserFixtures {
   given StrictIsFixture: PromonadFixture.On[Interpreters.strict.Arrows.type] = StrictFixture
 
   /** [[StrictFixture]], for the category of `StrictParser`. */
-  given StrictCategoryIsFixture: Fixture.On[Interpreters.strict.Arrows.category.type] = StrictFixture.category
+  given StrictCategoryIsFixture: CategoryFixture.On[Interpreters.strict.Arrows.category.type] = StrictFixture.category
 }

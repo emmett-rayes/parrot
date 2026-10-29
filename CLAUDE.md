@@ -155,7 +155,8 @@ src/main/scala/parrot/
   parser/     (package parrot.parser)     ParserAlgebra, Expected, the two interpreters, Fn, Scanner, CharSet
   json/       (package parrot.json)       JsonGrammar
 src/test/scala/parrot/
-  category/   LawSuite (law runner + law status table), Fixture/Sample (generators, observations), one spec per structure
+  category/   LawSuite (law runner + law status table), Sample, CategoryFixture, PromonadFixture (generators,
+              observations), one spec per structure
   parser/     Grammars (random grammars), law and agreement tests, interpreter tests, ScannerTest
   json/       JsonGrammarTest, JsonCorporaTest (every corpus document), JsonFixtures, JsonBenchmark (a `main`)
 src/test/resources/json/           vendored JSON corpora (see README.txt there for upstream sources/commits)
@@ -448,16 +449,17 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   `RecursionSpec`, `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ObservableSpec`, `PreorderSpec`,
   `ParserLawSpec`), **one class per
   instance**.
-- **Fixtures** (`Fixture.scala`): `Sample[X]` (generator, cogenerator, `Eq`), `Fixture` (arrows of a category whose
-  objects are all types: `arrow`, `variant`, `observe`), `PromonadFixture` (arrows of a promonad, with a `base` fixture
-  for pure arrows). Observations generate **fresh sample points per property**.
+- **Fixtures** (`Sample.scala`, `CategoryFixture.scala`, `PromonadFixture.scala`): `Sample[X]` (generator,
+  cogenerator, `Eq`), `CategoryFixture` (arrows of a category whose objects are all types: `arrow`, `variant`,
+  `observe`), `PromonadFixture` (arrows of a promonad, with a `base` fixture for pure arrows). Observations generate
+  **fresh sample points per property**.
 - **Specs take their subject, not a fixture**: the category or structure is a `tracked` parameter whose type states
   what the laws need (`tracked val M: Symmetric { val K: Category { type Obj = Type } }`), and the fixture is found
-  from it as a given, `using val F: Fixture.On[M.K.type]` (`PromonadFixture.On[S.P.type]` for promonads). There is
-  one given fixture per category or promonad, in the companions `Fixture` and `PromonadFixture` (the parser's in
-  `ParserFixtures`, imported). Derived categories (`Total.op`, `P.category`) need givens of their own: implicit search
-  cannot get from `Total.op` back to `Total`. `ObservableSpec` alone takes its fixture explicitly, since the fixture's
-  observer is what it tests.
+  from it as a given, `using val F: CategoryFixture.On[M.K.type]` (`PromonadFixture.On[S.P.type]` for promonads).
+  There is one given fixture per category or promonad, in the companions `CategoryFixture` and `PromonadFixture` (the
+  parser's in `ParserFixtures`, imported). Derived categories (`Total.op`, `P.category`) need givens of their own:
+  implicit search cannot get from `Total.op` back to `Total`. `ObservableSpec` alone takes its fixture explicitly,
+  since the fixture's observer is what it tests.
 - Conditional laws use targeted generators (`Descent` for loops that stop, `StringStateFixture.guarded` for guarded
   steps, `refined` pairs for monotonicity), not `==>`.
 - Negative results are **counterexample** tests (interchange fails for parsers, postcomposition does not distribute
