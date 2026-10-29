@@ -208,9 +208,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    class`es (`Kleisli(M)`, `StateT[S](M)`, `Kleisli.ClassicalOf(P, R)`), instantiated by objects.
 8. **Instances name their evidence explicitly** (`Type.TIsType`), never `summon`: a class-level forwarding given would be
    found and recurse.
-9. **Distinct operator names per structure**: `>>>` (category), `>>` (promonad), `***` (tensor), `&&&`/`|||` (pairing,
-   copairing), `+++` (coproduct tensor), `**` (Freyd parallel), `|>` (override), `=?=` (observable agreement), `<~`
-   (preorder), `===` (Eq).
+9. **Distinct operator names per structure**: `>>>`/`<<<` (category, diagrammatic and mathematical order), `>>`
+   (promonad), `***` (tensor), `&&&`/`|||` (pairing, copairing), `+++` (coproduct tensor), `**` (Freyd parallel), `|>`
+   (override), `=?=` (observable agreement), `<~` (preorder), `===` (Eq).
 10. **Nullary extensions that clash with a method of the same name** take `(using DummyImplicit)`.
 11. **`-Wsafe-init` is off** (commented out in `build.sbt`): a *class* that forwards a `tracked` parameter to a parent
     class with parameters gets a false "Access non-initialized value" (objects are fine; the scala3 issue draft is
@@ -262,7 +262,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | --- | --- | --- | --- |
 | `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`<~`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
-| `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`, `>>>`, `Iso`/`<->`, `op`, `CategoryLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
+| `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
 | `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor` | `Endofunctor.OptionIsEndofunctor`, `Total.Tuple2IsBifunctor`, … |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal`, `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure on a category | `***`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry` | `Total.Product`/`Coproduct`/`Exponential`, `Partial.Product`/`Coproduct`, `Cartesian.Op`, `Cocartesian.Op` |

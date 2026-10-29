@@ -6,17 +6,19 @@ import scala.annotation.targetName
 /** A category whose objects are types and whose morphisms are values.
   *
   * Represents a category **C**, where
-  *   - the objects are the types *A* with evidence that *A* is an object
+  *   - the objects are types *A* of kind * with evidence that they belong to a type class `Obj`
   *   - **C**(*A*,*B*) are the morphisms *f*: *A* → *B*
   *   - *id*: *A* → *A* is the identity
   *   - ∘ is the composition
   *
-  * Identity and composition are single polymorphic programs, so the category is uniform: they may use the evidence of
-  * their objects, but they cannot inspect the objects themselves. Equality of morphisms is semantic equality, which the
-  * laws check through an [[Observable]].
+  * @note Identity and composition are single polymorphic programs, so the category is uniform. Equality of morphisms is
+  *   observational equality, which the laws check through an [[Observable]] instance.
   */
 abstract class Category extends caps.Pure {
   type Self[_, _]
+
+  /** The type class selecting the objects: any refinement of [[Type]]. */
+  type Obj <: Type
 
   /** The morphisms **C**(*A*,*B*). */
   final type Hom = Self
@@ -24,29 +26,41 @@ abstract class Category extends caps.Pure {
   /** Infix alias for [[Hom]]. */
   final type --> = Hom
 
-  /** The type class selecting the objects: any refinement of [[Type]]. */
-  type Obj <: Type
-
   /** The identity morphism *id*: *A* → *A*. */
   def identity[A: Obj]: A --> A
 
   /** Composes *g*: *B* → *C* and *f*: *A* → *B* to *g* ∘ *f*: *A* → *C*. */
   def compose[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C
 
-  /** An isomorphism between *A* and *B*: two morphisms, inverse to each other by [[CategoryLaws.isomorphism]]. */
-  final case class Iso[A, B](to: A --> B, from: B --> A)
+  /** Composes *g*: *B* → *C* and *f*: *A* → *B* in diagrammatic order to *f* ⨾ *g*: *A* → *C*. */
+  final def andThen[A: Obj, B: Obj, C: Obj](f: A --> B, g: B --> C): A --> C = {
+    compose(g, f)
+  }
 
-  /** Infix alias for [[Iso]]: *A* ≅ *B*. */
+  /** An isomorphism *A* ≅ *B* between objects *A* and *B*.
+    *
+    * Consists of two morphisms, inverse to each other by [[IsoLaws.isomorphism]].
+    */
+  final case class Iso[A: Obj, B: Obj](to: A --> B, from: B --> A)
+
+  /** Infix alias for [[Iso]]. */
   final type <-> = Iso
 
-  /** The opposite category **C**ᵒᵖ: the same objects, with every morphism reversed. */
+  /** The corresponding opposite category **C**ᵒᵖ. */
   final lazy val op: Category.Op { val K: Category.this.type } = Category.Op(this)
 
+  extension [B: Obj, C: Obj](g: B --> C)
+    /** Infix alias for [[compose]]. */
+    @targetName("composeExt")
+    final def <<<[A: Obj](f: A --> B): A --> C = {
+      Category.this.compose(g, f)
+    }
+
   extension [A: Obj, B: Obj](f: A --> B)
-    /** Composes in diagrammatic order: *f* ⨾ *g* = *g* ∘ *f*. */
+    /** Infix alias for [[andThen]]. */
     @targetName("andThenExt")
     final def >>>[C: Obj](g: B --> C): A --> C = {
-      Category.this.compose(g, f)
+      Category.this.andThen(f, g)
     }
 
   /** Laws that any `Category` must satisfy. */
@@ -74,13 +88,17 @@ abstract class Category extends caps.Pure {
 
     /** If *f* = *f*′ and *g* = *g*′, then *g* ∘ *f* = *g*′ ∘ *f*′.
       *
-      * @note The premise is not checked: *f*′ and *g*′ must be equal to *f* and *g* by construction (variants).
+      * @note The premise is not checked: *f*′ and *g*′ must be equal to *f* and *g* by construction.
       */
     def congruence[A: Obj, B: Obj, C: Obj](f: A --> B, f2: A --> B, g: B --> C, g2: B --> C)(
       using (A --> C) is Observable
     ): Boolean = {
       (f >>> g) =?= (f2 >>> g2)
     }
+  }
+
+  /** Laws that any `Iso` must satisfy. */
+  object IsoLaws {
 
     /** *i*⁻¹ ∘ *i* = *id* and *i* ∘ *i*⁻¹ = *id*
       */
@@ -92,9 +110,12 @@ abstract class Category extends caps.Pure {
 
 object Category {
 
-  /** The opposite **K**ᵒᵖ of a category **K**: the same objects and identities, with every morphism reversed. */
+  /** The opposite **K**ᵒᵖ of a category **K**.
+    *
+    * The opposite category has the same objects and identities, with every morphism reversed.
+    */
   final class Op(tracked val K: Category) extends Category {
-    type Self[A, B] = K.-->[B, A]
+    type Self[A, B] = K.Hom[B, A]
     type Obj        = K.Obj
 
     def identity[A: Obj]: A --> A = {
@@ -106,38 +127,39 @@ object Category {
     }
   }
 
-  /** The product **C₁** × **C₂** of two categories: pairs of objects, and pairs of morphisms composed componentwise.
+  /** The product category **C₁** × **C₂** of two categories.
     *
     * Represents a category, where
     *   - the objects are the pair types *X* = (*X*₁,*X*₂) whose components are objects of **C₁** and **C₂**
-    *   - (**C₁** × **C₂**)(*X*,*Y*) = **C₁**(*X*₁,*Y*₁) × **C₂**(*X*₂,*Y*₂)
-    *   - *id* = (*id*,*id*) and (*g*₁,*g*₂) ∘ (*f*₁,*f*₂) = (*g*₁ ∘ *f*₁,*g*₂ ∘ *f*₂)
+    *   - the morphisms are pairs of morphisms in (**C₁** × **C₂**)(*X*,*Y*) = **C₁**(*X*₁,*Y*₁) × **C₂**(*X*₂,*Y*₂)
+    *     whose components are morphisms of **C₁** and **C₂**
+    *   - the identity is componentwise: *id* = (*id*,*id*)
+    *   - the composition is componentwise: (*g*₁,*g*₂) ∘ (*f*₁,*f*₂) = (*g*₁ ∘ *f*₁,*g*₂ ∘ *f*₂)
     *
-    * A morphism type is computed from two object types, so the components of a pair type *X* are taken apart by the
-    * match types [[Product.Fst]] and [[Product.Snd]]. The object evidence ([[Components]])
-    * is stated about the components themselves, so generic code never needs a match type to reduce; on a pair type
-    * (*A*₁,*A*₂) they reduce to *A*₁ and *A*₂. A [[Bifunctor]] is a functor out of a product category,
-    * [[Bifunctor.functor]].
+    * @note A morphism type is computed from two object types, so the components of a pair type *X* are taken apart by
+    *   the match types [[Product.Fst]] and [[Product.Snd]]. The object evidence ([[ProductObj]]) is stated about the
+    *   components themselves, so generic code never needs a match type to reduce; on a pair type (*A*₁,*A*₂) they
+    *   reduce to *A*₁ and *A*₂.
     */
   final class Product(tracked val C1: Category, tracked val C2: Category) extends Category {
     import Product.{Fst, Snd}
 
-    type Self[X, Y] = (C1.-->[Fst[X], Fst[Y]], C2.-->[Snd[X], Snd[Y]])
+    type Self[X, Y] = (C1.Hom[Fst[X], Fst[Y]], C2.Hom[Snd[X], Snd[Y]])
 
     /** Evidence that a pair type is an object: its components are objects of **C₁** and **C₂**. */
-    trait Components extends Type {
+    trait ProductObj extends Type {
 
       /** The first component is an object of **C₁**. */
-      def fst: Fst[Components.this.Self] is C1.Obj
+      def fst: Fst[ProductObj.this.Self] is C1.Obj
 
       /** The second component is an object of **C₂**. */
-      def snd: Snd[Components.this.Self] is C2.Obj
+      def snd: Snd[ProductObj.this.Self] is C2.Obj
     }
 
-    type Obj = Components
+    type Obj = ProductObj
 
     /** Pairs of objects are objects. */
-    given PairIsObj: [A1, A2] => (first: A1 is C1.Obj, second: A2 is C2.Obj) => ((A1, A2) is Components) {
+    given PairIsObj: [A1: C1.Obj as first, A2: C2.Obj as second] => ((A1, A2) is ProductObj) {
       def fst: A1 is C1.Obj = first
       def snd: A2 is C2.Obj = second
     }

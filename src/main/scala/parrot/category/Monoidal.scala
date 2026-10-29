@@ -73,9 +73,9 @@ abstract class Monoidal(
       (((A * B) * C) --> ((A * B) * C)) is Observable,
       ((A * (B * C)) --> (A * (B * C))) is Observable,
     ): Boolean = {
-      K.CategoryLaws.isomorphism(leftUnitor[A]) &&
-      K.CategoryLaws.isomorphism(rightUnitor[A]) &&
-      K.CategoryLaws.isomorphism(associator[A, B, C])
+      K.IsoLaws.isomorphism(leftUnitor[A]) &&
+      K.IsoLaws.isomorphism(rightUnitor[A]) &&
+      K.IsoLaws.isomorphism(associator[A, B, C])
     }
 
     /** *f* ∘ *λ* = *λ* ∘ (*id* ⊗ *f*)
