@@ -61,18 +61,25 @@ abstract class Monoidal(
   /** Laws that any `Monoidal` structure must satisfy, beyond the [[Bifunctor.BifunctorLaws]] of ⊗. */
   object MonoidalLaws {
 
-    /** *λ*, *ρ* and *α* are isomorphisms.
+    /** *λ*⁻¹ ∘ *λ* = *id* and *λ* ∘ *λ*⁻¹ = *id*
       */
-    def isomorphisms[A: Obj, B: Obj, C: Obj](
+    def leftUnitorIsomorphism[A: Obj](using ((I * A) --> (I * A)) is Observable, (A --> A) is Observable): Boolean = {
+      K.IsoLaws.isomorphism(leftUnitor[A])
+    }
+
+    /** *ρ*⁻¹ ∘ *ρ* = *id* and *ρ* ∘ *ρ*⁻¹ = *id*
+      */
+    def rightUnitorIsomorphism[A: Obj](using ((A * I) --> (A * I)) is Observable, (A --> A) is Observable): Boolean = {
+      K.IsoLaws.isomorphism(rightUnitor[A])
+    }
+
+    /** *α*⁻¹ ∘ *α* = *id* and *α* ∘ *α*⁻¹ = *id*
+      */
+    def associatorIsomorphism[A: Obj, B: Obj, C: Obj](
       using
-      ((I * A) --> (I * A)) is Observable,
-      (A --> A) is Observable,
-      ((A * I) --> (A * I)) is Observable,
       (((A * B) * C) --> ((A * B) * C)) is Observable,
       ((A * (B * C)) --> (A * (B * C))) is Observable,
     ): Boolean = {
-      K.IsoLaws.isomorphism(leftUnitor[A]) &&
-      K.IsoLaws.isomorphism(rightUnitor[A]) &&
       K.IsoLaws.isomorphism(associator[A, B, C])
     }
 

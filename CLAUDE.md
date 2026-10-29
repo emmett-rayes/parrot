@@ -453,9 +453,9 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   where the test class is declared), so that callers pass only types: `class IntIsEqTest extends EqSpec[Int]`,
   `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
 - **One generic spec per structure** (`EqSpec`, `ObservableSpec`, `PreorderSpec`, `CategorySpec`, `FunctorSpec`,
-  `BifunctorSpec`, `PromonadSpec`, `SymmetricSpec`, `CartesianSpec`, `CocartesianSpec`, `StrongSpec`,
-  `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`, `RecursionSpec`, `MonadSpec`,
-  `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ParserLawSpec`), **one class per instance**.
+  `BifunctorSpec`, `PromonadSpec`, `MonoidalSpec`, `SymmetricSpec`, `CartesianSpec`, `CocartesianSpec`,
+  `StrongSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`, `RecursionSpec`,
+  `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ParserLawSpec`), **one class per instance**.
 - **Fixtures** (`Sample.scala`, `CategoryFixture.scala`, `PromonadFixture.scala`): `Sample[X]` (generator,
   cogenerator, `Eq`; a carrier without an `Eq` is sampled at an instance where it is data, as `StateT` at `Boolean`
   states), `CategoryFixture` (arrows of a category whose objects are all types: `arrow`, `variant`, `observe`),
