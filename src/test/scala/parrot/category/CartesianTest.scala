@@ -4,11 +4,11 @@ package category
 /** The laws of [[Cartesian]]: the universal property of products. */
 abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type Obj = Type } })(using
   category: CategoryFixture.On[M.K.type],
-  monoidal: TypeName[M.type],
+  typename: TypeName[M.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
-) extends LawSuite("Cartesian", s"${monoidal.name} on ${category.name}") {
+) extends LawSuite("Cartesian", s"${typename.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
   import category.*
   import M.K.-->

@@ -9,10 +9,10 @@ abstract class BifunctorSpec(
   tracked val B: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
 )(using
   category: CategoryFixture.On[K.type],
-  bifunctor: TypeName[B.Self],
+  typename: TypeName[B.Self],
   types: SampleTypes,
   sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[B.F[X, Y]],
-) extends LawSuite("Bifunctor", s"${bifunctor.name} on ${category.name}") {
+) extends LawSuite("Bifunctor", s"${typename.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
   import category.*
   import K.-->

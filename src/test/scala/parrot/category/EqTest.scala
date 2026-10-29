@@ -6,7 +6,7 @@ import org.scalacheck.Gen
 import Sample.given
 
 /** The laws of [[Eq]]: an equivalence relation. Pairs and triples are sampled so that equal values occur often. */
-abstract class EqSpec[A: Sample](using typeName: TypeName[A]) extends LawSuite("Eq", typeName.name) {
+abstract class EqSpec[A: Sample](using typename: TypeName[A]) extends LawSuite("Eq", typename.name) {
   import A.eq.EqLaws.*
   private val pairs: Gen[(A, A)] = Gen.oneOf(Gen.zip(A.gen, A.gen), A.gen.map(a => (a, a)))
 

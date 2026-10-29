@@ -4,10 +4,10 @@ package category
 /** The laws of [[Symmetric]], for structures on a category whose objects are all types. */
 abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type Obj = Type } })(using
   category: CategoryFixture.On[M.K.type],
-  monoidal: TypeName[M.type],
+  typename: TypeName[M.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
-) extends LawSuite("Symmetric", s"${monoidal.name} on ${category.name}") {
+) extends LawSuite("Symmetric", s"${typename.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
   import category.*
   import M.K.-->

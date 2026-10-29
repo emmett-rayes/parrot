@@ -4,11 +4,11 @@ package category
 /** The laws of [[Cocartesian]]: the universal property of coproducts. */
 abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { type Obj = Type } })(using
   category: CategoryFixture.On[M.K.type],
-  monoidal: TypeName[M.type],
+  typename: TypeName[M.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
-) extends LawSuite("Cocartesian", s"${monoidal.name} on ${category.name}") {
+) extends LawSuite("Cocartesian", s"${typename.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
   import category.*
   import M.K.-->

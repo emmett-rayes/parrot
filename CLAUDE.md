@@ -451,9 +451,9 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   binds its generators to local vals named after what they sample, `observations` for the observer and the plural of
   the lambda parameter otherwise: `val fs = arrow[T1, T2]`, then, after a blank line,
   `forAll(observations, fs, gs) { (observe, f, g) => ... }`.
-- **Instance names from types**: a spec whose instance is named after a type takes a `TypeName[T]` (a macro, resolved
-  where the test class is declared), so that callers pass only types: `class IntIsEqTest extends EqSpec[Int]`,
-  `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
+- **Instance names from types**: a spec whose instance is named after a type takes a `TypeName[T]` named `typename`
+  (a macro, resolved where the test class is declared), so that callers pass only types:
+  `class IntIsEqTest extends EqSpec[Int]`, `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
 - **One generic spec per structure** (`EqSpec`, `ObservableSpec`, `PreorderSpec`, `CategorySpec`, `FunctorSpec`,
   `BifunctorSpec`, `PromonadSpec`, `MonoidalSpec`, `SymmetricSpec`, `CartesianSpec`, `CocartesianSpec`,
   `StrongSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`, `RecursionSpec`,
