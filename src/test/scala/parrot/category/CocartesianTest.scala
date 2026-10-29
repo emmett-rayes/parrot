@@ -12,6 +12,7 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   import types.{T1, T2, T3, T4, given}
   import category.*
   import M.K.-->
+  import M.+
   import M.CocartesianLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
@@ -39,11 +40,11 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   }
 
   law("copairUniqueness") {
-    val observations = observe[M.Tensor[T1, T2], T4]
-    val hs           = arrow[M.Tensor[T1, T2], T4]
+    val observations = observe[T1 + T2, T4]
+    val hs           = arrow[T1 + T2, T4]
 
     forAll(observations, hs) { (observe, h) =>
-      given ((M.Tensor[T1, T2] --> T4) is Observable) = observe
+      given (((T1 + T2) --> T4) is Observable) = observe
       copairUniqueness(h)
     }
   }
@@ -59,23 +60,23 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   }
 
   law("tensorIsCoproduct") {
-    val observations = observe[M.Tensor[T1, T2], M.Tensor[T4, T3]]
+    val observations = observe[T1 + T2, T4 + T3]
     val fs           = arrow[T1, T4]
     val gs           = arrow[T2, T3]
 
     forAll(observations, fs, gs) { (observe, f, g) =>
-      given ((M.Tensor[T1, T2] --> M.Tensor[T4, T3]) is Observable) = observe
+      given (((T1 + T2) --> (T4 + T3)) is Observable) = observe
       tensorIsCoproduct(f, g)
     }
   }
 
   law("copairCongruence") {
-    val observations = observe[M.Tensor[T1, T2], T4]
+    val observations = observe[T1 + T2, T4]
     val fs           = arrow[T1, T4]
     val gs           = arrow[T2, T4]
 
     forAll(observations, fs, gs) { (observe, f, g) =>
-      given ((M.Tensor[T1, T2] --> T4) is Observable) = observe
+      given (((T1 + T2) --> T4) is Observable) = observe
       copairCongruence(f, variant(f), g, variant(g))
     }
   }
