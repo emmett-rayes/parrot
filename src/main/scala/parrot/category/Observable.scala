@@ -1,10 +1,10 @@
 package parrot
 package category
 
-/** An oracle for observational equality.
+/** An oracle for checking observational equality.
   *
   * Represents a test of equality, where
-  *   - ≟ is a decidable equivalence relation that holds whenever the two values are equal
+  *   - ≟ is a decidable equivalence relation that fails only if some observation tells the two values apart
   *
   * Laws compare morphisms, and morphisms are usually functions, whose equality is not decidable. An `Observable`
   * decides something weaker: whether two values agree on finitely many observations, each ending in data that is
@@ -22,7 +22,7 @@ package category
 trait Observable extends caps.Pure {
   type Self
 
-  /** Returns `true` if *a* and *b* agree on every observation. */
+  /** Returns `false` if some observation shows that *a* and *b* do not agree. */
   def agree(a: Self, b: Self): Boolean
 
   extension (a: Self)
@@ -58,6 +58,8 @@ trait Observable extends caps.Pure {
     }
 
     /** If *a*₁ = *a*₂, then *a*₁ ≟ *a*₂
+      *
+      * No observation tells equal values apart.
       *
       * @note The premise is not checked: *a*₂ must be equal to *a*₁ by construction.
       */

@@ -213,7 +213,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    found and recurse.
 9. **Distinct operator names per structure**: `>>>`/`<<<` (category, diagrammatic and mathematical order), `>>`
    (promonad), `***` (tensor), `&&&`/`|||` (pairing, copairing), `+++` (coproduct tensor), `**` (Freyd parallel), `|>`
-   (override), `=?=` (observable agreement), `<~` (preorder), `===` (Eq).
+   (override), `=?=` (observable agreement), `?<` (preorder), `===` (Eq).
 10. **Nullary extensions that clash with a method of the same name** take `(using DummyImplicit)`.
 11. **`-Wsafe-init` is off** (commented out in `build.sbt`): a *class* that forwards a `tracked` parameter to a parent
     class with parameters gets a false "Access non-initialized value" (objects are fine; the scala3 issue draft is
@@ -266,7 +266,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | File | Structure | Key members | Instances |
 | --- | --- | --- | --- |
 | `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
-| `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`<~`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
+| `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
 | `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
 | `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
@@ -282,7 +282,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 
 Every structure has a nested `object <Name>Laws` whose methods return `Boolean`. **Laws compare with an `Observable`**
 (`(using X is Observable)`, infix `=?=`) — a finite set of observations ending in data compared with `Eq` — never with
-`Eq` on functions. Inequations take a `Preorder` (`<~`). **Congruence laws** take variants equal by construction
+`Eq` on functions. Inequations take a `Preorder` (`?<`). **Congruence laws** take variants equal by construction
 (`f2`), because agreement on samples is not a congruence. Conditional laws (uniformity, guardedness) state their premise
 in a `@note` and are tested with targeted generators. The oracles have laws too: an `Observable` is an equivalence and
 **sound** (variants agree), a `Preorder` is a preorder, sound, and contains agreement (*a* =?= *b* implies *a* ⊑ *b*,
@@ -530,7 +530,9 @@ Things that cost time once; check here before fighting the compiler.
   keep working. Moving `K` from a `val` to an export removed the `-Wsafe-init` warnings of `OptionT` and `StateT`.
 - **Infix types** follow the precedence of term operators by first character: `*` > `+`, `-` (`-->`, `->>`) > `=`
   (`==>`) > `^` > letters (`is`), with `<` (`<->`) between `=` and `+`; `~>` and `~~>` bind tightest. Parenthesize mixed
-  arrows and tensors.
+  arrows and tensors. **Term operators** follow the same rule: `?<` binds tighter than every other operator, so
+  parenthesize its operands, as in `(p >> q) ?< (p2 >> q2)`. After a space or an opening bracket, Scala reads `<?` and
+  `<!` as the start of an XML literal, which is why the preorder's operator is not `<?`.
 - **`-Wsafe-init`** warns on `tracked` parameters forwarded to a parameterized parent from a class, never from an object,
   which is why it is off (rule 11 of §4.1).
 - **No given whose `Self` is `Nothing`** (rule 12 of §4.1).

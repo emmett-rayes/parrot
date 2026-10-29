@@ -394,7 +394,7 @@ abstract class ParserAlgebra(
     /** 0 ⊑ *p* ⨾ 0: a failure at the end fails the whole sequence, which still reports what *p* expected.
       */
     def rightZero[A, B, C](p: P[A, B])(using P[A, C] is Preorder): Boolean = {
-      failure[A, C] <~ (p >> failure[B, C])
+      failure[A, C] ?< (p >> failure[B, C])
     }
 
     /** 0 ⊳ *p* = *p* = *p* ⊳ 0 */
@@ -419,7 +419,7 @@ abstract class ParserAlgebra(
 
     /** *p̄* ⨾ *p* ⊑ *p* (**R1**, up to diagnostics): where *p* fails, the silent lookahead reports nothing. */
     def lookaheadIdentity[A, B](p: P[A, B])(using P[A, B] is Preorder): Boolean = {
-      (~p >> p) <~ p
+      (~p >> p) ?< p
     }
 
     /** *p̄* ⨾ *q̄* = *q̄* ⨾ *p̄* (**R2**) */
@@ -436,7 +436,7 @@ abstract class ParserAlgebra(
       * lookahead when *q* fails.
       */
     def lookaheadPrecompose[A, B, C](p: P[A, B], q: P[B, C])(using P[A, B] is Preorder): Boolean = {
-      (~(p >> q) >> p) <~ (p >> ~q)
+      (~(p >> q) >> p) ?< (p >> ~q)
     }
 
     /** (*p̄*ᶜ)ᶜ = *p̄* */
@@ -476,24 +476,24 @@ abstract class ParserAlgebra(
     def andThenMonotone[A, B, C](p: P[A, B], p2: P[A, B], q: P[B, C], q2: P[B, C])(
       using P[A, C] is Preorder
     ): Boolean = {
-      (p >> q) <~ (p2 >> q2)
+      (p >> q) ?< (p2 >> q2)
     }
 
     /** If *p* ⊑ *p*′ and *q* ⊑ *q*′, then *p* ⊳ *q* ⊑ *p*′ ⊳ *q*′. */
     def orElseMonotone[A, B](p: P[A, B], p2: P[A, B], q: P[A, B], q2: P[A, B])(using P[A, B] is Preorder): Boolean = {
-      (p |> q) <~ (p2 |> q2)
+      (p |> q) ?< (p2 |> q2)
     }
 
     /** If *p* ⊑ *p*′ and *q* ⊑ *q*′, then *p* ⋉ *q* ⊑ *p*′ ⋉ *q*′. */
     def zipMonotone[A, B, C, D](p: P[A, B], p2: P[A, B], q: P[C, D], q2: P[C, D])(
       using P[(A, C), (B, D)] is Preorder
     ): Boolean = {
-      (p ** q) <~ (p2 ** q2)
+      (p ** q) ?< (p2 ** q2)
     }
 
     /** If *p* ⊑ *p*′, then *rule*(*p*,*l*) ⊑ *rule*(*p*′,*l*). */
     def ruleMonotone[A, B](p: P[A, B], p2: P[A, B], label: String)(using P[A, B] is Preorder): Boolean = {
-      p.rule(label) <~ p2.rule(label)
+      p.rule(label) ?< p2.rule(label)
     }
 
     /** *p*\* = (⟨*p*,*p*\*⟩ ⨾ *unit*(*cons*)) ⊳ *unit*(*empty*), for a *p* that consumes when it succeeds: *cons* prepends

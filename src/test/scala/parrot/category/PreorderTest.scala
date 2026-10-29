@@ -3,7 +3,7 @@ package category
 
 import org.scalacheck.Gen
 
-/** The laws of [[Preorder]], for orders drawn afresh for every case, each with an [[Observable]] that makes the same
+/** The laws of [[Preorder]], for orders sampled afresh for every case, each with an [[Observable]] that makes the same
   * observations. `refine` builds a value above its first argument, so that ordered pairs and chains occur often.
   */
 abstract class PreorderSpec[A](

@@ -87,10 +87,10 @@ where a program can tell a diverging pair from the pair of its diverging compone
   `Eq` extend `Type`, so evidence search is sound but not canonical (the tutorial discusses coherence).
 - **Names follow the mathematics.** Carriers have short aliases (`Hom`/`-->`, `F`, `P`, `M`, `C`); arrows of other
   categories are imported, renamed where categories meet (`->>`, `==>`, `~~>`); these three-symbol arrows name roles,
-  while the two concrete categories have two-symbol arrows, `->` for 𝒮 and `~>` for 𝒫; objects are combined infix
-  (`*`, `+`, `B ^ A` for *B*ᴬ, `<->` for isomorphisms); every structure has its own operators (`>>>`, `>>`, `***`,
-  `&&&`, `|||`, `**`, `|>`, `=?=`, `<~`, `===`), so two structures can be imported into one scope. Plain forwards are
-  `export`s.
+  while the two concrete categories have two-symbol arrows, `->` for 𝒮 and `~>` for 𝒫; objects are combined infix (`*`,
+  `+`, `B ^ A` for *B*ᴬ, `<->` for isomorphisms); every structure has its own operators (`>>>`, `>>`, `***`, `&&&`,
+  `|||`, `**`, `|>`, `=?=`, `?<`, `===`), so two structures can be imported into one scope, and none is a name that a
+  type already has: `?<`, not `<=`, which `Int`'s own `<=` would shadow. Plain forwards are `export`s.
 - **A monad is structure on an endofunctor**: `Monad(F: Endofunctor)` with `unit` and `flatten` primitive, the monoid
   presentation, so that `Monad` and `Monoid` have the same shape; `bind` is derived. Monads are refined through their
   functor (`Monad.On[Total.type]`), because only that keeps the chain of singleton types that path-dependent code needs.
