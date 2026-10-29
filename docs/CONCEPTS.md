@@ -76,7 +76,8 @@ that make ⊗ associative and unital. `Symmetric` adds the braiding, which swaps
 `Cocartesian` refine `Symmetric` where the tensor is a universal construction: the product, with a terminal unit, and
 the coproduct, with an initial unit. They are dual: `Cartesian.Op` reads the products of **K** as coproducts of **K**ᵒᵖ,
 with the opposite of the tensor (`Bifunctor.Op`), and `Cocartesian.Op` the converse. `Closed` is on a monoidal
-structure: an internal hom *A* ⇒ *B* with evaluation and currying.
+structure: an internal hom *A* ⇒ *B* with evaluation and currying, which make it a profunctor **K**ᵒᵖ × **K** → **K**
+(`Closed.InternalHom`).
 
 𝒮 has all of them: products, coproducts and function types (`Total.Product`, `Total.Coproduct`,
 `Total.Exponential`). 𝒫 has coproducts, but its pairs are only symmetric monoidal (`Partial.Product`):

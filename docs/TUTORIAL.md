@@ -2744,7 +2744,7 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 | `Symmetric(K, U, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, symmetry, hexagon | `Partial.Product` |
 | `Cartesian(K, U, T)` | the tensor is a product: `fst`, `snd`, `pair` (`&&&`), `discard`; the isomorphisms are derived | `Total.Product` |
 | `Cocartesian(K, U, T)` | the tensor is a coproduct: `inl`, `inr`, `copair` (`|||`), `absurd` | `Total.Coproduct`, `Partial.Coproduct` |
-| `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry` | `Total.Exponential` |
+| `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry`, and the internal hom as a profunctor, `internalHom` | `Total.Exponential` |
 
 `Cartesian` and `Cocartesian` are refinements of `Symmetric`, because being a product is a property of a tensor: it says that the tensor of two objects has the universal property of section 14.1. The library therefore derives their associator, unitors and braiding from the projections or injections, and checks one extra law, `tensorIsProduct` (or `tensorIsCoproduct`), that the tensor of arrows is the one the universal property gives. `Closed`, on the other hand, is structure *on* a monoidal category, so it takes one as a parameter.
 
