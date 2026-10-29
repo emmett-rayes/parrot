@@ -12,7 +12,7 @@ trait Eq extends Type {
   def equal(a: Self, b: Self): Boolean
 
   extension (a: Self)
-    /** Infix form of [[equal]]. */
+    /** Infix extension for [[equal]]. */
     final def ===(b: Self): Boolean = {
       Eq.this.equal(a, b)
     }

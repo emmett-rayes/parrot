@@ -49,7 +49,7 @@ abstract class Cocartesian(
     }
 
   extension [A: Obj, B: Obj](f: A --> B)
-    /** Infix form of [[tensor]] for coproducts: *f* + *g*. */
+    /** Infix extension for [[tensor]] on coproducts. */
     final def +++[C: Obj, D: Obj](g: C --> D): (A + C) --> (B + D) = {
       tensor(f, g)
     }

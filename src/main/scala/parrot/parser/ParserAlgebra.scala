@@ -276,47 +276,47 @@ abstract class ParserAlgebra(
 
   extension [A, B](self: P[A, B]) {
 
-    /** Infix form of [[rule]]. */
+    /** Infix extension for [[rule]]. */
     @targetName("ruleExt")
     final def rule(label: String): P[A, B] = ParserAlgebra.this.rule(self, label)
 
-    /** Infix form of [[map]]. */
+    /** Infix extension for [[map]]. */
     @targetName("mapExt")
     final def map[C](g: B --> C): P[A, C] = ParserAlgebra.this.map(self, g)
 
-    /** Infix form of [[mapInput]]. */
+    /** Infix extension for [[mapInput]]. */
     @targetName("mapInputExt")
     final def mapInput[C](f: C --> A): P[C, B] = ParserAlgebra.this.mapInput(self, f)
 
-    /** Infix form of [[andThen]]. */
+    /** Infix extension for [[andThen]]. */
     final def >>[C](other: P[B, C]): P[A, C] = ParserAlgebra.this.andThen(self, other)
 
-    /** Infix form of [[zip]]. */
+    /** Infix extension for [[zip]]. */
     final def **[C, D](other: P[C, D]): P[(A, C), (B, D)] = ParserAlgebra.this.zip(self, other)
 
-    /** Infix form of [[pair]]. */
+    /** Infix extension for [[pair]]. */
     final def &&[C](other: P[A, C]): P[A, (B, C)] = ParserAlgebra.this.pair(self, other)
 
-    /** Infix form of [[skipThen]]. */
+    /** Infix extension for [[skipThen]]. */
     final def *>[C](other: P[A, C]): P[A, C] = ParserAlgebra.this.skipThen(self, other)
 
-    /** Infix form of [[thenSkip]]. */
+    /** Infix extension for [[thenSkip]]. */
     final def <*[C](other: P[A, C]): P[A, B] = ParserAlgebra.this.thenSkip(self, other)
 
-    /** Infix form of [[between]]. */
+    /** Infix extension for [[between]]. */
     @targetName("betweenExt")
     final def between[C, D](open: P[A, C], close: P[A, D]): P[A, B] = ParserAlgebra.this.between(self, open, close)
 
-    /** Infix form of [[branch]]. */
+    /** Infix extension for [[branch]]. */
     final def ++[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = ParserAlgebra.this.branch(self, other)
 
-    /** Infix form of [[merge]]. */
+    /** Infix extension for [[merge]]. */
     final def ||[C](other: P[C, B]): P[Either[A, C], B] = ParserAlgebra.this.merge(self, other)
 
-    /** Infix form of [[orElse]]. */
+    /** Infix extension for [[orElse]]. */
     final def |>(other: P[A, B]): P[A, B] = ParserAlgebra.this.orElse(self, other)
 
-    /** Infix form of [[or]]. */
+    /** Infix extension for [[or]]. */
     final def +>[C](other: P[A, C]): P[A, Either[B, C]] = ParserAlgebra.this.or(self, other)
 
     /** Prefix form of [[lookahead]]. */
@@ -337,15 +337,15 @@ abstract class ParserAlgebra(
     @targetName("repeatedExt")
     final def repeated(using DummyImplicit): P[A, Vector[B]] = ParserAlgebra.this.repeated(self)
 
-    /** Infix form of [[times]]. */
+    /** Infix extension for [[times]]. */
     @targetName("timesExt")
     final def times(n: Int): P[A, Vector[B]] = ParserAlgebra.this.times(self, n)
 
-    /** Infix form of [[atLeast]]. */
+    /** Infix extension for [[atLeast]]. */
     @targetName("atLeastExt")
     final def atLeast(n: Int): P[A, Vector[B]] = ParserAlgebra.this.atLeast(self, n)
 
-    /** Infix form of [[separatedBy]]. */
+    /** Infix extension for [[separatedBy]]. */
     @targetName("separatedByExt")
     final def separatedBy[C](separator: P[A, C]): P[A, Vector[B]] = ParserAlgebra.this.separatedBy(self, separator)
   }

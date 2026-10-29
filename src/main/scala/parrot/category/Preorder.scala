@@ -15,7 +15,7 @@ trait Preorder extends caps.Pure {
   def below(a: Self, b: Self): Boolean
 
   extension (a: Self)
-    /** Infix form of [[below]]. */
+    /** Infix extension for [[below]]. */
     final def <~(b: Self): Boolean = {
       Preorder.this.below(a, b)
     }

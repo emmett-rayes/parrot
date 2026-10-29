@@ -113,7 +113,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
   }
 
   extension [A: Obj, B: Obj](p: P[A, B])
-    /** Infix form of [[orElse]]: *p* ⊳ *q*. */
+    /** Infix extension for [[orElse]]. */
     @targetName("orElseExt")
     final def |>(q: P[A, B]): P[A, B] = {
       orElse(p, q)

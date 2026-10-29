@@ -26,7 +26,7 @@ trait Observable extends caps.Pure {
   def agree(a: Self, b: Self): Boolean
 
   extension (a: Self)
-    /** Infix form of [[agree]]. */
+    /** Infix extension for [[agree]]. */
     final def =?=(b: Self): Boolean = {
       Observable.this.agree(a, b)
     }

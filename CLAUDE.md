@@ -405,6 +405,8 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - **Math mode composition** uses `∘` (or `⨾` where diagrammatic order reads better); **no spaces in math argument
   lists**: `**C**(*A*,*B*)`, `⟨*f*,*g*⟩`.
 - Laws state their equation first, e.g. `/** *μ* ∘ (*η* ⊗ *id*) = *λ* */`.
+- Infix names have one-line docs: `Infix alias for [[Hom]].` on a type alias, `Infix extension for [[compose]].` on
+  an extension method.
 - Structure docs begin "A <structure> on …" then "Represents …, where" followed by a bulleted list of components.
 - Use `@note` for caveats (unchecked premises, laws holding only for guarded arguments).
 

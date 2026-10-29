@@ -50,14 +50,14 @@ abstract class Category extends caps.Pure {
   final lazy val op: Category.Op { val K: Category.this.type } = Category.Op(this)
 
   extension [B: Obj, C: Obj](g: B --> C)
-    /** Infix alias for [[compose]]. */
+    /** Infix extension for [[compose]]. */
     @targetName("composeExt")
     final def <<<[A: Obj](f: A --> B): A --> C = {
       Category.this.compose(g, f)
     }
 
   extension [A: Obj, B: Obj](f: A --> B)
-    /** Infix alias for [[andThen]]. */
+    /** Infix extension for [[andThen]]. */
     @targetName("andThenExt")
     final def >>>[C: Obj](g: B --> C): A --> C = {
       Category.this.andThen(f, g)

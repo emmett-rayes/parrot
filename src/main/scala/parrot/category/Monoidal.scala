@@ -50,7 +50,7 @@ abstract class Monoidal(
   }
 
   extension [A: Obj, B: Obj](f: A --> B)
-    /** Infix form of [[tensor]]: *f* ⊗ *g*. */
+    /** Infix extension for [[tensor]]. */
     final def ***[C: Obj, D: Obj](g: C --> D): (A * C) --> (B * D) = {
       tensor(f, g)
     }
