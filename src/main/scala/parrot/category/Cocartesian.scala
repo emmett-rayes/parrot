@@ -142,7 +142,7 @@ object Cocartesian {
     *
     * The coproducts, injections and copairing in **K** become products, projections and pairing in **K**ᵒᵖ.
     */
-  final class Op(tracked val C: Cocartesian) extends Cartesian(C.K.op, C.U, Cartesian.Tensor(C)) {
+  final class Op(tracked val C: Cocartesian) extends Cartesian(C.K.op, C.U, C.T.op) {
     import K.{Obj, -->}
 
     def fst[A: Obj, B: Obj]: (A * B) --> A = {

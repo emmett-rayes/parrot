@@ -29,6 +29,9 @@ abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tra
   /** The bifunctor as a functor out of the product category **C₁** × **C₂**: *F*(*X*) = *F*(*X*₁,*X*₂). */
   final lazy val functor: Bifunctor.FromProduct { val B: Bifunctor.this.type } = Bifunctor.FromProduct(this)
 
+  /** The corresponding opposite bifunctor *F*ᵒᵖ: **C₁**ᵒᵖ × **C₂**ᵒᵖ → **D**ᵒᵖ. */
+  final lazy val op: Bifunctor.Op { val B: Bifunctor.this.type } = Bifunctor.Op(this)
+
   /** Laws that any `Bifunctor` must satisfy.
     *
     * A bifunctor preserves identity and composition of pairs of morphisms. These are the same as the
@@ -90,6 +93,26 @@ object Bifunctor {
 
     def map[X: C.Obj, Y: C.Obj](f: X --> Y): F[X] ->> F[Y] = {
       B.bimap(f._1, f._2)(using X.fst, X.snd, Y.fst, Y.snd)
+    }
+  }
+
+  /** The opposite *F*ᵒᵖ: **C₁**ᵒᵖ × **C₂**ᵒᵖ → **D**ᵒᵖ of a bifunctor *F*: **C₁** × **C₂** → **D**.
+    *
+    * The opposite bifunctor has the same object part, with every morphism reversed.
+    */
+  final class Op(tracked val B: Bifunctor) extends Bifunctor(B.C1.op, B.C2.op, B.D.op) {
+    import B.C1.-->
+    import B.C2.--> as ->>
+    import B.D.--> as ==>
+
+    type Self = B.F
+
+    def objects[X: C1.Obj, Y: C2.Obj]: F[X, Y] is D.Obj = {
+      B.objects[X, Y]
+    }
+
+    def bimap[A1: C1.Obj, B1: C2.Obj, A2: C1.Obj, B2: C2.Obj](f: A2 --> A1, g: B2 ->> B1): F[A2, B2] ==> F[A1, B1] = {
+      B.bimap(f, g)
     }
   }
 }

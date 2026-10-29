@@ -148,7 +148,7 @@ object Cartesian {
     *
     * The products, projections and pairing in **K** become coproducts, injections and copairing in **K**ᵒᵖ.
     */
-  final class Op(tracked val C: Cartesian) extends Cocartesian(C.K.op, C.U, Tensor(C)) {
+  final class Op(tracked val C: Cartesian) extends Cocartesian(C.K.op, C.U, C.T.op) {
     import K.{Obj, -->}
 
     def inl[A: Obj, B: Obj]: A --> (A + B) = {
@@ -165,22 +165,6 @@ object Cartesian {
 
     def absurd[A: Obj]: I --> A = {
       C.discard[A]
-    }
-  }
-
-  /** The tensor of a monoidal structure on **K**, as a bifunctor on **K**ᵒᵖ: *f* ⊗ *g* with every morphism reversed.
-    */
-  final class Tensor(tracked val M: Monoidal) extends Bifunctor(M.K.op, M.K.op, M.K.op) {
-    import M.K.{Obj, -->}
-
-    type Self = M.Tensor
-
-    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
-      M.TensorIsObj[A, B]
-    }
-
-    def bimap[A1: Obj, B1: Obj, A2: Obj, B2: Obj](f: A2 --> A1, g: B2 --> B1): F[A2, B2] --> F[A1, B1] = {
-      M.tensor(f, g)
     }
   }
 }

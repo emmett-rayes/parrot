@@ -57,5 +57,6 @@ abstract class BifunctorSpec(
 
 class ScalaTuple2IsBifunctorTest   extends BifunctorSpec(Total, Total.Tuple2IsBifunctor)
 class ScalaEitherIsBifunctorTest   extends BifunctorSpec(Total, Total.EitherIsBifunctor)
+class ScalaTuple2OpIsBifunctorTest extends BifunctorSpec(Total.op, Total.Tuple2IsBifunctor.op)
 class PartialTuple2IsBifunctorTest extends BifunctorSpec(Partial, Partial.Tuple2IsBifunctor)
 class PartialEitherIsBifunctorTest extends BifunctorSpec(Partial, Partial.EitherIsBifunctor)

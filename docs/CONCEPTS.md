@@ -12,7 +12,7 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 | *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Monad(F)` on an endofunctor; `Restriction(P)` on a promonad |
 | *refines*: more operations and laws | `extends`, forwarding the parameters | `Symmetric` refines `Monoidal`; `Cartesian` and `Cocartesian` refine `Symmetric`; `Classical` refines `Restriction`; `Semilattice` refines `Monoid` |
 | *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K**ᵒᵖ × **K** |
-| *dual*: the same structure on the opposite | an `Op` class | `Category.Op`; `Cartesian.Op` is `Cocartesian`; `Promonad.Op`; `Conway.OfElgot` |
+| *dual*: the same structure on the opposite | an `Op` class | `Category.Op`; `Bifunctor.Op`; `Cartesian.Op` is `Cocartesian`; `Promonad.Op`; `Conway.OfElgot` |
 | *induces*: a construction from one structure to another | an `open class` or a method | a category gives a promonad (`Promonad.Hom`); a monad gives a promonad (`Kleisli`); a monoid gives a monad (`Writer`); a semilattice gives a preorder (`Preorder.of`) |
 | *bridge*: two structures that define each other | `Of…` classes | `Traced.OfElgot` and `Elgot.OfTraced`; `Traced.OfConway` and `Conway.OfTraced` |
 | *bundle*: structures used together | a class of `tracked` parameters | `Freyd(S)`; `parser.ParserAlgebra` |
@@ -75,8 +75,8 @@ A `Monoidal` structure is on a category, a unit object *I* and a bifunctor ⊗: 
 that make ⊗ associative and unital. `Symmetric` adds the braiding, which swaps the arguments. `Cartesian` and
 `Cocartesian` refine `Symmetric` where the tensor is a universal construction: the product, with a terminal unit, and
 the coproduct, with an initial unit. They are dual: `Cartesian.Op` reads the products of **K** as coproducts of **K**ᵒᵖ,
-with the tensor as a bifunctor on **K**ᵒᵖ (`Cartesian.Tensor`), and `Cocartesian.Op` the converse. `Closed` is on a
-monoidal structure: an internal hom *A* ⇒ *B* with evaluation and currying.
+with the opposite of the tensor (`Bifunctor.Op`), and `Cocartesian.Op` the converse. `Closed` is on a monoidal
+structure: an internal hom *A* ⇒ *B* with evaluation and currying.
 
 𝒮 has all of them: products, coproducts and function types (`Total.Product`, `Total.Coproduct`,
 `Total.Exponential`). 𝒫 has coproducts, but its pairs are only symmetric monoidal (`Partial.Product`):
