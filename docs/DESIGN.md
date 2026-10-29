@@ -143,6 +143,11 @@ Each structure sits at the lowest level where its laws can be stated.
   ones.
 - One generic specification per structure, one test class per instance. Laws known to fail are **counterexample
   tests**, which must find a witness: they document the intended semantics as much as the laws do.
+- A specification takes the **instance it checks**, with what its laws need of it in the parameter type (objects that
+  are all types), and finds the instance's fixture as a given: one per category or promonad. Passing the fixture
+  instead hid the category inside it, and with it the constraint on the category's objects. Fixtures of derived
+  categories (`Total.op`, `P.category`) are written as givens of their own, because implicit search cannot get from
+  `Total.op` back to `Total`.
 - Every test run regenerates **`docs/law-status.md`**, the table of laws, instances and statuses that the tutorial's
   status tags cite. The tests write it themselves, which keeps it independent of the build tool.
 

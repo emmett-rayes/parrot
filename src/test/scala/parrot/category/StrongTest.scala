@@ -6,14 +6,14 @@ import org.scalacheck.Gen
 /** The laws of [[Strong]] and [[Freyd]], for strong promonads over 𝒮. */
 abstract class StrongSpec(
   name: String,
-  tracked val PF: PromonadFixture,
-  tracked val S: Strong { val P: PF.P.type },
+  tracked val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } },
 )(using
+  val PF: PromonadFixture.On[S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[S.M.Tensor[X, Y]],
 ) extends LawSuite("Strong", name) {
   import types.{T1, T2, T3, T4, given}
-  import PF.P
+  import S.P
   import P.P
   import S.StrongLaws.*
 
@@ -130,7 +130,7 @@ abstract class StrongSpec(
 }
 
 class OptionKleisliProductIsStrongTest
-    extends StrongSpec("Kleisli[Option] on Product", OptionKleisliFixture, Kleisli.OptionProduct) {
+    extends StrongSpec("Kleisli[Option] on Product", Kleisli.OptionProduct) {
   also("Freyd") {
     law("interchange", "holds: Option is a commutative monad") {
       forAll(interchange)(holds => holds)
@@ -139,7 +139,7 @@ class OptionKleisliProductIsStrongTest
 }
 
 class OptionKleisliCoproductIsStrongTest
-    extends StrongSpec("Kleisli[Option] on Coproduct", OptionKleisliFixture, Kleisli.OptionCoproduct) {
+    extends StrongSpec("Kleisli[Option] on Coproduct", Kleisli.OptionCoproduct) {
   also("Freyd") {
     law("interchange", "holds: only one side runs") {
       forAll(interchange)(holds => holds)
@@ -154,7 +154,7 @@ object StringWriterProduct extends Kleisli.ProductStrength(StringWriterKleisli)
 object StringWriterCoproduct extends Kleisli.CoproductStrength(StringWriterKleisli)
 
 class StringWriterKleisliProductIsStrongTest
-    extends StrongSpec("Kleisli[Writer[String]] on Product", StringWriterKleisliFixture, StringWriterProduct) {
+    extends StrongSpec("Kleisli[Writer[String]] on Product", StringWriterProduct) {
   also("Freyd") {
     counterexample("interchange", "logs are not commutative") {
       forAll(interchange)(holds => holds)
@@ -163,7 +163,7 @@ class StringWriterKleisliProductIsStrongTest
 }
 
 class StringWriterKleisliCoproductIsStrongTest
-    extends StrongSpec("Kleisli[Writer[String]] on Coproduct", StringWriterKleisliFixture, StringWriterCoproduct) {
+    extends StrongSpec("Kleisli[Writer[String]] on Coproduct", StringWriterCoproduct) {
   also("Freyd") {
     law("interchange", "holds: only one side runs") {
       forAll(interchange)(holds => holds)

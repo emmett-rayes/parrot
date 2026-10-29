@@ -81,14 +81,14 @@ object Descent {
 /** The laws of [[Elgot]], with steps whose loops stop (in 𝒫) or that make progress (guarded instances). */
 abstract class ElgotSpec(
   name: String,
-  tracked val PF: PromonadFixture,
-  tracked val E: Elgot { val S: Strong { val P: PF.P.type } },
+  tracked val E: Elgot { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
+  val PF: PromonadFixture.On[E.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[E.S.M.Tensor[X, Y]],
 ) extends LawSuite("Elgot", name) {
   import types.{T2, T3, given}
-  import PF.P
+  import E.S.P
   import P.P
   import E.ElgotLaws.*
   import P.K.-->
@@ -178,14 +178,14 @@ abstract class ElgotSpec(
 /** The laws of [[Traced]], with feedback that stops. */
 abstract class TracedSpec(
   name: String,
-  tracked val PF: PromonadFixture,
-  tracked val T: Traced { val S: Strong { val P: PF.P.type } },
+  tracked val T: Traced { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
+  val PF: PromonadFixture.On[T.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[T.S.M.Tensor[X, Y]],
 ) extends LawSuite("Traced", name) {
   import types.{T1, T2, T3, T4, given}
-  import PF.P
+  import T.S.P
   import P.P
   import T.TracedLaws.*
   import P.K.-->
@@ -281,11 +281,13 @@ abstract class TracedSpec(
 /** The laws of [[Recursion]], with functions that recurse on smaller arguments (𝒫) or after progress (guarded). */
 abstract class RecursionSpec(
   name: String,
-  tracked val PF: PromonadFixture,
-  tracked val R: Recursion { val P: PF.P.type }
-)(using types: SampleTypes) extends LawSuite("Recursion", name) {
+  tracked val R: Recursion { val P: Promonad { val K: Category { type Obj = Type } } },
+)(using
+  val PF: PromonadFixture.On[R.P.type],
+  types: SampleTypes,
+) extends LawSuite("Recursion", name) {
   import types.{T2, given}
-  import PF.P
+  import R.P
   import P.P
   import R.RecursionLaws.*
 
@@ -315,14 +317,14 @@ abstract class RecursionSpec(
 /** The laws of [[Conway]], with arrows whose fixed points are defined. */
 abstract class ConwaySpec(
   name: String,
-  tracked val PF: PromonadFixture,
-  tracked val C: Conway { val S: Strong { val P: PF.P.type } },
+  tracked val C: Conway { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
+  val PF: PromonadFixture.On[C.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[C.S.M.Tensor[X, Y]],
 ) extends LawSuite("Conway", name) {
   import types.{T2, T3, given}
-  import PF.P
+  import C.S.P
   import P.P
   import C.ConwayLaws.*
   import P.K.-->
@@ -413,7 +415,7 @@ abstract class ConwaySpec(
 
 // ==== 𝒫 ====
 
-class PartialLoopsIsElgotTest extends ElgotSpec("Partial (while loops)", PartialProgramsFixture, Partial.Loops) {
+class PartialLoopsIsElgotTest extends ElgotSpec("Partial (while loops)", Partial.Loops) {
   def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial(_))
   def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial(_))
   def shrink: Int ~> Int                                        = Partial(_ / 2)
@@ -424,14 +426,14 @@ class PartialLoopsIsElgotTest extends ElgotSpec("Partial (while loops)", Partial
 object PartialLoopsFromFeedback extends Elgot.OfTraced(Partial.Feedback)
 
 class PartialFeedbackIsElgotTest
-    extends ElgotSpec("Partial (iteration of the trace)", PartialProgramsFixture, PartialLoopsFromFeedback) {
+    extends ElgotSpec("Partial (iteration of the trace)", PartialLoopsFromFeedback) {
   def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial(_))
   def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial(_))
   def shrink: Int ~> Int                                        = Partial(_ / 2)
   def bijection: (Int ~> Int, Int ~> Int)                       = (Partial(x => -x), Partial(x => -x))
 }
 
-class PartialFeedbackIsTracedTest extends TracedSpec("Partial (feedback)", PartialProgramsFixture, Partial.Feedback) {
+class PartialFeedbackIsTracedTest extends TracedSpec("Partial (feedback)", Partial.Feedback) {
   def loop[A: Sample, B: Sample]: Gen[Either[A, Int] ~> Either[B, Int]] = Descent.loop[A, B].map(Partial(_))
 
   def loop2[A: Sample, B: Sample]: Gen[Either[A, Either[Int, Int]] ~> Either[B, Either[Int, Int]]] = {
@@ -445,7 +447,7 @@ class PartialFeedbackIsTracedTest extends TracedSpec("Partial (feedback)", Parti
   def shrink: Int ~> Int = Partial(_ / 2)
 }
 
-class PartialKnotsIsRecursionTest extends RecursionSpec("Partial (knots)", PartialProgramsFixture, Partial.Knots) {
+class PartialKnotsIsRecursionTest extends RecursionSpec("Partial (knots)", Partial.Knots) {
   def guarded[B: Sample]: Gen[(Int ~> B) -> (Int ~> B)] = {
     for {
       base    <- Sample.function[Int, B]
@@ -460,7 +462,7 @@ class PartialKnotsIsRecursionTest extends RecursionSpec("Partial (knots)", Parti
 // ==== Guarded state ====
 
 class StringStateLoopsIsElgotTest
-    extends ElgotSpec("Kleisli[State[String, Option]] (guarded)", StringStateFixture, StringStateLoops) {
+    extends ElgotSpec("Kleisli[State[String, Option]] (guarded)", StringStateLoops) {
   def step[A: Sample]: Gen[Int -> String -> Option[(Either[A, Int], String)]] = StringStateFixture.guarded[A, Int]
 
   def step2[A: Sample]: Gen[Int -> String -> Option[(Either[Either[A, Int], Int], String)]] = {
@@ -491,7 +493,7 @@ class StringStateLoopsIsElgotTest
 object StringStateFeedback extends Traced.OfElgot(StringStateLoops)
 
 class StringStateFeedbackIsTracedTest
-    extends TracedSpec("Kleisli[State[String, Option]] (guarded feedback)", StringStateFixture, StringStateFeedback) {
+    extends TracedSpec("Kleisli[State[String, Option]] (guarded feedback)", StringStateFeedback) {
   override protected def guarded: Boolean = true
 
   def loop[A: Sample, B: Sample]: Gen[Either[A, Int] -> String -> Option[(Either[B, Int], String)]] = {
@@ -521,7 +523,7 @@ class StringStateFeedbackIsTracedTest
 }
 
 class StringStateRecursionIsRecursionTest
-    extends RecursionSpec("Kleisli[State[String, Option]] (guarded)", StringStateFixture, StringStateRecursion) {
+    extends RecursionSpec("Kleisli[State[String, Option]] (guarded)", StringStateRecursion) {
   def guarded[B: Sample]: Gen[(Int -> String -> Option[(B, String)]) -> Int -> String -> Option[(B, String)]] = {
     for {
       base    <- StringStateFixture.arrow[Int, B]
@@ -577,7 +579,7 @@ object PartialOpFixture extends PromonadFixture("Partialᵒᵖ", PartialFixedPoi
 }
 
 class PartialOpIsConwayTest
-    extends ConwaySpec("Partialᵒᵖ (loops read backwards)", PartialOpFixture, PartialFixedPoints) {
+    extends ConwaySpec("Partialᵒᵖ (loops read backwards)", PartialFixedPoints) {
   def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial(_))
   def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial(_))
   def shrink: Int ~> Int                                        = Partial(_ / 2)
@@ -585,7 +587,7 @@ class PartialOpIsConwayTest
 }
 
 class PartialOpIsTracedTest
-    extends TracedSpec("Partialᵒᵖ (feedback through products)", PartialOpFixture, PartialProductFeedback) {
+    extends TracedSpec("Partialᵒᵖ (feedback through products)", PartialProductFeedback) {
   def loop[A: Sample, B: Sample]: Gen[Either[B, Int] ~> Either[A, Int]] = Descent.loop[B, A].map(Partial(_))
 
   def loop2[A: Sample, B: Sample]: Gen[Either[B, Either[Int, Int]] ~> Either[A, Either[Int, Int]]] = {

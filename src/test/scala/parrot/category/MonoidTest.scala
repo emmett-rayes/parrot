@@ -143,18 +143,18 @@ class StringConcatIsNotSemilatticeTest extends LawSuite("Semilattice", "String c
   }
 }
 
-/** The laws of [[Comonoid]], for comonoids in a monoidal structure on the category of a fixture. */
+/** The laws of [[Comonoid]], for comonoids in a monoidal structure on a category whose objects are all types. */
 abstract class ComonoidSpec(
   name: String,
-  tracked val F: Fixture,
-  tracked val W: Comonoid { val V: Monoidal { val K: F.K.type } },
+  tracked val W: Comonoid { val V: Monoidal { val K: Category { type Obj = Type } } },
 )(using
+  val F: Fixture.On[W.V.K.type],
   S: Sample[W.C],
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[W.V.*[X, Y]],
   unit: Sample[W.V.I],
 ) extends LawSuite("Comonoid", name) {
   import W.ComonoidLaws.*
-  import F.K.-->
+  import W.V.K.-->
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[W.V.*[X, Y]] = tensor[X, Y]
 
@@ -183,6 +183,6 @@ abstract class ComonoidSpec(
   }
 }
 
-class TotalProductComonoidTest extends ComonoidSpec("Int, by Δ and ! in 𝒮", TotalFixture, Total.Product.comonoid[Int])
+class TotalProductComonoidTest extends ComonoidSpec("Int, by Δ and ! in 𝒮", Total.Product.comonoid[Int])
 class PartialProductComonoidTest
-    extends ComonoidSpec("Int, by copying and deleting in 𝒫", PartialFixture, Partial.Product.comonoid[Int])
+    extends ComonoidSpec("Int, by copying and deleting in 𝒫", Partial.Product.comonoid[Int])

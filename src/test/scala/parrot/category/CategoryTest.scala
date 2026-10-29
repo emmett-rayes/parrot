@@ -2,10 +2,13 @@ package parrot
 package category
 
 /** The laws of [[Category]], for a category whose objects are all types. */
-abstract class CategorySpec(tracked val F: Fixture)(using types: SampleTypes) extends LawSuite("Category", F.name) {
+abstract class CategorySpec(tracked val K: Category { type Obj = Type })(using
+  val F: Fixture.On[K.type],
+  types: SampleTypes,
+) extends LawSuite("Category", F.name) {
   import types.{T1, T2, T3, T4, given}
-  import F.K.CategoryLaws.*
-  import F.K.-->
+  import K.CategoryLaws.*
+  import K.-->
 
   law("leftIdentity") {
     val observations = F.observe[T1, T2]
@@ -47,7 +50,7 @@ abstract class CategorySpec(tracked val F: Fixture)(using types: SampleTypes) ex
   }
 }
 
-class TotalIsCategoryTest extends CategorySpec(TotalFixture)
-class ScalaOpIsCategoryTest extends CategorySpec(OpFixture(TotalFixture))
-class PartialIsCategoryTest extends CategorySpec(PartialFixture)
-class OptionKleisliIsCategoryTest extends CategorySpec(OptionKleisliFixture.category)
+class TotalIsCategoryTest extends CategorySpec(Total)
+class ScalaOpIsCategoryTest extends CategorySpec(Total.op)
+class PartialIsCategoryTest extends CategorySpec(Partial)
+class OptionKleisliIsCategoryTest extends CategorySpec(Kleisli.OptionKleisli.category)

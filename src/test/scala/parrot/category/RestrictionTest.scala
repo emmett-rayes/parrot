@@ -8,11 +8,13 @@ import Sample.given
 /** The laws of [[Restriction]]. */
 abstract class RestrictionSpec(
   name: String,
-  tracked val PF: PromonadFixture,
-  tracked val R: Restriction { val P: PF.P.type }
-)(using types: SampleTypes) extends LawSuite("Restriction", name) {
+  tracked val R: Restriction { val P: Promonad { val K: Category { type Obj = Type } } },
+)(using
+  val PF: PromonadFixture.On[R.P.type],
+  types: SampleTypes,
+) extends LawSuite("Restriction", name) {
   import types.{T1, T2, T3, given}
-  import PF.P
+  import R.P
   import P.P
   import R.RestrictionLaws.*
 
@@ -77,13 +79,16 @@ abstract class RestrictionSpec(
 /** The laws of [[Classical]], for classical structures over the coproducts of 𝒮. */
 abstract class ClassicalSpec(
   name: String,
-  tracked val PF: PromonadFixture,
   tracked val C: Classical {
-    val P: PF.P.type; val C: Cocartesian { val T: Bifunctor { type Self = Either } }
+    val P: Promonad { val K: Category { type Obj = Type } }
+    val C: Cocartesian { val T: Bifunctor { type Self = Either } }
   },
-)(using types: SampleTypes) extends LawSuite("Classical", name) {
+)(using
+  val PF: PromonadFixture.On[C.P.type],
+  types: SampleTypes,
+) extends LawSuite("Classical", name) {
   import types.{T1, T2, T3, given}
-  import PF.P
+  import C.P
   import P.P
   import C.ClassicalLaws.*
 
@@ -254,18 +259,18 @@ object PartialProgramsFixture extends PromonadFixture("Partial", Partial.Program
 }
 
 class OptionKleisliIsRestrictionTest
-    extends RestrictionSpec("Kleisli[Option]", OptionKleisliFixture, Kleisli.OptionDomains)
+    extends RestrictionSpec("Kleisli[Option]", Kleisli.OptionDomains)
 
-class OptionKleisliIsClassicalTest extends ClassicalSpec("Kleisli[Option]", OptionKleisliFixture, Kleisli.OptionDomains)
+class OptionKleisliIsClassicalTest extends ClassicalSpec("Kleisli[Option]", Kleisli.OptionDomains)
 
 class PartialIsRestrictionTest
-    extends RestrictionSpec("Partial (total programs)", PartialProgramsFixture, Partial.Domains)
+    extends RestrictionSpec("Partial (total programs)", Partial.Domains)
 
 class StringStateIsRestrictionTest
-    extends RestrictionSpec("Kleisli[State[String, Option]]", StringStateFixture, StringStateDomains)
+    extends RestrictionSpec("Kleisli[State[String, Option]]", StringStateDomains)
 
 class StringStateIsClassicalTest
-    extends ClassicalSpec("Kleisli[State[String, Option]]", StringStateFixture, StringStateDomains)
+    extends ClassicalSpec("Kleisli[State[String, Option]]", StringStateDomains)
 
 // ==== Failure over a writer: restrictions that keep the output ====
 

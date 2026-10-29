@@ -4,15 +4,16 @@ package category
 import org.scalacheck.Gen
 
 /** The laws of [[Monoidal]] and [[Symmetric]], for structures on a category whose objects are all types. */
-abstract class SymmetricSpec(tracked val F: Fixture, tracked val M: Symmetric { val K: F.K.type })(using
+abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type Obj = Type } })(using
+  val F: Fixture.On[M.K.type],
   monoidal: TypeName[M.type],
-  category: TypeName[F.K.type],
+  category: TypeName[M.K.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Symmetric", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
-  import F.K.-->
+  import M.K.-->
   import M.SymmetricLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
@@ -115,15 +116,16 @@ abstract class SymmetricSpec(tracked val F: Fixture, tracked val M: Symmetric { 
 }
 
 /** The laws of [[Cartesian]]: the universal property of products. */
-abstract class CartesianSpec(tracked val F: Fixture, tracked val M: Cartesian { val K: F.K.type })(using
+abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type Obj = Type } })(using
+  val F: Fixture.On[M.K.type],
   monoidal: TypeName[M.type],
-  category: TypeName[F.K.type],
+  category: TypeName[M.K.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Cartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
-  import F.K.-->
+  import M.K.-->
   import M.CartesianLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
@@ -188,15 +190,16 @@ abstract class CartesianSpec(tracked val F: Fixture, tracked val M: Cartesian { 
 }
 
 /** The laws of [[Cocartesian]]: the universal property of coproducts. */
-abstract class CocartesianSpec(tracked val F: Fixture, tracked val M: Cocartesian { val K: F.K.type })(using
+abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { type Obj = Type } })(using
+  val F: Fixture.On[M.K.type],
   monoidal: TypeName[M.type],
-  category: TypeName[F.K.type],
+  category: TypeName[M.K.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Cocartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
-  import F.K.-->
+  import M.K.-->
   import M.CocartesianLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
@@ -260,10 +263,10 @@ abstract class CocartesianSpec(tracked val F: Fixture, tracked val M: Cocartesia
   }
 }
 
-class TotalProductIsSymmetricTest       extends SymmetricSpec(TotalFixture, Total.Product)
-class TotalProductIsCartesianTest       extends CartesianSpec(TotalFixture, Total.Product)
-class ScalaCoproductIsSymmetricTest     extends SymmetricSpec(TotalFixture, Total.Coproduct)
-class ScalaCoproductIsCocartesianTest   extends CocartesianSpec(TotalFixture, Total.Coproduct)
-class PartialProductIsSymmetricTest     extends SymmetricSpec(PartialFixture, Partial.Product)
-class PartialCoproductIsSymmetricTest   extends SymmetricSpec(PartialFixture, Partial.Coproduct)
-class PartialCoproductIsCocartesianTest extends CocartesianSpec(PartialFixture, Partial.Coproduct)
+class TotalProductIsSymmetricTest       extends SymmetricSpec(Total.Product)
+class TotalProductIsCartesianTest       extends CartesianSpec(Total.Product)
+class ScalaCoproductIsSymmetricTest     extends SymmetricSpec(Total.Coproduct)
+class ScalaCoproductIsCocartesianTest   extends CocartesianSpec(Total.Coproduct)
+class PartialProductIsSymmetricTest     extends SymmetricSpec(Partial.Product)
+class PartialCoproductIsSymmetricTest   extends SymmetricSpec(Partial.Coproduct)
+class PartialCoproductIsCocartesianTest extends CocartesianSpec(Partial.Coproduct)

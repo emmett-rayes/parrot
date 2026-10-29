@@ -430,18 +430,19 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   **`docs/law-status.md`** (regenerated after each run; do not edit it by hand). The suite provides the subject of its
   laws as a given; laws of another structure the instance has go in a block, `also("Functor") { law(...) { ... } }`.
 - **Sample types**: specs are generic in the types they check their laws at: *T1*, …, *T4* of a `SampleTypes` bundle,
-  a context parameter (`using types: SampleTypes`, then `import types.{T1, T2, given}`). In a using clause, `types`
-  and then the spec's samples come last (`sample`, `tensor`, `unit`), resolved where the test class is declared from
-  polymorphic givens such as `Sample.Tuple2Samples`, so that test classes need no sampling code. The default given
-  `SampleTypes.Standard` is `Int`, `String`, `Boolean`, `Long`, four distinct types, so call sites name no types.
-  Types that a generator forces stay concrete: the `Int` states of loops and recursion, the parser's `Int` semantics.
+  a context parameter (`using types: SampleTypes`, then `import types.{T1, T2, given}`). In a using clause, the
+  fixture comes first, `types` and then the spec's samples come last (`sample`, `tensor`, `unit`), resolved where the
+  test class is declared from polymorphic givens such as `Sample.Tuple2Samples`, so that test classes need no sampling
+  code. The default given `SampleTypes.Standard` is `Int`, `String`, `Boolean`, `Long`, four distinct types, so call
+  sites name no types. Types that a generator forces stay concrete: the `Int` states of loops and recursion, the
+  parser's `Int` semantics.
 - **Law bodies**: a spec imports its laws (`import M.MonadLaws.*`; those of an `also` structure inside its block), and
   each law binds its generators to local vals named after what they sample, `observations` for the observer and the
   plural of the lambda parameter otherwise: `val fs = F.arrow[T1, T2]`, then `forAll(observations, fs, gs) { (observe,
   f, g) => ... }`.
 - **Instance names from types**: a spec whose instance is named after a type takes a `TypeName[T]` (a macro, resolved
   where the test class is declared), so that callers pass only types: `class IntIsEqTest extends EqSpec[Int]`,
-  `BifunctorSpec(TotalFixture, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
+  `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
 - **One generic spec per structure** (`CategorySpec`, `PromonadSpec`, `SymmetricSpec`, `CartesianSpec`,
   `CocartesianSpec`, `StrongSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`,
   `RecursionSpec`, `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ObservableSpec`, `PreorderSpec`,
@@ -450,6 +451,13 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - **Fixtures** (`Fixture.scala`): `Sample[X]` (generator, cogenerator, `Eq`), `Fixture` (arrows of a category whose
   objects are all types: `arrow`, `variant`, `observe`), `PromonadFixture` (arrows of a promonad, with a `base` fixture
   for pure arrows). Observations generate **fresh sample points per property**.
+- **Specs take their subject, not a fixture**: the category or structure is a `tracked` parameter whose type states
+  what the laws need (`tracked val M: Symmetric { val K: Category { type Obj = Type } }`), and the fixture is found
+  from it as a given, `using val F: Fixture.On[M.K.type]` (`PromonadFixture.On[S.P.type]` for promonads). There is
+  one given fixture per category or promonad, in the companions `Fixture` and `PromonadFixture` (the parser's in
+  `ParserFixtures`, imported). Derived categories (`Total.op`, `P.category`) need givens of their own: implicit search
+  cannot get from `Total.op` back to `Total`. `ObservableSpec` alone takes its fixture explicitly, since the fixture's
+  observer is what it tests.
 - Conditional laws use targeted generators (`Descent` for loops that stop, `StringStateFixture.guarded` for guarded
   steps, `refined` pairs for monotonicity), not `==>`.
 - Negative results are **counterexample** tests (interchange fails for parsers, postcomposition does not distribute
@@ -479,8 +487,8 @@ and for library changes that the tutorial uses, run the snippet checker (§2).
 1. `src/main/scala/parrot/category/Foo.scala`: a scaladoc'd `abstract class Foo(tracked val …) extends caps.Pure` (or a
    refinement forwarding its parameters), its operations with infix extensions, and `object FooLaws`.
 2. Instances as `object`s (concrete) or `open class`es (generic) in the companion or next to their carrier.
-3. `src/test/scala/parrot/category/FooTest.scala`: an abstract `FooSpec(fixture, structure)` with one `law(...)` per law, and
-   one test class per instance.
+3. `src/test/scala/parrot/category/FooTest.scala`: an abstract `FooSpec(structure)(using fixture, …)` with one
+   `law(...)` per law, and one test class per instance; a new category or promonad also needs a given fixture.
 
 **Add a new parser interpreter:** choose the structures (a promonad over a category with `Obj = Type`, products and
 coproducts with `Unit`/`Tuple2` and `Nothing`/`Either`, the two strengths, a classical structure, guarded iteration and

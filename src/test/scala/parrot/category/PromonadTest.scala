@@ -8,10 +8,11 @@ import Sample.given
 /** The laws of [[Promonad]] beyond those of its category: the unit is a functor, and the derived profunctor action
   * satisfies the [[Bifunctor]] laws.
   */
-abstract class PromonadSpec(tracked val PF: PromonadFixture)(using types: SampleTypes)
-    extends LawSuite("Promonad", PF.name) {
+abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj = Type } })(using
+  val PF: PromonadFixture.On[P.type],
+  types: SampleTypes,
+) extends LawSuite("Promonad", PF.name) {
   import types.{T1, T2, T3, T4, given}
-  import PF.P
   import P.P
   import P.PromonadLaws.*
 
@@ -109,7 +110,7 @@ object StringWriterKleisliFixture extends PromonadFixture("Kleisli[Writer[String
   }
 }
 
-class OptionKleisliIsPromonadTest       extends PromonadSpec(OptionKleisliFixture)
-class ScalaFunctionsIsPromonadTest      extends PromonadSpec(ScalaFunctionsFixture)
-class StringWriterKleisliIsPromonadTest extends PromonadSpec(StringWriterKleisliFixture)
-class StringWriterKleisliIsCategoryTest extends CategorySpec(StringWriterKleisliFixture.category)
+class OptionKleisliIsPromonadTest       extends PromonadSpec(Kleisli.OptionKleisli)
+class ScalaFunctionsIsPromonadTest      extends PromonadSpec(Total.Functions)
+class StringWriterKleisliIsPromonadTest extends PromonadSpec(StringWriterKleisli)
+class StringWriterKleisliIsCategoryTest extends CategorySpec(StringWriterKleisli.category)

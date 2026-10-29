@@ -293,3 +293,21 @@ object StrictDiagnosticsFixture extends Fixture("StrictParser (with diagnostics)
 
   def observe[X: Sample, Y: Sample]: Gen[(X --> Y) is Observable] = ParserGen.exact[X, Y](Interpreters.strict)
 }
+
+/** The fixtures that specs find from the interpreter structure they check: one per promonad and category. */
+object ParserFixtures {
+
+  /** [[ReferenceFixture]], for the promonad of `ReferenceParser`. */
+  given ReferenceIsFixture: PromonadFixture.On[Interpreters.reference.Arrows.type] = ReferenceFixture
+
+  /** [[ReferenceFixture]], for the category of `ReferenceParser`. */
+  given ReferenceCategoryIsFixture: Fixture.On[Interpreters.reference.Arrows.category.type] = {
+    ReferenceFixture.category
+  }
+
+  /** [[StrictFixture]], for the promonad of `StrictParser`. */
+  given StrictIsFixture: PromonadFixture.On[Interpreters.strict.Arrows.type] = StrictFixture
+
+  /** [[StrictFixture]], for the category of `StrictParser`. */
+  given StrictCategoryIsFixture: Fixture.On[Interpreters.strict.Arrows.category.type] = StrictFixture.category
+}

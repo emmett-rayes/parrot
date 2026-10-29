@@ -113,6 +113,30 @@ abstract class Fixture(val name: String, tracked val K: Category { type Obj = Ty
   def observe[X: Sample, Y: Sample]: Gen[(X --> Y) is Observable]
 }
 
+/** The fixtures that specs find from the category they check: one per category. */
+object Fixture {
+
+  /** A fixture for the category *C*. */
+  type On[C <: Category] = Fixture { val K: C }
+
+  /** 𝒮: generated pure functions. */
+  given TotalIsFixture: On[Total.type] = TotalFixture
+
+  /** 𝒫, at its total morphisms. */
+  given PartialIsFixture: On[Partial.type] = PartialFixture
+
+  /** 𝒮ᵒᵖ: the functions of 𝒮, reversed. */
+  given TotalOpIsFixture: On[Total.op.type] = OpFixture(TotalFixture)
+
+  /** The category of arrows of `Kleisli[Option]`. */
+  given OptionKleisliCategoryIsFixture: On[Kleisli.OptionKleisli.category.type] = OptionKleisliFixture.category
+
+  /** The category of arrows of `Kleisli[Writer[String]]`. */
+  given StringWriterKleisliCategoryIsFixture: On[StringWriterKleisli.category.type] = {
+    StringWriterKleisliFixture.category
+  }
+}
+
 /** 𝒮: generated pure functions, observed by application. */
 object TotalFixture extends Fixture("Total", Total) {
 
@@ -172,7 +196,7 @@ abstract class PromonadFixture(val name: String, tracked val P: Promonad { val K
   import P.P
 
   /** The fixture of the base category, for pure arrows. */
-  val base: Fixture { val K: P.K.type }
+  val base: Fixture.On[P.K.type]
 
   /** Generates arrows *X* → *Y*, including the cases that matter for the promonad (failure, effects). */
   def arrow[X: Sample, Y: Sample]: Gen[P[X, Y]]
@@ -184,10 +208,32 @@ abstract class PromonadFixture(val name: String, tracked val P: Promonad { val K
   def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable]
 
   /** The same generators, for the category of arrows. */
-  final lazy val category: Fixture { val K: P.category.type } = PromonadFixture.Category(this)
+  final lazy val category: Fixture.On[P.category.type] = PromonadFixture.Category(this)
 }
 
+/** The fixtures that specs find from the promonad they check: one per promonad. */
 object PromonadFixture {
+
+  /** A fixture for the promonad *Q*. */
+  type On[Q <: Promonad] = PromonadFixture { val P: Q }
+
+  /** `Kleisli[Option]`: functions that fail often enough for failure to matter. */
+  given OptionKleisliIsFixture: On[Kleisli.OptionKleisli.type] = OptionKleisliFixture
+
+  /** 𝒮 as a promonad over itself. */
+  given ScalaFunctionsIsFixture: On[Total.Functions.type] = ScalaFunctionsFixture
+
+  /** `Kleisli[Writer[String]]`. */
+  given StringWriterKleisliIsFixture: On[StringWriterKleisli.type] = StringWriterKleisliFixture
+
+  /** `Kleisli[State[String, Option]]`. */
+  given StringStateKleisliIsFixture: On[StringStateKleisli.type] = StringStateFixture
+
+  /** 𝒫 at its total programs, as a promonad over itself. */
+  given PartialProgramsIsFixture: On[Partial.Programs.type] = PartialProgramsFixture
+
+  /** 𝒫ᵒᵖ as a promonad over itself, at its total programs. */
+  given PartialOpIsFixture: On[PartialFixedPoints.S.P.type] = PartialOpFixture
 
   /** The fixture of the category of arrows of a promonad. */
   final class Category(tracked val F: PromonadFixture) extends Fixture(F.name, F.P.category) {

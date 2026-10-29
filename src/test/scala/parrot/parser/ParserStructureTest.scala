@@ -5,20 +5,21 @@ import category.*
 import org.scalacheck.Gen
 
 import Sample.given
+import ParserFixtures.given
 
 // ==== ReferenceParser ====
 
-class ReferenceIsCategoryTest extends CategorySpec(ReferenceFixture.category)
+class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.Arrows.category)
 
-class ReferenceIsPromonadTest extends PromonadSpec(ReferenceFixture)
+class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.Arrows)
 
 class ReferenceIsRestrictionTest
-    extends RestrictionSpec("ReferenceParser", ReferenceFixture, Interpreters.reference.Choice)
+    extends RestrictionSpec("ReferenceParser", Interpreters.reference.Choice)
 
-class ReferenceIsClassicalTest extends ClassicalSpec("ReferenceParser", ReferenceFixture, Interpreters.reference.Choice)
+class ReferenceIsClassicalTest extends ClassicalSpec("ReferenceParser", Interpreters.reference.Choice)
 
 class ReferenceZippingIsStrongTest
-    extends StrongSpec("ReferenceParser (zipping)", ReferenceFixture, Interpreters.reference.Zipping) {
+    extends StrongSpec("ReferenceParser (zipping)", Interpreters.reference.Zipping) {
   also("Freyd") {
     counterexample("interchange", "consuming input is not commutative") {
       forAll(interchange)(holds => holds)
@@ -27,7 +28,7 @@ class ReferenceZippingIsStrongTest
 }
 
 class ReferenceBranchingIsStrongTest
-    extends StrongSpec("ReferenceParser (branching)", ReferenceFixture, Interpreters.reference.Branching) {
+    extends StrongSpec("ReferenceParser (branching)", Interpreters.reference.Branching) {
   also("Freyd") {
     law("interchange", "holds: only one side runs") {
       forAll(interchange)(holds => holds)
@@ -36,7 +37,7 @@ class ReferenceBranchingIsStrongTest
 }
 
 class ReferenceLoopsIsElgotTest
-    extends ElgotSpec("ReferenceParser (guarded)", ReferenceFixture, Interpreters.reference.Loops) {
+    extends ElgotSpec("ReferenceParser (guarded)", Interpreters.reference.Loops) {
   import PF.P.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.reference)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.reference)
@@ -45,7 +46,7 @@ class ReferenceLoopsIsElgotTest
 }
 
 class ReferenceKnotsIsRecursionTest
-    extends RecursionSpec("ReferenceParser (guarded)", ReferenceFixture, Interpreters.reference.Knots) {
+    extends RecursionSpec("ReferenceParser (guarded)", Interpreters.reference.Knots) {
   import PF.P.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.reference)
 
@@ -73,16 +74,16 @@ class ReferenceIsPreorderTest
 
 // ==== StrictParser ====
 
-class StrictIsCategoryTest extends CategorySpec(StrictFixture.category)
+class StrictIsCategoryTest extends CategorySpec(Interpreters.strict.Arrows.category)
 
-class StrictIsPromonadTest extends PromonadSpec(StrictFixture)
+class StrictIsPromonadTest extends PromonadSpec(Interpreters.strict.Arrows)
 
-class StrictIsRestrictionTest extends RestrictionSpec("StrictParser", StrictFixture, Interpreters.strict.Choice)
+class StrictIsRestrictionTest extends RestrictionSpec("StrictParser", Interpreters.strict.Choice)
 
-class StrictIsClassicalTest extends ClassicalSpec("StrictParser", StrictFixture, Interpreters.strict.Choice)
+class StrictIsClassicalTest extends ClassicalSpec("StrictParser", Interpreters.strict.Choice)
 
 class StrictZippingIsStrongTest
-    extends StrongSpec("StrictParser (zipping)", StrictFixture, Interpreters.strict.Zipping) {
+    extends StrongSpec("StrictParser (zipping)", Interpreters.strict.Zipping) {
   also("Freyd") {
     counterexample("interchange", "consuming input is not commutative") {
       forAll(interchange)(holds => holds)
@@ -91,7 +92,7 @@ class StrictZippingIsStrongTest
 }
 
 class StrictBranchingIsStrongTest
-    extends StrongSpec("StrictParser (branching)", StrictFixture, Interpreters.strict.Branching) {
+    extends StrongSpec("StrictParser (branching)", Interpreters.strict.Branching) {
   also("Freyd") {
     law("interchange", "holds: only one side runs") {
       forAll(interchange)(holds => holds)
@@ -99,7 +100,7 @@ class StrictBranchingIsStrongTest
   }
 }
 
-class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", StrictFixture, Interpreters.strict.Loops) {
+class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpreters.strict.Loops) {
   import PF.P.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.strict)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.strict)
@@ -108,7 +109,7 @@ class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", StrictF
 }
 
 class StrictKnotsIsRecursionTest
-    extends RecursionSpec("StrictParser (guarded)", StrictFixture, Interpreters.strict.Knots) {
+    extends RecursionSpec("StrictParser (guarded)", Interpreters.strict.Knots) {
   import PF.P.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.strict)
 
