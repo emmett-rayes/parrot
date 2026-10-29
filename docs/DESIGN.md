@@ -36,9 +36,10 @@ The category library stands on its own; the parser is its first and most importa
 ## 2. Two categories of programs
 
 **Decision.** There are two categories of Scala programs. 𝒮 (`Total`) has the pure, total functions `A -> B`. 𝒫
-(`Partial`, an opaque alias of `A -> B`) has the pure programs that may not terminate. `Partial(f)` includes 𝒮 in 𝒫;
-`Partial.assumeTotal(p)` is the library's single, greppable promise of totality. `=>` functions have no category
-instances. Purity (`->` versus `=>`) and totality (𝒮 versus 𝒫) are separate axes; both categories require purity.
+(`Partial`, an opaque alias of `A -> B`) has the pure programs that may not terminate, written `Partial(f)`.
+`Partial.fromTotal(f)` includes 𝒮 in 𝒫; `Partial.assumeTotal(p)` is the library's single, greppable promise of
+totality. `=>` functions have no category instances. Purity (`->` versus `=>`) and totality (𝒮 versus 𝒫) are separate
+axes; both categories require purity.
 
 **Why.** A bicartesian closed category with a fixed point for every endomorphism collapses (tutorial, Proposition 14.3),
 so 𝒮 cannot have general recursion or iteration. The earlier library had such operators on `Function`, and each of them

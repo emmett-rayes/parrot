@@ -251,9 +251,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 
 - **`Total`** is 𝒮: total, pure functions `A -> B`. Totality is a promise.
 - **`Partial`** is 𝒫: `opaque type Partial[A, B] = A -> B`, written `A ~> B`, programs that may diverge.
-  `Partial(f)` includes a function; **`Partial.assumeTotal(p)` is the single totality promise** of the library. 𝒫 has
-  the unguarded structures: restriction (`Domains`), while loops (`Loops`), feedback (`Feedback`), recursion at
-  function types (`Knots`).
+  `Partial(f)` is a program, total or not; `Partial.fromTotal(f)` includes a morphism of 𝒮 (use it where `f` is
+  total); **`Partial.assumeTotal(p)` is the single totality promise** of the library. 𝒫 has the unguarded structures:
+  restriction (`Domains`), while loops (`Loops`), feedback (`Feedback`), recursion at function types (`Knots`).
 - Iteration and recursion that must be total are **guarded** by a `Measure` on the state: `StateT.GuardedIteration`,
   `StateT.GuardedRecursion` fail (with the restriction zero) on a step or call that makes no progress.
 

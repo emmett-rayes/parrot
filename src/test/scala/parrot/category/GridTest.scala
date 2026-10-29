@@ -443,10 +443,13 @@ abstract class ConwaySpec(
 // ==== 𝒫 ====
 
 class PartialLoopsIsElgotTest extends ElgotSpec("Partial (while loops)", Partial.Loops) {
-  def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial(_))
-  def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial(_))
-  def shrink: Int ~> Int                                        = Partial(_ / 2)
-  def bijection: (Int ~> Int, Int ~> Int)                       = (Partial(x => -x), Partial(x => -x))
+  def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial.fromTotal(_))
+  def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial.fromTotal(_))
+  def shrink: Int ~> Int                                        = Partial.fromTotal(_ / 2)
+
+  def bijection: (Int ~> Int, Int ~> Int) = {
+    (Partial.fromTotal(x => -x), Partial.fromTotal(x => -x))
+  }
 }
 
 /** Iteration recovered from the trace of [[Partial.Loops]]: the bridge back. */
@@ -454,24 +457,27 @@ object PartialLoopsFromFeedback extends Elgot.OfTraced(Partial.Feedback)
 
 class PartialFeedbackIsElgotTest
     extends ElgotSpec("Partial (iteration of the trace)", PartialLoopsFromFeedback) {
-  def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial(_))
-  def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial(_))
-  def shrink: Int ~> Int                                        = Partial(_ / 2)
-  def bijection: (Int ~> Int, Int ~> Int)                       = (Partial(x => -x), Partial(x => -x))
+  def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial.fromTotal(_))
+  def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial.fromTotal(_))
+  def shrink: Int ~> Int                                        = Partial.fromTotal(_ / 2)
+
+  def bijection: (Int ~> Int, Int ~> Int) = {
+    (Partial.fromTotal(x => -x), Partial.fromTotal(x => -x))
+  }
 }
 
 class PartialFeedbackIsTracedTest extends TracedSpec("Partial (feedback)", Partial.Feedback) {
-  def loop[A: Sample, B: Sample]: Gen[Either[A, Int] ~> Either[B, Int]] = Descent.loop[A, B].map(Partial(_))
+  def loop[A: Sample, B: Sample]: Gen[Either[A, Int] ~> Either[B, Int]] = Descent.loop[A, B].map(Partial.fromTotal(_))
 
   def loop2[A: Sample, B: Sample]: Gen[Either[A, Either[Int, Int]] ~> Either[B, Either[Int, Int]]] = {
-    Descent.loop2[A, B].map(Partial(_))
+    Descent.loop2[A, B].map(Partial.fromTotal(_))
   }
 
   def straight[A: Sample, B: Sample]: Gen[Either[A, Nothing] ~> Either[B, Nothing]] = {
     PartialFixture.arrow[Either[A, Nothing], Either[B, Nothing]]
   }
 
-  def shrink: Int ~> Int = Partial(_ / 2)
+  def shrink: Int ~> Int = Partial.fromTotal(_ / 2)
 }
 
 class PartialKnotsIsRecursionTest extends RecursionSpec("Partial (knots)", Partial.Knots) {
@@ -609,23 +615,26 @@ object PartialOpFixture extends PromonadFixture("Partialᵒᵖ", PartialFixedPoi
 
 class PartialOpIsConwayTest
     extends ConwaySpec("Partialᵒᵖ (loops read backwards)", PartialFixedPoints) {
-  def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial(_))
-  def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial(_))
-  def shrink: Int ~> Int                                        = Partial(_ / 2)
-  def bijection: (Int ~> Int, Int ~> Int)                       = (Partial(x => -x), Partial(x => -x))
+  def step[A: Sample]: Gen[Int ~> Either[A, Int]]               = Descent.step[A].map(Partial.fromTotal(_))
+  def step2[A: Sample]: Gen[Int ~> Either[Either[A, Int], Int]] = Descent.step2[A].map(Partial.fromTotal(_))
+  def shrink: Int ~> Int                                        = Partial.fromTotal(_ / 2)
+
+  def bijection: (Int ~> Int, Int ~> Int) = {
+    (Partial.fromTotal(x => -x), Partial.fromTotal(x => -x))
+  }
 }
 
 class PartialOpIsTracedTest
     extends TracedSpec("Partialᵒᵖ (feedback through products)", PartialProductFeedback) {
-  def loop[A: Sample, B: Sample]: Gen[Either[B, Int] ~> Either[A, Int]] = Descent.loop[B, A].map(Partial(_))
+  def loop[A: Sample, B: Sample]: Gen[Either[B, Int] ~> Either[A, Int]] = Descent.loop[B, A].map(Partial.fromTotal(_))
 
   def loop2[A: Sample, B: Sample]: Gen[Either[B, Either[Int, Int]] ~> Either[A, Either[Int, Int]]] = {
-    Descent.loop2[B, A].map(Partial(_))
+    Descent.loop2[B, A].map(Partial.fromTotal(_))
   }
 
   def straight[A: Sample, B: Sample]: Gen[Either[B, Nothing] ~> Either[A, Nothing]] = {
     PartialFixture.arrow[Either[B, Nothing], Either[A, Nothing]]
   }
 
-  def shrink: Int ~> Int = Partial(_ / 2)
+  def shrink: Int ~> Int = Partial.fromTotal(_ / 2)
 }

@@ -3,50 +3,28 @@ package category
 
 import scala.annotation.unused
 
-/** A program from *A* to *B* that may fail to terminate: a morphism of 𝒫.
-  *
-  * The representation is a pure function, but unlike a morphism of 𝒮 it carries no promise of totality.
-  */
+/** A program from *A* to *B* that may diverge. */
 opaque type Partial[A, B] = A -> B
 
-/** Infix alias for [[Partial]]: the morphisms *A* → *B* of 𝒫. */
+/** Infix alias for [[Partial]]. */
 type ~> = Partial
 
 /** The category 𝒫 of pure Scala programs that may diverge.
   *
   * Represents 𝒫, where
   *   - the objects are all types
-  *   - 𝒫(*A*,*B*) are the pure programs *A* → *B*, total or not
-  *   - *id* and ∘ are those of functions, evaluated strictly
+  *   - 𝒫(*A*,*B*) are the pure Scala programs *A* → *B*
+  *   - *id* = *a* ↦ *a*
+  *   - *g* ∘ *f* = *a* ↦ *g*(*f*(*a*))
   *
-  * 𝒮 is the subcategory of total programs: [[Partial.apply]] includes a morphism of 𝒮, and [[Partial.assumeTotal]] is
-  * the one place where a program of 𝒫 is promised to be total. Pairs are not products in 𝒫, since a diverging
-  * component makes the whole pair diverge; they form the symmetric monoidal structure [[Product]]. Tagged unions are
-  * still coproducts.
+  * The morphisms of 𝒫 are evaluated strictly. Pairs are not products in 𝒫, since a diverging component makes the pair
+  * diverge. 𝒫 is cocartesian. See [[Coproduct]].
+  *
+  * 𝒮 is the subcategory of 𝒫 of total Scala programs. See [[Partial.fromTotal]], [[Partial.assumeTotal]].
   */
 object Partial extends Category {
   type Self = Partial
   type Obj  = Type
-
-  /** A program of 𝒫, total or not. Applied to a morphism of 𝒮, this is the inclusion functor 𝒮 → 𝒫. */
-  def apply[A, B](f: A -> B): A ~> B = {
-    f
-  }
-
-  /** Promises that *p* terminates on every argument, which makes it a morphism of 𝒮.
-    *
-    * @note This is the single totality promise of the library: if *p* diverges, every conclusion drawn from the promise
-    *   is void.
-    */
-  def assumeTotal[A, B](p: A ~> B): A -> B = {
-    p
-  }
-
-  extension [A, B](p: A ~> B)
-    /** Runs *p* on *a*; this may not terminate. */
-    final def run(a: A): B = {
-      p(a)
-    }
 
   def identity[A: Type]: A ~> A = {
     a => a
@@ -55,6 +33,36 @@ object Partial extends Category {
   def compose[A: Type, B: Type, C: Type](g: B ~> C, f: A ~> B): A ~> C = {
     a => g(f(a))
   }
+
+  /** Creates a morphism of 𝒫 from a pure Scala program, total or not. */
+  def apply[A, B](f: A -> B): A ~> B = {
+    f
+  }
+
+  /** Creates a morphism of 𝒫 from a morphism of 𝒮.
+    *
+    * This represents the inclusion functor 𝒮 → 𝒫.
+    */
+  def fromTotal[A, B](f: A -> B): A ~> B = {
+    f
+  }
+
+  /** Promises that *p* terminates on every argument, which makes it a morphism of 𝒮.
+    *
+    * @note If *p* diverges, every conclusion drawn from the promise is void.
+    */
+  def assumeTotal[A, B](p: A ~> B): A -> B = {
+    p
+  }
+
+  extension [A, B](p: A ~> B)
+    /** Runs *p* on *a*. This may diverge. */
+    final def run(a: A): B = {
+      p(a)
+    }
+
+  /** 𝒫 as a promonad over itself. */
+  object Programs extends Promonad.Hom(Partial)
 
   /** Pairs as a bifunctor on 𝒫: *f* × *g* runs *f*, then *g*. */
   object Tuple2IsBifunctor extends Bifunctor(Partial, Partial, Partial) {
@@ -152,9 +160,6 @@ object Partial extends Category {
       n => n
     }
   }
-
-  /** 𝒫 as a promonad over itself. */
-  object Programs extends Promonad.Hom(Partial)
 
   /** Programs run side by side on pairs: the first component first. */
   object Parallel extends Strong.OfHom(Programs, Product)

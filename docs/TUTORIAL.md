@@ -2495,10 +2495,10 @@ val lengths: Option[String] -> Option[Int] = O.map[String, Int](_.length)
 object Inclusion extends Functor(Total, Partial):
   type Self[A] = A
   def objects[A: Type]: A is Type                = Type.TIsType
-  def map[A: Type, B: Type](f: A -> B): A ~> B = Partial(f)
+  def map[A: Type, B: Type](f: A -> B): A ~> B = Partial.fromTotal(f)
 ```
 
-Its laws hold because `Partial(f)` is `f` itself; Proposition 2.9 says it is also faithful.
+Its laws hold because `Partial.fromTotal(f)` is `f` itself; Proposition 2.9 says it is also faithful.
 
 **Non-examples.** A `map` for `List` that also reverses the list breaks the identity law. A `map` that counts how often it is called breaks C1 and does not have the type `A -> B` under capture checking. A `map` for `Partial` that tries to decide whether its argument terminates cannot be written at all.
 
@@ -2992,7 +2992,7 @@ General recursion and unbounded loops produce programs that may not terminate, s
 
 ```scala library
 val gcdStep: (Int, Int) ~> Either[Int, (Int, Int)] =
-  Partial((a, b) => if b == 0 then Left(a.abs) else Right((b, a % b)))
+  Partial.fromTotal((a, b) => if b == 0 then Left(a.abs) else Right((b, a % b)))
 
 val gcd: (Int, Int) ~> Int = Partial.Loops.iterate(gcdStep)
 val six: Int                = gcd.run((12, 18))
@@ -3377,7 +3377,7 @@ val sumStep: Either[Int, (Int, Int)] -> Either[Int, (Int, Int)] = {
   case Right((i, sum))  => Right((i - 1, sum + i))
 }
 
-val sumTo: Int ~> Int = Partial.Feedback.trace[Int, Int, (Int, Int)](Partial(sumStep))
+val sumTo: Int ~> Int = Partial.Feedback.trace[Int, Int, (Int, Int)](Partial.fromTotal(sumStep))
 val fiftyFive: Int    = sumTo.run(10)
 ```
 

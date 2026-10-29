@@ -44,6 +44,26 @@ object CategoryFixture {
   }
 }
 
+/** [[CategoryFixture]] for the opposite of a category with a fixture.
+  *
+  * Morphisms *X* → *Y* in the opposite fixture correspond to morphisms *Y* → *X* in the original fixture.
+  */
+final class OpFixture(tracked val F: CategoryFixture) extends CategoryFixture(s"${F.name}ᵒᵖ", F.K.op) {
+  import F.K.-->
+
+  def arrow[X: Sample, Y: Sample]: Gen[Y --> X] = {
+    F.arrow
+  }
+
+  def variant[X: Sample, Y: Sample](f: Y --> X): Y --> X = {
+    F.variant(f)
+  }
+
+  def observe[X: Sample, Y: Sample]: Gen[(Y --> X) is Observable] = {
+    F.observe
+  }
+}
+
 /** [[CategoryFixture]] for [[Total]].
   *   - generates morphisms as pure functions
   *   - builds variants by η-expansion
@@ -66,11 +86,17 @@ object TotalFixture extends CategoryFixture("Total", Total) {
   }
 }
 
-/** 𝒫, at its total morphisms: divergence cannot be observed by a test that terminates. */
+/** [[CategoryFixture]] for [[Partial]].
+  *   - generates total morphisms as pure functions
+  *   - builds variants by η-expansion
+  *   - observes morphisms by application to sample points
+  *
+  * @note Divergence cannot be observed by a terminating test.
+  */
 object PartialFixture extends CategoryFixture("Partial", Partial) {
 
   def arrow[X: Sample, Y: Sample]: Gen[X ~> Y] = {
-    Sample.function[X, Y].map(Partial(_))
+    Sample.function[X, Y].map(Partial.fromTotal(_))
   }
 
   def variant[X: Sample, Y: Sample](f: X ~> Y): X ~> Y = {
@@ -81,22 +107,5 @@ object PartialFixture extends CategoryFixture("Partial", Partial) {
     Sample.points[X].map { points =>
       Observable.partial(points)(using Observable.EqIsObservable(using Y.eq))
     }
-  }
-}
-
-/** The opposite of a fixture's category: arrows *X* → *Y* are arrows *Y* → *X* of the original. */
-final class OpFixture(tracked val F: CategoryFixture) extends CategoryFixture(s"${F.name}ᵒᵖ", F.K.op) {
-  import F.K.-->
-
-  def arrow[X: Sample, Y: Sample]: Gen[Y --> X] = {
-    F.arrow
-  }
-
-  def variant[X: Sample, Y: Sample](f: Y --> X): Y --> X = {
-    F.variant(f)
-  }
-
-  def observe[X: Sample, Y: Sample]: Gen[(Y --> X) is Observable] = {
-    F.observe
   }
 }

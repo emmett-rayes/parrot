@@ -58,7 +58,7 @@ through; the product `Product`, whose objects are pairs and which is the source 
 
 Everything else is structure on two categories, or on categories built from them: 𝒮 (`Total`), the total pure
 functions, and 𝒫 (`Partial`), the pure programs that may diverge. 𝒮 is the subcategory of 𝒫 of total programs:
-`Partial.apply` includes a function, and `Partial.assumeTotal` promises totality.
+`Partial.fromTotal` includes a morphism of 𝒮, and `Partial.assumeTotal` promises totality.
 
 ## Functors
 

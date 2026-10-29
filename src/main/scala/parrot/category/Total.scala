@@ -26,7 +26,7 @@ object Total extends Category {
     a => g(f(a))
   }
 
-  /** 𝒮 as a promonad over itself: its arrows are its morphisms. */
+  /** 𝒮 as a promonad over itself. */
   object Functions extends Promonad.Hom(Total)
 
   /** Pairs as a bifunctor *A* × *B* on 𝒮. */
