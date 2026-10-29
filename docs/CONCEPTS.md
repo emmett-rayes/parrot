@@ -62,12 +62,12 @@ functions, and 𝒫 (`Partial`), the pure programs that may diverge. 𝒮 is the
 
 ## Functors
 
-A `Functor` maps one category to another; an `Endofunctor` maps a category to itself and is what a monad is structure
-on. A `Bifunctor` is a functor of two arguments, read as a functor out of the product category through its view
-`functor` (`Bifunctor.FromProduct`), whose functor laws are its laws. A `Profunctor` is a bifunctor out of
-**K**ᵒᵖ × **K**: contravariant in its first argument, as `A -> B` is in `A`; `dimap` is its morphism part with the
-variance spelled out. The tensors of 𝒮 and 𝒫, pairs and tagged unions, are bifunctors (`Tuple2IsBifunctor`,
-`EitherIsBifunctor`).
+A `Functor` maps one category to another, as the inclusion of 𝒮 in 𝒫 does (`Partial.Inclusion`); an `Endofunctor` maps a
+category to itself and is what a monad is structure on. A `Bifunctor` is a functor of two arguments, read as a functor
+out of the product category through its view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws. A
+`Profunctor` is a bifunctor out of **K**ᵒᵖ × **K**: contravariant in its first argument, as `A -> B` is in `A`; `dimap`
+is its morphism part with the variance spelled out. The tensors of 𝒮 and 𝒫, pairs and tagged unions, are bifunctors
+(`Tuple2IsBifunctor`, `EitherIsBifunctor`).
 
 ## Tensors
 

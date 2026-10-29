@@ -1,22 +1,17 @@
 package parrot
 package category
 
-/** A monad on a category **K**: structure on an endofunctor *M*, a monoid in the endofunctors on **K**.
+/** A monad on a category **K**.
   *
   * Represents a monad (*M*, *η*, *μ*), where
-  *   - *M* is the endofunctor [[F]], with action *M*(*f*) on morphisms
-  *   - *η*: *A* → *M*[*A*], the unit, returns a value without effect
-  *   - *μ*: *M*[*M*[*A*]] → *M*[*A*], the multiplication, merges two layers of effects into one
+  *   - *M* is an endofunctor on **K**, with action *M*(*f*) on morphisms
+  *   - *η*: *A* → *M*[*A*], the unit
+  *   - *μ*: *M*[*M*[*A*]] → *M*[*A*], the multiplication
   *
-  * The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*] is derived; its arrows *A* →
-  * *M*[*B*] form the [[Kleisli]] promonad. The unit and multiplication are the unit and multiplication of a monoid
-  * (compare [[Monoid]]), with composition of endofunctors as the tensor.
+  * The unit and multiplication are the unit and multiplication of a monoid, with composition of endofunctors as the
+  * tensor.
   */
 abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
-
-  /** From the endofunctor: the category **K** the monad is on, the object part *M*, its action *M*(*f*) on morphisms,
-    * and the evidence that *M* maps objects to objects.
-    */
   export F.{F as M, K, map, objects}
 
   import K.{Obj, -->, >>>}
@@ -34,8 +29,9 @@ abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
     map(f) >>> flatten[B]
   }
 
-  /** Laws that any `Monad` must satisfy beyond the [[Functor.FunctorLaws]] of *M*: those of a monoid, and the
-    * naturality of *η* and *μ*.
+  /** Laws that any `Monad` must satisfy.
+    *
+    * A monad is a monoid with unit and multiplication as natural transformations.
     */
   object MonadLaws {
 

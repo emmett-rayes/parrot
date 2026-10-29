@@ -62,6 +62,24 @@ object Sample {
     )
   }
 
+  /** Functions on `Boolean`, which are data: a function is determined by its two values. */
+  given BooleanFunctionSample: [Y: Sample] => Sample[Boolean -> Y] = {
+    val values: (Boolean -> Y) -> (Y, Y) = f => (f(false), f(true))
+    val functionIsEq: (Boolean -> Y) is Eq = new Eq {
+      type Self = Boolean -> Y
+
+      def equal(f: Boolean -> Y, g: Boolean -> Y): Boolean = {
+        Y.eq.equal(f(false), g(false)) && Y.eq.equal(f(true), g(true))
+      }
+    }
+    Sample(
+      Gen.zip(Y.gen, Y.gen).map((no: Y, yes: Y) => (b: Boolean) => if b then yes else no),
+      Cogen.tuple2(using Y.cogen, Y.cogen).contramap(values),
+      functionIsEq,
+      Y.inhabited,
+    )
+  }
+
   /** Samples of pairs from samples of their components, for all component types: the samples of the carrier of a
     * bifunctor.
     */
@@ -82,6 +100,25 @@ object Sample {
   /** Samples of pairs with a first component of type *A*, for all second components: the samples of a writer monad. */
   given WriterSamples: [A: Sample] => ([X] => Sample[X] ?-> Sample[(A, X)]) = {
     [X] => (_: Sample[X]) ?=> Tuple2Sample[A, X]
+  }
+
+  /** Samples of pairs with a first component of type *A* and an optional second, for all second components: the
+    * samples of a failure transformer over a writer monad.
+    */
+  given FailingWriterSamples: [A: Sample] => ([X] => Sample[X] ?-> Sample[(A, Option[X])]) = {
+    [X] => (_: Sample[X]) ?=> Tuple2Sample[A, Option[X]]
+  }
+
+  /** Samples of computations on `Boolean` states that may fail, for all result types: the samples of a state
+    * transformer over `Option`.
+    */
+  given BooleanStateSamples: ([X] => Sample[X] ?-> Sample[Boolean -> Option[(X, Boolean)]]) = {
+    [X] => (_: Sample[X]) ?=> BooleanFunctionSample[Option[(X, Boolean)]]
+  }
+
+  /** Samples of the values themselves, for all types: the samples of a functor that is the identity on objects. */
+  given IdentitySamples: ([X] => Sample[X] ?-> Sample[X]) = {
+    [X] => (x: Sample[X]) ?=> x
   }
 
   given SeqSample: [A: Sample] => Sample[Seq[A]] = {

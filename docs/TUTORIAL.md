@@ -2498,7 +2498,7 @@ object Inclusion extends Functor(Total, Partial):
   def map[A: Type, B: Type](f: A -> B): A ~> B = Partial.fromTotal(f)
 ```
 
-Its laws hold because `Partial.fromTotal(f)` is `f` itself; Proposition 2.9 says it is also faithful.
+Its laws hold because `Partial.fromTotal(f)` is `f` itself; Proposition 2.9 says it is also faithful. The library defines it as `Partial.Inclusion`.
 
 **Non-examples.** A `map` for `List` that also reverses the list breaks the identity law. A `map` that counts how often it is called breaks C1 and does not have the type `A -> B` under capture checking. A `map` for `Partial` that tries to decide whether its argument terminates cannot be written at all.
 

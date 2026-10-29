@@ -20,7 +20,8 @@ type ~> = Partial
   * The morphisms of 𝒫 are evaluated strictly. Pairs are not products in 𝒫, since a diverging component makes the pair
   * diverge. 𝒫 is cocartesian. See [[Coproduct]].
   *
-  * 𝒮 is the subcategory of 𝒫 of total Scala programs. See [[Partial.fromTotal]], [[Partial.assumeTotal]].
+  * 𝒮 is the subcategory of 𝒫 of total Scala programs. See [[Partial.Inclusion]], [[Partial.fromTotal]],
+  * [[Partial.assumeTotal]].
   */
 object Partial extends Category {
   type Self = Partial
@@ -41,7 +42,7 @@ object Partial extends Category {
 
   /** Creates a morphism of 𝒫 from a morphism of 𝒮.
     *
-    * This represents the inclusion functor 𝒮 → 𝒫.
+    * This represents the inclusion functor 𝒮 → 𝒫. See [[Inclusion]].
     */
   def fromTotal[A, B](f: A -> B): A ~> B = {
     f
@@ -60,6 +61,22 @@ object Partial extends Category {
     final def run(a: A): B = {
       p(a)
     }
+
+  /** The inclusion functor 𝒮 → 𝒫, where
+    *   - *F*[*A*] = *A*: the objects stay the same
+    *   - *F*(*f*) = *f*: a morphism of 𝒮 is a morphism of 𝒫 that is total
+    */
+  object Inclusion extends Functor(Total, Partial) {
+    type Self[A] = A
+
+    def objects[A: Type]: A is Type = {
+      Type.TIsType
+    }
+
+    def map[A: Type, B: Type](f: A -> B): A ~> B = {
+      fromTotal(f)
+    }
+  }
 
   /** 𝒫 as a promonad over itself. */
   object Programs extends Promonad.Hom(Partial)

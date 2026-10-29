@@ -63,7 +63,11 @@ abstract class Category extends caps.Pure {
       Category.this.andThen(f, g)
     }
 
-  /** Laws that any `Category` must satisfy. */
+  /** Laws that any `Category` must satisfy.
+    *
+    * Category composition is associative, and identities act as left and right units. Composition is also congruent
+    * with respect to observational equality of morphisms.
+    */
   object CategoryLaws {
 
     /** *id* ∘ *f* = *f*

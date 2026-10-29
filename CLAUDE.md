@@ -239,8 +239,10 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     `restricted`, the parser syntax); **`override` without `final`** when redefining an inherited member. A member that
     only forwards to a member of a parameter, with the same type parameters, is an **`export`**, not a new `def`
     (`Monad` exports `K`, `M`, `map`, `objects` from its functor; `ParserAlgebra` exports `pure`, `success`, `failure`,
-    `lookahead`, `not`, `attempt`, `optional`, `orElse` from its structures). Exports are final and carry one scaladoc on
-    the clause.
+    `lookahead`, `not`, `attempt`, `optional`, `orElse` from its structures). Exports are final. An export that gives
+    members a new meaning carries one scaladoc on the clause, saying what the new names mean (`ParserAlgebra`:
+    `unit as pure`, `complement as not`); one that only forwards needs none, since the members keep their own docs
+    (`Monad`, which only names its carrier `M`, as rule 13 does).
 17. **Monads have their functor**: `abstract class Monad(tracked val F: Endofunctor)` with primitives `unit` and
     `flatten`; `map`, `objects` are exported from `F`, `bind` is derived. Refine monads through the functor, `Monad.On[Total.type]` =
     `Monad { val F: Endofunctor { val K: Total.type } }`, not `Monad { val K: Total.type }`: only the former keeps the
@@ -264,7 +266,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`<~`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
 | `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
-| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor` | `Endofunctor.OptionIsEndofunctor`, `Total.Tuple2IsBifunctor`, … |
+| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, … |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal`, `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure on a category | `***`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry` | `Total.Product`/`Coproduct`/`Exponential`, `Partial.Product`/`Coproduct`, `Cartesian.Op`, `Cocartesian.Op` |
 | `Strong`, `Freyd` | strength on a profunctor; Freyd laws and `**` | `first`, `second` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.OfHom`, `Strong.OpOf…` |
@@ -393,7 +395,8 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 
 ### Documentation style
 
-- **Every** public class, type, given, method and law has a scaladoc comment.
+- **Every** public class, type, given, method and law has a scaladoc comment; exports only when they give members a
+  new meaning (rule 16 of §4.1).
 - Math notation in docs: variables in `*italics*`, categories in `**bold**` (`**K**`, `**V**`) or as 𝒮 and 𝒫, Unicode
   symbols (η, μ, ⊗, ⊕, π₁, ι₂, ⟨-,-⟩, [-,-], †, ∘, ⨾, ⊳, ⊑, ⊔).
 - **Math mode composition** uses `∘` (or `⨾` where diagrammatic order reads better); **no spaces in math argument
@@ -430,7 +433,7 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - Framework: ScalaTest `AnyFunSuite`; properties via ScalaCheck generators run by **`LawSuite(structure, instance)`**
   (`law(name) { ... }`, `counterexample(name) { ... }`, `forAll(...)`), which records every outcome in
   **`docs/law-status.md`** (regenerated after each run; do not edit it by hand). The suite provides the subject of its
-  laws as a given; laws of another structure the instance has go in a block, `also("Functor") { law(...) { ... } }`.
+  laws as a given; laws of another structure the instance has go in a block, `also("Freyd") { law(...) { ... } }`.
 - **Sample types**: specs are generic in the types they check their laws at: *T1*, …, *T4* of a `SampleTypes` bundle,
   a context parameter (`using types: SampleTypes`, then `import types.{T1, T2, given}`). In a using clause, the
   fixture comes first, `types` and then the spec's samples come last (`sample`, `tensor`, `unit`), resolved where the
@@ -445,23 +448,24 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - **Instance names from types**: a spec whose instance is named after a type takes a `TypeName[T]` (a macro, resolved
   where the test class is declared), so that callers pass only types: `class IntIsEqTest extends EqSpec[Int]`,
   `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
-- **One generic spec per structure** (`CategorySpec`, `PromonadSpec`, `SymmetricSpec`, `CartesianSpec`,
-  `CocartesianSpec`, `StrongSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`,
-  `RecursionSpec`, `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ObservableSpec`, `PreorderSpec`,
-  `ParserLawSpec`), **one class per
-  instance**.
+- **One generic spec per structure** (`EqSpec`, `ObservableSpec`, `PreorderSpec`, `CategorySpec`, `FunctorSpec`,
+  `BifunctorSpec`, `PromonadSpec`, `SymmetricSpec`, `CartesianSpec`, `CocartesianSpec`, `StrongSpec`,
+  `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`, `RecursionSpec`, `MonadSpec`,
+  `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ParserLawSpec`), **one class per instance**.
 - **Fixtures** (`Sample.scala`, `CategoryFixture.scala`, `PromonadFixture.scala`): `Sample[X]` (generator,
-  cogenerator, `Eq`), `CategoryFixture` (arrows of a category whose objects are all types: `arrow`, `variant`,
-  `observe`), `PromonadFixture` (arrows of a promonad, with a `base` fixture for pure arrows). Observations generate
-  **fresh sample points per property**.
+  cogenerator, `Eq`; a carrier without an `Eq` is sampled at an instance where it is data, as `StateT` at `Boolean`
+  states), `CategoryFixture` (arrows of a category whose objects are all types: `arrow`, `variant`, `observe`),
+  `PromonadFixture` (arrows of a promonad, with a `base` fixture for pure arrows). Observations generate **fresh
+  sample points per property**.
 - **Specs take their subject, not a fixture**: the category or structure is a `tracked` parameter whose type states
   what the laws need (`tracked val M: Symmetric { val K: Category { type Obj = Type } }`), and the fixture is found
   from it as a given, `using F: CategoryFixture.On[M.K.type]` (`PromonadFixture.On[S.P.type]` for promonads), a `val`
   only where a test class uses it.
   There is one given fixture per category or promonad, in the companions `CategoryFixture` and `PromonadFixture` (the
   parser's in `ParserFixtures`, imported). Derived categories (`Total.op`, `P.category`) need givens of their own:
-  implicit search cannot get from `Total.op` back to `Total`. `ObservableSpec` alone takes its fixture explicitly,
-  since the fixture's observer is what it tests.
+  implicit search cannot get from `Total.op` back to `Total`. `FunctorSpec` finds two fixtures, `source` for the
+  arrows it maps and `target` for the observations. `ObservableSpec` alone takes its fixture explicitly, since the
+  fixture's observer is what it tests.
 - Conditional laws use targeted generators (`Descent` for loops that stop, `StringStateFixture.guarded` for guarded
   steps, `refined` pairs for monotonicity), not `==>`.
 - Negative results are **counterexample** tests (interchange fails for parsers, postcomposition does not distribute
