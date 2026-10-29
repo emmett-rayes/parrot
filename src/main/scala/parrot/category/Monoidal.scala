@@ -1,17 +1,14 @@
 package parrot
 package category
 
-/** A monoidal structure on a category **K**: a tensor ⊗ that combines objects and morphisms, with a unit *I*.
+/** A monoidal structure on a category **K**.
   *
   * Represents a monoidal category (**K**, ⊗, *I*), where
-  *   - ⊗: **K** × **K** → **K** is the tensor, the bifunctor *T*
+  *   - ⊗: **K** × **K** → **K** is the tensor bifunctor
   *   - *I* is the unit object
   *   - *λ*: *I* ⊗ *A* ≅ *A* is the left unitor
   *   - *ρ*: *A* ⊗ *I* ≅ *A* is the right unitor
   *   - *α*: (*A* ⊗ *B*) ⊗ *C* ≅ *A* ⊗ (*B* ⊗ *C*) is the associator
-  *
-  * A monoidal structure is structure *on* **K**, not a new kind of category: one category can carry several (products
-  * and coproducts on 𝒮), so instances are named, not found by the carrier.
   */
 abstract class Monoidal(
   tracked val K: Category,
@@ -58,7 +55,7 @@ abstract class Monoidal(
       tensor(f, g)
     }
 
-  /** Laws that any `Monoidal` structure must satisfy, beyond the [[Bifunctor.BifunctorLaws]] of ⊗. */
+  /** Laws that any `Monoidal` structure must satisfy. */
   object MonoidalLaws {
 
     /** *λ*⁻¹ ∘ *λ* = *id* and *λ* ∘ *λ*⁻¹ = *id*

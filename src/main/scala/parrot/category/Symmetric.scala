@@ -1,20 +1,28 @@
 package parrot
 package category
 
-/** A symmetric monoidal structure on a category **K**: a monoidal structure whose tensor can swap its arguments.
+/** A symmetric monoidal structure on a category **K**.
   *
   * Represents a symmetric monoidal category, where
-  *   - *β*: *A* ⊗ *B* → *B* ⊗ *A* is the braiding, its own inverse
+  *   - *β*: *A* ⊗ *B* ≅ *B* ⊗ *A* is the braiding
   */
 abstract class Symmetric(
   tracked override val K: Category,
   tracked override val U: K.Obj,
   tracked override val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
 ) extends Monoidal(K, U, T) {
-  import K.{Obj, -->, >>>}
+  import K.{Iso, Obj, -->, <->, >>>}
 
-  /** The braiding *β*: *A* ⊗ *B* → *B* ⊗ *A*. */
+  /** The braiding *β*: *A* ⊗ *B* → *B* ⊗ *A*.
+    *
+    * @note The braiding is its own inverse. See [[braiding]].
+    */
   def braid[A: Obj, B: Obj]: (A * B) --> (B * A)
+
+  /** The braiding isomorphism *β*: *A* ⊗ *B* ≅ *B* ⊗ *A*. */
+  final def braiding[A: Obj, B: Obj]: (A * B) <-> (B * A) = {
+    Iso(braid[A, B], braid[B, A])
+  }
 
   /** Laws that any `Symmetric` structure must satisfy. */
   object SymmetricLaws {

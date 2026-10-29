@@ -3,7 +3,7 @@ package category
 
 import scala.annotation.targetName
 
-/** A cocartesian monoidal structure on a category **K**: the tensor is the coproduct and the unit is an initial object.
+/** A cocartesian monoidal structure on a category **K**.
   *
   * Represents a category with finite coproducts, the dual of [[Cartesian]], where
   *   - *A* + *B* is the coproduct, with injections *ι*₁ and *ι*₂
@@ -11,14 +11,15 @@ import scala.annotation.targetName
   *   - *I* is initial, with the unique morphism ¡: *I* → *A*
   *   - ∇ = [*id*,*id*] merges
   *
-  * The unitors, the associator and the braiding are derived from the injections and copairing.
+  * In a cocartesian category, the tensor is the coproduct and the unit is an initial object. The unitors, the
+  * associator and the braiding are derived from the injections and copairing.
   */
 abstract class Cocartesian(
   tracked override val K: Category,
   tracked override val U: K.Obj,
   tracked override val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
 ) extends Symmetric(K, U, T) {
-  import K.{Obj, -->, <->, >>>}
+  import K.{Iso, Obj, -->, <->, >>>}
 
   /** Infix alias for [[Tensor]]: the coproduct *A* + *B*. */
   final type + = Tensor
@@ -41,7 +42,7 @@ abstract class Cocartesian(
   }
 
   extension [A: Obj, X: Obj](f: A --> X)
-    /** Infix form of [[copair]]: [*f*,*g*]. */
+    /** Infix extension for [[copair]]. */
     @targetName("copairExt")
     final def |||[B: Obj](g: B --> X): (A + B) --> X = {
       copair(f, g)
@@ -62,13 +63,13 @@ abstract class Cocartesian(
   /** *λ* = [¡,*id*], with inverse *ι*₂
     */
   def leftUnitor[A: Obj]: (I + A) <-> A = {
-    K.Iso(copair(absurd[A], K.identity[A]), inr[I, A])
+    Iso(copair(absurd[A], K.identity[A]), inr[I, A])
   }
 
   /** *ρ* = [*id*,¡], with inverse *ι*₁
     */
   def rightUnitor[A: Obj]: (A + I) <-> A = {
-    K.Iso(copair(K.identity[A], absurd[A]), inl[A, I])
+    Iso(copair(K.identity[A], absurd[A]), inl[A, I])
   }
 
   /** *α* = [[*ι*₁,*ι*₂ ∘ *ι*₁],*ι*₂ ∘ *ι*₂], with the symmetric inverse
@@ -76,11 +77,12 @@ abstract class Cocartesian(
   def associator[A: Obj, B: Obj, C: Obj]: ((A + B) + C) <-> (A + (B + C)) = {
     val to   = (inl[A, B + C] ||| (inl[B, C] >>> inr[A, B + C])) ||| (inr[B, C] >>> inr[A, B + C])
     val from = (inl[A, B] >>> inl[A + B, C]) ||| ((inr[A, B] >>> inl[A + B, C]) ||| inr[A + B, C])
-    K.Iso(to, from)
+    Iso(to, from)
   }
 
-  /** Laws that any `Cocartesian` structure must satisfy: the universal property of coproducts and of the initial
-    * object.
+  /** Laws that any `Cocartesian` structure must satisfy.
+    *
+    * The coproduct and initial object satisfy the usual universal properties.
     */
   object CocartesianLaws {
 
@@ -136,7 +138,10 @@ abstract class Cocartesian(
 
 object Cocartesian {
 
-  /** The coproducts of **K**, read in **K**ᵒᵖ: products, with injections as projections and copairing as pairing. */
+  /** The cartesian opposite **K**ᵒᵖ of a cocartesian category **K**.
+    *
+    * The coproducts, injections and copairing in **K** become products, projections and pairing in **K**ᵒᵖ.
+    */
   final class Op(tracked val C: Cocartesian) extends Cartesian(C.K.op, C.U, Cartesian.Tensor(C)) {
     import K.{Obj, -->}
 

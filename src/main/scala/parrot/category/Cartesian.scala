@@ -3,8 +3,7 @@ package category
 
 import scala.annotation.targetName
 
-/** A cartesian monoidal structure on a category **K**: the tensor is the categorical product and the unit is a terminal
-  * object.
+/** A cartesian monoidal structure on a category **K**.
   *
   * Represents a category with finite products, where
   *   - *A* ⊗ *B* is the product, with projections *π*₁ and *π*₂
@@ -12,14 +11,15 @@ import scala.annotation.targetName
   *   - *I* is terminal, with the unique morphism !: *A* → *I*
   *   - Δ = ⟨*id*,*id*⟩ copies and ! deletes
   *
-  * The unitors, the associator and the braiding are derived from the projections and pairing.
+  * In a cartesian category, the tensor is the categorical product and the unit is a terminal object. The unitors, the
+  * associator and the braiding are derived from the projections and pairing.
   */
 abstract class Cartesian(
   tracked override val K: Category,
   tracked override val U: K.Obj,
   tracked override val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
 ) extends Symmetric(K, U, T) {
-  import K.{Obj, -->, <->, >>>}
+  import K.{Iso, Obj, -->, <->, >>>}
 
   /** The first projection *π*₁: *A* ⊗ *B* → *A*. */
   def fst[A: Obj, B: Obj]: (A * B) --> A
@@ -38,7 +38,7 @@ abstract class Cartesian(
     pair(K.identity[A], K.identity[A])
   }
 
-  /** Every object is a comonoid, and in exactly one way: deleting with ! and copying with Δ. */
+  /** Every object is a comonoid in exactly one way: deleting with ! and copying with Δ. */
   final def comonoid[A: Obj]: Comonoid { val V: Cartesian.this.type; type Self = A } = {
     new Comonoid(this) {
       type Self = A
@@ -52,7 +52,7 @@ abstract class Cartesian(
   }
 
   extension [X: Obj, A: Obj](f: X --> A)
-    /** Infix form of [[pair]]: ⟨*f*,*g*⟩. */
+    /** Infix extension for [[pair]]. */
     @targetName("pairExt")
     final def &&&[B: Obj](g: X --> B): X --> (A * B) = {
       pair(f, g)
@@ -67,13 +67,13 @@ abstract class Cartesian(
   /** *λ* = *π*₂, with inverse ⟨!,*id*⟩
     */
   def leftUnitor[A: Obj]: (I * A) <-> A = {
-    K.Iso(snd[I, A], pair(discard[A], K.identity[A]))
+    Iso(snd[I, A], pair(discard[A], K.identity[A]))
   }
 
   /** *ρ* = *π*₁, with inverse ⟨*id*,!⟩
     */
   def rightUnitor[A: Obj]: (A * I) <-> A = {
-    K.Iso(fst[A, I], pair(K.identity[A], discard[A]))
+    Iso(fst[A, I], pair(K.identity[A], discard[A]))
   }
 
   /** *α* = ⟨*π*₁ ∘ *π*₁,⟨*π*₂ ∘ *π*₁,*π*₂⟩⟩, with the symmetric inverse
@@ -81,10 +81,12 @@ abstract class Cartesian(
   def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C)) = {
     val to   = (fst[A * B, C] >>> fst[A, B]) &&& ((fst[A * B, C] >>> snd[A, B]) &&& snd[A * B, C])
     val from = (fst[A, B * C] &&& (snd[A, B * C] >>> fst[B, C])) &&& (snd[A, B * C] >>> snd[B, C])
-    K.Iso(to, from)
+    Iso(to, from)
   }
 
-  /** Laws that any `Cartesian` structure must satisfy: the universal property of products and of the terminal object.
+  /** Laws that any `Cartesian` structure must satisfy.
+    *
+    * The product and terminal object satisfy the usual universal properties.
     */
   object CartesianLaws {
 
@@ -142,7 +144,10 @@ abstract class Cartesian(
 
 object Cartesian {
 
-  /** The products of **K**, read in **K**ᵒᵖ: coproducts, with projections as injections and pairing as copairing. */
+  /** The cocartesian opposite **K**ᵒᵖ of a cartesian category **K**.
+    *
+    * The products, projections and pairing in **K** become coproducts, injections and copairing in **K**ᵒᵖ.
+    */
   final class Op(tracked val C: Cartesian) extends Cocartesian(C.K.op, C.U, Tensor(C)) {
     import K.{Obj, -->}
 
