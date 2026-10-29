@@ -227,8 +227,8 @@ optics, general iterated enrichment, the delay monad.
 - **Tests run in a forked JVM** with an explicit heap, and the JSON corpora are parsed on a thread with an explicit
   stack, so that the outcome does not depend on the defaults of the machine; every corpus document is asserted on
   both interpreters.
-- **sbt, not Pants.** Pants' Scala parser (scalameta) rejects `tracked` parameters, so it cannot build the library.
-  `pants.toml` and `BUILD` are kept for when it can.
+- **sbt and Pants.** Pants builds use the `scala_override` plugin to configure its Scalameta parser with
+  `Scala3Future`, enabling dependency inference for `tracked` parameters.
 - **Capture checking everywhere**, in the library and in the tests, so that `->` means a pure function wherever it is
   written. ScalaCheck is not compiled with capture checking, and its generated functions are trusted to be pure.
 - **The tutorial's code is compiled** by `docs/tutorial/check-snippets.py`, a script rather than a build task, so that it
@@ -236,8 +236,8 @@ optics, general iterated enrichment, the delay monad.
 
 ## 10. Compiler issues to file
 
-Both have been verified with Scala 3.9.0. Both are worked around by turning the flags (`-Wsafe-init`, `-Wunused:all`)
-off in `build.sbt`.
+Both have been verified with Scala 3.9.0. Both are worked around by turning the flags (`-Wsafe-init`, `-Wunused:imports`)
+off in `build.sbt` and `pants.toml`.
 
 **`-Wsafe-init` false positive when a `tracked` constructor parameter is forwarded to a parent class.** Options:
 `-source:future -language:experimental.modularity -Wsafe-init`.

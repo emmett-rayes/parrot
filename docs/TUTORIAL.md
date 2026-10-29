@@ -2436,7 +2436,7 @@ The encoding rests on experimental features: the `is` syntax and `tracked` param
 - **A false warning.** The compiler's initialization checker (`-Wsafe-init`) warns that a `tracked` parameter "may be accessed before it is initialized" when a *class* passes it on to a parent class that has parameters. At run time it is always initialized. Objects do not trigger the warning. The library's build turns the checker off rather than silencing it on each class where it appears **[Checked: Scala 3.9.0]**.
 - **A surprising given.** An instance whose `Self` is `Nothing`, such as an `Eq` for the empty type, is found by the compiler for *every* query of the same type class, because `Nothing` is a subtype of everything. The library therefore offers `Eq.NothingIsEq` as a plain value, not as a given **[Checked: Scala 3.9.0]**.
 - **A false unused warning.** A type imported under a new name, as in `import D.{--> as ==>}`, is reported as unused even where signatures use it. The library silences the warning locally, with a comment, on each class that renames an import **[Checked: Scala 3.9.0]**.
-- **Tool support.** Not every tool that parses Scala understands `tracked` yet; the project's Pants build cannot, so the project is built with sbt **[Checked]**.
+- **Tool support.** Not every tool that parses Scala understands `tracked` yet out of the box; Pants requires the in-repo `scala_override` plugin to parse `tracked` parameters **[Checked]**.
 
 None of these is a cost of the mathematics. Each is the price of using a language feature early.
 
@@ -3868,7 +3868,7 @@ sbt --client "Test/runMain parrot.json.JsonBenchmark nativejson-benchmark"
 docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.9.0/parrot/classes   # this document's code
 ```
 
-In sbt 2, `test` runs only the tests affected by a change, so `testFull` is the command that checks everything. The repository also contains a Pants configuration, but Pants cannot currently build the library: its Scala parser rejects `tracked` parameters.
+In sbt 2, `test` runs only the tests affected by a change, so `testFull` is the command that checks everything. The repository also contains a Pants configuration, supported via the in-repo `scala_override` plugin.
 
 Keep code that keeps the contract, the *core*, separate from code at the edges that performs I/O, interacts with Java libraries or loops forever. In the library, the edges are the `Partial` programs, which may not terminate, and the benchmark, which reads files.
 

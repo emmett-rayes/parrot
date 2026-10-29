@@ -1,13 +1,17 @@
 [GLOBAL]
 pants_version = "2.33.1"
 process_execution_local_enable_nailgun = false
+pythonpath = ["%(buildroot)s/pants-plugins"]
 backend_packages = [
+  "scala_override",
   "pants.backend.experimental.scala",
   "pants.backend.experimental.scala.bsp",
   "pants.backend.experimental.scala.debug_goals",
   "pants.backend.experimental.scala.lint.scalafmt",
   "pants.backend.experimental.scala.lint.scalafix",
 ]
+# the reference interpreter needs more than sbt's heap on the deepest JSON documents.
+process_per_child_memory_usage = "4GiB"
 
 [source]
 root_patterns = ["src/main/scala", "src/test/scala"]
@@ -25,10 +29,13 @@ version_for_resolve = { "jvm-default" = "3.9.0" }
 
 [scalac]
 args = [
+  # "-Wsafe-init",      # false positives on tracked parameters forwarded to a parent class (docs/DESIGN.md §10)
+  # "-Wunused:imports", # false positives on renamed type imports (docs/DESIGN.md §10)
   "-deprecation",
   "-explain-types",
   "-explain",
   "-feature",
+  "-language:experimental.captureChecking",
   "-language:experimental.genericNumberLiterals",
   "-language:experimental.modularity",
   "-language:experimental.pureFunctions",
@@ -38,10 +45,8 @@ args = [
   "-source:future",
   "-unchecked",
   "-Wnonunit-statement",
-  "-Wsafe-init",
-  "-Wunused:all",
+  "-Wunused:privates,locals,params,patvars",
   "-Wvalue-discard",
-  "-Xsemanticdb",
   "-Yexplicit-nulls",
 ]
 

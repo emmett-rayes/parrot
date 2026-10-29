@@ -17,22 +17,22 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
   type Exp[A, B]
 
   /** Infix alias for [[Exp]], in the order of the exponential *B*ᴬ = *A* ⇒ *B*. */
-  final type ^[B, A] = Exp[A, B]
+  final type `^`[B, A] = Exp[A, B]
 
   /** Internal homs of objects are objects. */
-  def objects[A: Obj, B: Obj]: (B ^ A) is Obj
+  def objects[A: Obj, B: Obj]: (B `^` A) is Obj
 
   /** Evidence that internal homs of objects are objects, for clients of the structure. */
-  given ExpIsObj: [A: Obj, B: Obj] => ((B ^ A) is Obj) = objects[A, B]
+  given ExpIsObj: [A: Obj, B: Obj] => ((B `^` A) is Obj) = objects[A, B]
 
   /** Evaluation *ev*: (*A* ⇒ *B*) ⊗ *A* → *B*. */
-  def eval[A: Obj, B: Obj]: ((B ^ A) * A) --> B
+  def eval[A: Obj, B: Obj]: ((B `^` A) * A) --> B
 
   /** Currying Λ: **K**(*C* ⊗ *A*,*B*) → **K**(*C*,*A* ⇒ *B*). */
-  def curry[A: Obj, B: Obj, C: Obj](f: (C * A) --> B): C --> (B ^ A)
+  def curry[A: Obj, B: Obj, C: Obj](f: (C * A) --> B): C --> (B `^` A)
 
   /** Uncurrying: *g* ↦ *ev* ∘ (*g* ⊗ *id*). */
-  final def uncurry[A: Obj, B: Obj, C: Obj](g: C --> (B ^ A)): (C * A) --> B = {
+  final def uncurry[A: Obj, B: Obj, C: Obj](g: C --> (B `^` A)): (C * A) --> B = {
     (g *** M.K.identity[A]) >>> eval[A, B]
   }
 
@@ -48,8 +48,8 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
     }
 
     /** Λ(*ev* ∘ (*g* ⊗ *id*)) = *g* */
-    def eta[A: Obj, B: Obj, C: Obj](g: C --> (B ^ A))(
-      using (C --> (B ^ A)) is Observable
+    def eta[A: Obj, B: Obj, C: Obj](g: C --> (B `^` A))(
+      using (C --> (B `^` A)) is Observable
     ): Boolean = {
       curry(uncurry(g)) =?= g
     }
@@ -59,7 +59,7 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
       * @note The premise is not checked: *f*′ must be equal to *f* by construction.
       */
     def curryCongruence[A: Obj, B: Obj, C: Obj](f: (C * A) --> B, f2: (C * A) --> B)(
-      using (C --> (B ^ A)) is Observable
+      using (C --> (B `^` A)) is Observable
     ): Boolean = {
       curry(f) =?= curry(f2)
     }

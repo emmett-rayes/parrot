@@ -29,16 +29,34 @@ ScalaTest and ScalaCheck, in `Test` scope.
 
 ---
 
-## 2. Toolchain and commands
+## 2. Toolchain and build systems
 
-| Item         | Value                                                      |
-| ------------ | ---------------------------------------------------------- |
-| Scala        | `3.9.0` (`build.sbt`)                                      |
-| Build tool   | sbt `2.0.10`                                               |
-| JDK          | developed on OpenJDK 25                                    |
-| Formatter    | scalafmt `3.11.3` (`.scalafmt.conf`), no sbt plugin        |
-| sbt plugins  | only `sbt-ide-settings` (IntelliJ)                         |
-| Test libs    | ScalaTest `3.2.20`, scalatestplus `scalacheck-1-19`        |
+| Item          | Value                                                              |
+| ------------- | ------------------------------------------------------------------ |
+| Scala         | `3.9.0` (`build.sbt`, `pants.toml`)                                |
+| Build tools   | sbt `2.0.10` (full suite, benchmarks), Pants `2.33.1` (fine-grained)|
+| JDK           | developed on OpenJDK 25                                            |
+| Formatter     | scalafmt `3.11.3` (`.scalafmt.conf`), no sbt plugin                |
+| Plugins       | sbt: `sbt-ide-settings`; Pants: in-repo `scala_override`           |
+| Test libs     | ScalaTest `3.2.20`, scalatestplus `scalacheck-1-19`                |
+
+### Dual build system setup
+
+Parrot maintains a **dual build system setup** where each tool serves a distinct role:
+
+- **sbt 2** is the canonical build tool for whole-repo verification and heavy tasks: running the entire suite of ~570 law
+  tests (`testFull`, which regenerates `docs/law-status.md`), executing memory-intensive benchmarks with large forked
+  heaps (`Test/runMain parrot.json.JsonBenchmark`), and running the tutorial snippet checker.
+- **Pants** provides fine-grained, file-level dependency tracking and isolated execution: ideal for fast developer feedback
+  loops when editing, type-checking, or testing individual files or targets without paying the overhead of evaluating
+  sbt's whole-project task graph.
+
+---
+
+### 2.1 sbt (whole-project verification and benchmarks)
+
+* Configuration: `build.sbt`, `project/`
+* Plugins: `sbt-ide-settings` (IntelliJ)
 
 Commands (run from the repository root):
 
@@ -51,10 +69,6 @@ sbt --client "testOnly parrot.parser.*"
 sbt --client "Test/runMain parrot.json.JsonBenchmark [--reference] [suite ...]"
 python3 docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.9.0/parrot/classes   # tutorial code, after compile
 ```
-
-> [!WARNING]
-> **Pants cannot build this code.** Its dependency-inference parser (scalameta) rejects `tracked` parameters, which the
-> whole library uses. `pants.toml` and `BUILD` are kept for when scalameta supports `tracked`; until then use sbt.
 
 Important sbt 2 gotchas:
 
@@ -69,20 +83,61 @@ Only `StrictParser` is measured unless `--reference` is passed. Example:
 `sbt --client "Test/runMain parrot.json.JsonBenchmark nativejson-benchmark"` (≈ 110 MiB/s for `StrictParser` at the
 time of writing, JSON_checker 34/34). Use it after touching `StrictParser`, `Scanner`, `CharSet` or `Fn`.
 
-### Compiler flags (from `build.sbt`)
+---
 
+### 2.2 Pants (fine-grained and single-file workflows)
+
+* Configuration: `pants.toml`, `BUILD`
+* Plugins: in-repo `scala_override` (`pants-plugins/scala_override`)
+
+Use Pants when editing or checking single files or specific targets to get fast, fine-grained feedback without
+evaluating the whole project.
+
+Commands (run from the repository root):
+
+```sh
+pants check <path-to-file>               # type-check a single file (e.g. src/main/scala/parrot/category/Strong.scala)
+pants check ::                           # type-check all targets
+pants test <path-to-test>                # run tests in a specific file
+pants dependencies <path-to-file>        # inspect inferred dependencies for a file
 ```
--source:future -preview
--language:experimental.modularity          # `A is TC`, `type Self`, `tracked` parameters
--language:experimental.pureFunctions       # `A -> B` is the type of pure functions
--language:experimental.captureChecking     # `->` is checked, in the library and in the tests
--language:experimental.genericNumberLiterals
--language:experimental.saferExceptions
--language:strictEquality                   # == needs CanEqual
--Yexplicit-nulls                           # Java APIs return T | Null
--Wunused:privates,locals,params,patvars -Wvalue-discard -Wnonunit-statement   # -Wunused:imports is off (rule 14 of §4.1); -Wsafe-init is off (rule 11 of §4.1)
--deprecation -feature -unchecked -explain -explain-types
-```
+
+> [!NOTE]
+> Pants uses fine-grained, file-level dependency inference powered by Scalameta. Because vanilla Scalameta rejects
+> Scala 3's `tracked` term parameters, Pants loads the in-repo plugin `scala_override` (`pants-plugins/scala_override`)
+> to patch `ScalaParser.scala` with `dialects.Scala3Future`.
+>
+> In `Closed.scala`, the infix exponential type operator is escaped as `` `^` `` to prevent collision with Scalameta's
+> capture-checking syntax.
+
+---
+
+### 2.3 Compiler flags (from `build.sbt` and `pants.toml`)
+
+| Flag | Purpose / Note |
+| ---- | -------------- |
+| `-source:future` | Future Scala language behavior and syntax |
+| `-preview` | Preview compiler features |
+| `-language:experimental.modularity` | Modularity features: `A is TC`, `type Self`, and `tracked` parameters |
+| `-language:experimental.pureFunctions` | Pure function types: `A -> B` |
+| `-language:experimental.captureChecking` | Capability and capture checking: `->` is checked in the library and tests |
+| `-language:experimental.genericNumberLiterals` | Generic numeric literal syntax |
+| `-language:experimental.saferExceptions` | Tracked exceptions using `canThrow` capabilities |
+| `-language:strictEquality` | Multiversal equality: `==` requires `CanEqual` instances |
+| `-Yexplicit-nulls` | Explicit nullability; Java interop returns `T \| Null` |
+| `-Wunused:privates,locals,params,patvars` | Report unused private members, locals, parameters, and pattern variables |
+| `-Wvalue-discard` | Warn when a non-`Unit` expression result is discarded |
+| `-Wnonunit-statement` | Warn when statements do not have `Unit` type (`val _ = assert(...)` in tests) |
+| `-deprecation` | Emit warning and location for usages of deprecated APIs |
+| `-feature` | Emit warning and location for features requiring explicit import |
+| `-unchecked` | Enable additional warnings where generated code depends on assumptions |
+| `-explain` | Explain errors in more detail |
+| `-explain-types` | Explain type errors in more detail |
+
+> [!NOTE]
+> `-Wsafe-init` and `-Wunused:imports` are deliberately disabled in both `build.sbt` and `pants.toml` due to compiler false positives:
+> - `-Wsafe-init`: False positives when a `tracked` constructor parameter is forwarded to a parent class (see §4.1 Rule 11 and `docs/DESIGN.md` §10).
+> - `-Wunused:imports`: False positives on renamed type imports like `import D.{--> as ==>}` (see §4.1 Rule 14 and `docs/DESIGN.md` §10).
 
 Tests are compiled **with** capture checking too. ScalaCheck is not capture-checked, so its generated functions are
 trusted to be pure. **Keep the build warning-free.**
@@ -93,6 +148,7 @@ trusted to be pure. **Keep the build warning-free.**
 
 ```
 build.sbt, project/                sbt 2 build
+pants.toml, BUILD, pants-plugins/  Pants 2.33.1 build and scala_override plugin
 .scalafmt.conf                     scalafmt 3.11.3, dialect scala3Future, maxColumn 120
 src/main/scala/parrot/
   category/   (package parrot.category)   the categorical library
@@ -163,7 +219,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     `val` for that reason.
 13. **Name the carrier** with a public `final` alias: `Hom` (and infix `-->`) for a category, `F` for a (bi/endo)functor,
     `P` for a profunctor or promonad, `M` for a monoid (and, as `M = F.F`, for a monad), `C` for a comonoid.
-    Object-level infix aliases: `*` (tensor), `+` (coproduct), `^` (`Closed.Exp` in the order of the exponential *B*ᴬ: `B ^ A` = *A* ⇒ *B*), `<->`
+    Object-level infix aliases: `*` (tensor), `+` (coproduct), `` `^` `` (`Closed.Exp` in the order of the exponential *B*ᴬ: `B `^` A` = *A* ⇒ *B*, backticked for Scalameta capture checking compatibility), `<->`
     (`Category.Iso`, `A <-> B`).
 14. **Arrows, not `.Self`.** Write morphisms infix: `-->` for the category at hand, `->>` for a second category (a
     functor's target, a bifunctor's second source), `==>` for a target category (bifunctor, profunctor), `~~>` for an
@@ -171,8 +227,8 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside `object Partial` too). Bring the
     role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`, `import S.P.{P, >>}`,
     `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.{--> as ==>}`), never with new type
-    definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:all` is commented
-    out in `build.sbt`. Parenthesize: `+`, `-->` and `->>` share a
+    definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:imports` is commented
+    out in `build.sbt` and `pants.toml`. Parenthesize: `+`, `-->` and `->>` share a
     precedence level, so write `(A + B) --> C`; `*` binds tighter, `<->`, `==>` and `^` looser, `~>` and `~~>`
     tighter than `*`. Parenthesize arrows next to `->` and `is` as well: `(A ~> B) -> (A ~> B)`,
     `(X ~> Y) is Observable`.
@@ -445,8 +501,8 @@ Things that cost time once; check here before fighting the compiler.
   `M.K` = `M.F.K` = `Total`). A refinement that intersects instead (`Monad { val K: Total.type }` on a member already
   typed `F.K.type`) breaks the chain; refine the parameter the member comes from (`Monad.On`).
 - **Renamed type imports** (`import D.{--> as ==>}`) are reported unused even when used, in every variant tried
-  (renaming `-->`, `Hom` or `Self`, with or without other imports), which is why `-Wunused:all` is commented out in
-  `build.sbt`.
+  (renaming `-->`, `Hom` or `Self`, with or without other imports), which is why `-Wunused:imports` is commented out in
+  `build.sbt` and `pants.toml`.
 - **`export` of a stable member** (`export F.K`) creates a stable alias: `import K.{Obj, -->}` and singleton chains
   keep working. Moving `K` from a `val` to an export removed the `-Wsafe-init` warnings of `OptionT` and `StateT`.
 - **Infix types** follow the precedence of term operators by first character: `*` > `+`, `-` (`-->`, `->>`) > `=`
@@ -484,7 +540,7 @@ Things that cost time once; check here before fighting the compiler.
   from scratch. The compile cache can also restore **stale class files**: after `Observable` changed from an abstract
   class to a trait, tests failed with `IncompatibleClassChangeError` even after `clean`, while a from-scratch `scalac`
   build passed. `clean` together with any source edit forces a fresh compile.
-- **scalafmt 3.11.3** cannot parse some given syntax (§7); **Pants** cannot parse `tracked` (§2).
+- **scalafmt 3.11.3** cannot parse some given syntax (§7); **Pants** requires the `scala_override` plugin with `Scala3Future` to parse `tracked` (§2).
 - **Spikes first.** For a question about what the type system accepts, a twenty-line spike compiled with
   `scalac $(cat flags)` answers faster than editing the library (the product category, renamed imports and infix
   precedence above were all settled that way).

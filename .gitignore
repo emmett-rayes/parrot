@@ -33,6 +33,10 @@ project/**/metals.sbt
 .pants.d
 dist/
 
+### Python ###
+__pycache__/
+*.pyc
+
 ### Agents ###
 .agents/
 .ai/

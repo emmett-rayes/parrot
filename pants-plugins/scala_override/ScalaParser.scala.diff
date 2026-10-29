@@ -1,0 +1,72 @@
+--- a/pants-plugins/scala_override/ScalaParser.scala
++++ b/pants-plugins/scala_override/ScalaParser.scala
+@@ -148,8 +148,8 @@ class SourceAnalysisTraverser extends Traverser {
+       }
+       case Type.Apply.After_4_6_0(tpe, argClause) =>
+         extractNamesFromTypeTree(tpe) ++ extractNamesFromTypeTree(argClause)
+-      case Type.ApplyInfix(lhs, _op, rhs) =>
+-        extractNamesFromTypeTree(lhs) ++ extractNamesFromTypeTree(rhs)
++      case Type.ApplyInfix(lhs, op, rhs) =>
++        extractNamesFromTypeTree(lhs) ++ extractNamesFromTypeTree(op) ++ extractNamesFromTypeTree(rhs)
+       case Type.ArgClause(args) => Chain.fromSeq(args).flatMap(extractNamesFromTypeTree(_))
+       case Type.Function(params, res) =>
+         Chain.fromSeq(params).flatMap(extractNamesFromTypeTree(_)) ++ extractNamesFromTypeTree(res)
+@@ -221,12 +221,23 @@ class SourceAnalysisTraverser extends Traverser {
+     skipProvidedNames = origSkipProvidedNames
+   }
+ 
++  def enclosingScopes: Vector[QualifiedName] = {
++    (2 until nameParts.length).flatMap { i =>
++      NonEmptyChain.fromSeq(nameParts.take(i).toSeq).map(QualifiedName(_))
++    }.toVector
++  }
++
+   def recordImport(name: QualifiedName, alias: Option[String], isWildcard: Boolean): Unit = {
+     val fullPackageName = currentScope
+     if (!importsByScope.contains(fullPackageName)) {
+       importsByScope(fullPackageName) = ArrayBuffer[AnImport[QualifiedName]]()
+     }
+     importsByScope(fullPackageName).append(AnImport(name, alias, isWildcard))
++    if (!name.isAbsolute) {
++      enclosingScopes.foreach { parentScope =>
++        importsByScope(fullPackageName).append(AnImport(parentScope.qualify(name), alias, isWildcard))
++      }
++    }
+   }
+ 
+   def recordConsumedSymbol(name: QualifiedName): Unit = {
+@@ -384,6 +395,23 @@ class SourceAnalysisTraverser extends Traverser {
+       withSuppressProvidedNames(() => apply(body))
+     }
+ 
++    case givenAlias: Defn.GivenAlias => {
++      visitMods(givenAlias.mods)
++      extractName(givenAlias.name).foreach(recordProvidedName(_))
++      givenAlias.tparams.foreach(apply)
++      extractNamesFromTypeTree(givenAlias.decltpe).iterator.foreach(recordConsumedSymbol(_))
++      withSuppressProvidedNames(() => apply(givenAlias.body))
++    }
++
++    case givenDef: Defn.Given => {
++      visitMods(givenDef.mods)
++      extractName(givenDef.name).foreach { name =>
++        recordProvidedName(name)
++        givenDef.tparams.foreach(apply)
++        name.simpleName.foreach(visitTemplate(givenDef.templ, _))
++      }
++    }
++
+     case Decl.Def(mods, _nameNode, tparams, params, decltpe) => {
+       visitMods(mods)
+       extractNamesFromTypeTree(decltpe).iterator.foreach(recordConsumedSymbol(_))
+@@ -552,9 +580,9 @@ object ScalaParser {
+         case "2.12"            => dialects.Scala212
+         case "2.13" if source3 => dialects.Scala213Source3
+         case "2.13"            => dialects.Scala213
+-        case "3.0"             => dialects.Scala3
++        case "3.0"             => dialects.Scala3Future
+         case _ =>
+-          if (scalaVersion.take(2) == "3.") dialects.Scala3
++          if (scalaVersion.take(2) == "3.") dialects.Scala3Future
+           else dialects.Scala213
+       }

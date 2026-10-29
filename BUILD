@@ -47,5 +47,5 @@ scala_artifact(
     group="org.scalatestplus",
     artifact="scalacheck-1-19",
     version="3.2.20.0",
-    packages=["org.scalatestplus.scalacheck.**"],
+    packages=["org.scalatestplus.scalacheck.**", "org.scalacheck.**"],
 )
