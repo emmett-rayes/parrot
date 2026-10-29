@@ -63,6 +63,14 @@ where a program can tell a diverging pair from the pair of its diverging compone
   passed bases as type parameters, which cannot be imported from, and recovered the base values with `ValueOf` and
   casts (16 `asInstanceOf` and 17 `Of[...]` traits). The encoding was validated by a spike (in the git history, under
   `docs/redesign/spike`, until commit `2f16e14`) before the library was rewritten: no casts, all laws pass.
+- **What a structure is on is a parameter; what it adds is a member.** A monoidal structure is on a category, a unit
+  object and a tensor, `Monoidal(K, U, T)`, and names their types `I = U.Self` and `Tensor = T.F`; `tracked` makes
+  them known to clients (`Total.Product.I` is `Unit`) without a member that every instance restates. The unitors,
+  the associator and the braiding are members, because refinements derive them (`Cartesian`), and so is the internal
+  hom, which is what `Closed` adds. The unit's evidence `U` is a value parameter, not a context parameter or an
+  abstract given: 𝒮 has two units and two tensors, so implicit search cannot choose them (for a `using` parameter it
+  chose `Type.TIsType[Any]`), and `deferred` givens are allowed only in traits. The structure offers the evidence to
+  its clients as a given, `IIsObj`.
 - **Structures are abstract classes**, because a refinement passes arguments to its parent (`Promonad(K)` extends
   `Profunctor(K, Total)`) and a trait cannot pass arguments to a parent trait. **Type classes without parameters that
   are not categorical structures** (`Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.

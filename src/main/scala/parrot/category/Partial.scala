@@ -111,13 +111,7 @@ object Partial extends Category {
   /** Pairs on 𝒫: a symmetric monoidal structure, but not a product. *π*₁ ∘ ⟨*f*,*g*⟩ diverges where *g* does, so it
     * equals *f* only where *g* terminates: the pairs of 𝒫 are its restriction products.
     */
-  object Product extends Symmetric(Partial, Tuple2IsBifunctor) {
-    type I = Unit
-
-    def unitObject: Unit is Type = {
-      Type.TIsType
-    }
-
+  object Product extends Symmetric(Partial, Type.TIsType[Unit], Tuple2IsBifunctor) {
     def braid[A: Type, B: Type]: (A, B) ~> (B, A) = {
       (a, b) => (b, a)
     }
@@ -153,13 +147,7 @@ object Partial extends Category {
   }
 
   /** The coproducts of 𝒫: tagged unions, with the empty type 0 as initial object. */
-  object Coproduct extends Cocartesian(Partial, EitherIsBifunctor) {
-    type I = Nothing
-
-    def unitObject: Nothing is Type = {
-      Type.TIsType
-    }
-
+  object Coproduct extends Cocartesian(Partial, Type.TIsType[Nothing], EitherIsBifunctor) {
     def inl[A: Type, B: Type]: A ~> Either[A, B] = {
       a => Left(a)
     }

@@ -203,7 +203,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 5. **Combinations are bundles**, not inheritance: `Freyd(S)` (a strong promonad), `ParserAlgebra(…)` (all the parser's
    structures). They take the structures as `tracked` parameters and derive or `export` their operations.
 6. **Object evidence**: a category's objects are the types with evidence `type Obj <: Type`. `Type` holds for every
-   type (`Type.TIsType`); refinements such as `Eq` select fewer. Evidence is passed only through context bounds.
+   type (`Type.TIsType`); refinements such as `Eq` select fewer. Evidence is passed only through context bounds,
+   except evidence that chooses an object, which is a `tracked` parameter: the unit `U` of `Monoidal(K, U, T)`, whose
+   type is the unit object `I = U.Self`.
 7. **Instances are `object`s** with descriptive names, nested in what they belong to: `Total.Product`,
    `Total.Coproduct`, `Total.Exponential`, `Partial.Loops`, `Kleisli.OptionKleisli`. Generic constructions are `open
    class`es (`Kleisli(M)`, `StateT[S](M)`, `Kleisli.ClassicalOf(P, R)`), instantiated by objects.

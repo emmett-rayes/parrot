@@ -2400,9 +2400,10 @@ Combinations of structures are not expressed by inheritance either. A class that
 
 ### 11.4 Evidence, and how it is found
 
-Problem 3 is solved as in section 3.8: a category declares `type Obj <: Type`, and its identity and composition take context bounds `[A: Obj]`. The library adds two rules that matter in practice.
+Problem 3 is solved as in section 3.8: a category declares `type Obj <: Type`, and its identity and composition take context bounds `[A: Obj]`. The library adds three rules that matter in practice.
 
 - **Evidence is passed only through context bounds**, never through an explicit `using` clause before the value parameters. Scala resolves a `using` clause where it appears, so a clause before the arrows would be resolved before the arrows had told the compiler which types are meant. Context bounds are placed after the value parameters, so infix code such as `f >>> g` infers every type.
+- **Evidence that chooses an object is a parameter.** A monoidal structure is on its unit object as much as on its tensor, so it takes the unit's evidence as a `tracked` parameter, `Monoidal(K, U, T)`, and the unit object is the type that evidence is about, `I = U.Self`. 𝒮 has two units, `Unit` for its products and `Nothing` for its coproducts, so implicit search could no more choose the unit than the tensor. `Monoidal` offers the evidence to its clients as a given, `IIsObj`.
 - **An instance names its own evidence**, as `Type.TIsType`, instead of searching for it. A structure that offers evidence to its clients, such as `Monoidal.TensorIsObj`, would otherwise be found by its own definition and call itself.
 
 Infix code needs one more rule: **every structure has its own operator names.** `>>>` composes in a category, `>>` in a category of arrows (chapter 17), `***` is the tensor of a monoidal structure, `&&&` and `|||` pair and copair, `**` runs two effectful arrows side by side, `=?=` asks an `Observable` whether two values agree. Two instances that defined the same operator could not both be imported into one scope. With distinct names, code reads like the mathematics:
@@ -2739,10 +2740,10 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 
 | Class | Adds | Instances |
 | --- | --- | --- |
-| `Monoidal(K, T)` | a tensor bifunctor `T`, a unit `I`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
-| `Symmetric(K, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, symmetry, hexagon | `Partial.Product` |
-| `Cartesian(K, T)` | the tensor is a product: `fst`, `snd`, `pair` (`&&&`), `discard`; the isomorphisms are derived | `Total.Product` |
-| `Cocartesian(K, T)` | the tensor is a coproduct: `inl`, `inr`, `copair` (`|||`), `absurd` | `Total.Coproduct`, `Partial.Coproduct` |
+| `Monoidal(K, U, T)` | a unit object `I`, given by its evidence `U`, a tensor bifunctor `T`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
+| `Symmetric(K, U, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, symmetry, hexagon | `Partial.Product` |
+| `Cartesian(K, U, T)` | the tensor is a product: `fst`, `snd`, `pair` (`&&&`), `discard`; the isomorphisms are derived | `Total.Product` |
+| `Cocartesian(K, U, T)` | the tensor is a coproduct: `inl`, `inr`, `copair` (`|||`), `absurd` | `Total.Coproduct`, `Partial.Coproduct` |
 | `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry` | `Total.Exponential` |
 
 `Cartesian` and `Cocartesian` are refinements of `Symmetric`, because being a product is a property of a tensor: it says that the tensor of two objects has the universal property of section 14.1. The library therefore derives their associator, unitors and braiding from the projections or injections, and checks one extra law, `tensorIsProduct` (or `tensorIsCoproduct`), that the tensor of arrows is the one the universal property gives. `Closed`, on the other hand, is structure *on* a monoidal category, so it takes one as a parameter.

@@ -15,6 +15,7 @@ package category
   */
 abstract class Monoidal(
   tracked val K: Category,
+  tracked val U: K.Obj,
   tracked val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
 ) extends caps.Pure {
   import K.{Obj, -->, <->, >>>}
@@ -26,13 +27,10 @@ abstract class Monoidal(
   final type * = Tensor
 
   /** The unit object *I*. */
-  type I
-
-  /** The unit is an object. */
-  def unitObject: I is Obj
+  final type I = U.Self
 
   /** Evidence that *I* is an object, for clients of the structure. */
-  given IIsObj: (I is Obj) = unitObject
+  given IIsObj: (I is Obj) = U
 
   /** Evidence that tensors of objects are objects, for clients of the structure. */
   given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]

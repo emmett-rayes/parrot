@@ -9,7 +9,7 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 
 | Relation | In the code | Examples |
 | --- | --- | --- |
-| *on*: structure on something else | a `tracked` parameter | `Monoidal(K, T)` on a category and a bifunctor; `Monad(F)` on an endofunctor; `Restriction(P)` on a promonad |
+| *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Monad(F)` on an endofunctor; `Restriction(P)` on a promonad |
 | *refines*: more operations and laws | `extends`, forwarding the parameters | `Symmetric` refines `Monoidal`; `Cartesian` and `Cocartesian` refine `Symmetric`; `Classical` refines `Restriction`; `Semilattice` refines `Monoid` |
 | *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K**ᵒᵖ × **K** |
 | *dual*: the same structure on the opposite | an `Op` class | `Category.Op`; `Cartesian.Op` is `Cocartesian`; `Promonad.Op`; `Conway.OfElgot` |
@@ -71,7 +71,7 @@ is its morphism part with the variance spelled out. The tensors of 𝒮 and 𝒫
 
 ## Tensors
 
-A `Monoidal` structure is on a category and a bifunctor ⊗: **K** × **K** → **K**, with a unit object and isomorphisms
+A `Monoidal` structure is on a category, a unit object *I* and a bifunctor ⊗: **K** × **K** → **K**, with isomorphisms
 that make ⊗ associative and unital. `Symmetric` adds the braiding, which swaps the arguments. `Cartesian` and
 `Cocartesian` refine `Symmetric` where the tensor is a universal construction: the product, with a terminal unit, and
 the coproduct, with an initial unit. They are dual: `Cartesian.Op` reads the products of **K** as coproducts of **K**ᵒᵖ,

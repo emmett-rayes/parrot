@@ -32,10 +32,10 @@ import scala.util.matching.Regex
 abstract class ParserAlgebra(
   tracked val Arrows: Promonad { val K: Category { type Obj = Type } },
   tracked val Products: Cartesian {
-    val K: Arrows.K.type; type I = Unit; val T: Bifunctor { type Self = Tuple2 }
+    val K: Arrows.K.type; val U: Unit is Type; val T: Bifunctor { type Self = Tuple2 }
   },
   tracked val Coproducts: Cocartesian {
-    val K: Arrows.K.type; type I = Nothing; val T: Bifunctor { type Self = Either }
+    val K: Arrows.K.type; val U: Nothing is Type; val T: Bifunctor { type Self = Either }
   },
   tracked val Zipping: Strong { val P: Arrows.type; val M: Products.type },
   tracked val Branching: Strong { val P: Arrows.type; val M: Coproducts.type },

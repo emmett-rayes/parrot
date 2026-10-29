@@ -172,13 +172,7 @@ object Fns extends Category {
   }
 
   /** Reified products: pairs, with projections and pairing as data. */
-  object Product extends Cartesian(Fns, Tuple2IsBifunctor) {
-    type I = Unit
-
-    def unitObject: Unit is Type = {
-      Type.TIsType
-    }
-
+  object Product extends Cartesian(Fns, Type.TIsType[Unit], Tuple2IsBifunctor) {
     def fst[A: Type, B: Type]: Fn[(A, B), A] = {
       Fn.Proj1()
     }
@@ -197,13 +191,7 @@ object Fns extends Category {
   }
 
   /** Reified coproducts: tagged unions, with injections and copairing as data. */
-  object Coproduct extends Cocartesian(Fns, EitherIsBifunctor) {
-    type I = Nothing
-
-    def unitObject: Nothing is Type = {
-      Type.TIsType
-    }
-
+  object Coproduct extends Cocartesian(Fns, Type.TIsType[Nothing], EitherIsBifunctor) {
     def inl[A: Type, B: Type]: Fn[A, Either[A, B]] = {
       Fn.Inl()
     }

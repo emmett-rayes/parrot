@@ -57,13 +57,7 @@ object Total extends Category {
   }
 
   /** The products of 𝒮: pairs, with the unit type 1 as terminal object. */
-  object Product extends Cartesian(Total, Tuple2IsBifunctor) {
-    type I = Unit
-
-    def unitObject: Unit is Type = {
-      Type.TIsType
-    }
-
+  object Product extends Cartesian(Total, Type.TIsType[Unit], Tuple2IsBifunctor) {
     def fst[A: Type, B: Type]: ((A, B)) -> A = {
       _._1
     }
@@ -82,13 +76,7 @@ object Total extends Category {
   }
 
   /** The coproducts of 𝒮: tagged unions, with the empty type 0 as initial object. */
-  object Coproduct extends Cocartesian(Total, EitherIsBifunctor) {
-    type I = Nothing
-
-    def unitObject: Nothing is Type = {
-      Type.TIsType
-    }
-
+  object Coproduct extends Cocartesian(Total, Type.TIsType[Nothing], EitherIsBifunctor) {
     def inl[A: Type, B: Type]: A -> Either[A, B] = {
       a => Left(a)
     }

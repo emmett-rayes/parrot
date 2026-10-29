@@ -16,8 +16,9 @@ import scala.annotation.targetName
   */
 abstract class Cartesian(
   tracked override val K: Category,
+  tracked override val U: K.Obj,
   tracked override val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
-) extends Symmetric(K, T) {
+) extends Symmetric(K, U, T) {
   import K.{Obj, -->, <->, >>>}
 
   /** The first projection *π*₁: *A* ⊗ *B* → *A*. */
@@ -142,14 +143,8 @@ abstract class Cartesian(
 object Cartesian {
 
   /** The products of **K**, read in **K**ᵒᵖ: coproducts, with projections as injections and pairing as copairing. */
-  final class Op(tracked val C: Cartesian) extends Cocartesian(C.K.op, Tensor(C)) {
+  final class Op(tracked val C: Cartesian) extends Cocartesian(C.K.op, C.U, Tensor(C)) {
     import K.{Obj, -->}
-
-    type I = C.I
-
-    def unitObject: I is Obj = {
-      C.unitObject
-    }
 
     def inl[A: Obj, B: Obj]: A --> (A + B) = {
       C.fst[A, B]

@@ -8,8 +8,9 @@ package category
   */
 abstract class Symmetric(
   tracked override val K: Category,
+  tracked override val U: K.Obj,
   tracked override val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
-) extends Monoidal(K, T) {
+) extends Monoidal(K, U, T) {
   import K.{Obj, -->, >>>}
 
   /** The braiding *β*: *A* ⊗ *B* → *B* ⊗ *A*. */
