@@ -6,7 +6,7 @@ import Sample.given
 /** The laws of [[Monad]] and of its endofunctor, for monads on 𝒮. */
 abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(using
   types: SampleTypes,
-  sample: [X] => Sample[X] ?=> Sample[M.M[X]],
+  sample: [X] => Sample[X] ?-> Sample[M.M[X]],
 ) extends LawSuite("Monad", name) {
   import types.{T1, T2, T4, given}
   import M.MonadLaws.*

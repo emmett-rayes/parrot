@@ -35,18 +35,20 @@
    }
  
    def recordConsumedSymbol(name: QualifiedName): Unit = {
-@@ -384,6 +395,23 @@ class SourceAnalysisTraverser extends Traverser {
-       withSuppressProvidedNames(() => apply(body))
-     }
+@@ -382,8 +393,25 @@ class SourceAnalysisTraverser extends Traverser {
+       params.foreach(param => apply(param))
  
+       withSuppressProvidedNames(() => apply(body))
++    }
++
 +    case givenAlias: Defn.GivenAlias => {
 +      visitMods(givenAlias.mods)
 +      extractName(givenAlias.name).foreach(recordProvidedName(_))
 +      givenAlias.tparams.foreach(apply)
 +      extractNamesFromTypeTree(givenAlias.decltpe).iterator.foreach(recordConsumedSymbol(_))
 +      withSuppressProvidedNames(() => apply(givenAlias.body))
-+    }
-+
+     }
+ 
 +    case givenDef: Defn.Given => {
 +      visitMods(givenDef.mods)
 +      extractName(givenDef.name).foreach { name =>
@@ -59,7 +61,18 @@
      case Decl.Def(mods, _nameNode, tparams, params, decltpe) => {
        visitMods(mods)
        extractNamesFromTypeTree(decltpe).iterator.foreach(recordConsumedSymbol(_))
-@@ -552,9 +580,9 @@ object ScalaParser {
+@@ -542,7 +570,9 @@ object ScalaParser {
+   def analyze(pathStr: String, scalaVersion: String, source3: Boolean): Analysis = {
+     val path = java.nio.file.Paths.get(pathStr)
+     val bytes = java.nio.file.Files.readAllBytes(path)
+-    val text = new String(bytes, "UTF-8")
++    // Scalameta rejects pure context functions (`?->`) in polymorphic function types, which capture checking requires
++    // there. `?=>` has the same length and names, which is all dependency inference needs.
++    val text = new String(bytes, "UTF-8").replace("?->", "?=>")
+ 
+     val dialect =
+       scalaVersion.take(4) match {
+@@ -552,9 +582,9 @@ object ScalaParser {
          case "2.12"            => dialects.Scala212
          case "2.13" if source3 => dialects.Scala213Source3
          case "2.13"            => dialects.Scala213
@@ -70,3 +83,4 @@
 +          if (scalaVersion.take(2) == "3.") dialects.Scala3Future
            else dialects.Scala213
        }
+ 

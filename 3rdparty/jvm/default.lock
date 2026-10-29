@@ -6,7 +6,7 @@
 # {
 #   "version": 1,
 #   "generated_with_requirements": [
-#     "org.scala-lang:scala3-library_3:3.9.0,url=not_provided,jar=not_provided",
+#     "org.scala-lang:scala3-library_3:3.10.0,url=not_provided,jar=not_provided",
 #     "org.scalatest:scalatest_3:3.2.20,url=not_provided,jar=not_provided",
 #     "org.scalatestplus:scalacheck-1-19_3:3.2.20.0,url=not_provided,jar=not_provided"
 #   ]
@@ -18,13 +18,13 @@ file_name = "org.scala-lang.modules_scala-xml_3_2.1.0.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 
@@ -39,39 +39,39 @@ serialized_bytes_length = 645935
 [[entries]]
 directDependencies = []
 dependencies = []
-file_name = "org.scala-lang_scala-library_3.9.0.jar"
+file_name = "org.scala-lang_scala-library_3.10.0.jar"
 
 [entries.coord]
 group = "org.scala-lang"
 artifact = "scala-library"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 [entries.file_digest]
-fingerprint = "b844bf6fb3080c73df6b9c523b7a69b9ef4a980bb15e5c37c35443d1d0b0e0cd"
-serialized_bytes_length = 9823422
+fingerprint = "b47befb29e02bbc08a10bbd387b35cf80ff9bf04fda8fdf3dda6c8ad6895f325"
+serialized_bytes_length = 9835169
 [[entries]]
-file_name = "org.scala-lang_scala3-library_3_3.9.0.jar"
+file_name = "org.scala-lang_scala3-library_3_3.10.0.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala-library"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala-library"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 
 [entries.coord]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 [entries.file_digest]
-fingerprint = "9343f9651453945fc6a9b75bb4fd230418ee28a1f88ea28ee429f3ebe0511aba"
-serialized_bytes_length = 344
+fingerprint = "4daaede24ddfeea082bbed096ba0c492d99e8428632e9fd3c38f82cf7aad4b63"
+serialized_bytes_length = 345
 [[entries]]
 directDependencies = []
 dependencies = []
@@ -90,7 +90,7 @@ file_name = "org.scalacheck_scalacheck_3_1.19.0.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -102,7 +102,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -125,13 +125,13 @@ file_name = "org.scalactic_scalactic_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 
@@ -167,7 +167,7 @@ packaging = "jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -191,7 +191,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -220,7 +220,7 @@ file_name = "org.scalatest_scalatest-diagrams_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -238,7 +238,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -273,7 +273,7 @@ file_name = "org.scalatest_scalatest-featurespec_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -291,7 +291,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -326,7 +326,7 @@ file_name = "org.scalatest_scalatest-flatspec_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -344,7 +344,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -379,7 +379,7 @@ file_name = "org.scalatest_scalatest-freespec_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -397,7 +397,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -432,7 +432,7 @@ file_name = "org.scalatest_scalatest-funspec_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -450,7 +450,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -485,7 +485,7 @@ file_name = "org.scalatest_scalatest-funsuite_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -503,7 +503,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -538,7 +538,7 @@ file_name = "org.scalatest_scalatest-matchers-core_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -556,7 +556,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -591,7 +591,7 @@ file_name = "org.scalatest_scalatest-mustmatchers_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -609,7 +609,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -650,7 +650,7 @@ file_name = "org.scalatest_scalatest-propspec_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -668,7 +668,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -703,7 +703,7 @@ file_name = "org.scalatest_scalatest-refspec_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -721,7 +721,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -756,7 +756,7 @@ file_name = "org.scalatest_scalatest-shouldmatchers_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -774,7 +774,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -815,7 +815,7 @@ file_name = "org.scalatest_scalatest-wordspec_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -833,7 +833,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -868,7 +868,7 @@ file_name = "org.scalatest_scalatest_3_3.2.20.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -958,7 +958,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]
@@ -1065,7 +1065,7 @@ file_name = "org.scalatestplus_scalacheck-1-19_3_3.2.20.0.jar"
 [[entries.directDependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.directDependencies]]
@@ -1089,7 +1089,7 @@ packaging = "jar"
 [[entries.dependencies]]
 group = "org.scala-lang"
 artifact = "scala3-library_3"
-version = "3.9.0"
+version = "3.10.0"
 packaging = "jar"
 
 [[entries.dependencies]]

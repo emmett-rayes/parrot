@@ -1,8 +1,9 @@
 # Compiled snippets of the tutorial
 
 `check-snippets.py` extracts the Scala code blocks of the tutorial, [`docs/TUTORIAL.md`](../TUTORIAL.md), and compiles them
-with `scalac` (Scala 3.9.0 on the `PATH`) and the options in `scalac-flags.txt`. Every Scala block of the tutorial is
-compiled unless it is marked otherwise.
+with Scala 3.10.0, the version of the library, and the options in `scalac-flags.txt`. The compiler is run by Scala CLI
+(`scala` on the `PATH`), which downloads that version on first use, so the system's own `scalac` does not matter. Every
+Scala block of the tutorial is compiled unless it is marked otherwise. The version is `SCALA_VERSION` in the script.
 
 ```sh
 docs/tutorial/check-snippets.py                       # the whole document
@@ -13,7 +14,7 @@ docs/tutorial/check-snippets.py --keep DIR            # keep the compiled snippe
 ```
 
 Blocks marked `library` need the compiled library: run `sbt --client compile` first and pass its classes, as in
-`docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.9.0/parrot/classes`.
+`docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.10.0/parrot/classes`.
 
 It exits with status 1 if a compiled block fails to compile or a `fails` block compiles, and prints the compiler
 output with line numbers translated to lines of the document.

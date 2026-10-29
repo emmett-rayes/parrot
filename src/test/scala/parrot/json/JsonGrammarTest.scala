@@ -14,23 +14,17 @@ class JsonGrammarTest extends AnyFunSuite {
   private val reference       = JsonGrammar(referenceParser)
   private val strict          = JsonGrammar(strictParser)
 
-  tests("ReferenceParser", reference)([B] =>
-    (p: reference.algebra.P[Unit, B], input: String) =>
-      referenceParser.parse(p)(input).toOption.map((result, offset) => (result, input.slice(offset, input.length)))
-  )
+  tests("ReferenceParser", reference)
 
-  tests("StrictParser", strict)([B] =>
-    (p: strict.algebra.P[Unit, B], input: String) =>
-      strictParser.parse(p)(input).toOption.map((result, offset) => (result, input.slice(offset, input.length)))
-  )
+  tests("StrictParser", strict)
 
-  /** Registers the tests of `grammar`, given a way to `run` a parser on a prefix of the input, returning its result and
-    * the remaining input.
+  /** Registers the tests of `grammar`, which run its parsers on a prefix of the input and return their result and the
+    * remaining input.
     */
-  private def tests(interpreter: String, grammar: JsonGrammar)(
-    run: [B] => (grammar.algebra.P[Unit, B], String) => Option[(B, String)]
-  ): Unit = {
-    extension [B](self: grammar.algebra.P[Unit, B]) def on(input: String): Option[(B, String)] = run(self, input)
+  private def tests(interpreter: String, grammar: JsonGrammar): Unit = {
+    extension [B](self: grammar.algebra.P[Unit, B]) def on(input: String): Option[(B, String)] = {
+      grammar.algebra.parse(self)(input).toOption.map((result, offset) => (result, input.slice(offset, input.length)))
+    }
 
     def accepts[B](p: grammar.algebra.P[Unit, B], input: String): Boolean = p.on(input).exists(_._2.isEmpty)
 

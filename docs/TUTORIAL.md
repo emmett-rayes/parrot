@@ -88,7 +88,7 @@ And for the other basic notation:
 
 ### Code conventions
 
-All code is written in Scala 3.9.0 with the following compiler options:
+All code is written in Scala 3.10.0 with the following compiler options:
 
 ```
 -source:future -preview -language:experimental.modularity -language:experimental.pureFunctions
@@ -415,7 +415,7 @@ def counting(): Boolean =
 
 Effects are not wrong. They have to be made visible in types before they can be modeled, and chapter 15 shows how monads do this, while Part IV builds categories out of effectful programs directly.
 
-**Checked by capture checking.** Under capture checking, the arrow `A -> B` is the type of pure functions, which cannot retain any capability, while `A => B` may retain arbitrary capabilities [Capture checking overview, checked]. That is why the code in this document writes `->`: every function it calls an arrow of a category has a type that says the function is pure. There is one gap to know about. In Scala 3.9.0, capture checking on its own tracks capabilities that are passed around as values, but not local mutable variables: `counting` above still type-checks when `next` is declared `Unit -> Int`. Separation checking, a further experimental layer, does track them, and then the pure declaration is rejected **[Checked: Scala 3.9.0]**:
+**Checked by capture checking.** Under capture checking, the arrow `A -> B` is the type of pure functions, which cannot retain any capability, while `A => B` may retain arbitrary capabilities [Capture checking overview, checked]. That is why the code in this document writes `->`: every function it calls an arrow of a category has a type that says the function is pure. There is one gap to know about. In Scala 3.10.0, capture checking on its own tracks capabilities that are passed around as values, but not local mutable variables: `counting` above still type-checks when `next` is declared `Unit -> Int`. Separation checking, a further experimental layer, does track them, and then the pure declaration is rejected **[Checked: Scala 3.10.0]**:
 
 ```scala unit=Separation fails
 import language.experimental.separationChecking
@@ -781,7 +781,7 @@ So, under the contract: use `A -> Option[B]` (or `Either`) for arrows of 𝒮. U
 - Stainless repository README. https://github.com/epfl-lara/stainless
 - Viktor Kunčak, talk abstract "Stainless", Lambda Days 2020. https://lambdadays.org/lambdadays2020/viktor-kunak/
 - An older version of Stainless's "Pure Scala" documentation. https://github.com/flonso/stainless/blob/master/core/src/sphinx/purescala.rst
-- The behavior of capture checking and separation checking on local mutable variables was checked with the Scala 3.9.0 compiler.
+- The behavior of capture checking and separation checking on local mutable variables was checked with the Scala 3.10.0 compiler.
 
 **Cited from memory, not consulted**
 
@@ -1521,7 +1521,7 @@ enum Leq[A, B]:
   case Step[A, B](prev: Leq[A, B]) extends Leq[A, S[B]] // A ≤ B implies A ≤ B + 1
 
 def trans[A, B, C](g: Leq[B, C], f: Leq[A, B]): Leq[A, C] = g match
-  case Leq.Refl()     => f                        // here C is B
+  case _: Leq.Refl[?] => f                        // here C is B
   case Leq.Step(prev) => Leq.Step(trans(prev, f)) // here C is S[C′] and prev: Leq[B, C′]
 
 object Order extends Category:
@@ -2122,7 +2122,7 @@ enum Path[A, B]:
   case Then[A, B, C](first: Step[A, B], rest: Path[B, C]) extends Path[A, C]
 
 def concat[A, B, C](p: Path[A, B], q: Path[B, C]): Path[A, C] = p match
-  case Path.Stay()        => q
+  case _: Path.Stay[?]    => q
   case Path.Then(s, rest) => Path.Then(s, concat(rest, q))
 
 object Paths extends Category:
@@ -2433,9 +2433,9 @@ The library's tests run one generic specification per structure against every in
 
 The encoding rests on experimental features: the `is` syntax and `tracked` parameters of Scala 3's modularity proposal, and capture checking for the pure function type `->` [Scala modularity, from memory]. Four costs are worth knowing.
 
-- **A false warning.** The compiler's initialization checker (`-Wsafe-init`) warns that a `tracked` parameter "may be accessed before it is initialized" when a *class* passes it on to a parent class that has parameters. At run time it is always initialized. Objects do not trigger the warning. The library's build turns the checker off rather than silencing it on each class where it appears **[Checked: Scala 3.9.0]**.
-- **A surprising given.** An instance whose `Self` is `Nothing`, such as an `Eq` for the empty type, is found by the compiler for *every* query of the same type class, because `Nothing` is a subtype of everything. The library therefore offers `Eq.NothingIsEq` as a plain value, not as a given **[Checked: Scala 3.9.0]**.
-- **A false unused warning.** A type imported under a new name, as in `import D.{--> as ==>}`, is reported as unused even where signatures use it. The library silences the warning locally, with a comment, on each class that renames an import **[Checked: Scala 3.9.0]**.
+- **A false warning.** The compiler's initialization checker (`-Wsafe-init`) warns that a `tracked` parameter "may be accessed before it is initialized" when a *class* passes it on to a parent class that has parameters. At run time it is always initialized. Objects do not trigger the warning. The library's build turns the checker off rather than silencing it on each class where it appears **[Checked: Scala 3.10.0]**.
+- **A surprising given.** An instance whose `Self` is `Nothing`, such as an `Eq` for the empty type, is found by the compiler for *every* query of the same type class, because `Nothing` is a subtype of everything. The library therefore offers `Eq.NothingIsEq` as a plain value, not as a given **[Checked: Scala 3.10.0]**.
+- **A false unused warning.** A type imported under a new name, as in `import D.{--> as ==>}`, is reported as unused even where signatures use it. The library's build leaves imports out of the unused checks rather than silencing the warning on each renamed import **[Checked: Scala 3.10.0]**.
 - **Tool support.** Not every tool that parses Scala understands `tracked` yet out of the box; Pants requires the in-repo `scala_override` plugin to parse `tracked` parameters **[Checked]**.
 
 None of these is a cost of the mathematics. Each is the price of using a language feature early.
@@ -3847,7 +3847,7 @@ All results are cited in the chapters listed in the table.
 | `-source:future`, `-language:experimental.modularity` | the type-class syntax (`is`, `Self`) and `tracked` parameters used throughout | — | experimental [checked] |
 | `-language:strictEquality` | no `==` without a `CanEqual` instance; no `==` on functions | custom `equals` | stable [checked] |
 | `Matchable` warnings, under `-source future-migration` or later | pattern matches on `Any`, unbounded type parameters and abstract types | casts | stable [checked] |
-| `-Yexplicit-nulls` | `null` in ordinary reference types; Java APIs return `T \| Null` | — | experimental **[Checked: Scala 3.9.0]**, enabled in the library |
+| `-Yexplicit-nulls` | `null` in ordinary reference types; Java APIs return `T \| Null` | — | experimental **[Checked: Scala 3.10.0]**, enabled in the library |
 | Capture checking | pure function types `->`; tracked capabilities | local mutable variables (without separation checking); exceptions | experimental, described as maturing [checked]; enabled for the library and its tests |
 | Separation checking | aliasing of exclusive capabilities, including local mutable variables | — | experimental, in flux [checked] |
 | Safe mode | no unchecked casts or matches, no `caps.unsafe`, no reflection, all mutation tracked, safe global objects only | exceptions | experimental [checked] |
@@ -3865,7 +3865,7 @@ sbt --client compile                 # the library
 sbt --client testFull                # every test; also regenerates docs/law-status.md
 sbt --client "testOnly parrot.category.GridTest"
 sbt --client "Test/runMain parrot.json.JsonBenchmark nativejson-benchmark"
-docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.9.0/parrot/classes   # this document's code
+docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.10.0/parrot/classes  # this document's code
 ```
 
 In sbt 2, `test` runs only the tests affected by a change, so `testFull` is the command that checks everything. The repository also contains a Pants configuration, supported via the in-repo `scala_override` plugin.

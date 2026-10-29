@@ -157,7 +157,7 @@ abstract class ComonoidSpec(
 )(using
   F: CategoryFixture.On[W.V.K.type],
   S: Sample[W.C],
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[W.V.*[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[W.V.*[X, Y]],
   unit: Sample[W.V.I],
 ) extends LawSuite("Comonoid", name) {
   import F.*

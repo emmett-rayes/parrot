@@ -119,7 +119,7 @@ object StrictParser {
 
     extension [B](out: Out[B])
       /** True if `out` is a failure. */
-      inline def isFailed: Boolean = out.isInstanceOf[Failed.type]
+      inline def isFailed: Boolean = out.asInstanceOf[AnyRef] eq Failed
 
       /** The value of a successful `out`. */
       inline def get: B = out.asInstanceOf[B]
@@ -240,20 +240,20 @@ object StrictParser {
         case Rule(_, p)        => analyze(p, env)
         case Literal(expected) =>
           if expected.isEmpty then consumesNothing else Info(CharSet.of(expected.charAt(0)), false)
-        case Scan(_, scanner, _)          => Info(scanner.first.set, scanner.first.nullable)
-        case Pattern(_)                   => unknown
-        case Pure(_) | Success() | Not(_) => consumesNothing
-        case Failure()                    => never
-        case Seq(p, q)                    => analyze(p, env).andThen(analyze(q, env))
-        case Zip(p, q)                    => analyze(p, env).andThen(analyze(q, env))
-        case Pair(p, q)                   => analyze(p, env).andThen(analyze(q, env))
-        case SkipThen(p, q)               => analyze(p, env).andThen(analyze(q, env))
-        case ThenSkip(p, q)               => analyze(p, env).andThen(analyze(q, env))
-        case Lookahead(p)                 => analyze(p, env)
-        case Loop(p)                      => analyze(p, env)
-        case Merge(p, q)                  => analyze(p, env).orElse(analyze(q, env))
-        case Choice(alternatives)         => alternatives.map(analyze(_, env)).reduce(_.orElse(_))
-        case Repeat(p, min, _, separator) =>
+        case Scan(_, scanner, _)              => Info(scanner.first.set, scanner.first.nullable)
+        case Pattern(_)                       => unknown
+        case Pure(_) | _: Success[?] | Not(_) => consumesNothing
+        case _: Failure[?, ?]                 => never
+        case Seq(p, q)                        => analyze(p, env).andThen(analyze(q, env))
+        case Zip(p, q)                        => analyze(p, env).andThen(analyze(q, env))
+        case Pair(p, q)                       => analyze(p, env).andThen(analyze(q, env))
+        case SkipThen(p, q)                   => analyze(p, env).andThen(analyze(q, env))
+        case ThenSkip(p, q)                   => analyze(p, env).andThen(analyze(q, env))
+        case Lookahead(p)                     => analyze(p, env)
+        case Loop(p)                          => analyze(p, env)
+        case Merge(p, q)                      => analyze(p, env).orElse(analyze(q, env))
+        case Choice(alternatives)             => alternatives.map(analyze(_, env)).reduce(_.orElse(_))
+        case Repeat(p, min, _, separator)     =>
           val item  = analyze(p, env)
           val after = if item.nullable then separator.fold(CharSet.empty)(analyze(_, env).first) else CharSet.empty
           Info(item.first.union(after), min == 0 || item.nullable)
@@ -279,12 +279,13 @@ object StrictParser {
       def reaches(node: Node[?, ?], visited: Set[Node.Rec[?, ?]]): Boolean = {
         import Node.*
         node match {
-          case Rule(_, p)                                                                => reaches(p, visited)
-          case Literal(_) | Scan(_, _, _) | Pattern(_) | Pure(_) | Success() | Failure() => false
-          case Lookahead(p)                                                              => reaches(p, visited)
-          case Not(p)                                                                    => reaches(p, visited)
-          case Loop(p)                                                                   => reaches(p, visited)
-          case Repeat(p, _, _, sep)                                                      =>
+          case Rule(_, p)                                        => reaches(p, visited)
+          case Literal(_) | Scan(_, _, _) | Pattern(_) | Pure(_) => false
+          case _: Success[?] | _: Failure[?, ?]                  => false
+          case Lookahead(p)                                      => reaches(p, visited)
+          case Not(p)                                            => reaches(p, visited)
+          case Loop(p)                                           => reaches(p, visited)
+          case Repeat(p, _, _, sep)                              =>
             reaches(p, visited) || (of(p).nullable && sep.exists(reaches(_, visited)))
           case Merge(p, q)          => reaches(p, visited) || reaches(q, visited)
           case Choice(alternatives) => alternatives.exists(reaches(_, visited))
@@ -620,12 +621,14 @@ object StrictParser {
       private[StrictParser] var info: Option[Info] = scala.None
       private lazy val mayLeftRecurse: Boolean     = Info.mayLeftRecurse(this)
 
+      private given CanEqual[A, A] = CanEqual.derived
+
       def run(a: A, s: State): Out[B] = {
         if !mayLeftRecurse then body.run(a, s)
         else {
           val start = s.offset
           s.findHead(this, start) match {
-            case Some(head) if head.arg.equals(a) =>
+            case Some(head) if head.arg == a =>
               head.leftRecursive = true
               s.offset = head.seedEnd
               head.seed
@@ -665,20 +668,20 @@ object StrictParser {
   /** Normalizing sequential composition, right-associated so that redexes surface at the head. */
   private def sequence[A, B, C](p: Node[A, B], q: Node[B, C]): Node[A, C] = {
     (p, q) match {
-      case (Success(), _)                                 => q
-      case (_, Success())                                 => p
-      case (Failure(), _)                                 => Failure()
-      case (Pure(f), Pure(g))                             => Nodes.unit(Fn.andThen(f, g))
-      case (Pure(Fn.Inl()), Merge(l, _))                  => l
-      case (Pure(Fn.Inr()), Merge(_, r))                  => r
-      case (Zip(l, Success()), Zip(Success(), r))         => Zip(l, r)
-      case (Pure(Fn.Fanout(Fn.Id(), Fn.Id())), Zip(l, r)) => Pair(l, r)
-      case (Pair(l, r), Pure(Fn.Proj1()))                 => ThenSkip(l, discard(r))
-      case (Pair(l, r), Pure(Fn.Proj2()))                 => SkipThen(discard(l), r)
-      case (Merge(l, r), Pure(_) | Merge(_, _))           => Merge(sequence(l, q), sequence(r, q))
-      case (Choice(alternatives), Pure(_))                => choice(alternatives.map(sequence(_, q)))
-      case (Seq(l, r), _)                                 => sequence(l, sequence(r, q))
-      case (_, Seq(l, r))                                 =>
+      case (_: Success[?], _)                                     => q
+      case (_, _: Success[?])                                     => p
+      case (_: Failure[?, ?], _)                                  => Failure()
+      case (Pure(f), Pure(g))                                     => Nodes.unit(Fn.andThen(f, g))
+      case (Pure(_: Fn.Inl[?, ?]), Merge(l, _))                   => l
+      case (Pure(_: Fn.Inr[?, ?]), Merge(_, r))                   => r
+      case (Zip(l, _: Success[?]), Zip(_: Success[?], r))         => Zip(l, r)
+      case (Pure(Fn.Fanout(_: Fn.Id[?], _: Fn.Id[?])), Zip(l, r)) => Pair(l, r)
+      case (Pair(l, r), Pure(_: Fn.Proj1[?, ?]))                  => ThenSkip(l, discard(r))
+      case (Pair(l, r), Pure(_: Fn.Proj2[?, ?]))                  => SkipThen(discard(l), r)
+      case (Merge(l, r), Pure(_) | Merge(_, _))                   => Merge(sequence(l, q), sequence(r, q))
+      case (Choice(alternatives), Pure(_))                        => choice(alternatives.map(sequence(_, q)))
+      case (Seq(l, r), _)                                         => sequence(l, sequence(r, q))
+      case (_, Seq(l, r))                                         =>
         sequence(p, l) match {
           case Seq(x, y) if (x eq p) && (y eq l) => Seq(p, q)
           case fused                             => sequence(fused, r)
@@ -708,13 +711,13 @@ object StrictParser {
     */
   private def choice[A, B](alternatives: List[Node[A, B]]): Node[A, B] = {
     val flat = alternatives.flatMap {
-      case Choice(nested) => nested
-      case Failure()      => Nil
-      case other          => List(other)
+      case Choice(nested)   => nested
+      case _: Failure[?, ?] => Nil
+      case other            => List(other)
     }
     val (before, fromTotal) = flat.span {
-      case Success() | Pure(_) => false
-      case _                   => true
+      case _: Success[?] | Pure(_) => false
+      case _                       => true
     }
     (before ::: fromTotal.take(1)) match {
       case Nil           => Failure()
@@ -729,8 +732,8 @@ object StrictParser {
 
     def unit[A: Type, B: Type](f: Fn[A, B]): Node[A, B] = {
       f match {
-        case Fn.Id() => Success()
-        case _       => Pure(f)
+        case _: Fn.Id[?] => Success()
+        case _           => Pure(f)
       }
     }
 
@@ -744,15 +747,15 @@ object StrictParser {
 
     def first[A: Type, B: Type, C: Type](p: Node[A, B]): Node[(A, C), (B, C)] = {
       p match {
-        case Success() => Success()
-        case _         => Zip(p, Success())
+        case _: Success[?] => Success()
+        case _             => Zip(p, Success())
       }
     }
 
     override def second[A: Type, B: Type, C: Type](p: Node[A, B]): Node[(C, A), (C, B)] = {
       p match {
-        case Success() => Success()
-        case _         => Zip(Success(), p)
+        case _: Success[?] => Success()
+        case _             => Zip(Success(), p)
       }
     }
   }
@@ -774,9 +777,9 @@ object StrictParser {
 
     def restrict[A: Type, B: Type](p: Node[A, B]): Node[A, A] = {
       discard(p) match {
-        case Success() | Pure(_) => Success()
-        case Lookahead(inner)    => Lookahead(inner)
-        case discarded           => Lookahead(discarded)
+        case _: Success[?] | Pure(_) => Success()
+        case Lookahead(inner)        => Lookahead(inner)
+        case discarded               => Lookahead(discarded)
       }
     }
 
@@ -786,8 +789,8 @@ object StrictParser {
 
     def complement[A: Type, B: Type](p: Node[A, B]): Node[A, A] = {
       discard(p) match {
-        case Failure() => Success()
-        case discarded => Not(discarded)
+        case _: Failure[?, ?] => Success()
+        case discarded        => Not(discarded)
       }
     }
 

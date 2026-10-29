@@ -241,8 +241,8 @@ optics, general iterated enrichment, the delay monad.
 
 ## 10. Compiler issues to file
 
-Both have been verified with Scala 3.9.0. Both are worked around by turning the flags (`-Wsafe-init`, `-Wunused:imports`)
-off in `build.sbt` and `pants.toml`.
+All three have been verified with Scala 3.10.0. The first two are worked around by turning the flags (`-Wsafe-init`,
+`-Wunused:imports`) off in `build.sbt` and `pants.toml`, the third by type patterns.
 
 **`-Wsafe-init` false positive when a `tracked` constructor parameter is forwarded to a parent class.** Options:
 `-source:future -language:experimental.modularity -Wsafe-init`.
@@ -277,6 +277,30 @@ class Uses(val b: Box) {
 
 Without the rename (`import b.T` and `T` in the signature) there is no warning. The same happens for type aliases and
 abstract type members, and with or without other imports in scope.
+
+**Capture checking mis-types patterns of case classes without fields.** New in Scala 3.10.0, and still in 3.10.1-RC1.
+Options: `-language:experimental.captureChecking`.
+
+```scala
+sealed trait Fn[A, B]
+final case class Id[A]() extends Fn[A, A]
+final case class Fst[A, B]() extends Fn[(A, B), A]
+final case class Snd[A, B]() extends Fn[(A, B), B]
+
+def isId[A, B](f: Fn[A, B]): Boolean = f match {
+  case Id() => true // error: Found: Id[A], Required: Boolean
+  case _    => false
+}
+
+def both[A, B, C](f: Fn[A, B], g: Fn[A, C]): Boolean = (f, g) match {
+  case (Fst(), Snd()) => true // crash: unexpected type of Fst.unapply(...).&&
+  case _              => false
+}
+```
+
+Scala 3.9.0 compiles both. The pattern matcher combines the `unapply` of a case class without fields with `&&`, as a
+`Boolean`, but capture checking types it as returning the case class. A type pattern, `case _: Id[?]`, matches the same
+values and refines the type arguments the same way; `Fn`, `StrictParser` and the tutorial use it.
 
 Two more behaviors cost time but are not clearly bugs: under capture checking, a `given` declared with an unreduced
 match type fails, because the check adds a capture variable to the scrutinee (declare it in reduced form); and sbt 2's

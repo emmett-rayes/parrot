@@ -65,22 +65,22 @@ object Sample {
   /** Samples of pairs from samples of their components, for all component types: the samples of the carrier of a
     * bifunctor.
     */
-  given Tuple2Samples: ([X, Y] => (Sample[X], Sample[Y]) ?=> Sample[(X, Y)]) = {
+  given Tuple2Samples: ([X, Y] => (Sample[X], Sample[Y]) ?-> Sample[(X, Y)]) = {
     [X, Y] => (_: Sample[X], _: Sample[Y]) ?=> Tuple2Sample[X, Y]
   }
 
   /** Samples of tagged unions from samples of their alternatives, for all alternative types. */
-  given EitherSamples: ([X, Y] => (Sample[X], Sample[Y]) ?=> Sample[Either[X, Y]]) = {
+  given EitherSamples: ([X, Y] => (Sample[X], Sample[Y]) ?-> Sample[Either[X, Y]]) = {
     [X, Y] => (_: Sample[X], _: Sample[Y]) ?=> EitherSample[X, Y]
   }
 
   /** Samples of optional values from samples of their values, for all value types: the samples of a monad. */
-  given OptionSamples: ([X] => Sample[X] ?=> Sample[Option[X]]) = {
+  given OptionSamples: ([X] => Sample[X] ?-> Sample[Option[X]]) = {
     [X] => (_: Sample[X]) ?=> OptionSample[X]
   }
 
   /** Samples of pairs with a first component of type *A*, for all second components: the samples of a writer monad. */
-  given WriterSamples: [A: Sample] => ([X] => Sample[X] ?=> Sample[(A, X)]) = {
+  given WriterSamples: [A: Sample] => ([X] => Sample[X] ?-> Sample[(A, X)]) = {
     [X] => (_: Sample[X]) ?=> Tuple2Sample[A, X]
   }
 

@@ -12,7 +12,7 @@ abstract class BifunctorSpec(
   bifunctor: TypeName[B.Self],
   category: TypeName[K.type],
   types: SampleTypes,
-  sample: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[B.F[X, Y]],
+  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[B.F[X, Y]],
 ) extends LawSuite("Bifunctor", s"${bifunctor.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
   import F.*

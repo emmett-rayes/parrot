@@ -85,7 +85,7 @@ abstract class ElgotSpec(
 )(using
   val PF: PromonadFixture.On[E.S.P.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[E.S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[E.S.M.Tensor[X, Y]],
 ) extends LawSuite("Elgot", name) {
   import types.{T2, T3, given}
   import PF.*
@@ -190,7 +190,7 @@ abstract class TracedSpec(
 )(using
   PF: PromonadFixture.On[T.S.P.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[T.S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[T.S.M.Tensor[X, Y]],
 ) extends LawSuite("Traced", name) {
   import types.{T1, T2, T3, T4, given}
   import PF.*
@@ -340,7 +340,7 @@ abstract class ConwaySpec(
 )(using
   PF: PromonadFixture.On[C.S.P.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[C.S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[C.S.M.Tensor[X, Y]],
 ) extends LawSuite("Conway", name) {
   import types.{T2, T3, given}
   import PF.*

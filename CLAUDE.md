@@ -33,8 +33,8 @@ ScalaTest and ScalaCheck, in `Test` scope.
 
 | Item          | Value                                                              |
 | ------------- | ------------------------------------------------------------------ |
-| Scala         | `3.9.0` (`build.sbt`, `pants.toml`)                                |
-| Build tools   | sbt `2.0.10` (full suite, benchmarks), Pants `2.33.1` (fine-grained)|
+| Scala         | `3.10.0` (`build.sbt`, `pants.toml`, `BUILD`, `check-snippets.py`) |
+| Build tools   | sbt `2.0.12` (full suite, benchmarks), Pants `2.33.1` (fine-grained) |
 | JDK           | developed on OpenJDK 25                                            |
 | Formatter     | scalafmt `3.11.3` (`.scalafmt.conf`), no sbt plugin                |
 | Plugins       | sbt: `sbt-ide-settings`; Pants: in-repo `scala_override`           |
@@ -67,7 +67,7 @@ sbt --client testFull                    # run ALL tests (about 570, under a min
 sbt --client test                        # sbt 2: INCREMENTAL (= testQuick) — may run nothing!
 sbt --client "testOnly parrot.parser.*"
 sbt --client "Test/runMain parrot.json.JsonBenchmark [--reference] [suite ...]"
-python3 docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.9.0/parrot/classes   # tutorial code, after compile
+python3 docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.10.0/parrot/classes  # tutorial code, after compile
 ```
 
 Important sbt 2 gotchas:
@@ -105,7 +105,8 @@ pants dependencies <path-to-file>        # inspect inferred dependencies for a f
 > [!NOTE]
 > Pants uses fine-grained, file-level dependency inference powered by Scalameta. Because vanilla Scalameta rejects
 > Scala 3's `tracked` term parameters, Pants loads the in-repo plugin `scala_override` (`pants-plugins/scala_override`)
-> to patch `ScalaParser.scala` with `dialects.Scala3Future`.
+> to patch `ScalaParser.scala` with `dialects.Scala3Future`. It also reads `?->` as `?=>`, because Scalameta rejects the
+> pure arrows that capture checking requires in polymorphic function types (§11).
 >
 > In `Closed.scala`, the infix exponential type operator is escaped as `` `^` `` to prevent collision with Scalameta's
 > capture-checking syntax.
@@ -216,7 +217,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     class with parameters gets a false "Access non-initialized value" (objects are fine; the scala3 issue draft is
     `docs/DESIGN.md` §10), and so does every test class that extends a spec passing such a parameter to `LawSuite`.
     Do not add `@nowarn` for it. In test specs, still prefer `lazy val` for members computed from parameters.
-12. **No given with `Self = Nothing`**: Scala 3.9.0 finds it for every `T is TC` query. `Eq.NothingIsEq` is a plain
+12. **No given with `Self = Nothing`**: Scala 3.10.0 finds it for every `T is TC` query. `Eq.NothingIsEq` is a plain
     `val` for that reason.
 13. **Name the carrier** with a public `final` alias: `Hom` (and infix `-->`) for a category, `F` for a (bi/endo)functor,
     `P` for a profunctor or promonad, `M` for a monoid (and, as `M = F.F`, for a monad), `C` for a comonoid.
@@ -524,7 +525,7 @@ Things that cost time once; check here before fighting the compiler.
 - **No given whose `Self` is `Nothing`** (rule 12 of §4.1).
 - **Overlapping givens are ambiguous.** A generic given and a more specific one in the same object both match
   (`[A: Eq] => A is Observable` and `[A: Observable, B: Observable] => (A, B) is Observable` for `(Int, String)`),
-  and Scala 3.9.0 reports an ambiguity. Put the fallback in a parent trait of the companion
+  and Scala 3.10.0 reports an ambiguity. Put the fallback in a parent trait of the companion
   (`object Observable extends ComponentwiseObservable`): inherited givens rank below the companion's own.
 - **`CanEqual` is not an equality.** It only permits `==`, whose meaning is the class's `equals`: reference identity on
   plain classes, not reflexive on `Double`. `Eq` instances on primitive data are named givens built with
@@ -542,6 +543,14 @@ Things that cost time once; check here before fighting the compiler.
   the re-check puts a capture variable on `(Int, Long)` and the match type no longer reduces. Declare such givens in
   reduced form (`given ((Int -> String, Partial[Long, Boolean]) is Observable)`); values with an expected type are
   fine.
+- **Scala 3.10 and capture checking.** The upgrade from 3.9.0 needed three kinds of change. Patterns of case classes
+  without fields (`Proj1()`, `Success()`) crash the capture checker or fail with `Found: Proj1[…]`, `Required: Boolean`
+  (`docs/DESIGN.md` §10): write type patterns, `case _: Proj1[?, ?]`, which match the same values and refine the same
+  type arguments. A polymorphic function type cannot wrap an impure function type: write `[X] => Sample[X] ?->
+  Sample[F[X]]`, not `?=>`. Scalameta rejects these pure arrows, so `scala_override` reads `?->` as `?=>`; `->` there
+  has no such rewrite and is best avoided (`JsonGrammarTest` calls the algebra's `parse` instead of taking a function).
+  And in a public inline method, the singleton type of a private member (`isInstanceOf[Failed.type]`) goes through an
+  accessor, which is not a stable path: compare with `eq`. `Any.equals` is deprecated: use `==` with a `CanEqual`.
 - **Inline methods and path-dependent givens.** Inside an inline expansion the algebra appears as a proxy path, so a
   given defined in the algebra is not found for the caller's `parser.P`; and an abstract type constructor cannot take
   wildcards (`P[?, ?]`). Evidence about the caller's types goes in a `using` parameter, resolved at the call site
@@ -550,10 +559,13 @@ Things that cost time once; check here before fighting the compiler.
   `test` is incremental; use `testFull`. Cached compilation does not replay warnings: to see every warning, compile
   from scratch. The compile cache can also restore **stale class files**: after `Observable` changed from an abstract
   class to a trait, tests failed with `IncompatibleClassChangeError` even after `clean`, while a from-scratch `scalac`
-  build passed. `clean` together with any source edit forces a fresh compile.
+  build passed. `clean` together with any source edit forces a fresh compile. sbt 2.0.10 restored semanticdb files as
+  read-only symlinks into its cache, so the next recompile failed with `AccessDeniedException` (sbt#9877, fixed in
+  2.0.11).
 - **scalafmt 3.11.3** cannot parse some given syntax (§7); **Pants** requires the `scala_override` plugin with `Scala3Future` to parse `tracked` (§2).
-- **Spikes first.** For a question about what the type system accepts, a twenty-line spike compiled with
-  `scalac $(cat flags)` answers faster than editing the library (the product category, renamed imports and infix
+- **Spikes first.** For a question about what the type system accepts, a twenty-line spike compiled at the library's
+  version, `scala compile --server=false -S 3.10.0` with each flag passed as `-O flag` (Scala CLI, so that the
+  system's `scalac` does not matter), answers faster than editing the library (the product category, renamed imports and infix
   precedence above were all settled that way).
 
 ---

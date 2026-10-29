@@ -9,7 +9,7 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Symmetric", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
@@ -130,7 +130,7 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Cartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
@@ -211,7 +211,7 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends LawSuite("Cocartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}

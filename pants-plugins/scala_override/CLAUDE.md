@@ -12,8 +12,9 @@ Pants uses fine-grained, file-level dependency inference for Scala powered by Sc
 2. **Ignores infix type operators:** `Type.ApplyInfix` discards `_op`, so symbolic infix types like `~>` and `-->` are not tracked as consumed symbols.
 3. **Ignores Scala 3 `given` definitions:** Vanilla Pants only handles Scala 2 `val`, `var`, and `def`, completely omitting `Defn.GivenAlias` and `Defn.Given`.
 4. **Fails on relative sibling imports:** In files with chained package clauses (`package parrot; package parser`), relative imports like `import category.*` are not qualified against parent package scopes.
+5. **Rejects pure context functions in polymorphic function types:** Scalameta (4.17.0 in Pants, and 4.17.4, the latest) fails on `[X] => Sample[X] ?-> Sample[F[X]]` with "polymorphic function types must have a value parameter". Since Scala 3.10, capture checking requires the pure arrow there.
 
-The `scala_override` plugin provides an in-repo override of `ScalaParser.scala` fixing all four issues.
+The `scala_override` plugin provides an in-repo override of `ScalaParser.scala` fixing all five issues.
 
 ---
 
@@ -74,6 +75,8 @@ Keeping [`ScalaParser.original.scala`](ScalaParser.original.scala) alongside the
    Computes enclosing package scopes from `nameParts` and adds qualified variants to `importsByScope` for relative package imports (`import category.*` -> `parrot.category.*`).
 4. **`Defn.GivenAlias` and `Defn.Given` (lines ~395–415):**
    Extracts provided names, consumed signature types (`decltpe`), and type-parameter context bounds (`tparams`) for Scala 3 `given` definitions.
+5. **`?->` read as `?=>` (lines ~573–575):**
+   Replaces `?->` with `?=>` in the source text before parsing. Both arrows have the same length, so positions are unchanged, and the names that dependency inference extracts are the same.
 
 ---
 

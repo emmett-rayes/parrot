@@ -22,8 +22,9 @@ Every unit becomes one file:
 
 Units are compiled in the order in which their first block appears, into one output directory that is on the
 classpath of every later unit, so a chapter can import an earlier one: `import tutorial.ch03.Snippets.*`.
-Language imports (`import language...`) are moved before the object, after the package clauses. The flags are read from
-`scalac-flags.txt` next to this script. Warnings are not failures.
+Language imports (`import language...`) are moved before the object, after the package clauses. Every unit is compiled
+by Scala CLI (`scala` on the PATH) with the Scala version of the library, SCALA_VERSION, whatever `scalac` the system
+has. The flags are read from `scalac-flags.txt` next to this script. Warnings are not failures.
 
 Exits with status 1 if a compiled block fails or a `fails` block compiles.
 """
@@ -38,6 +39,9 @@ from dataclasses import dataclass, field
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
+
+# The Scala version of the library (`build.sbt`): a compiler can only read the classes of its own or older versions.
+SCALA_VERSION = "3.10.0"
 
 
 @dataclass
@@ -141,9 +145,11 @@ def compile_unit(source, origins, out, classpath, flags, document):
         path = os.path.join(tmp, "Snippet.scala")
         with open(path, "w", encoding="utf-8") as f:
             f.write(source)
-        cmd = ["scalac"] + flags + ["-color:never", "-d", out]
+        cmd = ["scala", "compile", "--server=false", "-S", SCALA_VERSION, "--compilation-output", out]
+        for flag in flags + ["-color:never"]:
+            cmd += ["-O", flag]
         if classpath:
-            cmd += ["-classpath", classpath]
+            cmd += ["--classpath", classpath]
         cmd.append(path)
         result = subprocess.run(cmd, capture_output=True, text=True)
         output = result.stdout + result.stderr

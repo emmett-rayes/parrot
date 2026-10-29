@@ -25,7 +25,7 @@ resolves = { "jvm-default" = "3rdparty/jvm/default.lock" }
 default_resolve = "jvm-default"
 
 [scala]
-version_for_resolve = { "jvm-default" = "3.9.0" }
+version_for_resolve = { "jvm-default" = "3.10.0" }
 
 [scalac]
 args = [

@@ -10,7 +10,7 @@ abstract class StrongSpec(
 )(using
   PF: PromonadFixture.On[S.P.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[S.M.Tensor[X, Y]],
 ) extends LawSuite("Strong", name) {
   import types.{T1, T2, T3, T4, given}
   import PF.*

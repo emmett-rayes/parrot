@@ -97,31 +97,31 @@ object Fn {
   /** Normalizing pairing ⟨*f*,*g*⟩. */
   def fanout[A, B, C](f: Fn[A, B], g: Fn[A, C]): Fn[A, (B, C)] = {
     (f, g) match {
-      case (Proj1(), Proj2()) => Id()
-      case _                  => Fanout(f, g)
+      case (_: Proj1[?, ?], _: Proj2[?, ?]) => Id()
+      case _                                => Fanout(f, g)
     }
   }
 
   /** Normalizing copairing [*f*,*g*]. */
   def copair[A, B, C](f: Fn[A, C], g: Fn[B, C]): Fn[Either[A, B], C] = {
     (f, g) match {
-      case (Inl(), Inr()) => Id()
-      case _              => Copair(f, g)
+      case (_: Inl[?, ?], _: Inr[?, ?]) => Id()
+      case _                            => Copair(f, g)
     }
   }
 
   private def compose[A, B, C](f: Fn[A, B], g: Fn[B, C]): Fn[A, C] = {
     (f, g) match {
-      case (Id(), _)                => g
-      case (_, Id())                => f
-      case (_, Bang())              => Bang()
-      case (Fanout(f1, _), Proj1()) => f1
-      case (Fanout(_, f2), Proj2()) => f2
-      case (Inl(), Copair(g1, _))   => g1
-      case (Inr(), Copair(_, g2))   => g2
-      case (Lift(f1), Lift(g1))     => Lift(a => g1(f1(a)))
-      case (Compose(f1, f2), _)     => compose(f1, compose(f2, g))
-      case _                        => Compose(f, g)
+      case (_: Id[?], _)                   => g
+      case (_, _: Id[?])                   => f
+      case (_, _: Bang[?])                 => Bang()
+      case (Fanout(f1, _), _: Proj1[?, ?]) => f1
+      case (Fanout(_, f2), _: Proj2[?, ?]) => f2
+      case (_: Inl[?, ?], Copair(g1, _))   => g1
+      case (_: Inr[?, ?], Copair(_, g2))   => g2
+      case (Lift(f1), Lift(g1))            => Lift(a => g1(f1(a)))
+      case (Compose(f1, f2), _)            => compose(f1, compose(f2, g))
+      case _                               => Compose(f, g)
     }
   }
 }

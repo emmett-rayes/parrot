@@ -31,7 +31,7 @@ jvm_artifact(
     name="scala3-library",
     group="org.scala-lang",
     artifact="scala3-library_3",
-    version="3.9.0",
+    version="3.10.0",
 )
 
 scala_artifact(

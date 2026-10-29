@@ -570,7 +570,9 @@ object ScalaParser {
   def analyze(pathStr: String, scalaVersion: String, source3: Boolean): Analysis = {
     val path = java.nio.file.Paths.get(pathStr)
     val bytes = java.nio.file.Files.readAllBytes(path)
-    val text = new String(bytes, "UTF-8")
+    // Scalameta rejects pure context functions (`?->`) in polymorphic function types, which capture checking requires
+    // there. `?=>` has the same length and names, which is all dependency inference needs.
+    val text = new String(bytes, "UTF-8").replace("?->", "?=>")
 
     val dialect =
       scalaVersion.take(4) match {
