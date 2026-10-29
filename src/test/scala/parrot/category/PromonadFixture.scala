@@ -24,7 +24,10 @@ abstract class PromonadFixture(val name: String, tracked val P: Promonad { val K
   final lazy val category: CategoryFixture.On[P.category.type] = PromonadFixture.Category(this)
 }
 
-/** The fixtures that specs find from the promonad they check: one per promonad. */
+/** The fixtures of promonads.
+  *
+  * A spec finds the fixture of the promonad it checks among these givens, so there is one per promonad.
+  */
 object PromonadFixture {
 
   /** A fixture for the promonad *Q*. */

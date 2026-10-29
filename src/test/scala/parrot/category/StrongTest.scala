@@ -8,11 +8,12 @@ abstract class StrongSpec(
   name: String,
   tracked val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } },
 )(using
-  val PF: PromonadFixture.On[S.P.type],
+  PF: PromonadFixture.On[S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[S.M.Tensor[X, Y]],
 ) extends LawSuite("Strong", name) {
   import types.{T1, T2, T3, T4, given}
+  import PF.*
   import S.P
   import P.P
   import S.StrongLaws.*
@@ -24,10 +25,11 @@ abstract class StrongSpec(
   private lazy val F = Freyd(S)
 
   law("naturality") {
-    val observations = PF.observe[T[T4, T3], T[T3, T3]]
-    val ps           = PF.arrow[T1, T2]
-    val fs           = PF.base.arrow[T4, T1]
-    val gs           = PF.base.arrow[T2, T3]
+    val observations = observe[T[T4, T3], T[T3, T3]]
+    val ps           = arrow[T1, T2]
+    val fs           = base.arrow[T4, T1]
+    val gs           = base.arrow[T2, T3]
+
     forAll(observations, ps, fs, gs) { (observe, p, f, g) =>
       given (P[T[T4, T3], T[T3, T3]] is Observable) = observe
       naturality[T1, T2, T4, T3, T3](p, f, g)
@@ -35,9 +37,10 @@ abstract class StrongSpec(
   }
 
   law("dinaturality") {
-    val observations = PF.observe[T[T1, T4], T[T2, T3]]
-    val ps           = PF.arrow[T1, T2]
-    val hs           = PF.base.arrow[T4, T3]
+    val observations = observe[T[T1, T4], T[T2, T3]]
+    val ps           = arrow[T1, T2]
+    val hs           = base.arrow[T4, T3]
+
     forAll(observations, ps, hs) { (observe, p, h) =>
       given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
       dinaturality(p, h)
@@ -45,8 +48,9 @@ abstract class StrongSpec(
   }
 
   law("unitality") {
-    val observations = PF.observe[T1, T2]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T2]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
       unitality(p)
@@ -54,8 +58,9 @@ abstract class StrongSpec(
   }
 
   law("associativity") {
-    val observations = PF.observe[T[T1, T[T4, T3]], T[T2, T[T4, T3]]]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T[T1, T[T4, T3]], T[T2, T[T4, T3]]]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T[T1, T[T4, T3]], T[T2, T[T4, T3]]] is Observable) = observe
       associativity[T1, T2, T4, T3](p)
@@ -63,8 +68,9 @@ abstract class StrongSpec(
   }
 
   law("secondByBraiding") {
-    val observations = PF.observe[T[T4, T1], T[T4, T2]]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T[T4, T1], T[T4, T2]]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T[T4, T1], T[T4, T2]] is Observable) = observe
       secondByBraiding[T1, T2, T4](p)
@@ -72,11 +78,12 @@ abstract class StrongSpec(
   }
 
   law("firstCongruence") {
-    val observations = PF.observe[T[T1, T4], T[T2, T4]]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T[T1, T4], T[T2, T4]]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T[T1, T4], T[T2, T4]] is Observable) = observe
-      firstCongruence[T1, T2, T4](p, PF.variant(p))
+      firstCongruence[T1, T2, T4](p, variant(p))
     }
   }
 
@@ -84,8 +91,9 @@ abstract class StrongSpec(
     import F.FreydLaws.*
 
     law("unit") {
-      val observations = PF.observe[T[T1, T4], T[T2, T4]]
-      val fs           = PF.base.arrow[T1, T2]
+      val observations = observe[T[T1, T4], T[T2, T4]]
+      val fs           = base.arrow[T1, T2]
+
       forAll(observations, fs) { (observe, f) =>
         given (P[T[T1, T4], T[T2, T4]] is Observable) = observe
         unit[T1, T2, T4](f)
@@ -93,9 +101,10 @@ abstract class StrongSpec(
     }
 
     law("multiply") {
-      val observations = PF.observe[T[T1, T4], T[T3, T4]]
-      val ps           = PF.arrow[T1, T2]
-      val qs           = PF.arrow[T2, T3]
+      val observations = observe[T[T1, T4], T[T3, T4]]
+      val ps           = arrow[T1, T2]
+      val qs           = arrow[T2, T3]
+
       forAll(observations, ps, qs) { (observe, p, q) =>
         given (P[T[T1, T4], T[T3, T4]] is Observable) = observe
         multiply[T1, T2, T3, T4](p, q)
@@ -103,9 +112,10 @@ abstract class StrongSpec(
     }
 
     law("centrality") {
-      val observations = PF.observe[T[T1, T4], T[T2, T3]]
-      val fs           = PF.base.arrow[T1, T2]
-      val qs           = PF.arrow[T4, T3]
+      val observations = observe[T[T1, T4], T[T2, T3]]
+      val fs           = base.arrow[T1, T2]
+      val qs           = arrow[T4, T3]
+
       forAll(observations, fs, qs) { (observe, f, q) =>
         given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
         centrality(f, q)
@@ -118,9 +128,9 @@ abstract class StrongSpec(
     */
   protected def interchange: Gen[Boolean] = {
     for {
-      observe <- PF.observe[T[T1, T4], T[T2, T3]]
-      p       <- PF.arrow[T1, T2]
-      q       <- PF.arrow[T4, T3]
+      observe <- observe[T[T1, T4], T[T2, T3]]
+      p       <- arrow[T1, T2]
+      q       <- arrow[T4, T3]
     } yield {
       given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
       P.multiply(S.second[T4, T3, T2](q), S.first[T1, T2, T4](p)) =?=

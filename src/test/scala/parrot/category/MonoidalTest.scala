@@ -5,7 +5,7 @@ import org.scalacheck.Gen
 
 /** The laws of [[Monoidal]] and [[Symmetric]], for structures on a category whose objects are all types. */
 abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type Obj = Type } })(using
-  val F: CategoryFixture.On[M.K.type],
+  F: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
@@ -13,6 +13,7 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
   unit: Sample[M.I],
 ) extends LawSuite("Symmetric", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
+  import F.*
   import M.K.-->
   import M.SymmetricLaws.*
 
@@ -26,10 +27,10 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
 
     law("isomorphisms") {
       forAll(
-        Gen.zip(F.observe[T[I, T1], T[I, T1]], F.observe[T1, T1], F.observe[T[T1, I], T[T1, I]]),
+        Gen.zip(observe[T[I, T1], T[I, T1]], observe[T1, T1], observe[T[T1, I], T[T1, I]]),
         Gen.zip(
-          F.observe[T[T[T1, T2], T4], T[T[T1, T2], T4]],
-          F.observe[T[T1, T[T2, T4]], T[T1, T[T2, T4]]],
+          observe[T[T[T1, T2], T4], T[T[T1, T2], T4]],
+          observe[T[T1, T[T2, T4]], T[T1, T[T2, T4]]],
         ),
       ) { case ((o1, o2, o3), (o4, o5)) =>
         given O1: ((T[I, T1] --> T[I, T1]) is Observable)                 = o1
@@ -42,8 +43,9 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
     }
 
     law("leftUnitorNaturality") {
-      val observations = F.observe[T[I, T1], T2]
-      val fs           = F.arrow[T1, T2]
+      val observations = observe[T[I, T1], T2]
+      val fs           = arrow[T1, T2]
+
       forAll(observations, fs) { (observe, f) =>
         given ((T[I, T1] --> T2) is Observable) = observe
         leftUnitorNaturality(f)
@@ -51,8 +53,9 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
     }
 
     law("rightUnitorNaturality") {
-      val observations = F.observe[T[T1, I], T2]
-      val fs           = F.arrow[T1, T2]
+      val observations = observe[T[T1, I], T2]
+      val fs           = arrow[T1, T2]
+
       forAll(observations, fs) { (observe, f) =>
         given ((T[T1, I] --> T2) is Observable) = observe
         rightUnitorNaturality(f)
@@ -60,10 +63,11 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
     }
 
     law("associatorNaturality") {
-      val observations = F.observe[T[T[T1, T2], T3], T[T4, T[T1, T2]]]
-      val fs           = F.arrow[T1, T4]
-      val gs           = F.arrow[T2, T1]
-      val hs           = F.arrow[T3, T2]
+      val observations = observe[T[T[T1, T2], T3], T[T4, T[T1, T2]]]
+      val fs           = arrow[T1, T4]
+      val gs           = arrow[T2, T1]
+      val hs           = arrow[T3, T2]
+
       forAll(observations, fs, gs, hs) { (observe, f, g, h) =>
         given ((T[T[T1, T2], T3] --> T[T4, T[T1, T2]]) is Observable) = observe
         associatorNaturality(f, g, h)
@@ -71,7 +75,8 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
     }
 
     law("triangle") {
-      val observations = F.observe[T[T[T1, I], T2], T[T1, T2]]
+      val observations = observe[T[T[T1, I], T2], T[T1, T2]]
+
       forAll(observations) { observe =>
         given ((T[T[T1, I], T2] --> T[T1, T2]) is Observable) = observe
         triangle[T1, T2]
@@ -79,7 +84,8 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
     }
 
     law("pentagon") {
-      val observations = F.observe[T[T[T[T1, T2], T3], T4], T[T1, T[T2, T[T3, T4]]]]
+      val observations = observe[T[T[T[T1, T2], T3], T4], T[T1, T[T2, T[T3, T4]]]]
+
       forAll(observations) { observe =>
         given ((T[T[T[T1, T2], T3], T4] --> T[T1, T[T2, T[T3, T4]]]) is Observable) =
           observe
@@ -89,9 +95,10 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
   }
 
   law("braidNaturality") {
-    val observations = F.observe[T[T1, T2], T[T3, T4]]
-    val fs           = F.arrow[T1, T4]
-    val gs           = F.arrow[T2, T3]
+    val observations = observe[T[T1, T2], T[T3, T4]]
+    val fs           = arrow[T1, T4]
+    val gs           = arrow[T2, T3]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((T[T1, T2] --> T[T3, T4]) is Observable) = observe
       braidNaturality(f, g)
@@ -99,7 +106,8 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
   }
 
   law("symmetry") {
-    val observations = F.observe[T[T1, T2], T[T1, T2]]
+    val observations = observe[T[T1, T2], T[T1, T2]]
+
     forAll(observations) { observe =>
       given ((T[T1, T2] --> T[T1, T2]) is Observable) = observe
       symmetry[T1, T2]
@@ -107,7 +115,8 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
   }
 
   law("hexagon") {
-    val observations = F.observe[T[T[T1, T2], T4], T[T2, T[T4, T1]]]
+    val observations = observe[T[T[T1, T2], T4], T[T2, T[T4, T1]]]
+
     forAll(observations) { observe =>
       given ((T[T[T1, T2], T4] --> T[T2, T[T4, T1]]) is Observable) = observe
       hexagon[T1, T2, T4]
@@ -117,7 +126,7 @@ abstract class SymmetricSpec(tracked val M: Symmetric { val K: Category { type O
 
 /** The laws of [[Cartesian]]: the universal property of products. */
 abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type Obj = Type } })(using
-  val F: CategoryFixture.On[M.K.type],
+  F: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
@@ -125,15 +134,17 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
   unit: Sample[M.I],
 ) extends LawSuite("Cartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
+  import F.*
   import M.K.-->
   import M.CartesianLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
 
   law("fstPair") {
-    val observations = F.observe[T1, T2]
-    val fs           = F.arrow[T1, T2]
-    val gs           = F.arrow[T1, T3]
+    val observations = observe[T1, T2]
+    val fs           = arrow[T1, T2]
+    val gs           = arrow[T1, T3]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((T1 --> T2) is Observable) = observe
       fstPair(f, g)
@@ -141,9 +152,10 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
   }
 
   law("sndPair") {
-    val observations = F.observe[T1, T3]
-    val fs           = F.arrow[T1, T2]
-    val gs           = F.arrow[T1, T3]
+    val observations = observe[T1, T3]
+    val fs           = arrow[T1, T2]
+    val gs           = arrow[T1, T3]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((T1 --> T3) is Observable) = observe
       sndPair(f, g)
@@ -151,8 +163,9 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
   }
 
   law("pairUniqueness") {
-    val observations = F.observe[T1, M.Tensor[T2, T3]]
-    val hs           = F.arrow[T1, M.Tensor[T2, T3]]
+    val observations = observe[T1, M.Tensor[T2, T3]]
+    val hs           = arrow[T1, M.Tensor[T2, T3]]
+
     forAll(observations, hs) { (observe, h) =>
       given ((T1 --> M.Tensor[T2, T3]) is Observable) = observe
       pairUniqueness(h)
@@ -160,8 +173,9 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
   }
 
   law("discardUniqueness") {
-    val observations = F.observe[T1, M.I]
-    val fs           = F.arrow[T1, M.I]
+    val observations = observe[T1, M.I]
+    val fs           = arrow[T1, M.I]
+
     forAll(observations, fs) { (observe, f) =>
       given ((T1 --> M.I) is Observable) = observe
       discardUniqueness(f)
@@ -169,9 +183,10 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
   }
 
   law("tensorIsProduct") {
-    val observations = F.observe[M.Tensor[T1, T2], M.Tensor[T4, T3]]
-    val fs           = F.arrow[T1, T4]
-    val gs           = F.arrow[T2, T3]
+    val observations = observe[M.Tensor[T1, T2], M.Tensor[T4, T3]]
+    val fs           = arrow[T1, T4]
+    val gs           = arrow[T2, T3]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((M.Tensor[T1, T2] --> M.Tensor[T4, T3]) is Observable) = observe
       tensorIsProduct(f, g)
@@ -179,19 +194,20 @@ abstract class CartesianSpec(tracked val M: Cartesian { val K: Category { type O
   }
 
   law("pairCongruence") {
-    val observations = F.observe[T1, M.Tensor[T2, T3]]
-    val fs           = F.arrow[T1, T2]
-    val gs           = F.arrow[T1, T3]
+    val observations = observe[T1, M.Tensor[T2, T3]]
+    val fs           = arrow[T1, T2]
+    val gs           = arrow[T1, T3]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((T1 --> M.Tensor[T2, T3]) is Observable) = observe
-      pairCongruence(f, F.variant(f), g, F.variant(g))
+      pairCongruence(f, variant(f), g, variant(g))
     }
   }
 }
 
 /** The laws of [[Cocartesian]]: the universal property of coproducts. */
 abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { type Obj = Type } })(using
-  val F: CategoryFixture.On[M.K.type],
+  F: CategoryFixture.On[M.K.type],
   monoidal: TypeName[M.type],
   category: TypeName[M.K.type],
   types: SampleTypes,
@@ -199,15 +215,17 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   unit: Sample[M.I],
 ) extends LawSuite("Cocartesian", s"${monoidal.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
+  import F.*
   import M.K.-->
   import M.CocartesianLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
 
   law("copairInl") {
-    val observations = F.observe[T1, T4]
-    val fs           = F.arrow[T1, T4]
-    val gs           = F.arrow[T2, T4]
+    val observations = observe[T1, T4]
+    val fs           = arrow[T1, T4]
+    val gs           = arrow[T2, T4]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((T1 --> T4) is Observable) = observe
       copairInl(f, g)
@@ -215,9 +233,10 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   }
 
   law("copairInr") {
-    val observations = F.observe[T2, T4]
-    val fs           = F.arrow[T1, T4]
-    val gs           = F.arrow[T2, T4]
+    val observations = observe[T2, T4]
+    val fs           = arrow[T1, T4]
+    val gs           = arrow[T2, T4]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((T2 --> T4) is Observable) = observe
       copairInr(f, g)
@@ -225,8 +244,9 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   }
 
   law("copairUniqueness") {
-    val observations = F.observe[M.Tensor[T1, T2], T4]
-    val hs           = F.arrow[M.Tensor[T1, T2], T4]
+    val observations = observe[M.Tensor[T1, T2], T4]
+    val hs           = arrow[M.Tensor[T1, T2], T4]
+
     forAll(observations, hs) { (observe, h) =>
       given ((M.Tensor[T1, T2] --> T4) is Observable) = observe
       copairUniqueness(h)
@@ -234,8 +254,9 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   }
 
   law("absurdUniqueness") {
-    val observations = F.observe[M.I, T1]
-    val fs           = F.arrow[M.I, T1]
+    val observations = observe[M.I, T1]
+    val fs           = arrow[M.I, T1]
+
     forAll(observations, fs) { (observe, f) =>
       given ((M.I --> T1) is Observable) = observe
       absurdUniqueness(f)
@@ -243,9 +264,10 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   }
 
   law("tensorIsCoproduct") {
-    val observations = F.observe[M.Tensor[T1, T2], M.Tensor[T4, T3]]
-    val fs           = F.arrow[T1, T4]
-    val gs           = F.arrow[T2, T3]
+    val observations = observe[M.Tensor[T1, T2], M.Tensor[T4, T3]]
+    val fs           = arrow[T1, T4]
+    val gs           = arrow[T2, T3]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((M.Tensor[T1, T2] --> M.Tensor[T4, T3]) is Observable) = observe
       tensorIsCoproduct(f, g)
@@ -253,12 +275,13 @@ abstract class CocartesianSpec(tracked val M: Cocartesian { val K: Category { ty
   }
 
   law("copairCongruence") {
-    val observations = F.observe[M.Tensor[T1, T2], T4]
-    val fs           = F.arrow[T1, T4]
-    val gs           = F.arrow[T2, T4]
+    val observations = observe[M.Tensor[T1, T2], T4]
+    val fs           = arrow[T1, T4]
+    val gs           = arrow[T2, T4]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given ((M.Tensor[T1, T2] --> T4) is Observable) = observe
-      copairCongruence(f, F.variant(f), g, F.variant(g))
+      copairCongruence(f, variant(f), g, variant(g))
     }
   }
 }

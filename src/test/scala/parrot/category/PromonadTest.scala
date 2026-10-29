@@ -9,10 +9,11 @@ import Sample.given
   * satisfies the [[Bifunctor]] laws.
   */
 abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj = Type } })(using
-  val PF: PromonadFixture.On[P.type],
+  PF: PromonadFixture.On[P.type],
   types: SampleTypes,
 ) extends LawSuite("Promonad", PF.name) {
   import types.{T1, T2, T3, T4, given}
+  import PF.*
   import P.P
   import P.PromonadLaws.*
 
@@ -20,17 +21,18 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
   private def onArrows[X: Sample, Y: Sample, X2: Sample, Y2: Sample]
     : Gen[(P[X, Y] -> P[X2, Y2]) is Observable] = {
     for {
-      arrows  <- Gen.listOfN(4, PF.arrow[X, Y])
-      observe <- PF.observe[X2, Y2]
+      arrows  <- Gen.listOfN(4, arrow[X, Y])
+      observe <- observe[X2, Y2]
     } yield Observable.through[P[X, Y] -> P[X2, Y2], P[X2, Y2]](arrows.map(p => h => h(p)))(
       using observe
     )
   }
 
   law("unitComposition") {
-    val observations = PF.observe[T1, T4]
-    val fs           = PF.base.arrow[T1, T2]
-    val gs           = PF.base.arrow[T2, T4]
+    val observations = observe[T1, T4]
+    val fs           = base.arrow[T1, T2]
+    val gs           = base.arrow[T2, T4]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given (P[T1, T4] is Observable) = observe
       unitComposition(f, g)
@@ -38,11 +40,12 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
   }
 
   law("unitCongruence") {
-    val observations = PF.observe[T1, T2]
-    val fs           = PF.base.arrow[T1, T2]
+    val observations = observe[T1, T2]
+    val fs           = base.arrow[T1, T2]
+
     forAll(observations, fs) { (observe, f) =>
       given (P[T1, T2] is Observable) = observe
-      unitCongruence(f, PF.base.variant(f))
+      unitCongruence(f, base.variant(f))
     }
   }
 
@@ -59,8 +62,8 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
     law("composition") {
       forAll(
         onArrows[T1, T2, T4, T3],
-        Gen.zip(PF.base.arrow[T3, T1], PF.base.arrow[T2, T1]),
-        Gen.zip(PF.base.arrow[T4, T3], PF.base.arrow[T1, T3]),
+        Gen.zip(base.arrow[T3, T1], base.arrow[T2, T1]),
+        Gen.zip(base.arrow[T4, T3], base.arrow[T1, T3]),
       ) { case (observe, (f1, g1), (f2, g2)) =>
         given ((P[T1, T2] -> P[T4, T3]) is Observable) = observe
         composition[T1, T2, T3, T1, T4, T3](f1, g1, f2, g2)
@@ -68,11 +71,12 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
     }
 
     law("congruence") {
-      val fs = PF.base.arrow[T4, T1]
-      val gs = PF.base.arrow[T2, T3]
+      val fs = base.arrow[T4, T1]
+      val gs = base.arrow[T2, T3]
+
       forAll(onArrows[T1, T2, T4, T3], fs, gs) { (observe, f, g) =>
         given ((P[T1, T2] -> P[T4, T3]) is Observable) = observe
-        congruence[T1, T2, T4, T3](f, PF.base.variant(f), g, PF.base.variant(g))
+        congruence[T1, T2, T4, T3](f, base.variant(f), g, base.variant(g))
       }
     }
   }

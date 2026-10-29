@@ -15,6 +15,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
 
   law("leftUnit") {
     val observations = TotalFixture.observe[M.M[T1], M.M[T1]]
+
     forAll(observations) { observe =>
       given ((M.M[T1] -> M.M[T1]) is Observable) = observe
       leftUnit[T1]
@@ -23,6 +24,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
 
   law("rightUnit") {
     val observations = TotalFixture.observe[M.M[T1], M.M[T1]]
+
     forAll(observations) { observe =>
       given ((M.M[T1] -> M.M[T1]) is Observable) = observe
       rightUnit[T1]
@@ -31,6 +33,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
 
   law("associativity") {
     val observations = TotalFixture.observe[M.M[M.M[M.M[T1]]], M.M[T1]]
+
     forAll(observations) { observe =>
       given ((M.M[M.M[M.M[T1]]] -> M.M[T1]) is Observable) = observe
       associativity[T1]
@@ -40,6 +43,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
   law("unitNaturality") {
     val observations = TotalFixture.observe[T1, M.M[T2]]
     val fs           = TotalFixture.arrow[T1, T2]
+
     forAll(observations, fs) { (observe, f) =>
       given ((T1 -> M.M[T2]) is Observable) = observe
       unitNaturality(f)
@@ -49,6 +53,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
   law("flattenNaturality") {
     val observations = TotalFixture.observe[M.M[M.M[T1]], M.M[T2]]
     val fs           = TotalFixture.arrow[T1, T2]
+
     forAll(observations, fs) { (observe, f) =>
       given ((M.M[M.M[T1]] -> M.M[T2]) is Observable) = observe
       flattenNaturality(f)
@@ -60,6 +65,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
 
     law("identity") {
       val observations = TotalFixture.observe[M.M[T1], M.M[T1]]
+
       forAll(observations) { observe =>
         given ((M.M[T1] -> M.M[T1]) is Observable) = observe
         identity[T1]
@@ -70,6 +76,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
       val observations = TotalFixture.observe[M.M[T1], M.M[T4]]
       val fs           = TotalFixture.arrow[T1, T2]
       val gs           = TotalFixture.arrow[T2, T4]
+
       forAll(observations, fs, gs) { (observe, f, g) =>
         given ((M.M[T1] -> M.M[T4]) is Observable) = observe
         composition(f, g)
@@ -79,6 +86,7 @@ abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(usin
     law("congruence") {
       val observations = TotalFixture.observe[M.M[T1], M.M[T2]]
       val fs           = TotalFixture.arrow[T1, T2]
+
       forAll(observations, fs) { (observe, f) =>
         given ((M.M[T1] -> M.M[T2]) is Observable) = observe
         congruence(f, TotalFixture.variant(f))

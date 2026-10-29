@@ -437,10 +437,10 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   code. The default given `SampleTypes.Standard` is `Int`, `String`, `Boolean`, `Long`, four distinct types, so call
   sites name no types. Types that a generator forces stay concrete: the `Int` states of loops and recursion, the
   parser's `Int` semantics.
-- **Law bodies**: a spec imports its laws (`import M.MonadLaws.*`; those of an `also` structure inside its block), and
-  each law binds its generators to local vals named after what they sample, `observations` for the observer and the
-  plural of the lambda parameter otherwise: `val fs = F.arrow[T1, T2]`, then `forAll(observations, fs, gs) { (observe,
-  f, g) => ... }`.
+- **Law bodies**: a spec imports its fixture (`import F.*`) and its laws (`import M.MonadLaws.*`; those of an `also`
+  structure inside its block), and each law binds its generators to local vals named after what they sample,
+  `observations` for the observer and the plural of the lambda parameter otherwise: `val fs = arrow[T1, T2]`, then,
+  after a blank line, `forAll(observations, fs, gs) { (observe, f, g) => ... }`.
 - **Instance names from types**: a spec whose instance is named after a type takes a `TypeName[T]` (a macro, resolved
   where the test class is declared), so that callers pass only types: `class IntIsEqTest extends EqSpec[Int]`,
   `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
@@ -455,7 +455,8 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   **fresh sample points per property**.
 - **Specs take their subject, not a fixture**: the category or structure is a `tracked` parameter whose type states
   what the laws need (`tracked val M: Symmetric { val K: Category { type Obj = Type } }`), and the fixture is found
-  from it as a given, `using val F: CategoryFixture.On[M.K.type]` (`PromonadFixture.On[S.P.type]` for promonads).
+  from it as a given, `using F: CategoryFixture.On[M.K.type]` (`PromonadFixture.On[S.P.type]` for promonads), a `val`
+  only where a test class uses it.
   There is one given fixture per category or promonad, in the companions `CategoryFixture` and `PromonadFixture` (the
   parser's in `ParserFixtures`, imported). Derived categories (`Total.op`, `P.category`) need givens of their own:
   implicit search cannot get from `Total.op` back to `Total`. `ObservableSpec` alone takes its fixture explicitly,

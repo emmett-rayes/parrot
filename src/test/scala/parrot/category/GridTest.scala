@@ -88,6 +88,7 @@ abstract class ElgotSpec(
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[E.S.M.Tensor[X, Y]],
 ) extends LawSuite("Elgot", name) {
   import types.{T2, T3, given}
+  import PF.*
   import E.S.P
   import P.P
   import E.ElgotLaws.*
@@ -108,8 +109,9 @@ abstract class ElgotSpec(
   def bijection: (Int --> Int, Int --> Int)
 
   law("fixedPoint") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val ps           = step[T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[Int, T2] is Observable) = observe
       fixedPoint(p)
@@ -117,9 +119,10 @@ abstract class ElgotSpec(
   }
 
   law("parameterNaturality") {
-    val observations = PF.observe[Int, T3]
+    val observations = observe[Int, T3]
     val ps           = step[T2]
-    val hs           = PF.base.arrow[T2, T3]
+    val hs           = base.arrow[T2, T3]
+
     forAll(observations, ps, hs) { (observe, p, h) =>
       given (P[Int, T3] is Observable) = observe
       parameterNaturality(p, h)
@@ -127,8 +130,9 @@ abstract class ElgotSpec(
   }
 
   law("composition") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val ps           = step[T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[Int, T2] is Observable) = observe
       composition[T2, Int, Int](p, shrink)
@@ -136,9 +140,10 @@ abstract class ElgotSpec(
   }
 
   law("dinaturality") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val fs           = step[T2]
     val gs           = step[T2]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given (P[Int, T2] is Observable) = observe
       dinaturality[T2, Int, Int](f, g)
@@ -146,8 +151,9 @@ abstract class ElgotSpec(
   }
 
   law("doubleDagger") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val ps           = step2[T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[Int, T2] is Observable) = observe
       doubleDagger(p)
@@ -155,8 +161,9 @@ abstract class ElgotSpec(
   }
 
   law("uniformity") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val fs           = step[T2]
+
     forAll(observations, fs) { (observe, f) =>
       given (P[Int, T2] is Observable) = observe
       val (h, inverse)                          = bijection
@@ -166,11 +173,12 @@ abstract class ElgotSpec(
   }
 
   law("congruence") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val ps           = step[T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[Int, T2] is Observable) = observe
-      congruence(p, PF.variant(p))
+      congruence(p, variant(p))
     }
   }
 }
@@ -180,11 +188,12 @@ abstract class TracedSpec(
   name: String,
   tracked val T: Traced { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
-  val PF: PromonadFixture.On[T.S.P.type],
+  PF: PromonadFixture.On[T.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[T.S.M.Tensor[X, Y]],
 ) extends LawSuite("Traced", name) {
   import types.{T1, T2, T3, T4, given}
+  import PF.*
   import T.S.P
   import P.P
   import T.TracedLaws.*
@@ -210,7 +219,8 @@ abstract class TracedSpec(
   protected def guarded: Boolean = false
 
   private def yankingHolds: org.scalacheck.Prop = {
-    val observations = PF.observe[T1, T1]
+    val observations = observe[T1, T1]
+
     forAll(observations) { observe =>
       given (P[T1, T1] is Observable) = observe
       yanking[T1]
@@ -218,10 +228,11 @@ abstract class TracedSpec(
   }
 
   law("tightening") {
-    val observations = PF.observe[T4, T3]
-    val fs           = PF.arrow[T4, T1]
+    val observations = observe[T4, T3]
+    val fs           = arrow[T4, T1]
     val ps           = loop[T1, T2]
-    val gs           = PF.arrow[T2, T3]
+    val gs           = arrow[T2, T3]
+
     forAll(observations, fs, ps, gs) { (observe, f, p, g) =>
       given (P[T4, T3] is Observable) = observe
       tightening(f, p, g)
@@ -229,8 +240,9 @@ abstract class TracedSpec(
   }
 
   law("sliding") {
-    val observations = PF.observe[T1, T2]
+    val observations = observe[T1, T2]
     val ps           = loop[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
       sliding[T1, T2, Int, Int](p, shrink)
@@ -238,8 +250,9 @@ abstract class TracedSpec(
   }
 
   law("vanishingUnit") {
-    val observations = PF.observe[T1, T2]
+    val observations = observe[T1, T2]
     val ps           = straight[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
       vanishingUnit(p)
@@ -247,8 +260,9 @@ abstract class TracedSpec(
   }
 
   law("vanishingTensor") {
-    val observations = PF.observe[T1, T2]
+    val observations = observe[T1, T2]
     val ps           = loop2[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
       vanishingTensor[T1, T2, Int, Int](p)
@@ -256,9 +270,10 @@ abstract class TracedSpec(
   }
 
   law("superposing") {
-    val observations = PF.observe[T3 + T1, T4 + T2]
-    val gs           = PF.base.arrow[T3, T4]
+    val observations = observe[T3 + T1, T4 + T2]
+    val gs           = base.arrow[T3, T4]
     val ps           = loop[T1, T2]
+
     forAll(observations, gs, ps) { (observe, g, p) =>
       given (P[T3 + T1, T4 + T2] is Observable) = observe
       superposing(g, p)
@@ -269,11 +284,12 @@ abstract class TracedSpec(
   else law("yanking")(yankingHolds)
 
   law("congruence") {
-    val observations = PF.observe[T1, T2]
+    val observations = observe[T1, T2]
     val ps           = loop[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
-      congruence(p, PF.variant(p))
+      congruence(p, variant(p))
     }
   }
 }
@@ -287,6 +303,7 @@ abstract class RecursionSpec(
   types: SampleTypes,
 ) extends LawSuite("Recursion", name) {
   import types.{T2, given}
+  import PF.*
   import R.P
   import P.P
   import R.RecursionLaws.*
@@ -295,8 +312,9 @@ abstract class RecursionSpec(
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]]
 
   law("fixedPoint") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val fs           = guarded[T2]
+
     forAll(observations, fs) { (observe, f) =>
       given (P[Int, T2] is Observable) = observe
       fixedPoint(f)
@@ -304,9 +322,10 @@ abstract class RecursionSpec(
   }
 
   law("familyFixedPoint", "two arrows, each calling the other") {
-    val observations = PF.observe[Int, T2]
+    val observations = observe[Int, T2]
     val g0s          = guarded[T2]
     val g1s          = guarded[T2]
+
     forAll(observations, g0s, g1s) { (observe, g0, g1) =>
       given (P[Int, T2] is Observable) = observe
       familyFixedPoint[Int, T2](2)(rec => i => if i == 0 then g0(rec(1)) else g1(rec(0)))
@@ -319,11 +338,12 @@ abstract class ConwaySpec(
   name: String,
   tracked val C: Conway { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
-  val PF: PromonadFixture.On[C.S.P.type],
+  PF: PromonadFixture.On[C.S.P.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[C.S.M.Tensor[X, Y]],
 ) extends LawSuite("Conway", name) {
   import types.{T2, T3, given}
+  import PF.*
   import C.S.P
   import P.P
   import C.ConwayLaws.*
@@ -346,8 +366,9 @@ abstract class ConwaySpec(
   def bijection: (Int --> Int, Int --> Int)
 
   law("fixedPoint") {
-    val observations = PF.observe[T2, Int]
+    val observations = observe[T2, Int]
     val ps           = step[T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T2, Int] is Observable) = observe
       fixedPoint(p)
@@ -355,9 +376,10 @@ abstract class ConwaySpec(
   }
 
   law("parameterNaturality") {
-    val observations = PF.observe[T3, Int]
+    val observations = observe[T3, Int]
     val ps           = step[T2]
-    val hs           = PF.base.arrow[T3, T2]
+    val hs           = base.arrow[T3, T2]
+
     forAll(observations, ps, hs) { (observe, p, h) =>
       given (P[T3, Int] is Observable) = observe
       parameterNaturality(p, h)
@@ -365,8 +387,9 @@ abstract class ConwaySpec(
   }
 
   law("composition") {
-    val observations = PF.observe[T2, Int]
+    val observations = observe[T2, Int]
     val fs           = step[T2]
+
     forAll(observations, fs) { (observe, f) =>
       given (P[T2, Int] is Observable) = observe
       composition[T2, Int, Int](f, shrink)
@@ -374,9 +397,10 @@ abstract class ConwaySpec(
   }
 
   law("dinaturality") {
-    val observations = PF.observe[T2, Int]
+    val observations = observe[T2, Int]
     val fs           = step[T2]
     val gs           = step[T2]
+
     forAll(observations, fs, gs) { (observe, f, g) =>
       given (P[T2, Int] is Observable) = observe
       dinaturality[T2, Int, Int](f, g)
@@ -384,8 +408,9 @@ abstract class ConwaySpec(
   }
 
   law("doubleDagger") {
-    val observations = PF.observe[T2, Int]
+    val observations = observe[T2, Int]
     val ps           = step2[T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T2, Int] is Observable) = observe
       doubleDagger(p)
@@ -393,8 +418,9 @@ abstract class ConwaySpec(
   }
 
   law("uniformity") {
-    val observations = PF.observe[T2, Int]
+    val observations = observe[T2, Int]
     val fs           = step[T2]
+
     forAll(observations, fs) { (observe, f) =>
       given (P[T2, Int] is Observable) = observe
       val (h, inverse)                          = bijection
@@ -404,11 +430,12 @@ abstract class ConwaySpec(
   }
 
   law("congruence") {
-    val observations = PF.observe[T2, Int]
+    val observations = observe[T2, Int]
     val ps           = step[T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T2, Int] is Observable) = observe
-      congruence(p, PF.variant(p))
+      congruence(p, variant(p))
     }
   }
 }
@@ -479,6 +506,7 @@ class StringStateLoopsIsElgotTest
 
   counterexample("fixedPoint", "for unguarded steps") {
     val observations = StringStateFixture.observe[Int, String]
+
     forAll(observations, Sample.function[Int, Boolean], Sample.function[Int, String]) { (observe, go, stop) =>
       given ((Int -> String -> Option[(String, String)]) is Observable)     = observe
       val unguarded: Int -> String -> Option[(Either[String, Int], String)] = {
@@ -539,6 +567,7 @@ class StringStateRecursionIsRecursionTest
   counterexample("fixedPoint", "for left-recursive functions") {
     val observations = StringStateFixture.observe[Int, String]
     val bases        = StringStateFixture.arrow[Int, String]
+
     forAll(observations, bases) { (observe, base) =>
       given ((Int -> String -> Option[(String, String)]) is Observable) = observe
       val leftRecursive: (Int -> String -> Option[(String, String)]) -> Int -> String -> Option[(String, String)] = {

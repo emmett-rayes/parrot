@@ -8,14 +8,15 @@ import org.scalacheck.Gen
   */
 abstract class ObservableSpec(F: CategoryFixture)(using types: SampleTypes) extends LawSuite("Observable", F.name) {
   import types.{T1, T2, given}
+  import F.*
   import F.K.-->
 
-  private lazy val observations: Gen[(T1 --> T2) is Observable] = F.observe[T1, T2]
+  private lazy val observations: Gen[(T1 --> T2) is Observable] = observe[T1, T2]
 
-  private lazy val arrows: Gen[T1 --> T2] = F.arrow[T1, T2]
+  private lazy val arrows: Gen[T1 --> T2] = arrow[T1, T2]
 
   private lazy val pairs: Gen[(T1 --> T2, T1 --> T2)] = {
-    Gen.oneOf(Gen.zip(arrows, arrows), arrows.map(f => (f, F.variant(f))))
+    Gen.oneOf(Gen.zip(arrows, arrows), arrows.map(f => (f, variant(f))))
   }
 
   law("reflexivity") {
@@ -28,12 +29,12 @@ abstract class ObservableSpec(F: CategoryFixture)(using types: SampleTypes) exte
 
   law("transitivity") {
     forAll(observations, pairs, Gen.oneOf(true, false)) { case (o, (f, g), same) =>
-      o.ObservableLaws.transitivity(f, g, if same then F.variant(g) else f)
+      o.ObservableLaws.transitivity(f, g, if same then variant(g) else f)
     }
   }
 
   law("soundness") {
-    forAll(observations, arrows)((o, f) => o.ObservableLaws.soundness(f, F.variant(f)))
+    forAll(observations, arrows)((o, f) => o.ObservableLaws.soundness(f, variant(f)))
   }
 }
 

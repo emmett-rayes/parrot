@@ -10,17 +10,19 @@ abstract class RestrictionSpec(
   name: String,
   tracked val R: Restriction { val P: Promonad { val K: Category { type Obj = Type } } },
 )(using
-  val PF: PromonadFixture.On[R.P.type],
+  PF: PromonadFixture.On[R.P.type],
   types: SampleTypes,
 ) extends LawSuite("Restriction", name) {
   import types.{T1, T2, T3, given}
+  import PF.*
   import R.P
   import P.P
   import R.RestrictionLaws.*
 
   law("r1") {
-    val observations = PF.observe[T1, T2]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T2]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
       r1(p)
@@ -28,9 +30,10 @@ abstract class RestrictionSpec(
   }
 
   law("r2") {
-    val observations = PF.observe[T1, T1]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T1, T3]
+    val observations = observe[T1, T1]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T1, T3]
+
     forAll(observations, ps, qs) { (observe, p, q) =>
       given (P[T1, T1] is Observable) = observe
       r2(p, q)
@@ -38,9 +41,10 @@ abstract class RestrictionSpec(
   }
 
   law("r3") {
-    val observations = PF.observe[T1, T1]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T1, T3]
+    val observations = observe[T1, T1]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T1, T3]
+
     forAll(observations, ps, qs) { (observe, p, q) =>
       given (P[T1, T1] is Observable) = observe
       r3(p, q)
@@ -48,9 +52,10 @@ abstract class RestrictionSpec(
   }
 
   law("r4") {
-    val observations = PF.observe[T1, T2]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T2, T3]
+    val observations = observe[T1, T2]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T2, T3]
+
     forAll(observations, ps, qs) { (observe, p, q) =>
       given (P[T1, T2] is Observable) = observe
       r4(p, q)
@@ -58,8 +63,9 @@ abstract class RestrictionSpec(
   }
 
   law("pureTotal") {
-    val observations = PF.observe[T1, T1]
-    val fs           = PF.base.arrow[T1, T2]
+    val observations = observe[T1, T1]
+    val fs           = base.arrow[T1, T2]
+
     forAll(observations, fs) { (observe, f) =>
       given (P[T1, T1] is Observable) = observe
       pureTotal(f)
@@ -67,11 +73,12 @@ abstract class RestrictionSpec(
   }
 
   law("congruence") {
-    val observations = PF.observe[T1, T1]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T1]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T1] is Observable) = observe
-      congruence(p, PF.variant(p))
+      congruence(p, variant(p))
     }
   }
 }
@@ -84,16 +91,18 @@ abstract class ClassicalSpec(
     val C: Cocartesian { val T: Bifunctor { type Self = Either } }
   },
 )(using
-  val PF: PromonadFixture.On[C.P.type],
+  PF: PromonadFixture.On[C.P.type],
   types: SampleTypes,
 ) extends LawSuite("Classical", name) {
   import types.{T1, T2, T3, given}
+  import PF.*
   import C.P
   import P.P
   import C.ClassicalLaws.*
 
   law("zeroRestriction") {
-    val observations = PF.observe[T1, T1]
+    val observations = observe[T1, T1]
+
     forAll(observations) { observe =>
       given (P[T1, T1] is Observable) = observe
       zeroRestriction[T1, T2]
@@ -101,8 +110,9 @@ abstract class ClassicalSpec(
   }
 
   law("zeroLeft") {
-    val observations = PF.observe[T1, T3]
-    val ps           = PF.arrow[T2, T3]
+    val observations = observe[T1, T3]
+    val ps           = arrow[T2, T3]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T3] is Observable) = observe
       zeroLeft[T1, T2, T3](p)
@@ -110,8 +120,9 @@ abstract class ClassicalSpec(
   }
 
   law("zeroRight") {
-    val observations = PF.observe[T1, T3]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T3]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T3] is Observable) = observe
       zeroRight[T1, T2, T3](p)
@@ -119,8 +130,9 @@ abstract class ClassicalSpec(
   }
 
   law("overrideZero") {
-    val observations = PF.observe[T1, T2]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T2]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
       overrideZero(p)
@@ -128,10 +140,11 @@ abstract class ClassicalSpec(
   }
 
   law("overrideAssociativity") {
-    val observations = PF.observe[T1, T2]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T1, T2]
-    val rs           = PF.arrow[T1, T2]
+    val observations = observe[T1, T2]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T1, T2]
+    val rs           = arrow[T1, T2]
+
     forAll(observations, ps, qs, rs) { (observe, p, q, r) =>
       given (P[T1, T2] is Observable) = observe
       overrideAssociativity(p, q, r)
@@ -139,9 +152,10 @@ abstract class ClassicalSpec(
   }
 
   law("overrideRestricted") {
-    val observations = PF.observe[T1, T2]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T1, T2]
+    val observations = observe[T1, T2]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T1, T2]
+
     forAll(observations, ps, qs) { (observe, p, q) =>
       given (P[T1, T2] is Observable) = observe
       overrideRestricted(p, q)
@@ -149,9 +163,10 @@ abstract class ClassicalSpec(
   }
 
   law("overrideRestricting") {
-    val observations = PF.observe[T1, T2]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T1, T3]
+    val observations = observe[T1, T2]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T1, T3]
+
     forAll(observations, ps, qs) { (observe, p, q) =>
       given (P[T1, T2] is Observable) = observe
       overrideRestricting(p, q)
@@ -159,10 +174,11 @@ abstract class ClassicalSpec(
   }
 
   law("overridePrecomposition") {
-    val observations = PF.observe[T1, T3]
-    val hs           = PF.arrow[T1, T2]
-    val ps           = PF.arrow[T2, T3]
-    val qs           = PF.arrow[T2, T3]
+    val observations = observe[T1, T3]
+    val hs           = arrow[T1, T2]
+    val ps           = arrow[T2, T3]
+    val qs           = arrow[T2, T3]
+
     forAll(observations, hs, ps, qs) { (observe, h, p, q) =>
       given (P[T1, T3] is Observable) = observe
       overridePrecomposition(h, p, q)
@@ -170,10 +186,11 @@ abstract class ClassicalSpec(
   }
 
   law("overrideRestriction") {
-    val observations = PF.observe[T1, T3]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T1, T2]
-    val hs           = PF.arrow[T1, T3]
+    val observations = observe[T1, T3]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T1, T2]
+    val hs           = arrow[T1, T3]
+
     forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
       given (P[T1, T3] is Observable) = observe
       overrideRestriction(p, q, h)
@@ -181,8 +198,9 @@ abstract class ClassicalSpec(
   }
 
   law("complementExclusion") {
-    val observations = PF.observe[T1, T1]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T1]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T1] is Observable) = observe
       complementExclusion(p)
@@ -190,8 +208,9 @@ abstract class ClassicalSpec(
   }
 
   law("complementCover") {
-    val observations = PF.observe[T1, T1]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T1]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T1] is Observable) = observe
       complementCover(p)
@@ -199,8 +218,9 @@ abstract class ClassicalSpec(
   }
 
   law("complementRestriction") {
-    val observations = PF.observe[T1, T1]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T1]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T1] is Observable) = observe
       complementRestriction(p)
@@ -208,8 +228,9 @@ abstract class ClassicalSpec(
   }
 
   law("doubleComplement") {
-    val observations = PF.observe[T1, T1]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, T1]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T1] is Observable) = observe
       doubleComplement(p)
@@ -217,8 +238,9 @@ abstract class ClassicalSpec(
   }
 
   law("attemptDefinition") {
-    val observations = PF.observe[T1, Either[T2, T1]]
-    val ps           = PF.arrow[T1, T2]
+    val observations = observe[T1, Either[T2, T1]]
+    val ps           = arrow[T1, T2]
+
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, Either[T2, T1]] is Observable) = observe
       attemptDefinition(p)
@@ -226,20 +248,22 @@ abstract class ClassicalSpec(
   }
 
   law("congruence") {
-    val ps = PF.arrow[T1, T2]
-    val qs = PF.arrow[T1, T2]
-    forAll(Gen.zip(PF.observe[T1, T2], PF.observe[T1, T1]), ps, qs) { case ((o1, o2), p, q) =>
+    val ps = arrow[T1, T2]
+    val qs = arrow[T1, T2]
+
+    forAll(Gen.zip(observe[T1, T2], observe[T1, T1]), ps, qs) { case ((o1, o2), p, q) =>
       given O1: (P[T1, T2] is Observable) = o1
       given O2: (P[T1, T1] is Observable)    = o2
-      congruence(p, PF.variant(p), q, PF.variant(q))
+      congruence(p, variant(p), q, variant(q))
     }
   }
 
   counterexample("overridePostcomposition", "(p ⊳ q) ⨾ h = (p ⨾ h) ⊳ (q ⨾ h) fails: ⊳ commits") {
-    val observations = PF.observe[T1, T3]
-    val ps           = PF.arrow[T1, T2]
-    val qs           = PF.arrow[T1, T2]
-    val hs           = PF.arrow[T2, T3]
+    val observations = observe[T1, T3]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T1, T2]
+    val hs           = arrow[T2, T3]
+
     forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
       given (P[T1, T3] is Observable) = observe
       P.multiply(h, C.orElse(p, q)) =?= C.orElse(P.multiply(h, p), P.multiply(h, q))
@@ -319,6 +343,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
   law("r1") {
     val observations = observe[Int, String]
     val ps           = arrow[Int, String]
+
     forAll(observations, ps) { (o, p) =>
       given ((Int -> (Int, Option[String])) is Observable) = o
       r1(p)
@@ -329,6 +354,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
     val observations = observe[Int, Int]
     val ps           = arrow[Int, String]
     val qs           = arrow[Int, Boolean]
+
     forAll(observations, ps, qs) { (o, p, q) =>
       given ((Int -> (Int, Option[Int])) is Observable) = o
       r2(p, q)
@@ -339,6 +365,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
     val observations = observe[Int, Int]
     val ps           = arrow[Int, String]
     val qs           = arrow[Int, Boolean]
+
     forAll(observations, ps, qs) { (o, p, q) =>
       given ((Int -> (Int, Option[Int])) is Observable) = o
       r3(p, q)
@@ -349,6 +376,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
     val observations = observe[Int, String]
     val ps           = arrow[Int, String]
     val qs           = arrow[String, Boolean]
+
     forAll(observations, ps, qs) { (o, p, q) =>
       given ((Int -> (Int, Option[String])) is Observable) = o
       r4(p, q)
@@ -361,6 +389,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
       val hs           = arrow[Int, String]
       val ps           = arrow[String, Boolean]
       val qs           = arrow[String, Boolean]
+
       forAll(observations, hs, ps, qs) { (o, h, p, q) =>
         given ((Int -> (Int, Option[Boolean])) is Observable) = o
         overridePrecomposition(h, p, q)
@@ -370,6 +399,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
     counterexample("zeroRight", "p ⨾ 0 keeps the output of p") {
       val observations = observe[Int, Boolean]
       val ps           = arrow[Int, String]
+
       forAll(observations, ps) { (o, p) =>
         given ((Int -> (Int, Option[Boolean])) is Observable) = o
         zeroRight[Int, String, Boolean](p)
@@ -379,6 +409,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
     counterexample("complementExclusion", "the test outputs what p does") {
       val observations = observe[Int, Int]
       val ps           = arrow[Int, String]
+
       forAll(observations, ps) { (o, p) =>
         given ((Int -> (Int, Option[Int])) is Observable) = o
         complementExclusion(p)
@@ -388,6 +419,7 @@ class MaxOutcomeRestrictionTest extends LawSuite("Restriction", "Kleisli[OptionT
     counterexample("complementCover", "the test outputs what p does") {
       val observations = observe[Int, Int]
       val ps           = arrow[Int, String]
+
       forAll(observations, ps) { (o, p) =>
         given ((Int -> (Int, Option[Int])) is Observable) = o
         complementCover(p)
@@ -423,6 +455,7 @@ class ConcatOutcomeIsNotRestrictionTest
   counterexample("r1", "the output is not idempotent: p̄ ⨾ p outputs twice") {
     val observations = TotalFixture.observe[Int, (String, Option[String])]
     val ps           = arrow[Int, String]
+
     forAll(observations, ps) { (observe, p) =>
       given ((Int -> (String, Option[String])) is Observable) = observe
       r1(p)
@@ -434,6 +467,7 @@ class ConcatOutcomeIsNotRestrictionTest
       val observations = TotalFixture.observe[Int, (String, Option[Boolean])]
       val hs           = arrow[Int, String]
       val ps           = arrow[String, Boolean]
+
       forAll(observations, hs, ps) { (observe, h, p) =>
         given ((Int -> (String, Option[Boolean])) is Observable) = observe
         ConcatOutcomeDomains.ClassicalLaws.overridePrecomposition(h, p, p)
@@ -445,6 +479,7 @@ class ConcatOutcomeIsNotRestrictionTest
     val observations = TotalFixture.observe[Int, (String, Option[Int])]
     val ps           = arrow[Int, String]
     val qs           = arrow[Int, Boolean]
+
     forAll(observations, ps, qs) { (observe, p, q) =>
       given ((Int -> (String, Option[Int])) is Observable) = observe
       r2(p, q)

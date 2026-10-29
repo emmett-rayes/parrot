@@ -52,6 +52,7 @@ class ReferenceKnotsIsRecursionTest
 
   counterexample("fixedPoint", "for left-recursive rules: the call fails") {
     val observations = PF.observe[Int, Int]
+
     forAll(observations, Grammars.terms) { (o, term) =>
       given (P[Int, Int] is Observable) = o
       R.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.reference)(term))
@@ -115,6 +116,7 @@ class StrictKnotsIsRecursionTest
 
   counterexample("fixedPoint", "for left-recursive rules: seed growing") {
     val observations = PF.observe[Int, Int]
+
     forAll(observations, Grammars.terms) { (o, term) =>
       given (P[Int, Int] is Observable) = o
       R.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.strict)(term))

@@ -22,6 +22,7 @@ class ScalaExponentialIsClosedTest extends LawSuite("Closed", "Exponential on To
   law("beta") {
     val observations = TotalFixture.observe[(Int, String), Long]
     val fs           = TotalFixture.arrow[(Int, String), Long]
+
     forAll(observations, fs) { (observe, f) =>
       given ((((Int, String)) -> Long) is Observable) = observe
       beta(f)
@@ -38,6 +39,7 @@ class ScalaExponentialIsClosedTest extends LawSuite("Closed", "Exponential on To
 
   law("curryCongruence") {
     val fs = TotalFixture.arrow[(Int, String), Long]
+
     forAll(curried, fs) { (observe, f) =>
       given ((Int -> String -> Long) is Observable) = observe
       curryCongruence(f, TotalFixture.variant[(Int, String), Long](f))

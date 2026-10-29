@@ -14,6 +14,7 @@ class ProductIsCategoryTest extends LawSuite("Category", "Total × Partial") {
     val observations2 = PartialFixture.observe[Long, Boolean]
     val fs            = TotalFixture.arrow[Int, String]
     val gs            = PartialFixture.arrow[Long, Boolean]
+
     forAll(observations1, observations2, fs, gs) { (o1, o2, f, g) =>
       given ((Int -> String, Long ~> Boolean) is Observable) = Observable.Tuple2IsObservable(using o1, o2)
       leftIdentity[(Int, Long), (String, Boolean)]((f, g))
@@ -25,6 +26,7 @@ class ProductIsCategoryTest extends LawSuite("Category", "Total × Partial") {
     val observations2 = PartialFixture.observe[Long, Boolean]
     val fs            = TotalFixture.arrow[Int, String]
     val gs            = PartialFixture.arrow[Long, Boolean]
+
     forAll(observations1, observations2, fs, gs) { (o1, o2, f, g) =>
       given ((Int -> String, Long ~> Boolean) is Observable) = Observable.Tuple2IsObservable(using o1, o2)
       rightIdentity[(Int, Long), (String, Boolean)]((f, g))

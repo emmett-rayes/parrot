@@ -17,7 +17,10 @@ abstract class CategoryFixture(val name: String, tracked val K: Category { type 
   def observe[X: Sample, Y: Sample]: Gen[(X --> Y) is Observable]
 }
 
-/** The fixtures that specs find from the category they check: one per category. */
+/** The fixtures of categories.
+  *
+  * A spec finds the fixture of the category it checks among these givens, so there is one per category.
+  */
 object CategoryFixture {
 
   /** A fixture for the category *C*. */

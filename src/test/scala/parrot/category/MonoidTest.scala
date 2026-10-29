@@ -67,6 +67,7 @@ abstract class MonoidSpec(name: String, tracked val W: Monoid { val V: Total.Pro
 
   law("leftUnit") {
     val observations = TotalFixture.observe[(Unit, W.M), W.M]
+
     forAll(observations) { observe =>
       given ((((Unit, W.M)) -> W.M) is Observable) = observe
       leftUnit
@@ -75,6 +76,7 @@ abstract class MonoidSpec(name: String, tracked val W: Monoid { val V: Total.Pro
 
   law("rightUnit") {
     val observations = TotalFixture.observe[(W.M, Unit), W.M]
+
     forAll(observations) { observe =>
       given ((((W.M, Unit)) -> W.M) is Observable) = observe
       rightUnit
@@ -83,6 +85,7 @@ abstract class MonoidSpec(name: String, tracked val W: Monoid { val V: Total.Pro
 
   law("associativity") {
     val observations = TotalFixture.observe[((W.M, W.M), W.M), W.M]
+
     forAll(observations) { observe =>
       given (((((W.M, W.M), W.M)) -> W.M) is Observable) = observe
       associativity
@@ -98,6 +101,7 @@ abstract class SemilatticeSpec(name: String, tracked val W: Semilattice { val V:
 
   law("commutativity") {
     val observations = TotalFixture.observe[(W.M, W.M), W.M]
+
     forAll(observations) { observe =>
       given ((((W.M, W.M)) -> W.M) is Observable) = observe
       commutativity
@@ -106,6 +110,7 @@ abstract class SemilatticeSpec(name: String, tracked val W: Semilattice { val V:
 
   law("idempotence") {
     val observations = TotalFixture.observe[W.M, W.M]
+
     forAll(observations) { observe =>
       given ((W.M -> W.M) is Observable) = observe
       idempotence
@@ -128,6 +133,7 @@ class StringConcatIsNotSemilatticeTest extends LawSuite("Semilattice", "String c
 
   counterexample("commutativity") {
     val observations = TotalFixture.observe[(String, String), String]
+
     forAll(observations) { observe =>
       given ((((String, String)) -> String) is Observable) = observe
       commutativity
@@ -136,6 +142,7 @@ class StringConcatIsNotSemilatticeTest extends LawSuite("Semilattice", "String c
 
   counterexample("idempotence") {
     val observations = TotalFixture.observe[String, String]
+
     forAll(observations) { observe =>
       given ((String -> String) is Observable) = observe
       idempotence
@@ -148,18 +155,20 @@ abstract class ComonoidSpec(
   name: String,
   tracked val W: Comonoid { val V: Monoidal { val K: Category { type Obj = Type } } },
 )(using
-  val F: CategoryFixture.On[W.V.K.type],
+  F: CategoryFixture.On[W.V.K.type],
   S: Sample[W.C],
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?=> Sample[W.V.*[X, Y]],
   unit: Sample[W.V.I],
 ) extends LawSuite("Comonoid", name) {
+  import F.*
   import W.ComonoidLaws.*
   import W.V.K.-->
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[W.V.*[X, Y]] = tensor[X, Y]
 
   law("leftCounit") {
-    val observations = F.observe[W.C, W.V.*[W.V.I, W.C]]
+    val observations = observe[W.C, W.V.*[W.V.I, W.C]]
+
     forAll(observations) { observe =>
       given ((W.C --> W.V.*[W.V.I, W.C]) is Observable) = observe
       leftCounit
@@ -167,7 +176,8 @@ abstract class ComonoidSpec(
   }
 
   law("rightCounit") {
-    val observations = F.observe[W.C, W.V.*[W.C, W.V.I]]
+    val observations = observe[W.C, W.V.*[W.C, W.V.I]]
+
     forAll(observations) { observe =>
       given ((W.C --> W.V.*[W.C, W.V.I]) is Observable) = observe
       rightCounit
@@ -175,7 +185,8 @@ abstract class ComonoidSpec(
   }
 
   law("coassociativity") {
-    val observations = F.observe[W.C, W.V.*[W.C, W.V.*[W.C, W.C]]]
+    val observations = observe[W.C, W.V.*[W.C, W.V.*[W.C, W.C]]]
+
     forAll(observations) { observe =>
       given ((W.C --> W.V.*[W.C, W.V.*[W.C, W.C]]) is Observable) = observe
       coassociativity
