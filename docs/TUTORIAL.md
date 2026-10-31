@@ -2396,7 +2396,7 @@ val mirror: Either[Int, String] -> Either[String, Int] = Total.Coproduct.braid[I
 
 Both are called `braid`, both act on 𝒮, and nothing about the carrier tells them apart; the name does.
 
-Combinations of structures are not expressed by inheritance either. A class that extended both a product structure and a coproduct structure would inherit two members called `Tensor`, two called `I` and two called `braid`, which is wrong even where the compiler accepts it. Instead, a combination is a **bundle**: a class that takes the structures as `tracked` parameters and offers their operations, possibly with laws that connect them. The library has two bundles. `Freyd` (chapter 17) combines a category of arrows with a strength. `ParserAlgebra` (chapter 20) combines everything a parser is made of.
+Combinations of structures are not expressed by inheritance either. A class that extended both a product structure and a coproduct structure would inherit two members called `Tensor`, two called `I` and two called `braid`, which is wrong even where the compiler accepts it. Instead, a combination is a **bundle**: a class that takes the structures as `tracked` parameters and offers their operations, possibly with laws that connect them. The library has one, `ParserAlgebra` (chapter 20), which combines everything a parser is made of. A structure that is another with more operations does extend it: a Freyd category (chapter 17) is a category of arrows with a strength, so `Freyd` extends the category of arrows of a promonad and takes the strength as a parameter.
 
 ### 11.4 Evidence, and how it is found
 
@@ -3149,17 +3149,17 @@ The laws of both, for every Kleisli instance in the library, are **[Tested]**.
 
 A bistrong promonad is almost a structure for running arrows side by side. Name the two strengths after the component an arrow runs on, `first` for τ′ and `second` for τ, and define `p ** q` as `first(p)` followed by `second(q)`. One more condition is needed, that the pure arrows and the composition of the promonad agree with the strength.
 
-**Definition 17.3 (Freyd category).** A **Freyd category** is a promonad P on a symmetric monoidal category 𝒦, bistrong over its tensor, such that
+**Definition 17.3 (Freyd category).** A **Freyd category** is the category of arrows of a promonad P on a symmetric monoidal category 𝒦, bistrong over its tensor, such that
 
 - first(unit(f)) = unit(f ⊗ id): the strength of a pure arrow is the pure tensor, and
 - first(q ∘ p) = first(q) ∘ first(p): the strength respects composition.
 
 Freyd categories were introduced to model call-by-value languages with effects **[Standard: Power and Robinson; Levy, Power and Thielecke, from memory]**, and they are the semantics of Haskell's *arrows*, which programmers know as a design pattern **[Standard: Hughes 2000; Jacobs, Heunen and Hasuo 2009, from memory]**. A strong promonad is in fact a monoid in the category of strong profunctors, so the definition is a single monoid once more **[Standard: Rivas and Jaskelioff, from memory]**.
 
-In the library, a Freyd category is not a new structure but the combination of two: the bundle `Freyd(S)` takes a bistrong `S` whose profunctor is a promonad, names its strengths `first` and `second`, states the two laws and offers the parallel composition `parallel`, written `**`.
+In the library, a Freyd category is a category: `Freyd(P, S)` takes a promonad `P` and a bistrong structure `S` on it, and extends `Promonad.Arrows(P)`, the category of arrows of `P`, whose identity is η and whose composition is μ. It names the strengths `first` and `second`, states the two laws and offers the parallel composition `parallel`, written `**`.
 
 ```scala library
-val OptionFreyd = Freyd(Kleisli.OptionProduct)
+val OptionFreyd = Freyd(Kleisli.OptionKleisli, Kleisli.OptionProduct)
 import OptionFreyd.**
 
 val both: ((String, Int)) -> Option[(Int, Int)] = parse ** positive
@@ -4017,7 +4017,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Bistrong.** Having a left strength τ and a right strength τ′ that commute; over a symmetric monoidal category acting on itself, τ′ comes from τ by braiding. In the library, `Strong.Bistrong`. Section 17.3.
 
-**Bundle.** A class that combines several structures by taking them as `tracked` parameters, rather than by inheritance, such as `Freyd` and `ParserAlgebra`. Section 11.3.
+**Bundle.** A class that combines several structures by taking them as `tracked` parameters, rather than by inheritance, such as `ParserAlgebra`. Section 11.3.
 
 **Cartesian closed.** Having a terminal object, products and exponentials. Definitions 14.1.
 
@@ -4075,7 +4075,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Free theorem.** An equation about a polymorphic program that follows from its type alone. Chapter 9.
 
-**Freyd category.** A promonad with a strength that agrees with its pure arrows and its composition. Definition 17.3.
+**Freyd category.** The category of arrows of a promonad, with a strength that agrees with its pure arrows and its composition. Definition 17.3.
 
 **Functor.** A map between categories preserving identities and composition. Definition 1.3.
 

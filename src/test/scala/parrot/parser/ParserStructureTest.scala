@@ -19,20 +19,28 @@ class ReferenceIsRestrictionTest
 class ReferenceIsClassicalTest extends ClassicalSpec("ReferenceParser", Interpreters.reference.Choice)
 
 class ReferenceZippingIsStrongTest
-    extends StrongSpec("ReferenceParser (zipping)", Interpreters.reference.Zipping) {
-  also("Freyd") {
-    counterexample("interchange", "consuming input is not commutative") {
-      forAll(interchange)(holds => holds)
-    }
+    extends StrongSpec("ReferenceParser (zipping)", Interpreters.reference.Zipping)
+
+class ReferenceZippingIsFreydTest
+    extends FreydSpec(
+      "ReferenceParser (zipping)",
+      Freyd(Interpreters.reference.Arrows, Interpreters.reference.Zipping),
+    ) {
+  counterexample("interchange", "consuming input is not commutative") {
+    forAll(interchange)(holds => holds)
   }
 }
 
 class ReferenceBranchingIsStrongTest
-    extends StrongSpec("ReferenceParser (branching)", Interpreters.reference.Branching) {
-  also("Freyd") {
-    law("interchange", "holds: only one side runs") {
-      forAll(interchange)(holds => holds)
-    }
+    extends StrongSpec("ReferenceParser (branching)", Interpreters.reference.Branching)
+
+class ReferenceBranchingIsFreydTest
+    extends FreydSpec(
+      "ReferenceParser (branching)",
+      Freyd(Interpreters.reference.Arrows, Interpreters.reference.Branching),
+    ) {
+  law("interchange", "holds: only one side runs") {
+    forAll(interchange)(holds => holds)
   }
 }
 
@@ -84,20 +92,28 @@ class StrictIsRestrictionTest extends RestrictionSpec("StrictParser", Interprete
 class StrictIsClassicalTest extends ClassicalSpec("StrictParser", Interpreters.strict.Choice)
 
 class StrictZippingIsStrongTest
-    extends StrongSpec("StrictParser (zipping)", Interpreters.strict.Zipping) {
-  also("Freyd") {
-    counterexample("interchange", "consuming input is not commutative") {
-      forAll(interchange)(holds => holds)
-    }
+    extends StrongSpec("StrictParser (zipping)", Interpreters.strict.Zipping)
+
+class StrictZippingIsFreydTest
+    extends FreydSpec(
+      "StrictParser (zipping)",
+      Freyd(Interpreters.strict.Arrows, Interpreters.strict.Zipping),
+    ) {
+  counterexample("interchange", "consuming input is not commutative") {
+    forAll(interchange)(holds => holds)
   }
 }
 
 class StrictBranchingIsStrongTest
-    extends StrongSpec("StrictParser (branching)", Interpreters.strict.Branching) {
-  also("Freyd") {
-    law("interchange", "holds: only one side runs") {
-      forAll(interchange)(holds => holds)
-    }
+    extends StrongSpec("StrictParser (branching)", Interpreters.strict.Branching)
+
+class StrictBranchingIsFreydTest
+    extends FreydSpec(
+      "StrictParser (branching)",
+      Freyd(Interpreters.strict.Arrows, Interpreters.strict.Branching),
+    ) {
+  law("interchange", "holds: only one side runs") {
+    forAll(interchange)(holds => holds)
   }
 }
 

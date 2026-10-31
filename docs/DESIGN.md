@@ -79,9 +79,10 @@ where a program can tell a diverging pair from the pair of its diverging compone
   object). Structures *on* something else (`Monoidal`, `Module`, `Strong`, `Restriction`, the grid, `Monad`) have no
   `Self` and are named, not found by carrier: 𝒮 carries both products and coproducts, and nothing about the carrier
   tells them apart.
-- **Combinations are bundles, not inheritance.** A class that extended a product and a coproduct structure would
-  inherit two `Tensor`s, two `I`s and two `braid`s. `Freyd(S)` and `ParserAlgebra(...)` take their structures as
-  parameters instead.
+- **Combinations are bundles, not inheritance.** A class that extended a product and a coproduct structure would inherit
+  two `Tensor`s, two `I`s and two `braid`s. `ParserAlgebra(...)` takes its structures as parameters instead. A structure
+  that is another with more operations does extend it: `Freyd(P, S)` extends the category of arrows `Promonad.Arrows(P)`
+  and takes the strength as a parameter.
 - **Objects are types with evidence**: a category declares `type Obj <: Type`, and evidence travels only through
   context bounds, which come after the value parameters, so that infix code infers its types. Evidence classes such as
   `Eq` extend `Type`, so evidence search is sound but not canonical (the tutorial discusses coherence).
@@ -139,7 +140,13 @@ Each structure sits at the lowest level where its laws can be stated.
   be *τ*: it needs right modules, or bimodules, which have no client); `Bistrong` refining `P { val K1: M.K.type; val
   K2: M.K.type }` (for a promonad, nothing makes its own **K** equal to **M**.**K**; the constraint refines **M**
   instead); separate duals over products and coproducts (one `Bistrong.Op(S, S.M.op)`, whose braiding is not checked).
-- A Freyd category is a promonad with a strength and two compatibility laws, not a new class.
+- **A Freyd category is a category.** `Freyd(P, S)` extends `Promonad.Arrows(P)`, the category of arrows of the
+  promonad, with `first`, `second`, `parallel` and the laws that connect them to the strength `S`. It takes the promonad
+  as well as the strength, so that its signature names the promonad whose arrows it has; the strength refines towards it
+  through the alias `Bistrong.On[P.type]`, since inside a refinement `P` names the refinement's own member. It was a
+  bundle of the strength alone, which hid that a Freyd category is a category, left it without the category laws and
+  outside `caps.Pure`. `Promonad.Arrows` was `Promonad.Underlying`: an underlying category forgets structure (the
+  tutorial's Definitions 4.4 and 4.5), while this one is built from the promonad.
 - The trace laws restrict sliding and superposing to pure arrows, which are central (traced *premonoidal* categories).
 - The product row has no useful total instance in a strict language: computing ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first.
   Its instances exist by duality, on 𝒫ᵒᵖ, and the bridges (`OfElgot`, `OfConway`, `OfTraced`) are tested in both rows.

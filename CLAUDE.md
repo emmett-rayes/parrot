@@ -201,8 +201,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    `Self` and are named, not found by carrier: one category carries several (products and coproducts).
 4. **Refinements forward their parameter under the same name**: `abstract class Promonad(tracked override val K:
    Category) extends Endoprofunctor(K, Total)`.
-5. **Combinations are bundles**, not inheritance: `Freyd(S)` (a strong promonad), `ParserAlgebra(…)` (all the parser's
-   structures). They take the structures as `tracked` parameters and derive or `export` their operations.
+5. **Combinations are bundles**, not inheritance: `ParserAlgebra(…)` takes all the parser's structures as `tracked`
+   parameters and derives or `export`s their operations. A structure that is another with more operations extends it
+   instead: `Freyd(P, S)` is the category of arrows `Promonad.Arrows(P)` with a strength `S`.
 6. **Object evidence**: a category's objects are the types with evidence `type Obj <: Type`. `Type` holds for every
    type (`Type.TIsType`); refinements such as `Eq` select fewer. Evidence is passed only through context bounds,
    except evidence that chooses an object, which is a `tracked` parameter: the unit `U` of `Monoidal(K, U, T)`, whose
@@ -219,6 +220,8 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    **Exception:** where a promonad's arrow is also an arrow of its base, both apply to one value: a Kleisli promonad on
    𝒮 (`A -> M[B]`) and a hom promonad. Scala then reports an ambiguity or picks one and rejects the argument, never a
    wrong composition; such code imports one `>>>` and names the other (`M.K.andThen(f, M.bind(g))` in `Kleisli`).
+   A promonad and its category of arrows (`P.category`, `Freyd`) share their arrows and compose them alike, but
+   importing both `>>>` is ambiguous: import one.
    **Operators are syntax:** every symbolic extension passes its arguments one-to-one, in order, to a named method of
    the same structure, which holds the logic and the name (`f >>> g` is `andThen(f, g)`, `q <<< p` is `compose(q, p)`,
    `p ** q` is `parallel(p, q)`, `~p` is `lookahead(p)`). An operator computes nothing of its own; its doc is `Infix
@@ -235,16 +238,15 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     Object-level infix aliases: `*` (tensor), `+` (coproduct), `` `^` `` (`Closed.Exp` in the order of the exponential *B*ᴬ: `B `^` A` = *A* ⇒ *B*, backticked for Scalameta capture checking compatibility), `<->`
     (`Category.Iso`, `A <-> B`).
 14. **Arrows, not `.Self`.** Write morphisms infix: `-->` for the category at hand, `->>` for a second category (a
-    functor's target, a bifunctor's second source), `==>` for a target category (bifunctor, profunctor), `~~>` for an
-    opposite category. These three-symbol arrows name roles; the two concrete categories have two-symbol arrows,
-    `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside `object Partial` too). Bring the
-    role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`, `import S.P.{P, >>>}`,
-    `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.--> as ==>`), never with new type
-    definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:imports` is commented
-    out in `build.sbt` and `pants.toml`. Parenthesize: `+`, `-->` and `->>` share a
-    precedence level, so write `(A + B) --> C`; `*` binds tighter, `<->`, `==>` and `^` looser, `~>` and `~~>`
-    tighter than `*`. Parenthesize arrows next to `->` and `is` as well: `(A ~> B) -> (A ~> B)`,
-    `(X ~> Y) is Observable`.
+    functor's target, a bifunctor's second source), `==>` for a target category (bifunctor, profunctor) or the base of a
+    category of arrows (`Freyd`), `~~>` for an opposite category. These three-symbol arrows name roles; the two concrete
+    categories have two-symbol arrows, `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside
+    `object Partial` too). Bring the role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`,
+    `import S.P.{P, >>>}`, `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.--> as ==>`), never
+    with new type definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:imports`
+    is commented out in `build.sbt` and `pants.toml`. Parenthesize: `+`, `-->` and `->>` share a precedence level, so
+    write `(A + B) --> C`; `*` binds tighter, `<->`, `==>` and `^` looser, `~>` and `~~>` tighter than `*`. Parenthesize
+    arrows next to `->` and `is` as well: `(A ~> B) -> (A ~> B)`, `(X ~> Y) is Observable`.
 15. **Eta-reduce aliases** whose parameters are only passed on: `final type * = Tensor`, `type Self = Tuple2`.
 16. **`final`** on what is definitional: aliases and extension methods that only forward (`>>>`, `***`, `|>`, `first`,
     `restricted`, the parser syntax); **`override` without `final`** when redefining an inherited member. A member that
@@ -279,9 +281,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
 | `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
 | `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
-| `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
+| `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `category` (`Arrows`), `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal` (+ `Module`), `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure and actions on a category | `***`, `act`/`~~`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry`, `internalHom` | `Total.Product`/`Coproduct`/`Exponential`, `Module.OfMonoidal`, `Partial.Product`/`Coproduct`, `Cartesian.Op`/`op`, `Cocartesian.Op`/`op` |
-| `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd laws and `**` | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left`, `parallel`/`**` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.Bistrong.Hom`, `Strong.Bistrong.Op` |
+| `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd: the category of arrows of a promonad with a bistrong structure | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left`, `parallel`/`**` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.Bistrong.Hom`, `Strong.Bistrong.Op` |
 | `Restriction`, `Classical` | restriction category; zero, complement, override, attempt | `restrict`, `zero`, `complement`, `orElse`/`|>`, `attempt` | `Partial.Domains`, `Kleisli.RestrictionOf`/`ClassicalOf` |
 | `Traced`, `Conway`, `Elgot`, `Recursion` | the trace/fixed-point grid; recursion at arrow types | `trace`, `fix`, `iterate` | `Partial.Loops`/`Feedback`/`Knots`, bridges `OfElgot`/`OfConway`/`OfTraced`, guarded state |
 | `Monoid`, `Semilattice`, `Comonoid` | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
@@ -448,7 +450,7 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - Framework: ScalaTest `AnyFunSuite`; properties via ScalaCheck generators run by **`LawSuite(structure, instance)`**
   (`law(name) { ... }`, `counterexample(name) { ... }`, `forAll(...)`), which records every outcome in
   **`docs/law-status.md`** (regenerated after each run; do not edit it by hand). The suite provides the subject of its
-  laws as a given; laws of another structure the instance has go in a block, `also("Freyd") { law(...) { ... } }`.
+  laws as a given; laws of another structure the instance has go in a block, `also("Category") { law(...) { ... } }`.
 - **Sample types**: specs are generic in the types they check their laws at: *T1*, …, *T4* of a `SampleTypes` bundle,
   a context parameter (`using types: SampleTypes`, then `import types.{T1, T2, given}`). In a using clause, the
   fixture comes first, `types` and then the spec's samples come last (`sample`, `tensor`, `unit`), resolved where the
@@ -466,8 +468,9 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
   `class IntIsEqTest extends EqSpec[Int]`, `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
 - **One generic spec per structure** (`EqSpec`, `ObservableSpec`, `PreorderSpec`, `CategorySpec`, `FunctorSpec`,
   `BifunctorSpec`, `PromonadSpec`, `MonoidalSpec`, `SymmetricSpec`, `CartesianSpec`, `CocartesianSpec`, `ModuleSpec`,
-  `StrongSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`, `RecursionSpec`,
-  `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ParserLawSpec`), **one class per instance**.
+  `StrongSpec`, `FreydSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`,
+  `RecursionSpec`, `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ParserLawSpec`), **one class per
+  instance**.
 - **Fixtures** (`Sample.scala`, `CategoryFixture.scala`, `PromonadFixture.scala`): `Sample[X]` (generator,
   cogenerator, `Eq`; a carrier without an `Eq` is sampled at an instance where it is data, as `StateT` at `Boolean`
   states), `CategoryFixture` (arrows of a category whose objects are all types: `arrow`, `variant`, `observe`),
@@ -546,6 +549,9 @@ Things that cost time once; check here before fighting the compiler.
   October 2026.
 - **Anonymous classes lose the parent's tracked refinement.** Inside `new Bistrong(Promonad.Op(S.P), …) { … }` the
   body sees `P` only at its declared type, not as `Promonad.Op(S.P)`; a named class (`Bistrong.Op`) keeps it.
+- **A refinement cannot name a parameter that its members shadow.** In `Freyd(P, S: Bistrong { val P: P.type })`, the
+  `P` inside the braces is the refinement's own member (a cyclic reference), and `Freyd.this` is not available in a
+  constructor. Refine through an alias declared elsewhere, as `Monad.On` does: `S: Strong.Bistrong.On[P.type]`.
 - **Renamed type imports** (`import D.--> as ==>`) are reported unused even when used, in every variant tried
   (renaming `-->`, `Hom` or `Self`, with or without other imports), which is why `-Wunused:imports` is commented out in
   `build.sbt` and `pants.toml`.

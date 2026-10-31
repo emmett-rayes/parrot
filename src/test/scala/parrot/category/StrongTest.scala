@@ -1,9 +1,7 @@
 package parrot
 package category
 
-import org.scalacheck.Gen
-
-/** The laws of [[Strong]], [[Strong.Bistrong]] and [[Freyd]], for bistrong promonads over 𝒮. */
+/** The laws of [[Strong]] and [[Strong.Bistrong]], for bistrong promonads over 𝒮. */
 abstract class StrongSpec(
   name: String,
   tracked val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } },
@@ -15,14 +13,12 @@ abstract class StrongSpec(
   import types.{T1, T2, T3, T4, given}
   import promonad.*
   import S.P
-  import P.{P, >>>}
+  import P.P
   import S.StrongLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[S.M.Tensor[X, Y]] = tensor[X, Y]
 
   private type T[X, Y] = S.M.Tensor[X, Y]
-
-  private lazy val F = Freyd(S)
 
   law("naturality") {
     val observations = observe[T[T3, T4], T[T3, T3]]
@@ -90,75 +86,13 @@ abstract class StrongSpec(
       }
     }
   }
-
-  also("Freyd") {
-    import F.FreydLaws.*
-
-    law("unit") {
-      val observations = observe[T[T1, T4], T[T2, T4]]
-      val fs           = base.arrow[T1, T2]
-
-      forAll(observations, fs) { (observe, f) =>
-        given (P[T[T1, T4], T[T2, T4]] is Observable) = observe
-        unit[T1, T2, T4](f)
-      }
-    }
-
-    law("multiply") {
-      val observations = observe[T[T1, T4], T[T3, T4]]
-      val ps           = arrow[T1, T2]
-      val qs           = arrow[T2, T3]
-
-      forAll(observations, ps, qs) { (observe, p, q) =>
-        given (P[T[T1, T4], T[T3, T4]] is Observable) = observe
-        multiply[T1, T2, T3, T4](p, q)
-      }
-    }
-
-    law("centrality") {
-      val observations = observe[T[T1, T4], T[T2, T3]]
-      val fs           = base.arrow[T1, T2]
-      val qs           = arrow[T4, T3]
-
-      forAll(observations, fs, qs) { (observe, f, q) =>
-        given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
-        centrality(f, q)
-      }
-    }
-  }
-
-  /** Interchange: running *p* and *q* side by side in either order gives the same result. It holds when the effect is
-    * commutative and fails otherwise; it is not a law of Freyd categories.
-    */
-  protected def interchange: Gen[Boolean] = {
-    for {
-      observe <- observe[T[T1, T4], T[T2, T3]]
-      p       <- arrow[T1, T2]
-      q       <- arrow[T4, T3]
-    } yield {
-      given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
-      (S.right[T1, T2, T4](p) >>> S.left[T4, T3, T2](q)) =?= (S.left[T4, T3, T1](q) >>> S.right[T1, T2, T3](p))
-    }
-  }
 }
 
 class OptionKleisliProductIsStrongTest
-    extends StrongSpec("Kleisli[Option] on Product", Kleisli.OptionProduct) {
-  also("Freyd") {
-    law("interchange", "holds: Option is a commutative monad") {
-      forAll(interchange)(holds => holds)
-    }
-  }
-}
+    extends StrongSpec("Kleisli[Option] on Product", Kleisli.OptionProduct)
 
 class OptionKleisliCoproductIsStrongTest
-    extends StrongSpec("Kleisli[Option] on Coproduct", Kleisli.OptionCoproduct) {
-  also("Freyd") {
-    law("interchange", "holds: only one side runs") {
-      forAll(interchange)(holds => holds)
-    }
-  }
-}
+    extends StrongSpec("Kleisli[Option] on Coproduct", Kleisli.OptionCoproduct)
 
 /** The string writer's arrows, run side by side on pairs. */
 object StringWriterProduct extends Kleisli.ProductStrength(StringWriterKleisli)
@@ -167,19 +101,7 @@ object StringWriterProduct extends Kleisli.ProductStrength(StringWriterKleisli)
 object StringWriterCoproduct extends Kleisli.CoproductStrength(StringWriterKleisli)
 
 class StringWriterKleisliProductIsStrongTest
-    extends StrongSpec("Kleisli[Writer[String]] on Product", StringWriterProduct) {
-  also("Freyd") {
-    counterexample("interchange", "logs are not commutative") {
-      forAll(interchange)(holds => holds)
-    }
-  }
-}
+    extends StrongSpec("Kleisli[Writer[String]] on Product", StringWriterProduct)
 
 class StringWriterKleisliCoproductIsStrongTest
-    extends StrongSpec("Kleisli[Writer[String]] on Coproduct", StringWriterCoproduct) {
-  also("Freyd") {
-    law("interchange", "holds: only one side runs") {
-      forAll(interchange)(holds => holds)
-    }
-  }
-}
+    extends StrongSpec("Kleisli[Writer[String]] on Coproduct", StringWriterCoproduct)

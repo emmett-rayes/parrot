@@ -151,6 +151,11 @@ object Strong {
 
   object Bistrong {
 
+    /** The bistrong structures on the profunctor *Q*: refines the profunctor, so that the profunctor of a strength *S*
+      * is known as *Q*.
+      */
+    type On[Q <: Profunctor] = Bistrong { val P: Q }
+
     /** The opposite *P*ᵒᵖ of a bistrong promonad *P*, over **M**ᵒᵖ.
       *
       * The opposite has the same left strength, with every morphism reversed.
