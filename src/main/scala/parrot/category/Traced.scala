@@ -10,7 +10,7 @@ package category
   * the equation *u* = *p*(*a*,*u*)₂: a recursive definition. The laws are those of traced monoidal categories, with
   * dinaturality (sliding) and superposing restricted to pure arrows, which are central.
   */
-abstract class Traced(tracked val S: Strong { val P: Promonad }) extends caps.Pure {
+abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extends caps.Pure {
   import S.M.{I, `*`, given}
   import S.P.{P, >>}
   import S.P.K.{Obj, -->}
@@ -21,14 +21,14 @@ abstract class Traced(tracked val S: Strong { val P: Promonad }) extends caps.Pu
   /** Laws that any `Traced` structure must satisfy. */
   object TracedLaws {
 
-    /** *tr*(*first*(*f*) ⨾ *p* ⨾ *first*(*g*)) = *f* ⨾ *tr*(*p*) ⨾ *g*
+    /** *tr*(*τ*′(*f*) ⨾ *p* ⨾ *τ*′(*g*)) = *f* ⨾ *tr*(*p*) ⨾ *g*
       */
     def tightening[A0: Obj, A1: Obj, B1: Obj, B0: Obj, U: Obj](
       f: P[A0, A1],
       p: P[A1 * U, B1 * U],
       g: P[B1, B0],
     )(using P[A0, B0] is Observable): Boolean = {
-      trace(S.first[A0, A1, U](f) >> p >> S.first[B1, B0, U](g)) =?= (f >> trace(p) >> g)
+      trace(S.right[A0, A1, U](f) >> p >> S.right[B1, B0, U](g)) =?= (f >> trace(p) >> g)
     }
 
     /** *tr*(*p* ⨾ (*id* ⊗ *h*)) = *tr*((*id* ⊗ *h*) ⨾ *p*) for pure *h*: *U* → *V*
@@ -64,9 +64,9 @@ abstract class Traced(tracked val S: Strong { val P: Promonad }) extends caps.Pu
       g: C --> D,
       p: P[A * U, B * U],
     )(using P[C * A, D * B] is Observable): Boolean = {
-      val lhs = S.P.unit(S.M.associator[C, A, U].to) >> S.first[C, D, A * U](S.P.unit(g)) >>
-        S.second[A * U, B * U, D](p) >> S.P.unit(S.M.associator[D, B, U].from)
-      trace[C * A, D * B, U](lhs) =?= (S.first[C, D, A](S.P.unit(g)) >> S.second[A, B, D](trace(p)))
+      val lhs = S.P.unit(S.M.associator[C, A, U].to) >> S.right[C, D, A * U](S.P.unit(g)) >>
+        S.left[A * U, B * U, D](p) >> S.P.unit(S.M.associator[D, B, U].from)
+      trace[C * A, D * B, U](lhs) =?= (S.right[C, D, A](S.P.unit(g)) >> S.left[A, B, D](trace(p)))
     }
 
     /** *tr*(*β*) = *id*

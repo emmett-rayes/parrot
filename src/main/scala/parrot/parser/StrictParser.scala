@@ -743,32 +743,32 @@ object StrictParser {
   }
 
   /** Nodes run side by side on pairs: `Zip`. */
-  object Zipping extends Strong(Nodes, Fns.Product) {
+  object Zipping extends Strong.Bistrong(Nodes, Fns.Product) {
 
-    def first[A: Type, B: Type, C: Type](p: Node[A, B]): Node[(A, C), (B, C)] = {
-      p match {
-        case _: Success[?] => Success()
-        case _             => Zip(p, Success())
-      }
-    }
-
-    override def second[A: Type, B: Type, C: Type](p: Node[A, B]): Node[(C, A), (C, B)] = {
+    def left[A: Type, B: Type, C: Type](p: Node[A, B]): Node[(C, A), (C, B)] = {
       p match {
         case _: Success[?] => Success()
         case _             => Zip(Success(), p)
       }
     }
+
+    override def right[A: Type, B: Type, C: Type](p: Node[A, B]): Node[(A, C), (B, C)] = {
+      p match {
+        case _: Success[?] => Success()
+        case _             => Zip(p, Success())
+      }
+    }
   }
 
   /** Nodes run on one side of a tagged union: `Merge` with pure injections. */
-  object Branching extends Strong(Nodes, Fns.Coproduct) {
+  object Branching extends Strong.Bistrong(Nodes, Fns.Coproduct) {
 
-    def first[A: Type, B: Type, C: Type](p: Node[A, B]): Node[Either[A, C], Either[B, C]] = {
-      Merge(sequence(p, Pure(Fn.Inl[B, C]())), Pure(Fn.Inr[B, C]()))
+    def left[A: Type, B: Type, C: Type](p: Node[A, B]): Node[Either[C, A], Either[C, B]] = {
+      Merge(Pure(Fn.Inl[C, B]()), sequence(p, Pure(Fn.Inr[C, B]())))
     }
 
-    override def second[A: Type, B: Type, C: Type](p: Node[A, B]): Node[Either[C, A], Either[C, B]] = {
-      Merge(Pure(Fn.Inl[C, B]()), sequence(p, Pure(Fn.Inr[C, B]())))
+    override def right[A: Type, B: Type, C: Type](p: Node[A, B]): Node[Either[A, C], Either[B, C]] = {
+      Merge(sequence(p, Pure(Fn.Inl[B, C]())), Pure(Fn.Inr[B, C]()))
     }
   }
 

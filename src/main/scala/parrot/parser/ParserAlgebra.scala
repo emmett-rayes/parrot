@@ -37,8 +37,8 @@ abstract class ParserAlgebra(
   tracked val Coproducts: Cocartesian {
     val K: Arrows.K.type; val U: Nothing is Type; val T: Bifunctor { type Self = Either }
   },
-  tracked val Zipping: Strong { val P: Arrows.type; val M: Products.type },
-  tracked val Branching: Strong { val P: Arrows.type; val M: Coproducts.type },
+  tracked val Zipping: Strong.Bistrong { val P: Arrows.type; val M: Products.type },
+  tracked val Branching: Strong.Bistrong { val P: Arrows.type; val M: Coproducts.type },
   tracked val Choice: Classical { val P: Arrows.type; val C: Coproducts.type },
   tracked val Loops: Elgot { val S: Branching.type },
   tracked val Knots: Recursion { val P: Arrows.type },
@@ -125,15 +125,15 @@ abstract class ParserAlgebra(
 
   // ==== Zipping and branching: the strengths ====
 
-  /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* = *first*(*p*) ⨾ *second*(*q*).
+  /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* = *τ*′(*p*) ⨾ *τ*(*q*).
     */
   def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
-    andThen(Zipping.first[A, B, C](p), Zipping.second[C, D, B](q))
+    andThen(Zipping.right[A, B, C](p), Zipping.left[C, D, B](q))
   }
 
   /** Runs *p* on a left semantic input or *q* on a right one, tagging the result: *p* + *q*. */
   def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
-    andThen(Branching.first[A, B, C](p), Branching.second[C, D, B](q))
+    andThen(Branching.right[A, B, C](p), Branching.left[C, D, B](q))
   }
 
   /** Runs *p* on a left semantic input or *q* on a right one, into a common result: [*p*,*q*]. */

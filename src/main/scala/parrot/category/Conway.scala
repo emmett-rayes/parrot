@@ -12,7 +12,7 @@ package category
   * Conway operators are equivalent to traces for products ([[Traced.OfConway]], [[Conway.OfTraced]]) and dual to
   * iteration: an Elgot operator is a Conway operator on the opposite category.
   */
-abstract class Conway(tracked val S: Strong { val P: Promonad; val M: Cartesian }) extends caps.Pure {
+abstract class Conway(tracked val S: Strong.Bistrong { val P: Promonad; val M: Cartesian }) extends caps.Pure {
   import S.M.{`*`, given}
   import S.P.{P, >>}
   import S.P.K.{Obj, -->}
@@ -28,35 +28,35 @@ abstract class Conway(tracked val S: Strong { val P: Promonad; val M: Cartesian 
     /** *p*† = ⟨*id*,*p*†⟩ ⨾ *p*
       */
     def fixedPoint[A: Obj, X: Obj](p: P[A * X, X])(using P[A, X] is Observable): Boolean = {
-      fix(p) =?= (S.P.unit(S.M.diagonal[A]) >> S.second[A, X, A](fix(p)) >> p)
+      fix(p) =?= (S.P.unit(S.M.diagonal[A]) >> S.left[A, X, A](fix(p)) >> p)
     }
 
     /** ((*h* × *id*) ⨾ *p*)† = *h* ⨾ *p*† for pure *h* */
     def parameterNaturality[A0: Obj, A1: Obj, X: Obj](p: P[A1 * X, X], h: A0 --> A1)(
       using P[A0, X] is Observable
     ): Boolean = {
-      fix(S.first[A0, A1, X](S.P.unit(h)) >> p) =?= (S.P.unit(h) >> fix(p))
+      fix(S.right[A0, A1, X](S.P.unit(h)) >> p) =?= (S.P.unit(h) >> fix(p))
     }
 
     /** (*f* ⨾ *g*)† = ((*id* × *g*) ⨾ *f*)† ⨾ *g* for pure *g* */
     def composition[A: Obj, X: Obj, Y: Obj](f: P[A * X, Y], g: Y --> X)(
       using P[A, X] is Observable
     ): Boolean = {
-      fix[A, X](f >> S.P.unit(g)) =?= (fix[A, Y](S.second[Y, X, A](S.P.unit(g)) >> f) >> S.P.unit(g))
+      fix[A, X](f >> S.P.unit(g)) =?= (fix[A, Y](S.left[Y, X, A](S.P.unit(g)) >> f) >> S.P.unit(g))
     }
 
     /** (⟨*π*₁,*g*⟩ ⨾ *f*)† = ⟨*id*,(⟨*π*₁,*f*⟩ ⨾ *g*)†⟩ ⨾ *f* for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*: a
       * fixed point of two arrows that feed each other can be taken through either.
       *
-      * ⟨*π*₁,*g*⟩ keeps the parameter and runs *g*; with effects it is ⟨*π*₁,*id*⟩ ⨾ *second*(*g*). [[composition]] is
+      * ⟨*π*₁,*g*⟩ keeps the parameter and runs *g*; with effects it is ⟨*π*₁,*id*⟩ ⨾ *τ*(*g*). [[composition]] is
       * the special case of a pure *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[A * Y, X], g: P[A * X, Y])(
       using P[A, X] is Observable
     ): Boolean = {
-      val keepG = S.P.unit(S.M.pair(S.M.fst[A, X], S.P.K.identity[A * X])) >> S.second[A * X, Y, A](g)
-      val keepF = S.P.unit(S.M.pair(S.M.fst[A, Y], S.P.K.identity[A * Y])) >> S.second[A * Y, X, A](f)
-      fix[A, X](keepG >> f) =?= (S.P.unit(S.M.diagonal[A]) >> S.second[A, Y, A](fix[A, Y](keepF >> g)) >> f)
+      val keepG = S.P.unit(S.M.pair(S.M.fst[A, X], S.P.K.identity[A * X])) >> S.left[A * X, Y, A](g)
+      val keepF = S.P.unit(S.M.pair(S.M.fst[A, Y], S.P.K.identity[A * Y])) >> S.left[A * Y, X, A](f)
+      fix[A, X](keepG >> f) =?= (S.P.unit(S.M.diagonal[A]) >> S.left[A, Y, A](fix[A, Y](keepF >> g)) >> f)
     }
 
     /** (*p*†)† = (⟨*id*,*π*₂⟩ ⨾ *p*)† */
@@ -107,7 +107,7 @@ object Conway {
   }
 
   /** The fixed point of a trace on products: *p*† = *tr*(*p* ⨾ Δ). */
-  open class OfTraced(tracked val T: Traced { val S: Strong { val P: Promonad; val M: Cartesian } })
+  open class OfTraced(tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad; val M: Cartesian } })
       extends Conway(T.S) {
     import S.M.{`*`, given}
     import S.P.{P, >>}

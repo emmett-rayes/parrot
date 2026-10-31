@@ -2378,7 +2378,7 @@ object OptionMap extends MyFunctor(Total, Total):
   def map[A: Type, B: Type](f: A -> B): Option[A] -> Option[B] = _.map(f)
 ```
 
-The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters. A refinement passes its parameter on under the same name: `Promonad(tracked override val K: Category)` extends `Endoprofunctor(K, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Strong` takes a profunctor `P` and a monoidal structure `M { val K: P.K.type }` on the same category, so a strength over the wrong category is a type error.
+The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters. A refinement passes its parameter on under the same name: `Promonad(tracked override val K: Category)` extends `Endoprofunctor(K, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Strong.Bistrong` takes a profunctor `P { val K2: K1.type }` from a category to itself and a symmetric monoidal structure `M { val K: P.K1.type }` on that category, so a strength over the wrong category is a type error.
 
 ### 11.3 A carrier, or a name
 
@@ -3124,35 +3124,37 @@ Three kinds of promonad appear in this document.
 
 Pure functions can be run side by side on pairs: given f : A → B and g : C → D, the tensor f × g : (A, C) → (B, D) applies f on the left and g on the right (chapter 14). Effectful arrows need the same: a parser for a key and a parser for a value give a parser for a pair. But a promonad alone cannot do it. Its arrows compose; nothing lets an arrow A → B act on a pair whose other component it does not know.
 
-The missing ingredient is the ability to carry a value along unchanged while an arrow runs.
+The missing ingredient is the ability to carry a value along unchanged while an arrow runs. The value need not be an object of 𝒦 itself: it is enough that a monoidal category acts on 𝒦, so that a context C and an object A combine into an object C ⊘ A. A **left module** over a monoidal category (ℳ, ⊗, I), also called a left **actegory**, is a category 𝒦 with a bifunctor ⊘ : ℳ × 𝒦 → 𝒦, the **action**, and natural isomorphisms λ : I ⊘ A ≅ A and α : (X ⊗ Y) ⊘ A ≅ X ⊘ (Y ⊘ A) that satisfy the triangle and the pentagon of section 14.5. Every monoidal category is a left module over itself, with ⊘ = ⊗. In the library, a left module is a `Module`, and the self-action is `Module.OfMonoidal`.
 
-**Definition 17.2 (strength).** A **strength** on a profunctor P over a monoidal structure ⊗ on 𝒦 is an operation
+**Definition 17.2 (strength).** A **strength** on a profunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒮, over left modules ⊘₁ on 𝒦₁ and ⊘₂ on 𝒦₂ of the same monoidal category ℳ, is an operation
 
-first : P(A, B) → P(A ⊗ C, B ⊗ C),
+τ : P(A, B) → P(C ⊘₁ A, C ⊘₂ B),
 
-natural in A and B, dinatural in C, and compatible with the unitors and the associator of ⊗.
+natural in A and B, dinatural in C, and compatible with the unitors and the associators of the actions.
 
-The laws say that `first` commutes with pre- and post-composition (naturality), that it does not depend on how C is presented (dinaturality), that carrying the unit along does nothing (unitality), and that carrying C ⊗ D along is carrying C, then D (associativity). A profunctor with a strength is also called a **Tambara module** **[Standard: Pastro and Street, from memory]**. With a symmetric tensor, the other side comes for free, `second(p) = β ∘ first(p) ∘ β`.
+The laws say that τ commutes with pre- and post-composition (naturality), that it does not depend on how C is presented (dinaturality), that carrying the unit along does nothing (unitality), and that carrying C ⊗ D along is carrying D, then C (associativity). A profunctor with a strength is also called a **Tambara module** **[Standard: Pastro and Street, from memory]**. Because the context sits on the left, τ is a **left strength**, as is the strength X × M(A) → M(X × A) of a monad **[Standard: Moggi 1991, from memory]**.
 
-The library's `Strong(P, M)` takes the profunctor and the monoidal structure as parameters, so the same class covers two very different strengths.
+When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′(p) = P(β, β)(τ(p)), and the two strengths commute: τ′(τ(p)) = P(α, α⁻¹)(τ(τ′(p))). A profunctor with a left and a right strength that commute is **bistrong**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
 
-- **Over products**, `first` runs an arrow on the left component of a pair. For a Kleisli promonad on 𝒮, every monad has one: `first(p)((a, c))` runs `p(a)` and pairs its result with `c` (`Kleisli.ProductStrength`).
-- **Over coproducts**, `first` runs an arrow on the left case of an `Either` and passes the right case through untouched (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**.
+The library's `Strong(P, L1, L2)` takes the profunctor and the two modules, and its operation `left` is τ. `Strong.Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(β, β) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
+
+- **Over products**, τ′ runs an arrow on the left component of a pair and τ on the right one. For a Kleisli promonad on 𝒮, every monad has one: `left(p)((c, a))` runs `p(a)` and pairs `c` with its result (`Kleisli.ProductStrength`).
+- **Over coproducts**, τ′ runs an arrow on the left case of an `Either` and passes the right case through untouched, and τ the other way round (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**. Their `left` is τ′: it names the case of the sum that an arrow runs on, not the side of the action.
 
 The laws of both, for every Kleisli instance in the library, are **[Tested]**.
 
 ### 17.4 Freyd categories
 
-A promonad with a strength is almost a structure for running arrows side by side: define `p ** q` as `first(p)` followed by `second(q)`. One more condition is needed, that the pure arrows and the composition of the promonad agree with the strength.
+A bistrong promonad is almost a structure for running arrows side by side. Name the two strengths after the component an arrow runs on, `first` for τ′ and `second` for τ, and define `p ** q` as `first(p)` followed by `second(q)`. One more condition is needed, that the pure arrows and the composition of the promonad agree with the strength.
 
-**Definition 17.3 (Freyd category).** A **Freyd category** is a promonad P on a monoidal category 𝒦 with a strength, such that
+**Definition 17.3 (Freyd category).** A **Freyd category** is a promonad P on a symmetric monoidal category 𝒦, bistrong over its tensor, such that
 
 - first(unit(f)) = unit(f ⊗ id): the strength of a pure arrow is the pure tensor, and
 - first(q ∘ p) = first(q) ∘ first(p): the strength respects composition.
 
 Freyd categories were introduced to model call-by-value languages with effects **[Standard: Power and Robinson; Levy, Power and Thielecke, from memory]**, and they are the semantics of Haskell's *arrows*, which programmers know as a design pattern **[Standard: Hughes 2000; Jacobs, Heunen and Hasuo 2009, from memory]**. A strong promonad is in fact a monoid in the category of strong profunctors, so the definition is a single monoid once more **[Standard: Rivas and Jaskelioff, from memory]**.
 
-In the library, a Freyd category is not a new structure but the combination of two: the bundle `Freyd(S)` takes a strength `S` whose profunctor is a promonad, states the two laws and offers the parallel composition `**`.
+In the library, a Freyd category is not a new structure but the combination of two: the bundle `Freyd(S)` takes a bistrong `S` whose profunctor is a promonad, names its strengths `first` and `second`, states the two laws and offers the parallel composition `**`.
 
 ```scala library
 val OptionFreyd = Freyd(Kleisli.OptionProduct)
@@ -3803,7 +3805,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Polymorphic types as ends, free theorems | no counterpart in the same form | yes | yes | polymorphic functions | [Assumed: A2] | 9 |
 | Categories of type constructors | yes | yes | yes, one class per kind | `Category1` | [Proved] | 10 |
 | Promonads | yes | yes | yes | `Promonad`, `Kleisli` | [Tested] | 17 |
-| Strength; Freyd categories | yes | yes | yes | `Strong`, `Freyd` | [Tested]; interchange [Tested: counterexample] | 17 |
+| Strength; Freyd categories | yes | yes | yes | `Strong`, `Strong.Bistrong`, `Freyd` | [Tested]; interchange [Tested: counterexample] | 17 |
 | Restriction categories | yes | yes | yes | `Restriction`; `Partial.Domains`, `Kleisli.OptionDomains` | [Tested] | 18 |
 | Classical restriction, override | yes | for observable failure only | yes | `Classical` | [Tested]; 𝒫 not classical [Proved] | 18 |
 | Restriction products | yes | in 𝒫 | not stated | `Partial.Product` underneath | [Standard] | 18 |
@@ -4011,6 +4013,8 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Bifunctor.** A functor of two arguments, such as `Tuple2` and `Either`. Definition 12.1.
 
+**Bistrong.** Having a left strength τ and a right strength τ′ that commute; over a symmetric monoidal category acting on itself, τ′ comes from τ by braiding. In the library, `Strong.Bistrong`. Section 17.3.
+
 **Bundle.** A class that combines several structures by taking them as `tracked` parameters, rather than by inheritance, such as `Freyd` and `ParserAlgebra`. Section 11.3.
 
 **Cartesian closed.** Having a terminal object, products and exponentials. Definitions 14.1.
@@ -4095,6 +4099,8 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Law status table.** The table `docs/law-status.md`, regenerated by every test run, that records each law and instance as tested or refuted. Section 22.4.
 
+**Left module (left actegory).** A category 𝒦 with an action ⊘ : ℳ × 𝒦 → 𝒦 of a monoidal category ℳ, unital and associative up to coherent isomorphism; every monoidal category acts on itself. In the library, `Module`. Section 17.3.
+
 **Left recursion.** A rule that calls itself before consuming input; guarded recursion fails the call, and `StrictParser` extends it by seed growing. Section 20.7.
 
 **Locally small.** Having a set of arrows between any two objects; the same as Set-enriched. Section 1.5.
@@ -4151,7 +4157,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Silent test.** A restriction or complement that reports nothing about the arrow it tests. Sections 18.7, 20.6.
 
-**Strength.** An operation first : P(A, B) → P(A ⊗ C, B ⊗ C) that carries a value along while an arrow runs. Definition 17.2.
+**Strength.** An operation τ : P(A, B) → P(C ⊘ A, C ⊘ B) that carries a context along while an arrow runs, for left actions ⊘ of a monoidal category; in the library, `Strong`. Definition 17.2.
 
 **Strictly positive.** Of a pattern functor: the recursive parameter never appears to the left of a function arrow. Section 16.2.
 
@@ -4191,7 +4197,7 @@ An earlier version of the library had more structures than the current one. Some
 | --- | --- | --- |
 | Total fixed points and iteration on Scala functions | Each diverged on some input while claiming to be an arrow of the total category 𝒮. Proposition 14.3 shows that 𝒮 cannot have a fixed point for every arrow without collapsing. | Unguarded loops and recursion on 𝒫 (`Partial.Loops`, `Partial.Knots`); guarded ones in 𝒮 (chapters 16 and 19). |
 | Lazy pairs as a cartesian structure | Isomorphic to ordinary pairs in 𝒮, and not a product in 𝒫, where a program can tell a diverging pair from its components. They existed only to tie the knots above. | None needed. A lazy semantics would be a separate project. |
-| Strength defined as `p *** id` on a monoidal category | Every one of its laws followed from bifunctoriality, so it said nothing. Strength is structure on a profunctor over a monoidal base (Definition 17.2). | `Strong(P, M)`. |
+| Strength defined as `p *** id` on a monoidal category | Every one of its laws followed from bifunctoriality, so it said nothing. Strength is structure on a profunctor over left modules (Definition 17.2). | `Strong(P, L1, L2)` and `Strong.Bistrong(P, M)`. |
 | Restriction on Scala functions, `a => { p(a); a }` | In 𝒮 every arrow is total, so this is the identity. | `Partial.Domains`, on 𝒫, where it means something (chapter 18). |
 
 ### Removed because nothing used them
@@ -4241,7 +4247,7 @@ Each concept is introduced where a problem needs it. This index lists, for each,
 | Semilattices | 15 | a monoid that is also an order | sets under union; positions under `max` |
 | Folds, iteration, recursion, guardedness | 16 | recursion beyond structural recursion; why recursion cannot be total in general | `gcd` by iteration; a balanced-parentheses recognizer |
 | Promonads | 17 | Kleisli categories and syntax trees both contain the pure functions | `Kleisli.OptionKleisli`; `StrictParser`'s nodes |
-| Strength, Freyd categories, premonoidal tensors | 17 | running effectful arrows side by side | a logger with a non-commutative log |
+| Left modules, strength, bistrong profunctors, Freyd categories, premonoidal tensors | 17 | running effectful arrows side by side | a logger with a non-commutative log |
 | Commuting and copyable effects | 17 | when interchange holds and when running twice is running once | writers of commutative and idempotent monoids |
 | Restriction categories; restriction products | 18 | where an arrow is defined, asked inside the category | `Option` Kleisli; 𝒫 |
 | Classical restriction, override, attempt | 18 | ordered choice as a theorem; decidable failure versus divergence | `half \|> odd`; 𝒫 is not classical |

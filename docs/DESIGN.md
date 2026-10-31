@@ -57,7 +57,7 @@ where a program can tell a diverging pair from the pair of its diverging compone
 
 **Decisions and reasons.**
 
-- **Structures take what they are built on as `tracked` term parameters**: `Strong(P, M)`, `Promonad(K)`,
+- **Structures take what they are built on as `tracked` term parameters**: `Strong(P, L1, L2)`, `Promonad(K)`,
   `Monad(F)`. A term parameter is a stable path, so its type members can be named and imported; `tracked` keeps its
   singleton type in the instance's type, so `Kleisli.OptionKleisli.K` is known to be `Total`. The earlier encoding
   passed bases as type parameters, which cannot be imported from, and recovered the base values with `ValueOf` and
@@ -109,12 +109,26 @@ Each structure sits at the lowest level where its laws can be stated.
 
 | Row | Over products | Over coproducts | Level |
 | --- | --- | --- | --- |
-| strength | `Strong` (⊗ = ×) | `Strong` (⊗ = +), also called choice | a profunctor over a symmetric monoidal **K** (a Tambara module) |
-| trace | `Traced` (×) | `Traced` (+) | a strong promonad: superposing needs composition and strength |
-| fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a strong promonad |
+| strength | `Bistrong` (⊗ = ×) | `Bistrong` (⊗ = +), also called choice | `Strong`: a profunctor over left modules (a Tambara module); `Bistrong`: over a symmetric **K** acting on itself |
+| trace | `Traced` (×) | `Traced` (+) | a bistrong promonad: superposing needs composition and strength |
+| fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a bistrong promonad |
 
 - `Strong` and `Traced` are defined once, parameterized by the monoidal structure. The earlier `Strong extends
   Monoidal`, with `first = p *** id`, was vacuous: every one of its laws followed from bifunctoriality.
+- **Strength over left modules.** `Strong(P, L1, L2)` is a profunctor *P*: **K₁**ᵒᵖ × **K₂** → 𝒮 with left actions
+  `Module` of one monoidal **M** on **K₁** and **K₂**, and its primitive is the left strength *τ*: *P*(*A*,*B*) →
+  *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*), `left`, as in the literature (Pastro and Street's Tambara modules; Moggi's strength is a
+  left strength). §8 listed actegories as not attempted; they came in because the general definition costs nothing:
+  every instance in the library is the self-action, which is a subclass. `Bistrong(P, M)` is that case for a symmetric
+  **M** acting on itself, the only case with a right action as well: it adds the right strength *τ*′, `right`, and the
+  law that the two commute (`compatibility`). *τ*′ defaults to *P*(*β*,*β*) ∘ *τ* and may be overridden, which
+  `StrictParser` does to build `Zip(p, Success())` directly. `Freyd` names the strengths after the component an arrow
+  runs on, `first` = *τ*′ and `second` = *τ*, so the laws of Freyd categories and the grid read as usual.
+- Rejected: naming the primitive `first` (with a left action it runs an arrow on the *second* component, and every
+  client read backwards); `Bistrong` over two arbitrary left modules (a left module has no right action, so *τ*′ would
+  be *τ*: it needs right modules, or bimodules, which have no client); `Bistrong` refining `P { val K1: M.K.type; val
+  K2: M.K.type }` (for a promonad, nothing makes its own **K** equal to **M**.**K**; the constraint refines **M**
+  instead).
 - A Freyd category is a promonad with a strength and two compatibility laws, not a new class.
 - The trace laws restrict sliding and superposing to pure arrows, which are central (traced *premonoidal* categories).
 - The product row has no useful total instance in a strict language: computing ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first.
@@ -234,8 +248,8 @@ nothing and named its operations `zero` and `add`); and the product of categorie
 (its old version recovered objects from type parameters with casts).
 
 Not attempted, each until it has a client: codata and productivity, restriction products as a class, useful fixed
-points over products in a strict language, packrat memoization, error recovery, an enriched module, actegories and mixed
-optics, general iterated enrichment, the delay monad.
+points over products in a strict language, packrat memoization, error recovery, an enriched module, right modules and
+bimodules, module morphisms, mixed optics, general iterated enrichment, the delay monad.
 
 ## 9. Tooling
 

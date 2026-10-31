@@ -191,9 +191,10 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    refinement chains need them. Type classes without parameters that are not categorical structures (`Type`, `Eq`,
    `Observable`, `Preorder`, `Measure`) are traits.
 2. **Bases are `tracked` term parameters.** A structure on something else takes it as a parameter:
-   `abstract class Strong(tracked val P: Endoprofunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })`.
-   A parameter is a stable path, so `P.K.Obj`, `M.Tensor`, `import M.given` work, and `tracked` keeps its singleton type
-   in the instance's type: no casts, no `ValueOf`.
+   `abstract class Bistrong(tracked val P: Profunctor { val V: Total.type; val K2: K1.type }, tracked val M: Symmetric { val K: P.K1.type })`.
+   A parameter is a stable path, so `P.K1.Obj`, `M.Tensor`, `import M.given` work, and `tracked` keeps its singleton type
+   in the instance's type: no casts, no `ValueOf`. A constraint between parameters refines the *later* one towards the
+   earlier (`M { val K: P.K1.type }`), never the other way (§11).
 3. **`Self` iff the structure has its own carrier** (`Category`, `Bifunctor`, `Functor`, `Profunctor`, `Promonad`,
    `Monoid`, `Comonoid`, `Eq`, `Observable`). Structures *on* something else (`Monoidal`, `Module`, `Strong`,
    `Restriction`, `Traced`, `Conway`, `Elgot`, `Recursion`, and `Monad`, which is structure on an `Endofunctor`) have no
@@ -248,8 +249,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 17. **Monads have their functor**: `abstract class Monad(tracked val F: Endofunctor)` with primitives `unit` and
     `flatten`; `map`, `objects` are exported from `F`, `bind` is derived. Refine monads through the functor, `Monad.On[Total.type]` =
     `Monad { val F: Endofunctor { val K: Total.type } }`, not `Monad { val K: Total.type }`: only the former keeps the
-    chain of singleton types (`M.K` = `M.F.K` = `Total`) that lets `Strong(P, Total.Product)` type-check. Transformers
-    define their endofunctor in their companion (`Writer.FunctorOf`, `OptionT.FunctorOf`, `StateT.FunctorOf`).
+    chain of singleton types (`M.K` = `M.F.K` = `Total`) that lets `Strong.Bistrong(P, Total.Product)` type-check.
+    Transformers define their endofunctor in their companion (`Writer.FunctorOf`, `OptionT.FunctorOf`,
+    `StateT.FunctorOf`).
 
 ### 4.2 Two categories of programs
 
@@ -271,7 +273,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal` (+ `Module`), `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure and actions on a category | `***`, `act`/`~~`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry`, `internalHom` | `Total.Product`/`Coproduct`/`Exponential`, `Module.OfMonoidal`, `Partial.Product`/`Coproduct`, `Cartesian.Op`, `Cocartesian.Op` |
-| `Strong`, `Freyd` | strength on a profunctor; Freyd laws and `**` | `first`, `second` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.OfHom`, `Strong.OpOf…` |
+| `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd laws and `**` | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.OfHom`, `Strong.OpOf…` |
 | `Restriction`, `Classical` | restriction category; zero, complement, override, attempt | `restrict`, `zero`, `complement`, `orElse`/`|>`, `attempt` | `Partial.Domains`, `Kleisli.RestrictionOf`/`ClassicalOf` |
 | `Traced`, `Conway`, `Elgot`, `Recursion` | the trace/fixed-point grid; recursion at arrow types | `trace`, `fix`, `iterate` | `Partial.Loops`/`Feedback`/`Knots`, bridges `OfElgot`/`OfConway`/`OfTraced`, guarded state |
 | `Monoid`, `Semilattice`, `Comonoid` | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
@@ -523,6 +525,10 @@ Things that cost time once; check here before fighting the compiler.
 - **Singleton chains.** Path-dependent code type-checks when every link is declared with a singleton type (`P.K` =
   `M.K` = `M.F.K` = `Total`). A refinement that intersects instead (`Monad { val K: Total.type }` on a member already
   typed `F.K.type`) breaks the chain; refine the parameter the member comes from (`Monad.On`).
+- **Chains run from the later parameter to the earlier.** `Bistrong(P { val K2: K1.type }, M { val K: P.K1.type })`
+  works; `Bistrong(M, P { val K1: M.K.type; val K2: M.K.type })` does not: for a promonad, `P.K1` then points both to
+  `M.K` and to the promonad's own `P.K`, and nothing makes those two equal, so `Freyd`, `Conway` and `Elgot` lose
+  `Obj` and the `Op` instances become cyclic. Intersections (`M { val K: P.K1.type & P.K2.type }`) are not needed.
 - **Renamed type imports** (`import D.--> as ==>`) are reported unused even when used, in every variant tried
   (renaming `-->`, `Hom` or `Self`, with or without other imports), which is why `-Wunused:imports` is commented out in
   `build.sbt` and `pants.toml`.

@@ -12,7 +12,7 @@ package category
   * the laws for the steps that always make progress. Elgot operators are equivalent to traces for coproducts
   * ([[Traced.OfElgot]], [[Elgot.OfTraced]]).
   */
-abstract class Elgot(tracked val S: Strong { val P: Promonad; val M: Cocartesian }) extends caps.Pure {
+abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Cocartesian }) extends caps.Pure {
   import S.M.{+, given}
   import S.P.{P, >>}
   import S.P.K.{Obj, -->}
@@ -28,35 +28,35 @@ abstract class Elgot(tracked val S: Strong { val P: Promonad; val M: Cocartesian
     /** *p*† = *p* ⨾ [*id*,*p*†]
       */
     def fixedPoint[A: Obj, X: Obj](p: P[X, A + X])(using P[X, A] is Observable): Boolean = {
-      iterate(p) =?= (p >> S.second[X, A, A](iterate(p)) >> S.P.unit(S.M.codiagonal[A]))
+      iterate(p) =?= (p >> S.left[X, A, A](iterate(p)) >> S.P.unit(S.M.codiagonal[A]))
     }
 
     /** (*p* ⨾ (*h* + *id*))† = *p*† ⨾ *h* for pure *h* */
     def parameterNaturality[A: Obj, B: Obj, X: Obj](p: P[X, A + X], h: A --> B)(
       using P[X, B] is Observable
     ): Boolean = {
-      iterate(p >> S.first[A, B, X](S.P.unit(h))) =?= (iterate(p) >> S.P.unit(h))
+      iterate(p >> S.right[A, B, X](S.P.unit(h))) =?= (iterate(p) >> S.P.unit(h))
     }
 
     /** (*g* ⨾ *p*)† = *g* ⨾ (*p* ⨾ (*id* + *g*))† for pure *g* */
     def composition[A: Obj, X: Obj, Y: Obj](p: P[Y, A + X], g: X --> Y)(
       using P[X, A] is Observable
     ): Boolean = {
-      iterate[A, X](S.P.unit(g) >> p) =?= (S.P.unit(g) >> iterate[A, Y](p >> S.second[X, Y, A](S.P.unit(g))))
+      iterate[A, X](S.P.unit(g) >> p) =?= (S.P.unit(g) >> iterate[A, Y](p >> S.left[X, Y, A](S.P.unit(g))))
     }
 
     /** (*f* ⨾ [*ι*₁,*g*])† = *f* ⨾ [*id*,(*g* ⨾ [*ι*₁,*f*])†] for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*: a loop
       * that alternates two steps can start with either.
       *
-      * [*ι*₁,*g*] runs *g* on the right and passes *A* through; with effects it is *second*(*g*) ⨾ [*ι*₁,*id*].
+      * [*ι*₁,*g*] runs *g* on the right and passes *A* through; with effects it is *τ*(*g*) ⨾ [*ι*₁,*id*].
       * [[composition]] is the special case of a pure *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[X, A + Y], g: P[Y, A + X])(
       using P[X, A] is Observable
     ): Boolean = {
-      val fg = f >> S.second[Y, A + X, A](g) >> S.P.unit(S.M.copair(S.M.inl[A, X], S.P.K.identity[A + X]))
-      val gf = g >> S.second[X, A + Y, A](f) >> S.P.unit(S.M.copair(S.M.inl[A, Y], S.P.K.identity[A + Y]))
-      iterate[A, X](fg) =?= (f >> S.second[Y, A, A](iterate[A, Y](gf)) >> S.P.unit(S.M.codiagonal[A]))
+      val fg = f >> S.left[Y, A + X, A](g) >> S.P.unit(S.M.copair(S.M.inl[A, X], S.P.K.identity[A + X]))
+      val gf = g >> S.left[X, A + Y, A](f) >> S.P.unit(S.M.copair(S.M.inl[A, Y], S.P.K.identity[A + Y]))
+      iterate[A, X](fg) =?= (f >> S.left[Y, A, A](iterate[A, Y](gf)) >> S.P.unit(S.M.codiagonal[A]))
     }
 
     /** (*p*†)† = (*p* ⨾ [*id*,*ι*₂])† */
@@ -105,7 +105,7 @@ object Elgot {
   }
 
   /** The iteration of a trace on coproducts: *p*† = *tr*(∇ ⨾ *p*). */
-  open class OfTraced(tracked val T: Traced { val S: Strong { val P: Promonad; val M: Cocartesian } })
+  open class OfTraced(tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad; val M: Cocartesian } })
       extends Elgot(T.S) {
     import S.M.{+, given}
     import S.P.{P, >>}

@@ -3,144 +3,190 @@ package category
 
 import scala.annotation.targetName
 
-/** A strength on a profunctor *P* valued in 𝒮, over a symmetric monoidal structure ⊗ on its base **K**: arrows can be
-  * run on one side of a tensor while the other side is passed along.
+/** A strong profunctor *P*: **K₁**ᵒᵖ × **K₂** → 𝒮 over left modules (also called a Tambara module).
   *
-  * Represents a Tambara module, where
-  *   - *first*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*), natural in *A* and *B* and dinatural in *C*
-  *   - *second*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*) = *P*(*β*,*β*) ∘ *first*
-  *
-  * With ⊗ the product this is the *first* of arrows; with ⊗ the coproduct it is their *left*, often called *choice*. A
-  * strong promonad whose *unit* and *multiply* preserve the strength is a Freyd category, see [[Freyd]].
+  * Represents a strong profunctor over two **M**-modules, where
+  *   - ⊘₁: **M** × **K₁** → **K₁** is the left action of **M** on **K₁**
+  *   - ⊘₂: **M** × **K₂** → **K₂** is the left action of **M** on **K₂**
+  *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*) is the left strength
   */
-abstract class Strong(tracked val P: Endoprofunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })
-    extends caps.Pure {
-  import M.{I, `*`, given}
+abstract class Strong(
+  tracked val P: Profunctor { val V: Total.type },
+  tracked val L1: Module { val K: P.K1.type },
+  tracked val L2: Module { val M: L1.M.type; val K: P.K2.type },
+) extends caps.Pure {
   import P.P
-  import P.K.{Obj, -->}
+  import P.K1.{Obj as Obj1, -->}
+  import P.K2.{Obj as Obj2, --> as ->>}
+  import L1.M.K.{Obj as ObjM, --> as ==>}
+  import L1.`~` as `~1`
+  import L2.`~` as `~2`
 
-  /** *first*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*).
+  /** The monoidal category acting on **K₁** and **K₂**. */
+  val M: L1.M.type = L1.M
+  import M.`*`
+
+  /** The left strength *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*).
     */
-  def first[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[A * C, B * C]
+  def left[A: Obj1, B: Obj2, C: ObjM](p: P[A, B]): P[C `~1` A, C `~2` B]
 
-  /** *second*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*), by default *P*(*β*,*β*)(*first*(*p*)).
-    */
-  def second[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[C * A, C * B] = {
-    P.dimap(M.braid[C, A], M.braid[B, C])(first[A, B, C](p))
-  }
+  extension [A: Obj1, B: Obj2](p: P[A, B]) {
 
-  extension [A: Obj, B: Obj](p: P[A, B]) {
-
-    /** Postfix form of [[first]]. */
-    @targetName("firstExt")
-    final def first[C: Obj]: P[A * C, B * C] = {
-      Strong.this.first[A, B, C](p)
-    }
-
-    /** Postfix form of [[second]]. */
-    @targetName("secondExt")
-    final def second[C: Obj]: P[C * A, C * B] = {
-      Strong.this.second[A, B, C](p)
+    /** Postfix form of [[left]]. */
+    @targetName("leftExt")
+    final def left[C: ObjM]: P[C `~1` A, C `~2` B] = {
+      Strong.this.left[A, B, C](p)
     }
   }
 
-  /** Laws that any `Strong` profunctor must satisfy. */
+  /** Laws that any `Strong` profunctor must satisfy.
+    *
+    * The left strength is natural in *A* and *B*, dinatural in *C*, and compatible with the unitors and associators of
+    * the actions.
+    */
   object StrongLaws {
 
-    /** *first*(*P*(*f*,*g*)(*p*)) = *P*(*f* ⊗ *id*,*g* ⊗ *id*)(*first*(*p*))
+    /** *τ*(*P*(*f*,*g*)(*p*)) = *P*(*id* ⊘₁ *f*,*id* ⊘₂ *g*)(*τ*(*p*))
       */
-    def naturality[A1: Obj, B1: Obj, A2: Obj, B2: Obj, C: Obj](
+    def naturality[A1: Obj1, B1: Obj2, A2: Obj1, B2: Obj2, C: ObjM](
       p: P[A1, B1],
       f: A2 --> A1,
-      g: B1 --> B2,
-    )(using P[A2 * C, B2 * C] is Observable): Boolean = {
-      first[A2, B2, C](P.dimap(f, g)(p)) =?=
-        P.dimap(M.tensor(f, P.K.identity[C]), M.tensor(g, P.K.identity[C]))(first[A1, B1, C](p))
+      g: B1 ->> B2,
+    )(using P[C `~1` A2, C `~2` B2] is Observable): Boolean = {
+      left[A2, B2, C](P.dimap(f, g)(p)) =?=
+        P.dimap(L1.act(M.K.identity[C], f), L2.act(M.K.identity[C], g))(left[A1, B1, C](p))
     }
 
-    /** *P*(*id* ⊗ *h*,*id*)(*first*(*p*)) = *P*(*id*,*id* ⊗ *h*)(*first*(*p*)), dinaturality in *C*
+    /** *P*(*h* ⊘₁ *id*,*id*)(*τ*(*p*)) = *P*(*id*,*h* ⊘₂ *id*)(*τ*(*p*)), dinaturality in *C*
       */
-    def dinaturality[A: Obj, B: Obj, C1: Obj, C2: Obj](p: P[A, B], h: C1 --> C2)(
-      using P[A * C1, B * C2] is Observable
+    def dinaturality[A: Obj1, B: Obj2, C1: ObjM, C2: ObjM](p: P[A, B], h: C1 ==> C2)(
+      using P[C1 `~1` A, C2 `~2` B] is Observable
     ): Boolean = {
-      P.dimap(M.tensor(P.K.identity[A], h), P.K.identity[B * C2])(first[A, B, C2](p)) =?=
-        P.dimap(P.K.identity[A * C1], M.tensor(P.K.identity[B], h))(first[A, B, C1](p))
+      P.dimap(L1.act(h, P.K1.identity[A]), P.K2.identity[C2 `~2` B])(left[A, B, C2](p)) =?=
+        P.dimap(P.K1.identity[C1 `~1` A], L2.act(h, P.K2.identity[B]))(left[A, B, C1](p))
     }
 
-    /** *P*(*ρ*⁻¹,*ρ*)(*first*(*p*)) = *p*
+    /** *P*(*λ*₁⁻¹,*λ*₂)(*τ*(*p*)) = *p*
       */
-    def unitality[A: Obj, B: Obj](p: P[A, B])(using P[A, B] is Observable): Boolean = {
-      P.dimap(M.rightUnitor[A].from, M.rightUnitor[B].to)(first[A, B, I](p)) =?= p
+    def unitality[A: Obj1, B: Obj2](p: P[A, B])(using P[A, B] is Observable): Boolean = {
+      P.dimap(L1.leftUnitor[A].from, L2.leftUnitor[B].to)(left[A, B, M.I](p)) =?= p
     }
 
-    /** *P*(*α*⁻¹,*α*)(*first*(*first*(*p*))) = *first*(*p*)
+    /** *P*(*α*₁,*α*₂⁻¹)(*τ*(*τ*(*p*))) = *τ*(*p*)
       */
-    def associativity[A: Obj, B: Obj, C: Obj, D: Obj](p: P[A, B])(
-      using P[A * (C * D), B * (C * D)] is Observable
+    def associativity[A: Obj1, B: Obj2, C: ObjM, D: ObjM](p: P[A, B])(
+      using P[(C * D) `~1` A, (C * D) `~2` B] is Observable
     ): Boolean = {
-      P.dimap(M.associator[A, C, D].from, M.associator[B, C, D].to)(first[A * C, B * C, D](first[A, B, C](p))) =?=
-        first[A, B, C * D](p)
+      P.dimap(L1.associator[C, D, A].to, L2.associator[C, D, B].from)(
+        left[D `~1` A, D `~2` B, C](left[A, B, D](p))
+      ) =?= left[A, B, C * D](p)
     }
 
-    /** *second*(*p*) = *P*(*β*,*β*)(*first*(*p*))
-      */
-    def secondByBraiding[A: Obj, B: Obj, C: Obj](p: P[A, B])(
-      using P[C * A, C * B] is Observable
-    ): Boolean = {
-      second[A, B, C](p) =?= P.dimap(M.braid[C, A], M.braid[B, C])(first[A, B, C](p))
-    }
-
-    /** If *p* = *p*′, then *first*(*p*) = *first*(*p*′).
+    /** If *p* = *p*′, then *τ*(*p*) = *τ*(*p*′).
       *
       * @note The premise is not checked: *p*′ must be equal to *p* by construction.
       */
-    def firstCongruence[A: Obj, B: Obj, C: Obj](p: P[A, B], p2: P[A, B])(
-      using P[A * C, B * C] is Observable
+    def leftCongruence[A: Obj1, B: Obj2, C: ObjM](p: P[A, B], p2: P[A, B])(
+      using P[C `~1` A, C `~2` B] is Observable
     ): Boolean = {
-      first[A, B, C](p) =?= first[A, B, C](p2)
+      left[A, B, C](p) =?= left[A, B, C](p2)
     }
   }
 }
 
 object Strong {
 
-  /** The strength of a promonad over coproducts, read in the opposite promonad: a strength over products of **K**ᵒᵖ.
-    * *first* is unchanged: *P*(*B*,*A*) → *P*(*B* + *C*,*A* + *C*) is *P*ᵒᵖ(*A*,*B*) → *P*ᵒᵖ(*A* × *C*,*B* × *C*).
+  /** A bistrong profunctor *P*: **K**ᵒᵖ × **K** → 𝒮 over a symmetric monoidal category **M** acting on itself.
+    *
+    * Represents a bistrong profunctor over the self-action of **M**, where
+    *   - ⊗: **K** × **K** → **K** is the tensor of **M**, which acts on **K** from both sides
+    *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*) is the left strength
+    *   - *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*) is the right strength derived from the left strength
+    *
+    * Here, the action is ⊗ itself because a right strength needs a right action, which a left module does not have.
     */
-  final class OpOfCoproduct(tracked val S: Strong { val P: Promonad; val M: Cocartesian })
-      extends Strong(Promonad.Op(S.P), Cocartesian.Op(S.M)) {
+  abstract class Bistrong(
+    tracked override val P: Profunctor { val V: Total.type; val K2: K1.type },
+    tracked override val M: Symmetric { val K: P.K1.type },
+  ) extends Strong(P, Module.OfMonoidal(M), Module.OfMonoidal(M)) {
+    import M.{`*`, given}
+    import P.P
+    import M.K.Obj
+
+    /** The right strength *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*).
+      *
+      * The right strength is derived from the left strength as *P*(*β*,*β*)(*τ*(*p*)).
+      */
+    def right[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[A * C, B * C] = {
+      P.dimap(M.braid[A, C], M.braid[C, B])(left[A, B, C](p))
+    }
+
+    extension [A: Obj, B: Obj](p: P[A, B]) {
+
+      /** Postfix form of [[right]]. */
+      @targetName("rightExt")
+      final def right[C: Obj]: P[A * C, B * C] = {
+        Bistrong.this.right[A, B, C](p)
+      }
+    }
+
+    /** Laws that any `Bistrong` profunctor must satisfy.
+      *
+      * The left and the right strength commute, up to the associator.
+      */
+    object BistrongLaws {
+
+      /** *τ*′(*τ*(*p*)) = *P*(*α*,*α*⁻¹)(*τ*(*τ*′(*p*)))
+        */
+      def compatibility[A: Obj, B: Obj, C: Obj, D: Obj](p: P[A, B])(
+        using P[(C * A) * D, (C * B) * D] is Observable
+      ): Boolean = {
+        right[C * A, C * B, D](left[A, B, C](p)) =?=
+          P.dimap(M.associator[C, A, D].to, M.associator[C, B, D].from)(
+            left[A * D, B * D, C](right[A, B, D](p))
+          )
+      }
+    }
+  }
+
+  /** The strength of a promonad over coproducts, read in the opposite promonad: a strength over products of **K**ᵒᵖ.
+    * *τ* is unchanged: *P*(*B*,*A*) → *P*(*C* + *B*,*C* + *A*) is *P*ᵒᵖ(*A*,*B*) → *P*ᵒᵖ(*C* × *A*,*C* × *B*).
+    */
+  final class OpOfCoproduct(tracked val S: Bistrong { val P: Promonad; val M: Cocartesian })
+      extends Bistrong(Promonad.Op(S.P), Cocartesian.Op(S.M)) {
     import M.`*`
     import P.P
     import P.K.Obj
 
-    def first[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[A * C, B * C] = {
-      S.first[B, A, C](p)
+    def left[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[C * A, C * B] = {
+      S.left[B, A, C](p)
     }
   }
 
   /** The strength of a promonad over products, read in the opposite promonad: a strength over coproducts of **K**ᵒᵖ.
+    * *τ* is unchanged: *P*(*B*,*A*) → *P*(*C* × *B*,*C* × *A*) is *P*ᵒᵖ(*A*,*B*) → *P*ᵒᵖ(*C* + *A*,*C* + *B*).
     */
-  final class OpOfProduct(tracked val S: Strong { val P: Promonad; val M: Cartesian })
-      extends Strong(Promonad.Op(S.P), Cartesian.Op(S.M)) {
+  final class OpOfProduct(tracked val S: Bistrong { val P: Promonad; val M: Cartesian })
+      extends Bistrong(Promonad.Op(S.P), Cartesian.Op(S.M)) {
     import M.`*`
     import P.P
     import P.K.Obj
 
-    def first[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[A * C, B * C] = {
-      S.first[B, A, C](p)
+    def left[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[C * A, C * B] = {
+      S.left[B, A, C](p)
     }
   }
 
-  /** The strength of a hom promonad: *first*(*f*) = *f* ⊗ *id*. Every symmetric monoidal category is strong over itself
+  /** The strength of a hom promonad: *τ*(*f*) = *id* ⊗ *f*. Every symmetric monoidal category is bistrong over itself
     * in this way.
     */
   open class OfHom(tracked override val P: Promonad.Hom, tracked override val M: Symmetric { val K: P.K.type })
-      extends Strong(P, M) {
+      extends Bistrong(P, M) {
     import M.`*`
     import P.K.{Obj, -->}
 
-    def first[A: Obj, B: Obj, C: Obj](p: A --> B): (A * C) --> (B * C) = {
-      M.tensor(p, P.K.identity[C])
+    def left[A: Obj, B: Obj, C: Obj](p: A --> B): (C * A) --> (C * B) = {
+      M.tensor(P.K.identity[C], p)
     }
   }
 }

@@ -3,10 +3,10 @@ package category
 
 import org.scalacheck.Gen
 
-/** The laws of [[Strong]] and [[Freyd]], for strong promonads over 𝒮. */
+/** The laws of [[Strong]], [[Strong.Bistrong]] and [[Freyd]], for bistrong promonads over 𝒮. */
 abstract class StrongSpec(
   name: String,
-  tracked val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } },
+  tracked val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } },
 )(using
   promonad: PromonadFixture.On[S.P.type],
   types: SampleTypes,
@@ -25,24 +25,24 @@ abstract class StrongSpec(
   private lazy val F = Freyd(S)
 
   law("naturality") {
-    val observations = observe[T[T4, T3], T[T3, T3]]
+    val observations = observe[T[T3, T4], T[T3, T3]]
     val ps           = arrow[T1, T2]
     val fs           = base.arrow[T4, T1]
     val gs           = base.arrow[T2, T3]
 
     forAll(observations, ps, fs, gs) { (observe, p, f, g) =>
-      given (P[T[T4, T3], T[T3, T3]] is Observable) = observe
+      given (P[T[T3, T4], T[T3, T3]] is Observable) = observe
       naturality[T1, T2, T4, T3, T3](p, f, g)
     }
   }
 
   law("dinaturality") {
-    val observations = observe[T[T1, T4], T[T2, T3]]
+    val observations = observe[T[T4, T1], T[T3, T2]]
     val ps           = arrow[T1, T2]
     val hs           = base.arrow[T4, T3]
 
     forAll(observations, ps, hs) { (observe, p, h) =>
-      given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
+      given (P[T[T4, T1], T[T3, T2]] is Observable) = observe
       dinaturality(p, h)
     }
   }
@@ -58,32 +58,36 @@ abstract class StrongSpec(
   }
 
   law("associativity") {
-    val observations = observe[T[T1, T[T4, T3]], T[T2, T[T4, T3]]]
+    val observations = observe[T[T[T4, T3], T1], T[T[T4, T3], T2]]
     val ps           = arrow[T1, T2]
 
     forAll(observations, ps) { (observe, p) =>
-      given (P[T[T1, T[T4, T3]], T[T2, T[T4, T3]]] is Observable) = observe
+      given (P[T[T[T4, T3], T1], T[T[T4, T3], T2]] is Observable) = observe
       associativity[T1, T2, T4, T3](p)
     }
   }
 
-  law("secondByBraiding") {
+  law("leftCongruence") {
     val observations = observe[T[T4, T1], T[T4, T2]]
     val ps           = arrow[T1, T2]
 
     forAll(observations, ps) { (observe, p) =>
       given (P[T[T4, T1], T[T4, T2]] is Observable) = observe
-      secondByBraiding[T1, T2, T4](p)
+      leftCongruence[T1, T2, T4](p, variant(p))
     }
   }
 
-  law("firstCongruence") {
-    val observations = observe[T[T1, T4], T[T2, T4]]
-    val ps           = arrow[T1, T2]
+  also("Bistrong") {
+    import S.BistrongLaws.*
 
-    forAll(observations, ps) { (observe, p) =>
-      given (P[T[T1, T4], T[T2, T4]] is Observable) = observe
-      firstCongruence[T1, T2, T4](p, variant(p))
+    law("compatibility") {
+      val observations = observe[T[T[T4, T1], T3], T[T[T4, T2], T3]]
+      val ps           = arrow[T1, T2]
+
+      forAll(observations, ps) { (observe, p) =>
+        given (P[T[T[T4, T1], T3], T[T[T4, T2], T3]] is Observable) = observe
+        compatibility[T1, T2, T4, T3](p)
+      }
     }
   }
 
@@ -133,8 +137,8 @@ abstract class StrongSpec(
       q       <- arrow[T4, T3]
     } yield {
       given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
-      P.multiply(S.second[T4, T3, T2](q), S.first[T1, T2, T4](p)) =?=
-        P.multiply(S.first[T1, T2, T3](p), S.second[T4, T3, T1](q))
+      P.multiply(S.left[T4, T3, T2](q), S.right[T1, T2, T4](p)) =?=
+        P.multiply(S.right[T1, T2, T3](p), S.left[T4, T3, T1](q))
     }
   }
 }

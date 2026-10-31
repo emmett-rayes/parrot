@@ -27,27 +27,27 @@ open class Kleisli(tracked val M: Monad) extends Promonad(M.K) {
 object Kleisli {
 
   /** Every Kleisli promonad of a monad on 𝒮 is strong for products, where
-    *   - *first*(*p*) = (*a*,*c*) ↦ *M*(*b* ↦ (*b*,*c*))(*p*(*a*))
+    *   - *τ*(*p*) = (*c*,*a*) ↦ *M*(*b* ↦ (*c*,*b*))(*p*(*a*))
     *
     * The effect of *p* happens; *c* is passed along unchanged.
     */
   open class ProductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
-      extends Strong(P, Total.Product) {
-    def first[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): ((A, C)) -> P.M.M[(B, C)] = {
-      (a, c) => P.M.map[B, (B, C)](b => (b, c))(p(a))
+      extends Strong.Bistrong(P, Total.Product) {
+    def left[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): ((C, A)) -> P.M.M[(C, B)] = {
+      (c, a) => P.M.map[B, (C, B)](b => (c, b))(p(a))
     }
   }
 
   /** Every Kleisli promonad of a monad on 𝒮 is strong for coproducts, where
-    *   - *first*(*p*) = [*M*(*ι*₁) ∘ *p*,*η* ∘ *ι*₂]
+    *   - *τ*(*p*) = [*η* ∘ *ι*₁,*M*(*ι*₂) ∘ *p*]
     *
-    * On the left the arrow runs; on the right the value passes through without effect.
+    * On the left the value passes through without effect; on the right the arrow runs.
     */
   open class CoproductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
-      extends Strong(P, Total.Coproduct) {
-    def first[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): Either[A, C] -> P.M.M[Either[B, C]] = {
-      case Left(a)  => P.M.map[B, Either[B, C]](b => Left(b))(p(a))
-      case Right(c) => P.M.unit[Either[B, C]](Right(c))
+      extends Strong.Bistrong(P, Total.Coproduct) {
+    def left[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): Either[C, A] -> P.M.M[Either[C, B]] = {
+      case Left(c)  => P.M.unit[Either[C, B]](Left(c))
+      case Right(a) => P.M.map[B, Either[C, B]](b => Right(b))(p(a))
     }
   }
 
@@ -100,7 +100,7 @@ object Kleisli {
 
   /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */
   open class ElgotOf(
-    tracked override val S: Strong {
+    tracked override val S: Strong.Bistrong {
       val P: Kleisli { val M: Monad.On[Total.type] }; val M: Total.Coproduct.type
     },
     tracked val E: ElgotMonad { val M: S.P.M.type },

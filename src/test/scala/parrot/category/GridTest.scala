@@ -81,7 +81,7 @@ object Descent {
 /** The laws of [[Elgot]], with steps whose loops stop (in 𝒫) or that make progress (guarded instances). */
 abstract class ElgotSpec(
   name: String,
-  tracked val E: Elgot { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
+  tracked val E: Elgot { val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
   val promonad: PromonadFixture.On[E.S.P.type],
   types: SampleTypes,
@@ -167,7 +167,7 @@ abstract class ElgotSpec(
     forAll(observations, fs) { (observe, f) =>
       given (P[Int, T2] is Observable) = observe
       val (h, inverse)                          = bijection
-      val g = P.multiply(E.S.second[Int, Int, T2](P.unit(h)), P.multiply(f, P.unit(inverse)))
+      val g = P.multiply(E.S.left[Int, Int, T2](P.unit(h)), P.multiply(f, P.unit(inverse)))
       uniformity(f, g, h)
     }
   }
@@ -186,7 +186,7 @@ abstract class ElgotSpec(
 /** The laws of [[Traced]], with feedback that stops. */
 abstract class TracedSpec(
   name: String,
-  tracked val T: Traced { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
+  tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
   promonad: PromonadFixture.On[T.S.P.type],
   types: SampleTypes,
@@ -336,7 +336,7 @@ abstract class RecursionSpec(
 /** The laws of [[Conway]], with arrows whose fixed points are defined. */
 abstract class ConwaySpec(
   name: String,
-  tracked val C: Conway { val S: Strong { val P: Promonad { val K: Category { type Obj = Type } } } },
+  tracked val C: Conway { val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } } },
 )(using
   promonad: PromonadFixture.On[C.S.P.type],
   types: SampleTypes,
@@ -424,7 +424,7 @@ abstract class ConwaySpec(
     forAll(observations, fs) { (observe, f) =>
       given (P[T2, Int] is Observable) = observe
       val (h, inverse)                          = bijection
-      val g = P.multiply(P.unit(h), P.multiply(f, C.S.second[Int, Int, T2](P.unit(inverse))))
+      val g = P.multiply(P.unit(h), P.multiply(f, C.S.left[Int, Int, T2](P.unit(inverse))))
       uniformity(f, g, h)
     }
   }
