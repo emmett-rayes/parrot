@@ -183,6 +183,10 @@ Each structure sits at the lowest level where its laws can be stated.
   `Terminal.FromLimit` computes one from a limit, and an instance may override ! with a better implementation, which
   `TerminalLaws` and, through the view, `LimitLaws` check. It was first an alias, `Terminal[C] = Limit.Of[…]`: any
   limit of the empty diagram counted as terminal, but a terminal object had no operation of its own to override.
+  Products follow the same pattern: `Product(C, U1, U2, U)` has `fst`, `snd`, `pair` and the laws of `Cartesian`'s
+  products, the view `limit` over a diagram of shape **2** (`Category.Discrete2`), and `Product.FromLimit`. **2**
+  tells its objects apart by a case analysis carried by the evidence, `Two.fold`: a GADT would need a match on the
+  evidence to refine `A`, and Scala derives GADT constraints from type parameters, not from the `Self` of `A is Two`.
 - Rejected: applied constructor types (`Functor(J, C)` as a type, `Limit(D)` as a result type), which avoid the
   refinement shadowing that `Limit.Of[D.type]` and `Limits.this.C` work around; scalac accepts them, Scalameta and
   so Pants do not.

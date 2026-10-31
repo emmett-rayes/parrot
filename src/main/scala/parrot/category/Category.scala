@@ -222,4 +222,48 @@ object Category {
       A.absurd
     }
   }
+
+  /** The discrete category **2**, with two objects and only their identities.
+    *
+    * Represents **2**, where
+    *   - the objects are the literal types `0` and `1`
+    *   - **2**(*A*,*B*) contains the identity morphism if *A* = *B*, and no morphisms otherwise
+    *   - *id* is the identity morphism for each object
+    */
+  object Discrete2 extends Category {
+    type Self = =:=
+    type Obj  = Two
+
+    /** Evidence that a type is an object of **2**, with case analysis on which object it is.
+      *
+      * @note Total code can write no instance but `Zero` and `One`: another would have to produce an *R*[*A*] from an
+      *   *R*[0] and an *R*[1] for every *R*.
+      */
+    trait Two extends Type {
+
+      /** The case analysis on the object: *zero* if it is `0`, *one* if it is `1`, for a family of types *R*. */
+      def fold[R[_]](zero: => R[0], one: => R[1]): R[Two.this.Self]
+    }
+
+    object Two {
+
+      /** `0` is an object of **2**. */
+      given Zero: (0 is Two) {
+        def fold[R[_]](zero: => R[0], one: => R[1]): R[0] = zero
+      }
+
+      /** `1` is an object of **2**. */
+      given One: (1 is Two) {
+        def fold[R[_]](zero: => R[0], one: => R[1]): R[1] = one
+      }
+    }
+
+    def identity[A: Two]: A =:= A = {
+      summon
+    }
+
+    def compose[A: Two, B: Two, C: Two](g: B =:= C, f: A =:= B): A =:= C = {
+      g.compose(f)
+    }
+  }
 }
