@@ -55,8 +55,8 @@ object StateT {
     *   - *m* ⊳ *n* runs *n* from the original state where *m* fails: it backtracks
     *   - *attempt*(*m*) keeps the new state on success and the original state on failure
     */
-  open class ClassicalOf[S](tracked val T: StateT[S], tracked val R: ClassicalMonad { val M: T.M.type })
-      extends ClassicalMonad(T) {
+  open class ClassicalOf[S](tracked val T: StateT[S], tracked val R: Monad.Classical { val M: T.M.type })
+      extends Monad.Classical(T) {
 
     def restrict[A](m: S -> T.M.M[(A, S)]): S -> T.M.M[(Unit, S)] = {
       s => T.M.map[Unit, (Unit, S)](_ => ((), s))(R.restrict(m(s)))
@@ -90,9 +90,9 @@ object StateT {
     * Every run stops, since the measure cannot decrease forever. For guarded *f*, whose steps returning *X* always
     * decrease the measure, *f*† is the iteration of *f* and satisfies the laws of [[Elgot]].
     */
-  open class GuardedIteration[S](tracked val T: StateT[S], tracked val R: ClassicalMonad { val M: T.M.type })(
+  open class GuardedIteration[S](tracked val T: StateT[S], tracked val R: Monad.Classical { val M: T.M.type })(
     using size: S is Measure
-  ) extends ElgotMonad(T) {
+  ) extends Monad.Elgot(T) {
 
     def iterate[A, X](f: X -> S -> T.M.M[(Either[A, X], S)]): X -> S -> T.M.M[(A, S)] = {
       def loop(x: X, s: S): T.M.M[(A, S)] = {
@@ -117,7 +117,7 @@ object StateT {
     */
   open class GuardedRecursion[S](
     tracked override val P: Kleisli { val M: StateT[S] },
-    tracked val R: ClassicalMonad { val M: P.M.M.type },
+    tracked val R: Monad.Classical { val M: P.M.M.type },
   )(using size: S is Measure)
       extends Recursion(P) {
 

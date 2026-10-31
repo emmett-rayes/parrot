@@ -24,7 +24,7 @@ Type ─ refines ─ Eq ─ induces ─ Observable ─ counterpart ─ Preorder 
 
 Category (Op, Product, Iso)                                                    𝒮 = Total, 𝒫 = Partial
 └─ on ─ Functor ─ is a ─ Endofunctor ─ on ─ Monad ─ induces ─ Kleisli (a Promonad)
-   │                                         ├─ on ─ RestrictionMonad ─ ClassicalMonad, ElgotMonad
+   │                                         ├─ on ─ Monad.Restriction ─ Monad.Classical, Monad.Elgot
    │                                         └─ transformers: Writer (from a Monoid), OptionT, StateT
    └─ Bifunctor (Op) ─ is a ─ Functor out of Category.Product
       ├─ on ─ Monoidal ─ refines ─ Symmetric ─ refines ─ Cartesian ⇄ Cocartesian (dual)
@@ -62,7 +62,7 @@ Each item needs only those before it:
 12. `Restriction`, `Classical`
 13. `Elgot`, `Conway`, `Traced`, `Recursion`
 14. `Monad`, `Kleisli`
-15. `RestrictionMonad`, `ClassicalMonad`, `ElgotMonad`; `Writer`, `OptionT`, `StateT`
+15. `Monad.Restriction`, `Monad.Classical`, `Monad.Elgot`; `Writer`, `OptionT`, `StateT`
 
 `Total` and `Partial` are categories in item 3; their instances of later structures belong to the item of the
 structure.

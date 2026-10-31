@@ -56,7 +56,7 @@ object Kleisli {
     */
   open class RestrictionOf(
     tracked override val P: Kleisli { val M: Monad.On[Total.type] },
-    tracked val R: RestrictionMonad { val M: P.M.type },
+    tracked val R: Monad.Restriction { val M: P.M.type },
   ) extends Restriction(P) {
 
     def restrict[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
@@ -70,7 +70,7 @@ object Kleisli {
     */
   open class ClassicalOf(
     tracked override val P: Kleisli { val M: Monad.On[Total.type] },
-    tracked val R: ClassicalMonad { val M: P.M.type },
+    tracked val R: Monad.Classical { val M: P.M.type },
   ) extends Classical(P, Total.Coproduct) {
 
     def restrict[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
@@ -103,7 +103,7 @@ object Kleisli {
     tracked override val S: Strong.Bistrong {
       val P: Kleisli { val M: Monad.On[Total.type] }; val M: Total.Coproduct.type
     },
-    tracked val E: ElgotMonad { val M: S.P.M.type },
+    tracked val E: Monad.Elgot { val M: S.P.M.type },
   ) extends Elgot(S) {
 
     def iterate[A: Type, X: Type](p: X -> S.P.M.M[Either[A, X]]): X -> S.P.M.M[A] = {
@@ -121,5 +121,5 @@ object Kleisli {
   object OptionCoproduct extends CoproductStrength(OptionKleisli)
 
   /** Functions that may fail: a classical restriction category, with failure as zero and ordered choice as override. */
-  object OptionDomains extends ClassicalOf(OptionKleisli, ClassicalMonad.OptionIsClassical)
+  object OptionDomains extends ClassicalOf(OptionKleisli, Monad.Classical.OptionIsClassical)
 }

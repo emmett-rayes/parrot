@@ -105,6 +105,8 @@ where a program can tell a diverging pair from the pair of its diverging compone
 - **A monad is structure on an endofunctor**: `Monad(F: Endofunctor)` with `unit` and `flatten` primitive, the monoid
   presentation, so that `Monad` and `Monoid` have the same shape; `bind` is derived. Monads are refined through their
   functor (`Monad.On[Total.type]`), because only that keeps the chain of singleton types that path-dependent code needs.
+  The structures on a monad whose laws are those of the Kleisli structures they induce, `Monad.Restriction`,
+  `Monad.Classical` and `Monad.Elgot`, live in its companion.
 - **Products of categories use match types.** `Category.Product(C1, C2)` has pair types as objects. A morphism type is
   computed from two object types, and the only way to take a type apart at the type level is a match type
   (`Fst[(A1, A2)] = A1`): evidence is a value and cannot index a type, and projecting a type member of an abstract type

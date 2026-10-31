@@ -491,7 +491,7 @@ class ConcatOutcomeIsNotRestrictionTest
 class ClassicalMonadOrElseIsLazyTest extends org.scalatest.funsuite.AnyFunSuite {
 
   test("Option: the second argument is not computed where the first succeeds") {
-    assert(ClassicalMonad.OptionIsClassical.orElse(Some(1), sys.error("computed")).contains(1))
+    assert(Monad.Classical.OptionIsClassical.orElse(Some(1), sys.error("computed")).contains(1))
   }
 
   test("State over Option: the second computation is not run where the first succeeds") {

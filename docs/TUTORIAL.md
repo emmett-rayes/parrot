@@ -3031,7 +3031,7 @@ given StringIsMeasure: String is Measure:
 
 object Remaining  extends StateT[String](Monad.OptionIsMonad)
 object Recognizer extends Kleisli(Remaining)
-object Guarded    extends StateT.GuardedRecursion(Recognizer, ClassicalMonad.OptionIsClassical)
+object Guarded    extends StateT.GuardedRecursion(Recognizer, Monad.Classical.OptionIsClassical)
 
 type R = Unit -> String -> Option[(Unit, String)]
 
@@ -3468,7 +3468,7 @@ given StringIsMeasure: String is Measure:
   def measure(s: String): Int = s.length
 
 object Remaining extends StateT[String](Monad.OptionIsMonad)
-object Steps     extends StateT.GuardedIteration(Remaining, ClassicalMonad.OptionIsClassical)
+object Steps     extends StateT.GuardedIteration(Remaining, Monad.Classical.OptionIsClassical)
 
 type Step = Unit -> String -> Option[(Either[Unit, Unit], String)]
 

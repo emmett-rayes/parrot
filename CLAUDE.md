@@ -288,7 +288,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Traced`, `Conway`, `Elgot`, `Recursion` | the trace/fixed-point grid; recursion at arrow types | `trace`, `fix`, `iterate` | `Partial.Loops`/`Feedback`/`Knots`, bridges `OfElgot`/`OfConway`/`OfTraced`, guarded state |
 | `Monoid`, `Semilattice`, `Comonoid` | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
 | `Monad`, `Kleisli`, `Writer`, `OptionT`, `StateT` | monads on an endofunctor; the Kleisli promonad; transformers | `unit`, `flatten`; derived `map`, `bind` | `Monad.OptionIsMonad`, `Kleisli.OptionKleisli` |
-| `RestrictionMonad`, `ClassicalMonad`, `ElgotMonad`, `Measure` | monad-level presentations whose laws are the Kleisli ones | `restrict`, `orElse`, `attempt`, `iterate` | `ClassicalMonad.OptionIsClassical`, `StateT.ClassicalOf`, `OptionT.ClassicalOf` |
+| `Monad.Restriction`, `Monad.Classical`, `Monad.Elgot`, `Measure` | monad-level presentations whose laws are the Kleisli ones | `restrict`, `orElse`, `attempt`, `iterate` | `Monad.Classical.OptionIsClassical`, `StateT.ClassicalOf`, `OptionT.ClassicalOf` |
 
 ### 4.4 Laws
 

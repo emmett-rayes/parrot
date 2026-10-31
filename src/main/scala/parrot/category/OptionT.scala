@@ -50,7 +50,7 @@ object OptionT {
     * while *m* ⨾ 0 and *m̄* ⨾ *m̄*ᶜ have those of *m*. Silent tests, which drop the effects of *m*, keep these laws
     * exact instead, at the cost of **R1** and **R4**.
     */
-  open class ClassicalOf(tracked val T: OptionT) extends ClassicalMonad(T) {
+  open class ClassicalOf(tracked val T: OptionT) extends Monad.Classical(T) {
 
     def restrict[A](m: T.M.M[Option[A]]): T.M.M[Option[Unit]] = {
       T.M.map[Option[A], Option[Unit]](_.map(_ => ()))(m)

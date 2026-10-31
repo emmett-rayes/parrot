@@ -17,7 +17,7 @@ object StringState extends StateT[String](Monad.OptionIsMonad)
 object StringStateKleisli extends Kleisli(StringState)
 
 /** Failure, backtracking choice and lookahead for [[StringState]]. */
-object StringStateClassical extends StateT.ClassicalOf(StringState, ClassicalMonad.OptionIsClassical)
+object StringStateClassical extends StateT.ClassicalOf(StringState, Monad.Classical.OptionIsClassical)
 
 /** The classical restriction structure of [[StringStateKleisli]]. */
 object StringStateDomains extends Kleisli.ClassicalOf(StringStateKleisli, StringStateClassical)
@@ -26,13 +26,13 @@ object StringStateDomains extends Kleisli.ClassicalOf(StringStateKleisli, String
 object StringStateChoice extends Kleisli.CoproductStrength(StringStateKleisli)
 
 /** Guarded loops over [[StringState]]. */
-object StringStateIteration extends StateT.GuardedIteration(StringState, ClassicalMonad.OptionIsClassical)
+object StringStateIteration extends StateT.GuardedIteration(StringState, Monad.Classical.OptionIsClassical)
 
 /** The guarded iteration of [[StringStateKleisli]]. */
 object StringStateLoops extends Kleisli.ElgotOf(StringStateChoice, StringStateIteration)
 
 /** Guarded recursion for [[StringStateKleisli]]. */
-object StringStateRecursion extends StateT.GuardedRecursion(StringStateKleisli, ClassicalMonad.OptionIsClassical)
+object StringStateRecursion extends StateT.GuardedRecursion(StringStateKleisli, Monad.Classical.OptionIsClassical)
 
 object StringStateFixture extends PromonadFixture("Kleisli[State[String, Option]]", StringStateKleisli) {
   val base: TotalFixture.type = TotalFixture

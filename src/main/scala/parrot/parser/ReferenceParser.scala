@@ -89,7 +89,7 @@ object ReferenceParser {
     * diagnostics (see [[ParserAlgebra.ParserLaws]]). Keeping the diagnostics of tests, as [[OptionT.ClassicalOf]] does,
     * would make **R1** and **R4** exact but break **R2** and the laws of zero and complement.
     */
-  object Silent extends ClassicalMonad(Outcome) {
+  object Silent extends Monad.Classical(Outcome) {
 
     def restrict[A](m: (Expected, Option[A])): (Expected, Option[Unit]) = {
       (Expected.bottom, m._2.map(_ => ()))
