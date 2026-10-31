@@ -366,12 +366,14 @@ abstract class ParserAlgebra(
     */
   object ParserLaws {
 
-    /** *id* ⨾ *p* = *p* */
+    /** *id* ⨾ *p* = *p*
+      */
     def leftIdentity[A, B](p: P[A, B])(using P[A, B] is Observable): Boolean = {
       (success[A] >> p) =?= p
     }
 
-    /** *p* ⨾ *id* = *p* */
+    /** *p* ⨾ *id* = *p*
+      */
     def rightIdentity[A, B](p: P[A, B])(using P[A, B] is Observable): Boolean = {
       (p >> success[B]) =?= p
     }
@@ -381,7 +383,8 @@ abstract class ParserAlgebra(
       ((p >> q) >> r) =?= (p >> (q >> r))
     }
 
-    /** *id* ⋉ *id* = *id* */
+    /** *id* ⋉ *id* = *id*
+      */
     def zipIdentity[A, C](using P[(A, C), (A, C)] is Observable): Boolean = {
       (success[A] ** success[C]) =?= success[(A, C)]
     }
@@ -407,22 +410,26 @@ abstract class ParserAlgebra(
       ((p |> q) |> r) =?= (p |> (q |> r))
     }
 
-    /** *h* ⨾ (*p* ⊳ *q*) = (*h* ⨾ *p*) ⊳ (*h* ⨾ *q*): choice distributes over what comes before it. */
+    /** *h* ⨾ (*p* ⊳ *q*) = (*h* ⨾ *p*) ⊳ (*h* ⨾ *q*): choice distributes over what comes before it.
+      */
     def choicePrecomposition[A, B, C](h: P[A, B], p: P[B, C], q: P[B, C])(using P[A, C] is Observable): Boolean = {
       (h >> (p |> q)) =?= ((h >> p) |> (h >> q))
     }
 
-    /** *p* ⊳ *q* = *attempt*(*p*) ⨾ [*id*,*q*]: ordered choice is an attempt followed by a merge. */
+    /** *p* ⊳ *q* = *attempt*(*p*) ⨾ [*id*,*q*]: ordered choice is an attempt followed by a merge.
+      */
     def choiceByAttempt[A, B](p: P[A, B], q: P[A, B])(using P[A, B] is Observable): Boolean = {
       (p |> q) =?= (attempt(p) >> (success[B] || q))
     }
 
-    /** *p̄* ⨾ *p* ⊑ *p* (**R1**, up to diagnostics): where *p* fails, the silent lookahead reports nothing. */
+    /** *p̄* ⨾ *p* ⊑ *p* (**R1**, up to diagnostics): where *p* fails, the silent lookahead reports nothing.
+      */
     def lookaheadIdentity[A, B](p: P[A, B])(using P[A, B] is Preorder): Boolean = {
       (~p >> p) ?< p
     }
 
-    /** *p̄* ⨾ *q̄* = *q̄* ⨾ *p̄* (**R2**) */
+    /** *p̄* ⨾ *q̄* = *q̄* ⨾ *p̄* (**R2**)
+      */
     def lookaheadCommutativity[A, B, C](p: P[A, B], q: P[A, C])(using P[A, A] is Observable): Boolean = {
       (~p >> ~q) =?= (~q >> ~p)
     }
@@ -444,27 +451,32 @@ abstract class ParserAlgebra(
       !(!p) =?= ~p
     }
 
-    /** *p̄* ⨾ *p̄*ᶜ = 0: a parser cannot both succeed and fail. */
+    /** *p̄* ⨾ *p̄*ᶜ = 0: a parser cannot both succeed and fail.
+      */
     def negationExclusion[A, B](p: P[A, B])(using P[A, A] is Observable): Boolean = {
       (~p >> !p) =?= failure[A, A]
     }
 
-    /** *p̄* ⊳ *p̄*ᶜ = *id*: a parser either succeeds or fails. */
+    /** *p̄* ⊳ *p̄*ᶜ = *id*: a parser either succeeds or fails.
+      */
     def negationCover[A, B](p: P[A, B])(using P[A, A] is Observable): Boolean = {
       (~p |> !p) =?= success[A]
     }
 
-    /** *p*† = *p* ⨾ [*id*,*p*†], for a guarded *p*. */
+    /** *p*† = *p* ⨾ [*id*,*p*†], for a guarded *p*.
+      */
     def loopUnfolding[A, B](p: P[A, Either[B, A]])(using P[A, B] is Observable): Boolean = {
       p.iterate =?= (p >> (success[B] || p.iterate))
     }
 
-    /** *fix*(*f*) = *f*(*fix*(*f*)), for a guarded *f*. */
+    /** *fix*(*f*) = *f*(*fix*(*f*)), for a guarded *f*.
+      */
     def recursionUnfolding[A, B](f: P[A, B] -> P[A, B])(using P[A, B] is Observable): Boolean = {
       recursive(f) =?= f(recursive(f))
     }
 
-    /** *rule*(*p*,*l*) ≡ *p*: rules change diagnostics only. Observed without diagnostics. */
+    /** *rule*(*p*,*l*) ≡ *p*: rules change diagnostics only. Observed without diagnostics.
+      */
     def ruleTransparent[A, B](p: P[A, B], label: String)(using P[A, B] is Observable): Boolean = {
       p.rule(label) =?= p
     }
@@ -496,8 +508,8 @@ abstract class ParserAlgebra(
       p.rule(label) ?< p2.rule(label)
     }
 
-    /** *p*\* = (⟨*p*,*p*\*⟩ ⨾ *unit*(*cons*)) ⊳ *unit*(*empty*), for a *p* that consumes when it succeeds: *cons* prepends
-      * a result to the collection, and *empty* is the empty collection.
+    /** *p*\* = (⟨*p*,*p*\*⟩ ⨾ *unit*(*cons*)) ⊳ *unit*(*empty*), for a *p* that consumes when it succeeds: *cons*
+      * prepends a result to the collection, and *empty* is the empty collection.
       */
     def repeatedUnfolding[A, B](p: P[A, B])(using P[A, Vector[B]] is Observable): Boolean = {
       val cons  = lift[(B, Vector[B]), Vector[B]]((b, bs) => b +: bs)

@@ -16,8 +16,8 @@ import scala.util.{Try, Failure as TryFailure, Success as TrySuccess}
   * specialized nodes:
   *   - ⟨*p*,*q*⟩ = Δ ⨾ (*p* ⋉ *q*) becomes [[StrictParser.Node.Pair]]: the input is never duplicated into a pair
   *   - ⟨*p*,*q*⟩ ⨾ *π*₂ becomes [[StrictParser.Node.SkipThen]]: no result pair is built
-  *   - [*p*,*q*] = (*p* + *q*) ⨾ ∇ becomes [[StrictParser.Node.Merge]], and (*p* + *q*) ⨾ [*f*,*g*] becomes
-  *     [*p* ⨾ *f*,*q* ⨾ *g*]: no intermediate tagged union is built
+  *   - [*p*,*q*] = (*p* + *q*) ⨾ ∇ becomes [[StrictParser.Node.Merge]], and (*p* + *q*) ⨾ [*f*,*g*] becomes [*p* ⨾
+  *     *f*,*q* ⨾ *g*]: no intermediate tagged union is built
   *   - (*p* ⊳ *q*) ⨾ *f* becomes (*p* ⨾ *f*) ⊳ (*q* ⨾ *f*)
   *
   * Regular expressions in the single-character-atom fragment are compiled to a [[Scanner]]; other expressions fall back
