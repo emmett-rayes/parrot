@@ -2378,7 +2378,7 @@ object OptionMap extends MyFunctor(Total, Total):
   def map[A: Type, B: Type](f: A -> B): Option[A] -> Option[B] = _.map(f)
 ```
 
-The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters. A refinement passes its parameter on under the same name: `Promonad(tracked override val K: Category)` extends `Profunctor(K, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Strong` takes a profunctor `P` and a monoidal structure `M { val K: P.K.type }` on the same category, so a strength over the wrong category is a type error.
+The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters. A refinement passes its parameter on under the same name: `Promonad(tracked override val K: Category)` extends `Endoprofunctor(K, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Strong` takes a profunctor `P` and a monoidal structure `M { val K: P.K.type }` on the same category, so a strength over the wrong category is a type error.
 
 ### 11.3 A carrier, or a name
 
@@ -2539,9 +2539,9 @@ A predicate `A -> Boolean` can be pulled back along a function `f: B -> A` to a 
 
 Function types do both at once. A function `A1 -> B1` can be pre-composed with `f: A2 -> A1` and post-composed with `g: B1 -> B2`, giving `A2 -> B2`. The first argument is contravariant and the second covariant. Such a functor is a **profunctor**.
 
-**Definition 12.2 (profunctor).** A profunctor P on a category 𝒦, valued in 𝒱, is a bifunctor P : 𝒦ᵒᵖ × 𝒦 → 𝒱. Its action on arrows is written P(f, g), for f : A₂ → A₁ and g : B₁ → B₂ of 𝒦, and maps P(A₁, B₁) to P(A₂, B₂).
+**Definition 12.2 (profunctor).** A profunctor P, valued in 𝒱, is a bifunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒱. Its action on arrows is written P(f, g), for f : A₂ → A₁ of 𝒦₁ and g : B₁ → B₂ of 𝒦₂, and maps P(A₁, B₁) to P(A₂, B₂). A profunctor on a category 𝒦, a bifunctor P : 𝒦ᵒᵖ × 𝒦 → 𝒱, is an **endoprofunctor**.
 
-The library's `Profunctor(K, V)` is exactly `Bifunctor(K.op, K, V)`, with a method `dimap` that spells out the variance. The most important example is the **hom profunctor** of a category, whose value at (A, B) is the type of arrows A → B and whose action pre- and post-composes. For 𝒮 it is `Total.Functions`:
+The library's `Profunctor(K1, K2, V)` is exactly `Bifunctor(K1.op, K2, V)`, with a method `dimap` that spells out the variance, and its `Endoprofunctor(K, V)` is `Profunctor(K, K, V)`. The most important example is the **hom profunctor** of a category, an endoprofunctor whose value at (A, B) is the type of arrows A → B and whose action pre- and post-composes. For 𝒮 it is `Total.Functions`:
 
 ```scala library
 val f: Int -> String = _.toString
@@ -4046,6 +4046,8 @@ Extensionality, the principle that functions agreeing on every argument are equa
 **Elgot operator (iteration operator).** An operation sending a step X → A + X to an arrow X → A that runs it until it stops, with its laws. Definition 19.2.
 
 **Endofunctor.** A functor from a category to itself; in the library, `Endofunctor(K)`. Section 12.2.
+
+**Endoprofunctor.** A profunctor 𝒦ᵒᵖ × 𝒦 → 𝒱 on a single category; in the library, `Endoprofunctor(K, V)`. Definition 12.2.
 
 **Enriched category (𝒱-category).** A category whose homs are objects of 𝒱 and whose identities and composition are arrows of 𝒱. Definition 4.1.
 

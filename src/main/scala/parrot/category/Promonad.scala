@@ -14,7 +14,7 @@ import scala.annotation.targetName
   * [[category]], with the objects of **K**, and *unit* is an identity-on-objects functor from **K** into it. Kleisli
   * categories and reified arrows such as parsers are promonads.
   */
-abstract class Promonad(tracked override val K: Category) extends Profunctor(K, Total) {
+abstract class Promonad(tracked override val K: Category) extends Endoprofunctor(K, Total) {
   import K.{Obj, -->}
   import K.op.--> as ~~>
 

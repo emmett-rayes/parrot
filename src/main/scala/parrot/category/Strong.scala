@@ -13,7 +13,7 @@ import scala.annotation.targetName
   * With ⊗ the product this is the *first* of arrows; with ⊗ the coproduct it is their *left*, often called *choice*. A
   * strong promonad whose *unit* and *multiply* preserve the strength is a Freyd category, see [[Freyd]].
   */
-abstract class Strong(tracked val P: Profunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })
+abstract class Strong(tracked val P: Endoprofunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })
     extends caps.Pure {
   import M.{I, `*`, given}
   import P.P

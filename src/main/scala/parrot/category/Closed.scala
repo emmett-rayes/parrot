@@ -73,7 +73,7 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
 
 object Closed {
 
-  /** The internal hom ⇒: **K**ᵒᵖ × **K** → **K** of a closed structure, as a profunctor.
+  /** The internal hom ⇒: **K**ᵒᵖ × **K** → **K** of a closed structure, as an endoprofunctor.
     *
     * Represents a profunctor, where
     *   - *A* ⇒ *B* is the object part
@@ -82,7 +82,7 @@ object Closed {
     * @note The morphism part is determined by evaluation and currying, so the laws of the profunctor follow from the
     *   laws `beta` and `eta` of [[Closed]].
     */
-  final class InternalHom(tracked val C: Closed) extends Profunctor(C.M.K, C.M.K) {
+  final class InternalHom(tracked val C: Closed) extends Endoprofunctor(C.M.K, C.M.K) {
     import C.M.{***, given}
     import C.M.K.{Obj, -->, >>>}
     import C.given

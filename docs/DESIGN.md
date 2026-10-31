@@ -73,7 +73,7 @@ where a program can tell a diverging pair from the pair of its diverging compone
   `Type.TIsType[Any]`), and `deferred` givens are allowed only in traits. The structure offers the evidence to its
   clients as a given, `IIsObj`.
 - **Structures are abstract classes**, because a refinement passes arguments to its parent (`Promonad(K)` extends
-  `Profunctor(K, Total)`) and a trait cannot pass arguments to a parent trait. **Type classes without parameters that
+  `Endoprofunctor(K, Total)`) and a trait cannot pass arguments to a parent trait. **Type classes without parameters that
   are not categorical structures** (`Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
 - **`Self` only when the structure has its own carrier** (a category's morphisms, a functor's object map, a monoid's
   object). Structures *on* something else (`Monoidal`, `Strong`, `Restriction`, the grid, `Monad`) have no `Self` and

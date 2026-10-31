@@ -191,7 +191,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    refinement chains need them. Type classes without parameters that are not categorical structures (`Type`, `Eq`,
    `Observable`, `Preorder`, `Measure`) are traits.
 2. **Bases are `tracked` term parameters.** A structure on something else takes it as a parameter:
-   `abstract class Strong(tracked val P: Profunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })`.
+   `abstract class Strong(tracked val P: Endoprofunctor { val V: Total.type }, tracked val M: Symmetric { val K: P.K.type })`.
    A parameter is a stable path, so `P.K.Obj`, `M.Tensor`, `import M.given` work, and `tracked` keeps its singleton type
    in the instance's type: no casts, no `ValueOf`.
 3. **`Self` iff the structure has its own carrier** (`Category`, `Bifunctor`, `Functor`, `Profunctor`, `Promonad`,
@@ -199,7 +199,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    `Traced`, `Conway`, `Elgot`, `Recursion`, and `Monad`, which is structure on an `Endofunctor`) have no `Self` and are
    named, not found by carrier: one category carries several (products and coproducts).
 4. **Refinements forward their parameter under the same name**: `abstract class Promonad(tracked override val K:
-   Category) extends Profunctor(K, Total)`.
+   Category) extends Endoprofunctor(K, Total)`.
 5. **Combinations are bundles**, not inheritance: `Freyd(S)` (a strong promonad), `ParserAlgebra(…)` (all the parser's
    structures). They take the structures as `tracked` parameters and derive or `export` their operations.
 6. **Object evidence**: a category's objects are the types with evidence `type Obj <: Type`. `Type` holds for every
@@ -268,7 +268,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
 | `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
-| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
+| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal`, `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure on a category | `***`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry`, `internalHom` | `Total.Product`/`Coproduct`/`Exponential`, `Partial.Product`/`Coproduct`, `Cartesian.Op`, `Cocartesian.Op` |
 | `Strong`, `Freyd` | strength on a profunctor; Freyd laws and `**` | `first`, `second` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.OfHom`, `Strong.OpOf…` |

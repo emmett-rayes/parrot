@@ -11,7 +11,7 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 | --- | --- | --- |
 | *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Monad(F)` on an endofunctor; `Restriction(P)` on a promonad |
 | *refines*: more operations and laws | `extends`, forwarding the parameters | `Symmetric` refines `Monoidal`; `Cartesian` and `Cocartesian` refine `Symmetric`; `Classical` refines `Restriction`; `Semilattice` refines `Monoid` |
-| *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K**ᵒᵖ × **K** |
+| *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K₁**ᵒᵖ × **K₂**; an `Endoprofunctor` is a `Profunctor` from **K** to **K** |
 | *dual*: the same structure on the opposite | an `Op` class | `Category.Op`; `Bifunctor.Op`; `Cartesian.Op` is `Cocartesian`; `Promonad.Op`; `Conway.OfElgot` |
 | *induces*: a construction from one structure to another | an `open class` or a method | a category gives a promonad (`Promonad.Hom`); a monad gives a promonad (`Kleisli`); a monoid gives a monad (`Writer`); a semilattice gives a preorder (`Preorder.of`) |
 | *bridge*: two structures that define each other | `Of…` classes | `Traced.OfElgot` and `Elgot.OfTraced`; `Traced.OfConway` and `Conway.OfTraced` |
@@ -28,10 +28,10 @@ Category (Op, Product, Iso)                                                    �
    │                                         └─ transformers: Writer (from a Monoid), OptionT, StateT
    └─ Bifunctor (Op) ─ is a ─ Functor out of Category.Product
       ├─ on ─ Monoidal ─ refines ─ Symmetric ─ refines ─ Cartesian ⇄ Cocartesian (dual)
-      │       ├─ on ─ Closed (InternalHom, a Profunctor)
+      │       ├─ on ─ Closed (InternalHom, an Endoprofunctor)
       │       └─ on ─ Monoid ⇄ Comonoid (dual); Semilattice (on Cartesian) ─ induces ─ Preorder
-      └─ Profunctor ─ is a ─ Bifunctor out of Kᵒᵖ × K
-         └─ refines ─ Promonad (Underlying, Op, Hom)
+      └─ Profunctor ─ is a ─ Bifunctor out of K₁ᵒᵖ × K₂
+         └─ is a ─ Endoprofunctor ─ refines ─ Promonad (Underlying, Op, Hom)
             ├─ on ─ Strong (+ Symmetric) ─ bundle ─ Freyd
             │       └─ on ─ Traced ⇄ Conway (+ Cartesian), Elgot (+ Cocartesian)   bridges and duals
             ├─ on ─ Restriction ─ refines ─ Classical (+ Cocartesian)
@@ -52,7 +52,7 @@ Each item needs only those before it:
 5. `Bifunctor`
 6. `Monoidal`, `Symmetric`
 7. `Cartesian`, `Cocartesian`
-8. `Profunctor`, `Closed`
+8. `Profunctor`, `Endoprofunctor`, `Closed`
 9. `Monoid`, `Semilattice`, `Comonoid`, then `Preorder`
 10. `Promonad`
 11. `Strong`, `Freyd`
