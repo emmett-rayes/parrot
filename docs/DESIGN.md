@@ -76,9 +76,9 @@ where a program can tell a diverging pair from the pair of its diverging compone
   `Endoprofunctor(K, Total)`) and a trait cannot pass arguments to a parent trait. **Type classes without parameters that
   are not categorical structures** (`Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
 - **`Self` only when the structure has its own carrier** (a category's morphisms, a functor's object map, a monoid's
-  object). Structures *on* something else (`Monoidal`, `Strong`, `Restriction`, the grid, `Monad`) have no `Self` and
-  are named, not found by carrier: 𝒮 carries both products and coproducts, and nothing about the carrier tells them
-  apart.
+  object). Structures *on* something else (`Monoidal`, `Module`, `Strong`, `Restriction`, the grid, `Monad`) have no
+  `Self` and are named, not found by carrier: 𝒮 carries both products and coproducts, and nothing about the carrier
+  tells them apart.
 - **Combinations are bundles, not inheritance.** A class that extended a product and a coproduct structure would
   inherit two `Tensor`s, two `I`s and two `braid`s. `Freyd(S)` and `ParserAlgebra(...)` take their structures as
   parameters instead.
