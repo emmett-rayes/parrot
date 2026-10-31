@@ -107,8 +107,8 @@ where a program can tell a diverging pair from the pair of its diverging compone
   functor (`Monad.On[Total.type]`), because only that keeps the chain of singleton types that path-dependent code needs.
   The structures on a monad whose laws are those of the Kleisli structures they induce, `Monad.Restriction`,
   `Monad.Classical` and `Monad.Elgot`, live in its companion. The plain monads are transformers over the identity monad,
-  `Monad.OptionIsMonad` = `OptionT(Monad.Identity)` and `State[S]` = `StateT[S](Monad.Identity)`, so that each effect is
-  defined once.
+  `Monad.OptionIsMonad` = `OptionT(Monad.Identity)`, `State[S]` = `StateT[S](Monad.Identity)` and `Writer(W)` =
+  `WriterT(W, Monad.Identity)`, so that each effect is defined once.
 - **Products of categories use match types.** `Category.Product(C1, C2)` has pair types as objects. A morphism type is
   computed from two object types, and the only way to take a type apart at the type level is a match type
   (`Fst[(A1, A2)] = A1`): evidence is a value and cannot index a type, and projecting a type member of an abstract type
@@ -229,7 +229,9 @@ Each structure sits at the lowest level where its laws can be stated.
 
 - A parse reports the furthest position at which something failed and the set of expectations there, each tagged with
   the rules that enclose it. The reports form a join-semilattice, the lexicographic product of the chain of positions
-  with sets of expectations, and they are a **writer effect**, produced on success as well as on failure.
+  with sets of expectations, and they are a **writer effect**, produced on success as well as on failure. The failure
+  transformer is over the writer, `OptionT(Writer(E))`, not under it: `WriterT(E, Option)` would drop the report of a
+  parse that fails (`TransformerOrderTest`).
 - The laws force most of this: the choice monoid needs an associative combination with a unit, and distributivity,
   `h >> (p |> q)` = `(h >> p) |> (h >> q)`, runs `h` twice, which is harmless only if *x* ⊔ *y* ⊔ *x* = *x* ⊔ *y*.
   Commutativity is a choice: it makes the report independent of the order in which alternatives were tried.

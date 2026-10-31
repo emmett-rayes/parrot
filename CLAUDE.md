@@ -261,8 +261,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     `Monad.On[Total.type]` = `Monad { val F: Endofunctor { val K: Total.type } }`, not `Monad { val K: Total.type }`:
     only the former keeps the chain of singleton types (`M.K` = `M.F.K` = `Total`) that lets
     `Strong.Bistrong(P, Total.Product)` type-check. Transformers define their endofunctor in their companion
-    (`Writer.FunctorOf`, `OptionT.FunctorOf`, `StateT.FunctorOf`). Plain monads are transformers over `Monad.Identity`:
-    `Monad.OptionIsMonad` is `OptionT(Identity)` and `State[S]` is `StateT[S](Identity)`.
+    (`OptionT.FunctorOf`, `StateT.FunctorOf`, `WriterT.FunctorOf`). Plain monads are transformers over `Monad.Identity`:
+    `Monad.OptionIsMonad` is `OptionT(Identity)`, `State[S]` is `StateT[S](Identity)` and `Writer(W)` is
+    `WriterT(W, Identity)`.
 
 ### 4.2 Two categories of programs
 
@@ -288,7 +289,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Restriction`, `Classical` | restriction category; zero, complement, override, attempt | `restrict`, `zero`, `complement`, `orElse`/`|>`, `attempt` | `Partial.Domains`, `Kleisli.RestrictionOf`/`ClassicalOf` |
 | `Traced`, `Conway`, `Elgot`, `Recursion` | the trace/fixed-point grid; recursion at arrow types | `trace`, `fix`, `iterate` | `Partial.Loops`/`Feedback`/`Knots`, bridges `OfElgot`/`OfConway`/`OfTraced`, guarded state |
 | `Monoid`, `Semilattice`, `Comonoid` | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
-| `Monad`, `Kleisli`, `Writer`, `Option`, `State` | monads on an endofunctor; the Kleisli promonad; the transformers `OptionT` and `StateT`, and the plain monads as transformers over the identity | `unit`, `flatten`; derived `map`, `bind` | `Monad.Identity`, `Monad.OptionIsMonad` (`OptionT(Identity)`), `State[S]` (`StateT[S](Identity)`), `Kleisli.OptionKleisli` |
+| `Monad`, `Kleisli`, `Writer`, `Option`, `State` | monads on an endofunctor; the Kleisli promonad; the transformers `OptionT`, `StateT` and `WriterT`, and the plain monads as transformers over the identity | `unit`, `flatten`; derived `map`, `bind` | `Monad.Identity`, `Monad.OptionIsMonad` (`OptionT(Identity)`), `State[S]` (`StateT[S](Identity)`), `Writer(W)` (`WriterT(W, Identity)`), `Kleisli.OptionKleisli` |
 | `Monad.Restriction`, `Monad.Classical`, `Monad.Elgot`, `Measure` | monad-level presentations whose laws are the Kleisli ones | `restrict`, `orElse`, `attempt`, `iterate` | `Monad.Classical.OptionIsClassical`, `StateT.ClassicalOf`, `OptionT.ClassicalOf` |
 
 ### 4.4 Laws

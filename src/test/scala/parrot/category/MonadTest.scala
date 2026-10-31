@@ -68,6 +68,9 @@ object StringWriter extends Writer(StringConcat)
 /** Computations that log strings and may fail: the effects of the reference parser without its state. */
 object FailingStringWriter extends OptionT(StringWriter)
 
+/** Computations that may fail and log strings, where a failure loses the log. */
+object StringWriterOverOption extends WriterT(StringConcat, Monad.OptionIsMonad)
+
 /** Computations that read and update a `Boolean` state: few enough states for computations to be data. */
 object BooleanState extends State[Boolean]
 
@@ -78,5 +81,23 @@ class IdentityIsMonadTest extends MonadSpec("Identity", Monad.Identity)
 class OptionIsMonadTest   extends MonadSpec("Option", Monad.OptionIsMonad)
 class WriterIsMonadTest   extends MonadSpec("Writer[String]", StringWriter)
 class OptionTIsMonadTest  extends MonadSpec("OptionT[Writer[String]]", FailingStringWriter)
+class WriterTIsMonadTest  extends MonadSpec("WriterT[String, Option]", StringWriterOverOption)
 class StateIsMonadTest    extends MonadSpec("State[Boolean]", BooleanState)
 class StateTIsMonadTest   extends MonadSpec("State[Boolean, Option]", FailingBooleanState)
+
+/** The order of failure and output: failure over a writer keeps the output of a computation that fails, and a writer
+  * over failure loses it.
+  */
+class TransformerOrderTest extends org.scalatest.funsuite.AnyFunSuite {
+  given CanEqual[Any, Any] = CanEqual.derived
+
+  test("OptionT[Writer[String]]: a computation that fails keeps the output before it") {
+    val failed = FailingStringWriter.bind[Unit, Int](_ => ("", None))(("a", Some(())))
+    assert(failed == ("a", None))
+  }
+
+  test("WriterT[String, Option]: a computation that fails loses the output before it") {
+    val failed = StringWriterOverOption.bind[Unit, Int](_ => None)(Some(("a", ())))
+    assert(failed.isEmpty)
+  }
+}

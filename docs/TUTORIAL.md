@@ -2838,12 +2838,13 @@ So a monad is a way of building a new category of effectful arrows on top of ð’
 | --- | --- | --- | --- |
 | identity | `A` | none | `Monad.Identity` |
 | `Option` | `Option[A]` | possible absence of a result | `Monad.OptionIsMonad`, which is `OptionT(Monad.Identity)` |
-| Writer | `(W, A)`, with W a monoid | producing output | `Writer(W)` |
+| Writer | `(W, A)`, with W a monoid | producing output | `Writer(W)`, which is `WriterT(W, Monad.Identity)` |
 | State | `S -> (A, S)` | reading and updating a state | `State[S]`, which is `StateT[S](Monad.Identity)` |
 | failure transformer | `M[Option[A]]` | failure, on top of the effects of M | `OptionT(M)` |
 | state transformer | `S -> M[(A, S)]` | reading and updating a state, with the effects of M | `StateT[S](M)` |
+| writer transformer | `M[(W, A)]` | producing output, with the effects of M | `WriterT(W, M)` |
 
-The identity monad has no effect, so a transformer over it is its effect alone: the library defines `Option` and the state monad that way. For instance, the reference parser of chapter 20 is the Kleisli category of `StateT[Input](OptionT(Writer(E)))`: it reads and consumes input, reports diagnostics, and may fail. `Either[E, *]`, `List` and the reader monad `R -> A` are monads too, and the tests use `Writer` for strings, whose order of output matters (chapter 17).
+The identity monad has no effect, so a transformer over it is its effect alone: the library defines `Option`, the writer monad and the state monad that way. For instance, the reference parser of chapter 20 is the Kleisli category of `StateT[Input](OptionT(Writer(E)))`: it reads and consumes input, reports diagnostics, and may fail. The order of the transformers matters: failure over a writer, `(W, Option[A])`, keeps the output of a computation that fails, and a writer over failure, `WriterT(W, Monad.OptionIsMonad)` with `Option[(W, A)]`, loses it. A parser reports what it expected where it failed, so the reference parser needs the first **[Proved]**. `Either[E, *]`, `List` and the reader monad `R -> A` are monads too, and the tests use `Writer` for strings, whose order of output matters (chapter 17).
 
 The laws also justify the rewriting of `for`-comprehensions. `for { x <- m; y <- f(x) } yield y` is the same computation as `m.flatMap(f)` by the right unit law, and nested comprehensions can be flattened by associativity. These rewrites are sound for every lawful monad and only for lawful ones.
 

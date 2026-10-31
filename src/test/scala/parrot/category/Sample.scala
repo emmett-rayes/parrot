@@ -109,6 +109,13 @@ object Sample {
     [X] => (_: Sample[X]) ?=> Tuple2Sample[A, Option[X]]
   }
 
+  /** Optional samples of pairs with a first component of type *A*, for all second components: the samples of a writer
+    * transformer over `Option`.
+    */
+  given WriterOverOptionSamples: [A: Sample] => ([X] => Sample[X] ?-> Sample[Option[(A, X)]]) = {
+    [X] => (_: Sample[X]) ?=> OptionSample[(A, X)]
+  }
+
   /** Samples of computations on `Boolean` states, for all result types: the samples of a state monad. */
   given BooleanStateSamples: ([X] => Sample[X] ?-> Sample[Boolean -> (X, Boolean)]) = {
     [X] => (_: Sample[X]) ?=> BooleanFunctionSample[(X, Boolean)]
