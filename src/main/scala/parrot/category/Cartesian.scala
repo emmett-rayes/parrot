@@ -51,6 +51,9 @@ abstract class Cartesian(
     }
   }
 
+  /** The corresponding cocartesian opposite **K**ᵒᵖ. */
+  final lazy val op: Cartesian.Op { val C: Cartesian.this.type } = Cartesian.Op(this)
+
   extension [X: Obj, A: Obj](f: X --> A)
     /** Infix extension for [[pair]]. */
     @targetName("pairExt")

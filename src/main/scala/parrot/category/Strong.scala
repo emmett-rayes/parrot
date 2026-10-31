@@ -149,44 +149,39 @@ object Strong {
     }
   }
 
-  /** The strength of a promonad over coproducts, read in the opposite promonad: a strength over products of **K**ᵒᵖ.
-    * *τ* is unchanged: *P*(*B*,*A*) → *P*(*C* + *B*,*C* + *A*) is *P*ᵒᵖ(*A*,*B*) → *P*ᵒᵖ(*C* × *A*,*C* × *B*).
-    */
-  final class OpOfCoproduct(tracked val S: Bistrong { val P: Promonad; val M: Cocartesian })
-      extends Bistrong(Promonad.Op(S.P), Cocartesian.Op(S.M)) {
-    import M.`*`
-    import P.P
-    import P.K.Obj
+  object Bistrong {
 
-    def left[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[C * A, C * B] = {
-      S.left[B, A, C](p)
+    /** The opposite *P*ᵒᵖ of a bistrong promonad *P*, over **M**ᵒᵖ.
+      *
+      * The opposite has the same left strength, with every morphism reversed.
+      *
+      * @note **M** is meant to be `S.M.op`; its braiding is not checked.
+      */
+    final class Op(
+      tracked val S: Bistrong { val P: Promonad },
+      tracked override val M: Symmetric { val K: S.P.K.op.type; val T: Bifunctor { type Self = S.M.T.F } },
+    ) extends Bistrong(Promonad.Op(S.P), M) {
+      import M.`*`
+      import P.P
+      import P.K.Obj
+
+      def left[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[C * A, C * B] = {
+        S.left[B, A, C](p)
+      }
     }
-  }
 
-  /** The strength of a promonad over products, read in the opposite promonad: a strength over coproducts of **K**ᵒᵖ.
-    * *τ* is unchanged: *P*(*B*,*A*) → *P*(*C* × *B*,*C* × *A*) is *P*ᵒᵖ(*A*,*B*) → *P*ᵒᵖ(*C* + *A*,*C* + *B*).
-    */
-  final class OpOfProduct(tracked val S: Bistrong { val P: Promonad; val M: Cartesian })
-      extends Bistrong(Promonad.Op(S.P), Cartesian.Op(S.M)) {
-    import M.`*`
-    import P.P
-    import P.K.Obj
+    /** The bistrong hom promonad of a symmetric monoidal category **M**: *τ*(*f*) = *id* ⊗ *f*.
+      *
+      * Every symmetric monoidal category is bistrong over itself in this way.
+      */
+    open class Hom(tracked override val P: Promonad.Hom, tracked override val M: Symmetric { val K: P.K.type })
+        extends Bistrong(P, M) {
+      import M.`*`
+      import P.K.{Obj, -->}
 
-    def left[A: Obj, B: Obj, C: Obj](p: P[A, B]): P[C * A, C * B] = {
-      S.left[B, A, C](p)
-    }
-  }
-
-  /** The strength of a hom promonad: *τ*(*f*) = *id* ⊗ *f*. Every symmetric monoidal category is bistrong over itself
-    * in this way.
-    */
-  open class OfHom(tracked override val P: Promonad.Hom, tracked override val M: Symmetric { val K: P.K.type })
-      extends Bistrong(P, M) {
-    import M.`*`
-    import P.K.{Obj, -->}
-
-    def left[A: Obj, B: Obj, C: Obj](p: A --> B): (C * A) --> (C * B) = {
-      M.tensor(P.K.identity[C], p)
+      def left[A: Obj, B: Obj, C: Obj](p: A --> B): (C * A) --> (C * B) = {
+        M.tensor(P.K.identity[C], p)
+      }
     }
   }
 }

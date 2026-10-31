@@ -96,7 +96,7 @@ object Conway {
     * coproducts of **K**. A step *P*(*X*,*A* + *X*) is an arrow *P*ᵒᵖ(*A* × *X*,*X*), and its iteration *P*(*X*,*A*) is
     * the fixed point *P*ᵒᵖ(*A*,*X*).
     */
-  open class OfElgot(tracked val E: Elgot) extends Conway(Strong.OpOfCoproduct(E.S)) {
+  open class OfElgot(tracked val E: Elgot) extends Conway(Strong.Bistrong.Op(E.S, E.S.M.op)) {
     import S.M.`*`
     import S.P.P
     import S.P.K.Obj

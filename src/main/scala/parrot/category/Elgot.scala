@@ -94,7 +94,7 @@ abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Co
 object Elgot {
 
   /** Fixed points read backwards: a Conway operator on *P* is an Elgot operator on *P*ᵒᵖ. */
-  open class OfConway(tracked val C: Conway) extends Elgot(Strong.OpOfProduct(C.S)) {
+  open class OfConway(tracked val C: Conway) extends Elgot(Strong.Bistrong.Op(C.S, C.S.M.op)) {
     import S.M.+
     import S.P.P
     import S.P.K.Obj

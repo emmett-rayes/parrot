@@ -128,7 +128,7 @@ Each structure sits at the lowest level where its laws can be stated.
   client read backwards); `Bistrong` over two arbitrary left modules (a left module has no right action, so *τ*′ would
   be *τ*: it needs right modules, or bimodules, which have no client); `Bistrong` refining `P { val K1: M.K.type; val
   K2: M.K.type }` (for a promonad, nothing makes its own **K** equal to **M**.**K**; the constraint refines **M**
-  instead).
+  instead); separate duals over products and coproducts (one `Bistrong.Op(S, S.M.op)`, whose braiding is not checked).
 - A Freyd category is a promonad with a strength and two compatibility laws, not a new class.
 - The trace laws restrict sliding and superposing to pure arrows, which are central (traced *premonoidal* categories).
 - The product row has no useful total instance in a strict language: computing ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first.

@@ -41,6 +41,9 @@ abstract class Cocartesian(
     copair(K.identity[A], K.identity[A])
   }
 
+  /** The corresponding cartesian opposite **K**ᵒᵖ. */
+  final lazy val op: Cocartesian.Op { val C: Cocartesian.this.type } = Cocartesian.Op(this)
+
   extension [A: Obj, X: Obj](f: A --> X)
     /** Infix extension for [[copair]]. */
     @targetName("copairExt")

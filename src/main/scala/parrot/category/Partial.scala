@@ -167,10 +167,10 @@ object Partial extends Category {
   }
 
   /** Programs run side by side on pairs: the first component first. */
-  object Parallel extends Strong.OfHom(Programs, Product)
+  object Parallel extends Strong.Bistrong.Hom(Programs, Product)
 
   /** Programs run on one side of a tagged union. */
-  object Choice extends Strong.OfHom(Programs, Coproduct)
+  object Choice extends Strong.Bistrong.Hom(Programs, Coproduct)
 
   /** 𝒫 is a restriction category, where
     *   - *p̄* = *a* ↦ (*p*(*a*); *a*) runs *p* for its termination only
