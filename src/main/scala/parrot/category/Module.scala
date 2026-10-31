@@ -51,20 +51,32 @@ abstract class Module(
   /** Laws that any `Module` must satisfy. */
   object ModuleLaws {
 
-    /** *λ*⁻¹ ∘ *λ* = *id* and *λ* ∘ *λ*⁻¹ = *id*
+    /** *λ*⁻¹ ∘ *λ* = *id*
       */
-    def leftUnitorIsomorphism[A: Obj](using ((I ~ A) --> (I ~ A)) is Observable, (A --> A) is Observable): Boolean = {
-      K.IsoLaws.isomorphism(leftUnitor[A])
+    def leftUnitorLeftInverse[A: Obj](using ((I ~ A) --> (I ~ A)) is Observable): Boolean = {
+      K.IsoLaws.leftInverse(leftUnitor[A])
     }
 
-    /** *α*⁻¹ ∘ *α* = *id* and *α* ∘ *α*⁻¹ = *id*
+    /** *λ* ∘ *λ*⁻¹ = *id*
       */
-    def associatorIsomorphism[X: ObjM, Y: ObjM, A: Obj](
-      using
-      (((X * Y) ~ A) --> ((X * Y) ~ A)) is Observable,
-      ((X ~ (Y ~ A)) --> (X ~ (Y ~ A))) is Observable,
+    def leftUnitorRightInverse[A: Obj](using (A --> A) is Observable): Boolean = {
+      K.IsoLaws.rightInverse(leftUnitor[A])
+    }
+
+    /** *α*⁻¹ ∘ *α* = *id*
+      */
+    def associatorLeftInverse[X: ObjM, Y: ObjM, A: Obj](
+      using (((X * Y) ~ A) --> ((X * Y) ~ A)) is Observable
     ): Boolean = {
-      K.IsoLaws.isomorphism(associator[X, Y, A])
+      K.IsoLaws.leftInverse(associator[X, Y, A])
+    }
+
+    /** *α* ∘ *α*⁻¹ = *id*
+      */
+    def associatorRightInverse[X: ObjM, Y: ObjM, A: Obj](
+      using ((X ~ (Y ~ A)) --> (X ~ (Y ~ A))) is Observable
+    ): Boolean = {
+      K.IsoLaws.rightInverse(associator[X, Y, A])
     }
 
     /** *f* ∘ *λ* = *λ* ∘ (*id* ⊘ *f*)

@@ -3,18 +3,18 @@ package category
 
 /** An oracle for checking observational equality.
   *
-  * Represents a test of equality, where
+  * Represents a test of equality (called agreement), where
   *   - ≟ is a decidable equivalence relation that fails only if some observation tells the two values apart
   *
-  * Laws compare morphisms, and morphisms are usually functions, whose equality is not decidable. An `Observable`
-  * decides something weaker: whether two values agree on finitely many observations, each ending in data that is
-  * compared using equality. Data observes itself. A function is observed by applying it at sample points.
+  * Used in laws that compare morphisms. Morphisms are usually functions, whose equality is not decidable. An
+  * `Observable` decides something weaker: whether two values agree on finitely many observations, each ending in data
+  * that is compared using equality. Data observes itself. A function is observed by applying it at sample points.
   *
   * @see [[Eq]] for equality on data.
   *
   * @note Agreement is coarser than equality: two values may agree on every observation without being equal. It is
-  *   therefore sound for refutation only: a law that fails under some `Observable` is false, but a law that holds is
-  *   not thereby proved.
+  *   therefore sound for refutation only. A law that fails under some `Observable` is false, but a law that holds under
+  *   agreement is not proved.
   *
   * @note Agreement on samples is not a congruence: composites of agreeing functions can disagree. Congruence laws
   *   therefore take values that are assumed to be equal by construction, rather than values that agree on samples.
@@ -31,10 +31,7 @@ trait Observable extends caps.Pure {
       Observable.this.agree(a, b)
     }
 
-  /** Laws that any `Observable` must satisfy.
-    *
-    * Agreement is an equivalence relation, and equal values agree.
-    */
+  /** Laws that any `Observable` must satisfy. */
   object ObservableLaws {
     extension (p: Boolean)
       private def implies(q: Boolean): Boolean = {
@@ -72,7 +69,7 @@ trait Observable extends caps.Pure {
 /** Observability for pairs wherever the components are observable.
   *
   * @note Defined as a low-priority parent of the companion of [[Observable]], so that [[Observable.EqIsObservable]]
-  *   takes precedence: for a pair of data, agreement is componentwise equality.
+  *   takes precedence. For a pair of data, agreement is componentwise equality.
   */
 trait ComponentwiseObservable {
 

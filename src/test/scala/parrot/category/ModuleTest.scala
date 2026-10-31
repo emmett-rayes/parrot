@@ -27,25 +27,39 @@ abstract class ModuleSpec(
   private given ActionSample: [X: Sample, Y: Sample] => Sample[A.Action[X, Y]]   = action[X, Y]
   private given TensorSample: [X: Sample, Y: Sample] => Sample[A.M.Tensor[X, Y]] = tensor[X, Y]
 
-  law("leftUnitorIsomorphism") {
-    val observations1 = observe[A.M.I ~ T1, A.M.I ~ T1]
-    val observations2 = observe[T1, T1]
+  law("leftUnitorLeftInverse") {
+    val observations = observe[A.M.I ~ T1, A.M.I ~ T1]
 
-    forAll(observations1, observations2) { (o1, o2) =>
-      given O1: (((A.M.I ~ T1) --> (A.M.I ~ T1)) is Observable) = o1
-      given O2: ((T1 --> T1) is Observable)                     = o2
-      leftUnitorIsomorphism[T1]
+    forAll(observations) { observe =>
+      given (((A.M.I ~ T1) --> (A.M.I ~ T1)) is Observable) = observe
+      leftUnitorLeftInverse[T1]
     }
   }
 
-  law("associatorIsomorphism") {
-    val observations1 = observe[(T1 * T2) ~ T4, (T1 * T2) ~ T4]
-    val observations2 = observe[T1 ~ (T2 ~ T4), T1 ~ (T2 ~ T4)]
+  law("leftUnitorRightInverse") {
+    val observations = observe[T1, T1]
 
-    forAll(observations1, observations2) { (o1, o2) =>
-      given O1: ((((T1 * T2) ~ T4) --> ((T1 * T2) ~ T4)) is Observable) = o1
-      given O2: (((T1 ~ (T2 ~ T4)) --> (T1 ~ (T2 ~ T4))) is Observable) = o2
-      associatorIsomorphism[T1, T2, T4]
+    forAll(observations) { observe =>
+      given ((T1 --> T1) is Observable) = observe
+      leftUnitorRightInverse[T1]
+    }
+  }
+
+  law("associatorLeftInverse") {
+    val observations = observe[(T1 * T2) ~ T4, (T1 * T2) ~ T4]
+
+    forAll(observations) { observe =>
+      given ((((T1 * T2) ~ T4) --> ((T1 * T2) ~ T4)) is Observable) = observe
+      associatorLeftInverse[T1, T2, T4]
+    }
+  }
+
+  law("associatorRightInverse") {
+    val observations = observe[T1 ~ (T2 ~ T4), T1 ~ (T2 ~ T4)]
+
+    forAll(observations) { observe =>
+      given (((T1 ~ (T2 ~ T4)) --> (T1 ~ (T2 ~ T4))) is Observable) = observe
+      associatorRightInverse[T1, T2, T4]
     }
   }
 

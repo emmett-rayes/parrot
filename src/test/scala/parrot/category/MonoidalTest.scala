@@ -17,36 +17,57 @@ abstract class MonoidalSpec(tracked val M: Monoidal { val K: Category { type Obj
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
 
-  law("leftUnitorIsomorphism") {
-    val observations1 = observe[I * T1, I * T1]
-    val observations2 = observe[T1, T1]
+  law("leftUnitorLeftInverse") {
+    val observations = observe[I * T1, I * T1]
 
-    forAll(observations1, observations2) { (o1, o2) =>
-      given O1: (((I * T1) --> (I * T1)) is Observable) = o1
-      given O2: ((T1 --> T1) is Observable)             = o2
-      leftUnitorIsomorphism[T1]
+    forAll(observations) { observe =>
+      given (((I * T1) --> (I * T1)) is Observable) = observe
+      leftUnitorLeftInverse[T1]
     }
   }
 
-  law("rightUnitorIsomorphism") {
-    val observations1 = observe[T1 * I, T1 * I]
-    val observations2 = observe[T1, T1]
+  law("leftUnitorRightInverse") {
+    val observations = observe[T1, T1]
 
-    forAll(observations1, observations2) { (o1, o2) =>
-      given O1: (((T1 * I) --> (T1 * I)) is Observable) = o1
-      given O2: ((T1 --> T1) is Observable)             = o2
-      rightUnitorIsomorphism[T1]
+    forAll(observations) { observe =>
+      given ((T1 --> T1) is Observable) = observe
+      leftUnitorRightInverse[T1]
     }
   }
 
-  law("associatorIsomorphism") {
-    val observations1 = observe[(T1 * T2) * T4, (T1 * T2) * T4]
-    val observations2 = observe[T1 * (T2 * T4), T1 * (T2 * T4)]
+  law("rightUnitorLeftInverse") {
+    val observations = observe[T1 * I, T1 * I]
 
-    forAll(observations1, observations2) { (o1, o2) =>
-      given O1: ((((T1 * T2) * T4) --> ((T1 * T2) * T4)) is Observable) = o1
-      given O2: (((T1 * (T2 * T4)) --> (T1 * (T2 * T4))) is Observable) = o2
-      associatorIsomorphism[T1, T2, T4]
+    forAll(observations) { observe =>
+      given (((T1 * I) --> (T1 * I)) is Observable) = observe
+      rightUnitorLeftInverse[T1]
+    }
+  }
+
+  law("rightUnitorRightInverse") {
+    val observations = observe[T1, T1]
+
+    forAll(observations) { observe =>
+      given ((T1 --> T1) is Observable) = observe
+      rightUnitorRightInverse[T1]
+    }
+  }
+
+  law("associatorLeftInverse") {
+    val observations = observe[(T1 * T2) * T4, (T1 * T2) * T4]
+
+    forAll(observations) { observe =>
+      given ((((T1 * T2) * T4) --> ((T1 * T2) * T4)) is Observable) = observe
+      associatorLeftInverse[T1, T2, T4]
+    }
+  }
+
+  law("associatorRightInverse") {
+    val observations = observe[T1 * (T2 * T4), T1 * (T2 * T4)]
+
+    forAll(observations) { observe =>
+      given (((T1 * (T2 * T4)) --> (T1 * (T2 * T4))) is Observable) = observe
+      associatorRightInverse[T1, T2, T4]
     }
   }
 

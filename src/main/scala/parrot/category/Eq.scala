@@ -3,10 +3,11 @@ package category
 
 /** Equality on data types.
   *
-  * Represents the intended equality of values of a data type, where
-  *   - = is a decidable equivalence relation that holds if and only if the values are considered equal.
+  * Represents equality of values of a data type, where
+  *   - = is a decidable equivalence relation that holds if and only if the values are equal.
   */
-trait Eq extends Type {
+trait Eq extends caps.Pure {
+  type Self
 
   /** Returns `true` if *a* and *b* are equal. */
   def equal(a: Self, b: Self): Boolean
@@ -17,15 +18,8 @@ trait Eq extends Type {
       Eq.this.equal(a, b)
     }
 
-  /** Laws that any `Eq` must satisfy.
-    *
-    * Equality is an equivalence relation.
-    */
+  /** Laws that any `Eq` must satisfy. */
   object EqLaws {
-    extension (p: Boolean)
-      private def implies(q: Boolean): Boolean = {
-        !p || q
-      }
 
     /** *a* = *a*
       */
@@ -42,6 +36,11 @@ trait Eq extends Type {
     def transitivity(a: Self, b: Self, c: Self): Boolean = {
       (a === b && b === c) `implies` (a === c)
     }
+
+    extension (p: Boolean)
+      private def implies(q: Boolean): Boolean = {
+        !p || q
+      }
   }
 }
 
@@ -52,9 +51,9 @@ object Eq {
 
   /** Structural equality, for data types whose `==` compares constructor trees.
     *
-    * @note Not a given: `CanEqual` only permits `==`, it does not make `==` a structural equality. On plain classes
-    *   `==` is reference identity, and on `Double` it is not even reflexive (`NaN == NaN` is `false`), so each
-    *   instance states that `==` is the intended structural equality of its type by calling `structural`.
+    * @note Not a given: `CanEqual` does not make `==` a structural equality. On plain classes `==` is reference
+    *   identity, and on `Double` it is not even reflexive (`NaN == NaN` is `false`), so each instance states that `==`
+    *   is the intended structural equality of its type by calling `structural`.
     */
   def structural[A](using CanEqual[A, A]): A is Eq = {
     new Eq {
@@ -107,7 +106,7 @@ object Eq {
   /** Equality on `Double` as `java.lang.Double.compare` defines it: `NaN` equals itself, `0.0` and `-0.0` differ. */
   given DoubleIsEq: (Double is Eq) {
     def equal(a: Double, b: Double): Boolean = {
-      java.lang.Double.compare(a, b) == 0
+      a.compare(b) == 0
     }
   }
 

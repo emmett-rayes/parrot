@@ -58,26 +58,44 @@ abstract class Monoidal(
   /** Laws that any `Monoidal` structure must satisfy. */
   object MonoidalLaws {
 
-    /** *λ*⁻¹ ∘ *λ* = *id* and *λ* ∘ *λ*⁻¹ = *id*
+    /** *λ*⁻¹ ∘ *λ* = *id*
       */
-    def leftUnitorIsomorphism[A: Obj](using ((I * A) --> (I * A)) is Observable, (A --> A) is Observable): Boolean = {
-      K.IsoLaws.isomorphism(leftUnitor[A])
+    def leftUnitorLeftInverse[A: Obj](using ((I * A) --> (I * A)) is Observable): Boolean = {
+      K.IsoLaws.leftInverse(leftUnitor[A])
     }
 
-    /** *ρ*⁻¹ ∘ *ρ* = *id* and *ρ* ∘ *ρ*⁻¹ = *id*
+    /** *λ* ∘ *λ*⁻¹ = *id*
       */
-    def rightUnitorIsomorphism[A: Obj](using ((A * I) --> (A * I)) is Observable, (A --> A) is Observable): Boolean = {
-      K.IsoLaws.isomorphism(rightUnitor[A])
+    def leftUnitorRightInverse[A: Obj](using (A --> A) is Observable): Boolean = {
+      K.IsoLaws.rightInverse(leftUnitor[A])
     }
 
-    /** *α*⁻¹ ∘ *α* = *id* and *α* ∘ *α*⁻¹ = *id*
+    /** *ρ*⁻¹ ∘ *ρ* = *id*
       */
-    def associatorIsomorphism[A: Obj, B: Obj, C: Obj](
-      using
-      (((A * B) * C) --> ((A * B) * C)) is Observable,
-      ((A * (B * C)) --> (A * (B * C))) is Observable,
+    def rightUnitorLeftInverse[A: Obj](using ((A * I) --> (A * I)) is Observable): Boolean = {
+      K.IsoLaws.leftInverse(rightUnitor[A])
+    }
+
+    /** *ρ* ∘ *ρ*⁻¹ = *id*
+      */
+    def rightUnitorRightInverse[A: Obj](using (A --> A) is Observable): Boolean = {
+      K.IsoLaws.rightInverse(rightUnitor[A])
+    }
+
+    /** *α*⁻¹ ∘ *α* = *id*
+      */
+    def associatorLeftInverse[A: Obj, B: Obj, C: Obj](
+      using (((A * B) * C) --> ((A * B) * C)) is Observable
     ): Boolean = {
-      K.IsoLaws.isomorphism(associator[A, B, C])
+      K.IsoLaws.leftInverse(associator[A, B, C])
+    }
+
+    /** *α* ∘ *α*⁻¹ = *id*
+      */
+    def associatorRightInverse[A: Obj, B: Obj, C: Obj](
+      using ((A * (B * C)) --> (A * (B * C))) is Observable
+    ): Boolean = {
+      K.IsoLaws.rightInverse(associator[A, B, C])
     }
 
     /** *f* ∘ *λ* = *λ* ∘ (*id* ⊗ *f*)

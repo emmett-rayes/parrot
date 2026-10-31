@@ -3,7 +3,7 @@ package category
 
 /** An oracle for checking observational order.
   *
-  * Represents a test of order, where
+  * Represents a test of order (called below), where
   *   - ⊑ is a decidable preorder that fails only if some observation orders the two values apart
   */
 trait Preorder extends caps.Pure {

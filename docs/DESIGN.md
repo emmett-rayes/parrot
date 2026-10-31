@@ -85,7 +85,11 @@ where a program can tell a diverging pair from the pair of its diverging compone
   and takes the strength as a parameter.
 - **Objects are types with evidence**: a category declares `type Obj <: Type`, and evidence travels only through
   context bounds, which come after the value parameters, so that infix code infers its types. Evidence classes such as
-  `Eq` extend `Type`, so evidence search is sound but not canonical (the tutorial discusses coherence).
+  `ProductObj` extend `Type`, so evidence search is sound but not canonical (the tutorial discusses coherence). `Eq`
+  once extended `Type` too, so that the types with an equality could be the objects of a category. No category used
+  it, and every `import Eq.given` then changed what answered `A is Type`; `Eq` is now a type class of data, like
+  `Observable` and `Preorder`, and a category of types with equality takes an evidence class that carries an `Eq`
+  (`EqType`, tutorial, section 3.8).
 - **Names follow the mathematics.** Carriers have short aliases (`Hom`/`-->`, `F`, `P`, `M`, `C`); arrows of other
   categories are imported, renamed where categories meet (`->>`, `==>`, `~~>`); these three-symbol arrows name roles,
   while the two concrete categories have two-symbol arrows, `->` for 𝒮 and `~>` for 𝒫; objects are combined infix (`*`,

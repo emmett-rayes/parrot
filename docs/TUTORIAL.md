@@ -335,7 +335,7 @@ Equality has to be built from the ground up, starting with types whose values a 
 
 **Data types.** Call a type a **data type** if it is built from `Boolean`, `Char`, `Int`, `Long`, `BigInt`, `String` and `Unit` using tuples, `Option`, `Either`, `List`, and case classes or enums whose equality is the one the compiler generates, provided no component is a function or a value of an abstract type. A value of a data type is a finite tree of constructors with primitive values at the leaves. Two such values are equal exactly when they are the same tree.
 
-For data types we can write equality as a program. Here is the type class this document uses, with its laws stated inside it; it is the library's `Eq`, apart from one detail that section 3.8 adds:
+For data types we can write equality as a program. Here is the type class this document uses, with its laws stated inside it; it is the library's `Eq`:
 
 ```scala
 trait Eq extends caps.Pure:
@@ -858,7 +858,7 @@ abstract class Category extends caps.Pure:
 
   extension [A, B](f: A --> B) def >>>[C](g: B --> C): A --> C = compose(g, f)
 
-  /** An isomorphism (section 1.3): two arrows, inverse by the law `isomorphism`. */
+  /** An isomorphism (section 1.3): two arrows, inverse by the laws `leftInverse` and `rightInverse`. */
   final case class Iso[A, B](to: A --> B, from: B --> A)
 
   // Laws. Each must return true for all arrows, under every observation.
@@ -877,8 +877,11 @@ abstract class Category extends caps.Pure:
         using (A --> C) is Observable): Boolean =
       (f >>> g) =?= (f2 >>> g2)
 
-    def isomorphism[A, B](i: Iso[A, B])(using (A --> A) is Observable, (B --> B) is Observable): Boolean =
-      ((i.to >>> i.from) =?= identity[A]) && ((i.from >>> i.to) =?= identity[B])
+    def leftInverse[A, B](i: Iso[A, B])(using (A --> A) is Observable): Boolean =
+      (i.to >>> i.from) =?= identity[A]
+
+    def rightInverse[A, B](i: Iso[A, B])(using (B --> B) is Observable): Boolean =
+      (i.from >>> i.to) =?= identity[B]
 ```
 
 `Self` is the type constructor of arrows, and `-->` is a more descriptive name for it: `A --> B` is the type of arrows from `A` to `B`. `compose(g, f)` is g ∘ f, in mathematical order, so its first argument is applied last. Code reads more easily in the order the arrows run, so the class also provides `f >>> g`, which is the same composite written diagrammatically: f first, then g. This document writes ∘ in mathematics and `>>>` in code. `extends caps.Pure` declares the category itself pure, as section 2.2 did for `Eq`.
@@ -1026,7 +1029,7 @@ The definition of a category starts with "a collection of objects", yet the `Cat
 
 #### Isomorphic objects, in code
 
-An isomorphism between two objects is a pair of arrows that compose to identities (section 1.3). In code, the pair is data, `Iso`, and the condition is the law `isomorphism`. In `Total`, swapping the components of a pair is an isomorphism `(A, B) ≅ (B, A)`, and it is its own inverse:
+An isomorphism between two objects is a pair of arrows that compose to identities (section 1.3). In code, the pair is data, `Iso`, and the conditions are the laws `leftInverse` and `rightInverse`. In `Total`, swapping the components of a pair is an isomorphism `(A, B) ≅ (B, A)`, and it is its own inverse:
 
 ```scala
 def swap[A, B]: Total.Iso[(A, B), (B, A)] = Total.Iso(_.swap, _.swap)
@@ -1091,10 +1094,11 @@ object Total extends Category:
   def compose[A: Type, B: Type, C: Type](g: B -> C, f: A -> B): A -> C = a => g(f(a))
 ```
 
-`Obj <: Type` says that whatever type class selects the objects must be a kind of `Type`. For an evidence class to qualify, it extends `Type`, and that applies to `Eq`: in the library, `Eq` extends `Type`, so that "the types with an equality" can be the objects of a category. Here are `Eq` and `Observable` again in that form, with the instances the rest of the document needs and the laws of section 2.2 left out:
+`Obj <: Type` says that whatever type class selects the objects must be a kind of `Type`: an evidence class qualifies by extending `Type`. `Eq` does not. Like `Observable`, it is a type class of data, which laws and programs use everywhere, not evidence about objects. Here are `Eq` and `Observable` again, with the instances the rest of the document needs and the laws of section 2.2 left out:
 
 ```scala unit=Categories
-trait Eq extends Type:
+trait Eq extends caps.Pure:
+  type Self
   def equal(a: Self, b: Self): Boolean
   extension (a: Self) def ===(b: Self): Boolean = equal(a, b)
 
@@ -1143,20 +1147,28 @@ object Observable:
     through[A -> B, B](points.map(a => (f: A -> B) => f(a)))
 ```
 
-These are the definitions of the library's `Type`, `Eq`, `Observable` and `Category`, apart from the members this document has not yet needed; the rest of the document uses them. Now the objects can be restricted. Restricting a category to the types with some evidence, and keeping all arrows between them, gives a full subcategory. For example, `Total` restricted to the types with an `Eq` is the category of types with decidable equality, which is useful whenever an arrow needs to compare its inputs:
+These are the definitions of the library's `Type`, `Eq`, `Observable` and `Category`, apart from the members this document has not yet needed; the rest of the document uses them. Now the objects can be restricted. Restricting a category to the types with some evidence, and keeping all arrows between them, gives a full subcategory. For example, `Total` restricted to the types with an `Eq` is the category of types with decidable equality, which is useful whenever an arrow needs to compare its inputs. Its evidence class extends `Type` and carries the equality as a member, so a program that is given `A: EqType` can compare values of `A` with `A.equality`:
 
 ```scala unit=Categories
-def withEq(K: Category { type Obj = Type }): Category { type Self[A, B] = K.Self[A, B]; type Obj = Eq } =
+/** Evidence for the types with an equality: carries their `Eq`. */
+trait EqType extends Type:
+  def equality: Self is Eq
+
+object EqType:
+  given EqIsEqType: [A: Eq as eq] => A is EqType:
+    def equality: A is Eq = eq
+
+def withEq(K: Category { type Obj = Type }): Category { type Self[A, B] = K.Self[A, B]; type Obj = EqType } =
   new Category:
     type Self[A, B] = K.Self[A, B]
-    type Obj        = Eq
-    def identity[A: Eq]: K.Self[A, A] = K.identity[A]
-    def compose[A: Eq, B: Eq, C: Eq](g: K.Self[B, C], f: K.Self[A, B]): K.Self[A, C] = K.compose(g, f)
+    type Obj        = EqType
+    def identity[A: EqType]: K.Self[A, A] = K.identity[A]
+    def compose[A: EqType, B: EqType, C: EqType](g: K.Self[B, C], f: K.Self[A, B]): K.Self[A, C] = K.compose(g, f)
 
 val TotalWithEq = withEq(Total)
 ```
 
-Inside `withEq`, `K.identity[A]` needs evidence that `A` is a `Type`, and the evidence that `A` has an `Eq` serves, because `Eq` extends `Type`. That convenience has a side effect worth knowing. A query for `A is Type` can now be answered either by the instance `TIsType` or by any `Eq` instance in scope, so the evidence found for an object is not always the same value. For `Type`, which has no members, this cannot matter. For a type class with members it can, and chapter 7 meets the case.
+Inside `withEq`, `K.identity[A]` needs evidence that `A` is a `Type`, and the evidence that `A` is an `EqType` serves, because `EqType` extends `Type`. That convenience has a side effect worth knowing. A query for `A is Type` can now be answered either by the instance `TIsType` or by the `EqType` evidence in scope, so the evidence found for an object is not always the same value. For `Type`, which has no members, this cannot matter. For a type class with members it can, and chapter 7 meets the case. It is also why `Eq` does not extend `Type` itself: `Eq` instances are imported wherever values are compared, and each import would change the answer to `A is Type`, while `EqType` evidence is in scope only where a category asks for it.
 
 Notice also that `withEq` returns an ordinary value, not a given. A category is a first-class **module**: it can be stored, passed and returned, and its types are referred to through it, as in `TotalWithEq.-->[Int, String]`.
 
@@ -1936,7 +1948,7 @@ The weakness of setoids is that *every* function in the program must respect the
 
 Setoids are the standard way to add quotients to type theories that lack them **[Standard, from memory]**, and the category of setoids can be seen as 𝒮 with quotients added freely.
 
-**Two equalities on one type.** `List[A]` now has two `Eq` instances: the elementwise `ListIsEq` of chapter 3 and `sameElements`. Which one a given `===` uses depends on which instance the compiler finds at that point, and nothing stops two parts of a program from finding different ones. A collection that deduplicates its elements with one equality and is queried with the other gives answers that contradict each other. Evidence found by search is called **coherent** when every search for the same type finds the same instance, or at least instances that behave the same. Scala does not enforce coherence; Haskell, for instance, insists on at most one instance per type in a whole program **[Standard, from memory]**. Subtyping between evidence classes makes the question sharper: since `Eq` extends `Type`, a search for `A is Type` can be answered by any `Eq` instance in scope (section 3.8). That is harmless for `Type`, which has no members, but not in general.
+**Two equalities on one type.** `List[A]` now has two `Eq` instances: the elementwise `ListIsEq` of chapter 3 and `sameElements`. Which one a given `===` uses depends on which instance the compiler finds at that point, and nothing stops two parts of a program from finding different ones. A collection that deduplicates its elements with one equality and is queried with the other gives answers that contradict each other. Evidence found by search is called **coherent** when every search for the same type finds the same instance, or at least instances that behave the same. Scala does not enforce coherence; Haskell, for instance, insists on at most one instance per type in a whole program **[Standard, from memory]**. Subtyping between evidence classes makes the question sharper: since `EqType` extends `Type`, a search for `A is Type` can be answered by the `EqType` evidence in scope (section 3.8). That is harmless for `Type`, which has no members, but not in general.
 
 This document and the library follow a convention **[Convention]**: *a type has at most one `Eq` in its implicit scope, and it is the type's semantic equality; a coarser equality gets a new type.* That is why `sameElements` is a plain method above, not a given, and why section 7.6 gives finite sets their own type, which carries `sameElements` as *its* only equality.
 
@@ -1977,13 +1989,14 @@ import finite.{FinSet, flatMapSet}
 
 object FinRel extends Category:
   type Self[A, B] = A -> FinSet[B]
-  type Obj        = Eq
-  def identity[A: Eq]: A -> FinSet[A] = a => FinSet.single(a)
-  def compose[A: Eq, B: Eq, C: Eq](g: B -> FinSet[C], f: A -> FinSet[B]): A -> FinSet[C] =
+  type Obj        = EqType
+  def identity[A: EqType]: A -> FinSet[A] = a => FinSet.single(a)
+  def compose[A: EqType, B: EqType, C: EqType](g: B -> FinSet[C], f: A -> FinSet[B]): A -> FinSet[C] =
+    given (B is Eq) = B.equality
     a => f(a).flatMapSet(g)
 ```
 
-Its objects are the types with decidable equality, `Obj = Eq`. Its arrows are relations in which each element is related to finitely many others, compared extensionally as sets at every argument. Composition is computable because the images are finite. And this is a category in which congruence is a real obligation: two arrows that return the same sets in different orders must give composites that do, which holds because `flatMap` of equal sets gives equal sets **[Proved]**, and which a test checks by composing arrows with shuffled and duplicated variants of themselves. Compared with chapter 5, where Rel with decidable predicates had uncomputable composition, and chapter 8, where Rel is restricted to finite types, this is the third piece of Rel that Scala can capture: arbitrary types, finitely branching relations.
+Its objects are the types with decidable equality, `Obj = EqType`, and composition takes the equality of the middle object from its evidence. Its arrows are relations in which each element is related to finitely many others, compared extensionally as sets at every argument. Composition is computable because the images are finite. And this is a category in which congruence is a real obligation: two arrows that return the same sets in different orders must give composites that do, which holds because `flatMap` of equal sets gives equal sets **[Proved]**, and which a test checks by composing arrows with shuffled and duplicated variants of themselves. Compared with chapter 5, where Rel with decidable predicates had uncomputable composition, and chapter 8, where Rel is restricted to finite types, this is the third piece of Rel that Scala can capture: arbitrary types, finitely branching relations.
 
 ### 7.8 Set and Scala
 
@@ -2019,22 +2032,22 @@ In an ordinary category, objects can be anything: numbers, sets, points of a spa
 
 Object evidence (section 3.8) restricts the objects to the types `A` for which an instance `A is Obj` exists. The evidence serves two purposes at once. It says which types are objects, and it supplies run-time information that uniform programs need about each object. The second purpose is what makes the following example work.
 
-**Rel on finite types.** A finite type, with decidable equality, can list its values:
+**Rel on finite types.** A finite type is a type with an equality that can list its values, so its evidence refines `EqType` (section 3.8):
 
 ```scala
 import tutorial.ch03.Categories.*
 import Eq.given
 
-trait Finite extends Eq:
+trait Finite extends EqType:
   def all: List[Self] // every value, each exactly once
 
   object FiniteLaws:
-    def complete(x: Self): Boolean = all.count(_ === x) == 1
+    def complete(x: Self): Boolean = all.count(y => equality.equal(y, x)) == 1
 
 object Finite:
   given BooleanIsFinite: Boolean is Finite:
-    def equal(a: Boolean, b: Boolean): Boolean = a == b
-    def all: List[Boolean]                     = List(false, true)
+    def equality: Boolean is Eq = Eq.BooleanIsEq
+    def all: List[Boolean]      = List(false, true)
 ```
 
 The law `complete` says that each value occurs exactly once. With this evidence, composing relations given as predicates is a finite search:
@@ -2043,7 +2056,7 @@ The law `complete` says that each value occurs exactly once. With this evidence,
 object FiniteRel extends Category:
   type Self[A, B] = (A, B) -> Boolean
   type Obj        = Finite
-  def identity[A: Finite]: (A, A) -> Boolean = (x, y) => x === y
+  def identity[A: Finite]: (A, A) -> Boolean = (x, y) => A.equality.equal(x, y)
   def compose[A: Finite, B: Finite, C: Finite](s: (B, C) -> Boolean, r: (A, B) -> Boolean): (A, C) -> Boolean =
     (a, c) => B.all.exists(b => r(a, b) && s(b, c))
 ```

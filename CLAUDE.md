@@ -205,7 +205,8 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    parameters and derives or `export`s their operations. A structure that is another with more operations extends it
    instead: `Freyd(P, S)` is the category of arrows `Promonad.Arrows(P)` with a strength `S`.
 6. **Object evidence**: a category's objects are the types with evidence `type Obj <: Type`. `Type` holds for every
-   type (`Type.TIsType`); refinements such as `Eq` select fewer. Evidence is passed only through context bounds,
+   type (`Type.TIsType`); refinements such as `ProductObj` select fewer. `Eq`, `Observable` and `Preorder` are type
+   classes of data, not object evidence, and do not extend `Type`. Evidence is passed only through context bounds,
    except evidence that chooses an object, which is a `tracked` parameter: the unit `U` of `Monoidal(K, U, T)`, whose
    type is the unit object `I = U.Self`.
 7. **Instances are `object`s** with descriptive names, nested in what they belong to: `Total.Product`,

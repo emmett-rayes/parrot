@@ -20,7 +20,8 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 ## The map
 
 ```
-Type ─ refines ─ Eq ─ induces ─ Observable ─ counterpart ─ Preorder            evidence and oracles
+Type                                                                           object evidence
+Eq ─ induces ─ Observable ─ counterpart ─ Preorder                             equality and oracles
 
 Category (Op, Product, Iso)                                                    𝒮 = Total, 𝒫 = Partial
 └─ on ─ Functor ─ is a ─ Endofunctor ─ on ─ Monad ─ induces ─ Kleisli (a Promonad)

@@ -17,10 +17,10 @@ import scala.annotation.targetName
 abstract class Category extends caps.Pure {
   type Self[_, _]
 
-  /** The type class selecting the objects: any refinement of [[Type]]. */
+  /** The type class selecting the objects. */
   type Obj <: Type
 
-  /** The morphisms **C**(*A*,*B*). */
+  /** The hom-object of **C**. */
   final type Hom = Self
 
   /** Infix alias for [[Hom]]. */
@@ -32,14 +32,14 @@ abstract class Category extends caps.Pure {
   /** Composes *g*: *B* → *C* and *f*: *A* → *B* to *g* ∘ *f*: *A* → *C*. */
   def compose[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C
 
-  /** Composes *g*: *B* → *C* and *f*: *A* → *B* in diagrammatic order to *f* ⨾ *g*: *A* → *C*. */
+  /** Composes *f*: *A* → *B* and *g*: *B* → *C* in diagrammatic order to *f* ⨾ *g*: *A* → *C*. */
   final def andThen[A: Obj, B: Obj, C: Obj](f: A --> B, g: B --> C): A --> C = {
     compose(g, f)
   }
 
   /** An isomorphism *A* ≅ *B* between objects *A* and *B*.
     *
-    * Consists of two morphisms, inverse to each other by [[IsoLaws.isomorphism]].
+    * An isomorphism consists of two morphisms, inverse to each other. See [[IsoLaws]].
     */
   final case class Iso[A: Obj, B: Obj](to: A --> B, from: B --> A)
 
@@ -104,10 +104,16 @@ abstract class Category extends caps.Pure {
   /** Laws that any `Iso` must satisfy. */
   object IsoLaws {
 
-    /** *i*⁻¹ ∘ *i* = *id* and *i* ∘ *i*⁻¹ = *id*
+    /** *i*⁻¹ ∘ *i* = *id*
       */
-    def isomorphism[A: Obj, B: Obj](i: A <-> B)(using (A --> A) is Observable, (B --> B) is Observable): Boolean = {
-      ((i.to >>> i.from) =?= identity[A]) && ((i.from >>> i.to) =?= identity[B])
+    def leftInverse[A: Obj, B: Obj](i: A <-> B)(using (A --> A) is Observable): Boolean = {
+      ((i.to >>> i.from) =?= identity[A])
+    }
+
+    /** *i* ∘ *i*⁻¹ = *id*
+      */
+    def rightInverse[A: Obj, B: Obj](i: A <-> B)(using (B --> B) is Observable): Boolean = {
+      ((i.from >>> i.to) =?= identity[B])
     }
   }
 }
