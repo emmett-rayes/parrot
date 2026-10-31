@@ -14,8 +14,8 @@ import scala.util.matching.Regex
   * structures the algebra is built from, where
   *   - [[Arrows]]: parsers form a promonad over the category of pure functions (*unit*, ⨾)
   *   - [[Products]] and [[Coproducts]]: pairs and tagged unions of semantic values, in the category of pure functions
-  *   - [[Zipping]]: a strength over products, which makes parsers a Freyd category (⋉, ⟨-,-⟩)
-  *   - [[Branching]]: a strength over coproducts (+, [-,-])
+  *   - [[Zipping]]: a strength over products, which makes parsers a Freyd category, [[Zipped]] (⋉, ⟨-,-⟩)
+  *   - [[Branching]]: a strength over coproducts, which makes parsers a Freyd category, [[Branched]] (+, [-,-])
   *   - [[Choice]]: a classical restriction structure (0, *p̄*, *p̄*ᶜ, *attempt*, ⊳)
   *   - [[Loops]]: guarded iteration (†, and the repetition combinators derived from it)
   *   - [[Knots]]: guarded recursion at the types of parsers (*fix*)
@@ -125,15 +125,20 @@ abstract class ParserAlgebra(
 
   // ==== Zipping and branching: the strengths ====
 
-  /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* = *τ*′(*p*) ⨾ *τ*(*q*).
-    */
-  def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
-    andThen(Zipping.right[A, B, C](p), Zipping.left[C, D, B](q))
+  /** Parsers as a Freyd category over products, with the strength [[Zipping]]. */
+  final lazy val Zipped: Freyd { val P: Arrows.type; val S: Zipping.type } = Freyd(Arrows, Zipping)
+
+  /** Parsers as a Freyd category over coproducts, with the strength [[Branching]]. */
+  final lazy val Branched: Freyd { val P: Arrows.type; val S: Branching.type } = Freyd(Arrows, Branching)
+
+  /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* in [[Zipped]]. */
+  final def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
+    Zipped.parallel(p, q)
   }
 
-  /** Runs *p* on a left semantic input or *q* on a right one, tagging the result: *p* + *q*. */
-  def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
-    andThen(Branching.right[A, B, C](p), Branching.left[C, D, B](q))
+  /** Runs *p* on a left semantic input or *q* on a right one, tagging the result: *p* + *q* in [[Branched]]. */
+  final def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
+    Branched.parallel(p, q)
   }
 
   /** Runs *p* on a left semantic input or *q* on a right one, into a common result: [*p*,*q*]. */

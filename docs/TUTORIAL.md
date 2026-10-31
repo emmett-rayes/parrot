@@ -3556,8 +3556,8 @@ A parser `P[A, B]` consumes a prefix of the input while turning a **semantic inp
 | --- | --- | --- | --- |
 | `Arrows` | promonad over a category of pure functions `-->` | 17 | `pure`, `success`, `>>`, `map`, `mapInput` |
 | `Products`, `Coproducts` | cartesian and cocartesian structure of `-->`, on `Tuple2` and `Either` | 14 | used by the derived combinators |
-| `Zipping` | strength over products: a Freyd category | 17 | `**`, and derived from it `&&`, `*>`, `<*`, `between` |
-| `Branching` | strength over coproducts | 17 | `++`, and derived from it `\|\|` |
+| `Zipping` | strength over products, which makes parsers a Freyd category, `Zipped` | 17 | `**`, and derived from it `&&`, `*>`, `<*`, `between` |
+| `Branching` | strength over coproducts, which makes parsers a Freyd category, `Branched` | 17 | `++`, and derived from it `\|\|` |
 | `Choice` | classical restriction structure | 18 | `failure`, `~` (lookahead), `!` (negation), `attempt`, `\|>`, `+>`, `optional` |
 | `Loops` | guarded iteration | 19 | `iterate`, and derived from it `repeated`, `times`, `atLeast`, `separatedBy` |
 | `Knots` | guarded recursion at the types of parsers | 19 | `recursive` |

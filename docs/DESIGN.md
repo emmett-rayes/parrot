@@ -97,7 +97,7 @@ where a program can tell a diverging pair from the pair of its diverging compone
   base's. There both `>>>` apply, Scala reports an ambiguity or rejects the argument (never a wrong composition: both
   readings type-check only if *B* = *M*(*B*)), and the code imports one `>>>` and names the other composition. No
   operator is a name that a type already has: `?<`, not `<=`, which `Int`'s own `<=` would shadow. Plain forwards are
-  `export`s.
+  `export`s, without docs; a forward that renames is a method that delegates, with its own doc.
 - **Operators are syntax.** Every symbolic extension passes its arguments one-to-one, in order, to a named method of the
   same structure (`p >>> q` is `andThen(p, q)`, `p ** q` is `parallel(p, q)`), and computes nothing of its own. Every
   operation then has a name that docs, laws, exports and searches can refer to, and an operator can be read by looking

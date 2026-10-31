@@ -250,12 +250,11 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 15. **Eta-reduce aliases** whose parameters are only passed on: `final type * = Tensor`, `type Self = Tuple2`.
 16. **`final`** on what is definitional: aliases and extension methods that only forward (`>>>`, `***`, `|>`, `first`,
     `restricted`, the parser syntax); **`override` without `final`** when redefining an inherited member. A member that
-    only forwards to a member of a parameter, with the same type parameters, is an **`export`**, not a new `def`
-    (`Monad` exports `K`, `M`, `map`, `objects` from its functor; `ParserAlgebra` exports `pure`, `success`, `failure`,
-    `lookahead`, `not`, `attempt`, `optional`, `orElse` from its structures). Exports are final. An export that gives
-    members a new meaning carries one scaladoc on the clause, saying what the new names mean (`ParserAlgebra`:
-    `unit as pure`, `complement as not`); one that only forwards needs none, since the members keep their own docs
-    (`Monad`, which only names its carrier `M`, as rule 13 does).
+    only forwards to a member of a parameter, under its own name and with the same type parameters, is an **`export`**,
+    not a new `def` (`Monad` exports `K`, `map`, `objects` from its functor, and names its carrier `F as M`, as rule 13
+    does). Exports are final and carry no scaladoc: the members keep their own docs. A forward that gives a member a new
+    name or meaning is instead a `final def` with its own scaladoc that delegates to it (`ParserAlgebra.zip`, *p* ⋉ *q*
+    in `Zipped`, is `Zipped.parallel(p, q)`).
 17. **Monads have their functor**: `abstract class Monad(tracked val F: Endofunctor)` with primitives `unit` and
     `flatten`; `map`, `objects` are exported from `F`, `bind` is derived. Refine monads through the functor, `Monad.On[Total.type]` =
     `Monad { val F: Endofunctor { val K: Total.type } }`, not `Monad { val K: Total.type }`: only the former keeps the
@@ -314,8 +313,8 @@ pure functions (`Fn` or `->`), `lift` includes a Scala function into it. Semanti
 | Combinators | Structure |
 | --- | --- |
 | `pure`, `success`, `>>`, `map`, `mapInput` | `Arrows`: a promonad over `-->` |
-| `**` (`zip`), `&&`, `*>`, `<*`, `between` | `Zipping`: strength over products (a Freyd category); concatenation uses `Products` |
-| `++` (`branch`), `\|\|` (`merge`) | `Branching`: strength over coproducts |
+| `**` (`zip`), `&&`, `*>`, `<*`, `between` | `Zipping`: strength over products; `zip` is `parallel` of its Freyd category `Zipped`; concatenation uses `Products` |
+| `++` (`branch`), `\|\|` (`merge`) | `Branching`: strength over coproducts; `branch` is `parallel` of its Freyd category `Branched` |
 | `failure`, `~` (lookahead), `!` (not), `attempt`/`optional`, `\|>` (`orElse`), `+>` (`or`) | `Choice`: classical restriction structure; `\|>` is override (PEG ordered choice) |
 | `iterate`, `repeated`, `times`, `atLeast`, `separatedBy` | `Loops`: **guarded** iteration — a step that continues without consuming input fails |
 | `recursive`, `recursive[T <: Tuple]` (mutual) | `Knots`: **guarded** recursion — a recursive call without progress fails; tuples use `fixFamily`, one knot per parser |
@@ -410,8 +409,7 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 
 ### Documentation style
 
-- **Every** public class, type, given, method and law has a scaladoc comment; exports only when they give members a
-  new meaning (rule 16 of §4.1).
+- **Every** public class, type, given, method and law has a scaladoc comment; exports have none (rule 16 of §4.1).
 - Math notation in docs: variables in `*italics*`, categories in `**bold**` (`**K**`, `**V**`) or as 𝒮 and 𝒫, Unicode
   symbols (η, μ, ⊗, ⊕, π₁, ι₂, ⟨-,-⟩, [-,-], †, ∘, ⨾, ⊳, ⊑, ⊔).
 - **Math mode composition** uses `∘` (or `⨾` where diagrammatic order reads better); **no spaces in math argument
