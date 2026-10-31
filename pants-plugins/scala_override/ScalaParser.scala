@@ -571,8 +571,12 @@ object ScalaParser {
     val path = java.nio.file.Paths.get(pathStr)
     val bytes = java.nio.file.Files.readAllBytes(path)
     // Scalameta rejects pure context functions (`?->`) in polymorphic function types, which capture checking requires
-    // there. `?=>` has the same length and names, which is all dependency inference needs.
-    val text = new String(bytes, "UTF-8").replace("?->", "?=>")
+    // there, and pure polymorphic function types (`[A] -> B`). `?=>` and `=>` have the same length and names, which is
+    // all dependency inference needs. The second arrow is rewritten only after a type parameter clause that starts a
+    // type, after `:`, `(`, `,`, `=` or `[`, so that `List[A] -> B` and `xs[A] -> b` are left alone.
+    val text = new String(bytes, "UTF-8")
+      .replace("?->", "?=>")
+      .replaceAll("""(?<=[:(,=\[]\s?)(\[[^\[\]]*\]\s*)->""", "$1=>")
 
     val dialect =
       scalaVersion.take(4) match {

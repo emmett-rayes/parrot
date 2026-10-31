@@ -105,8 +105,9 @@ pants dependencies <path-to-file>        # inspect inferred dependencies for a f
 > [!NOTE]
 > Pants uses fine-grained, file-level dependency inference powered by Scalameta. Because vanilla Scalameta rejects
 > Scala 3's `tracked` term parameters, Pants loads the in-repo plugin `scala_override` (`pants-plugins/scala_override`)
-> to patch `ScalaParser.scala` with `dialects.Scala3Future`. It also reads `?->` as `?=>`, because Scalameta rejects the
-> pure arrows that capture checking requires in polymorphic function types (§11).
+> to patch `ScalaParser.scala` with `dialects.Scala3Future`. It also reads `?->` as `?=>`, and the arrow of a pure
+> polymorphic function type `[A] -> B` as `=>`, because Scalameta rejects the pure arrows that capture checking requires
+> in polymorphic function types (§11).
 >
 > In `Closed.scala`, the infix exponential type operator is escaped as `` `^` `` to prevent collision with Scalameta's
 > capture-checking syntax.
@@ -610,8 +611,9 @@ Things that cost time once; check here before fighting the compiler.
   without fields (`Proj1()`, `Success()`) crash the capture checker or fail with `Found: Proj1[…]`, `Required: Boolean`
   (`docs/DESIGN.md` §10): write type patterns, `case _: Proj1[?, ?]`, which match the same values and refine the same
   type arguments. A polymorphic function type cannot wrap an impure function type: write `[X] => Sample[X] ?->
-  Sample[F[X]]`, not `?=>`. Scalameta rejects these pure arrows, so `scala_override` reads `?->` as `?=>`; `->` there
-  has no such rewrite and is best avoided (`JsonGrammarTest` calls the algebra's `parse` instead of taking a function).
+  Sample[F[X]]`, not `?=>`. Scalameta rejects these pure arrows, so `scala_override` reads `?->` as `?=>`, and the arrow
+  of a pure polymorphic function type, `[A] -> B`, as `=>`; a pure function arrow inside one (`[X] => A -> B`) has no
+  such rewrite and is best avoided (`JsonGrammarTest` calls the algebra's `parse` instead of taking a function).
   And in a public inline method, the singleton type of a private member (`isInstanceOf[Failed.type]`) goes through an
   accessor, which is not a stable path: compare with `eq`. `Any.equals` is deprecated: use `==` with a `CanEqual`.
 - **Inline methods and path-dependent givens.** Inside an inline expansion the algebra appears as a proxy path, so a

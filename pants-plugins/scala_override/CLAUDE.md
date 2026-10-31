@@ -13,8 +13,9 @@ Pants uses fine-grained, file-level dependency inference for Scala powered by Sc
 3. **Ignores Scala 3 `given` definitions:** Vanilla Pants only handles Scala 2 `val`, `var`, and `def`, completely omitting `Defn.GivenAlias` and `Defn.Given`.
 4. **Fails on relative sibling imports:** In files with chained package clauses (`package parrot; package parser`), relative imports like `import category.*` are not qualified against parent package scopes.
 5. **Rejects pure context functions in polymorphic function types:** Scalameta (4.17.0 in Pants, and 4.17.4, the latest) fails on `[X] => Sample[X] ?-> Sample[F[X]]` with "polymorphic function types must have a value parameter". Since Scala 3.10, capture checking requires the pure arrow there.
+6. **Rejects pure polymorphic function types:** Scalameta fails on `[A] -> (A is J.Obj) ?-> D.F[A]` with "expected =>> or =>": it knows only the arrow `[A] =>`.
 
-The `scala_override` plugin provides an in-repo override of `ScalaParser.scala` fixing all five issues.
+The `scala_override` plugin provides an in-repo override of `ScalaParser.scala` fixing all six issues.
 
 ---
 
@@ -75,8 +76,10 @@ Keeping [`ScalaParser.original.scala`](ScalaParser.original.scala) alongside the
    Computes enclosing package scopes from `nameParts` and adds qualified variants to `importsByScope` for relative package imports (`import category.*` -> `parrot.category.*`).
 4. **`Defn.GivenAlias` and `Defn.Given` (lines ~395–415):**
    Extracts provided names, consumed signature types (`decltpe`), and type-parameter context bounds (`tparams`) for Scala 3 `given` definitions.
-5. **`?->` read as `?=>` (lines ~573–575):**
+5. **`?->` read as `?=>` (lines ~573–579):**
    Replaces `?->` with `?=>` in the source text before parsing. Both arrows have the same length, so positions are unchanged, and the names that dependency inference extracts are the same.
+6. **Pure polymorphic arrows read as `=>` (lines ~573–579):**
+   Replaces `->` with `=>` after a type parameter clause that starts a type, that is, after `:`, `(`, `,`, `=` or `[`, with the regular expression `(?<=[:(,=\[]\s?)(\[[^\[\]]*\]\s*)->`. Ordinary function types (`List[A] -> B`) and terms (`xs[A] -> b`) are left alone, and so are type parameter clauses with nested brackets (`[F[_]] -> …`), which the repository does not use. The arrows have the same length, so positions are unchanged.
 
 ---
 
@@ -86,8 +89,11 @@ Whenever you modify [`ScalaParser.scala`](ScalaParser.scala):
 
 1. **Regenerate the diff:**
    ```sh
-   diff -u -p pants-plugins/scala_override/ScalaParser.original.scala pants-plugins/scala_override/ScalaParser.scala > pants-plugins/scala_override/ScalaParser.scala.diff
+   diff -u -p --label a/pants-plugins/scala_override/ScalaParser.scala --label b/pants-plugins/scala_override/ScalaParser.scala \
+     pants-plugins/scala_override/ScalaParser.original.scala pants-plugins/scala_override/ScalaParser.scala \
+     > pants-plugins/scala_override/ScalaParser.scala.diff
    ```
+   The labels give the diff the `a/` and `b/` headers that `patch -p1` expects.
 2. **Verify diff applicability:**
    Confirm the diff reverses cleanly against the modified file:
    ```sh

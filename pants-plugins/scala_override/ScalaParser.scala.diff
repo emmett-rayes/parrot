@@ -61,18 +61,21 @@
      case Decl.Def(mods, _nameNode, tparams, params, decltpe) => {
        visitMods(mods)
        extractNamesFromTypeTree(decltpe).iterator.foreach(recordConsumedSymbol(_))
-@@ -542,7 +570,9 @@ object ScalaParser {
+@@ -542,7 +570,13 @@ object ScalaParser {
    def analyze(pathStr: String, scalaVersion: String, source3: Boolean): Analysis = {
      val path = java.nio.file.Paths.get(pathStr)
      val bytes = java.nio.file.Files.readAllBytes(path)
--    val text = new String(bytes, "UTF-8")
 +    // Scalameta rejects pure context functions (`?->`) in polymorphic function types, which capture checking requires
-+    // there. `?=>` has the same length and names, which is all dependency inference needs.
-+    val text = new String(bytes, "UTF-8").replace("?->", "?=>")
++    // there, and pure polymorphic function types (`[A] -> B`). `?=>` and `=>` have the same length and names, which is
++    // all dependency inference needs. The second arrow is rewritten only after a type parameter clause that starts a
++    // type, after `:`, `(`, `,`, `=` or `[`, so that `List[A] -> B` and `xs[A] -> b` are left alone.
+     val text = new String(bytes, "UTF-8")
++      .replace("?->", "?=>")
++      .replaceAll("""(?<=[:(,=\[]\s?)(\[[^\[\]]*\]\s*)->""", "$1=>")
  
      val dialect =
        scalaVersion.take(4) match {
-@@ -552,9 +582,9 @@ object ScalaParser {
+@@ -552,9 +586,9 @@ object ScalaParser {
          case "2.12"            => dialects.Scala212
          case "2.13" if source3 => dialects.Scala213Source3
          case "2.13"            => dialects.Scala213
