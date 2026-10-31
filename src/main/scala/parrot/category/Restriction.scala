@@ -13,7 +13,7 @@ import scala.annotation.targetName
   * succeeds. For parsers, *p̄* is positive lookahead.
   */
 abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
-  import P.P
+  import P.{P, >>>}
   import P.K.{Obj, -->}
 
   /** The restriction *p̄*: *A* → *A* of *p*: *A* → *B*. */
@@ -32,7 +32,7 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
     /** **R1** *p̄* ⨾ *p* = *p*
       */
     def r1[A: Obj, B: Obj](p: P[A, B])(using P[A, B] is Observable): Boolean = {
-      P.multiply(p, restrict(p)) =?= p
+      (restrict(p) >>> p) =?= p
     }
 
     /** **R2** *p̄* ⨾ *q̄* = *q̄* ⨾ *p̄*
@@ -40,7 +40,7 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
     def r2[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[A, C])(
       using P[A, A] is Observable
     ): Boolean = {
-      P.multiply(restrict(q), restrict(p)) =?= P.multiply(restrict(p), restrict(q))
+      (restrict(p) >>> restrict(q)) =?= (restrict(q) >>> restrict(p))
     }
 
     /** **R3** (*p̄* ⨾ *q*)‾ = *p̄* ⨾ *q̄*
@@ -48,7 +48,7 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
     def r3[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[A, C])(
       using P[A, A] is Observable
     ): Boolean = {
-      restrict(P.multiply(q, restrict(p))) =?= P.multiply(restrict(q), restrict(p))
+      restrict(restrict(p) >>> q) =?= (restrict(p) >>> restrict(q))
     }
 
     /** **R4** *p* ⨾ *q̄* = (*p* ⨾ *q*)‾ ⨾ *p*
@@ -56,7 +56,7 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
     def r4[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[B, C])(
       using P[A, B] is Observable
     ): Boolean = {
-      P.multiply(restrict(q), p) =?= P.multiply(p, restrict(P.multiply(q, p)))
+      (p >>> restrict(q)) =?= (restrict(p >>> q) >>> p)
     }
 
     /** *unit*(*f*)‾ = *id*: pure arrows are total.
@@ -94,7 +94,7 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
 abstract class Classical(tracked override val P: Promonad, tracked val C: Cocartesian { val K: P.K.type })
     extends Restriction(P) {
   import C.{+, given}
-  import P.P
+  import P.{P, >>>}
   import P.K.Obj
 
   /** The restriction zero 0: *A* → *B*, defined nowhere. */
@@ -109,7 +109,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
   /** *attempt*(*p*) = (*p* ⨾ *ι*₁) ⊳ *ι*₂: the result of *p* on the left, or the untouched input on the right.
     */
   def attempt[A: Obj, B: Obj](p: P[A, B]): P[A, B + A] = {
-    orElse(P.multiply(P.unit(C.inl[B, A]), p), P.unit(C.inr[B, A]))
+    orElse(p >>> P.unit(C.inl[B, A]), P.unit(C.inr[B, A]))
   }
 
   extension [A: Obj, B: Obj](p: P[A, B])
@@ -131,13 +131,13 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
 
     /** 0 ⨾ *p* = 0 */
     def zeroLeft[A: Obj, B: Obj, C: Obj](p: P[B, C])(using P[A, C] is Observable): Boolean = {
-      P.multiply(p, zero[A, B]) =?= zero[A, C]
+      (zero[A, B] >>> p) =?= zero[A, C]
     }
 
     /** *p* ⨾ 0 = 0
       */
     def zeroRight[A: Obj, B: Obj, C: Obj](p: P[A, B])(using P[A, C] is Observable): Boolean = {
-      P.multiply(zero[B, C], p) =?= zero[A, C]
+      (p >>> zero[B, C]) =?= zero[A, C]
     }
 
     /** 0 ⊳ *p* = *p* = *p* ⊳ 0 */
@@ -158,7 +158,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
     def overrideRestricted[A: Obj, B: Obj](p: P[A, B], q: P[A, B])(
       using P[A, B] is Observable
     ): Boolean = {
-      orElse(p, P.multiply(q, restrict(p))) =?= p
+      orElse(p, restrict(p) >>> q) =?= p
     }
 
     /** **⊳.3** (*q̄* ⨾ *p*) ⊳ *p* = *p*
@@ -166,7 +166,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
     def overrideRestricting[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[A, C])(
       using P[A, B] is Observable
     ): Boolean = {
-      orElse(P.multiply(p, restrict(q)), p) =?= p
+      orElse(restrict(q) >>> p, p) =?= p
     }
 
     /** **⊳.4** *h* ⨾ (*p* ⊳ *q*) = (*h* ⨾ *p*) ⊳ (*h* ⨾ *q*): precomposition distributes.
@@ -176,7 +176,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
       p: P[B, C],
       q: P[B, C],
     )(using P[A, C] is Observable): Boolean = {
-      P.multiply(orElse(p, q), h) =?= orElse(P.multiply(p, h), P.multiply(q, h))
+      (h >>> orElse(p, q)) =?= orElse(h >>> p, h >>> q)
     }
 
     /** **⊳.5** (*p* ⊳ *q*)‾ ⨾ *h* = (*p̄* ⨾ *h*) ⊳ (*q̄* ⨾ *h*)
@@ -186,13 +186,13 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
       q: P[A, B],
       h: P[A, C],
     )(using P[A, C] is Observable): Boolean = {
-      P.multiply(h, restrict(orElse(p, q))) =?= orElse(P.multiply(h, restrict(p)), P.multiply(h, restrict(q)))
+      (restrict(orElse(p, q)) >>> h) =?= orElse(restrict(p) >>> h, restrict(q) >>> h)
     }
 
     /** *p̄* ⨾ *p̄*ᶜ = 0: an arrow cannot be both defined and undefined.
       */
     def complementExclusion[A: Obj, B: Obj](p: P[A, B])(using P[A, A] is Observable): Boolean = {
-      P.multiply(complement(p), restrict(p)) =?= zero[A, A]
+      (restrict(p) >>> complement(p)) =?= zero[A, A]
     }
 
     /** *p̄* ⊳ *p̄*ᶜ = *id*: every input either is or is not in the domain of *p*.
@@ -214,7 +214,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
     /** *attempt*(*p*) = (*p* ⨾ *ι*₁) ⊳ *ι*₂
       */
     def attemptDefinition[A: Obj, B: Obj](p: P[A, B])(using P[A, B + A] is Observable): Boolean = {
-      attempt(p) =?= orElse(P.multiply(P.unit(C.inl[B, A]), p), P.unit(C.inr[B, A]))
+      attempt(p) =?= orElse(p >>> P.unit(C.inl[B, A]), P.unit(C.inr[B, A]))
     }
 
     /** If *p* = *p*′ and *q* = *q*′, then *p* ⊳ *q* = *p*′ ⊳ *q*′ and *p̄*ᶜ = *p*′‾ᶜ.

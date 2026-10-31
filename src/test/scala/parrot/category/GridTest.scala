@@ -90,7 +90,7 @@ abstract class ElgotSpec(
   import types.{T2, T3, given}
   import promonad.*
   import E.S.P
-  import P.P
+  import P.{P, >>>}
   import E.ElgotLaws.*
   import P.K.-->
 
@@ -167,7 +167,7 @@ abstract class ElgotSpec(
     forAll(observations, fs) { (observe, f) =>
       given (P[Int, T2] is Observable) = observe
       val (h, inverse)                          = bijection
-      val g = P.multiply(E.S.left[Int, Int, T2](P.unit(h)), P.multiply(f, P.unit(inverse)))
+      val g = P.unit(inverse) >>> f >>> E.S.left[Int, Int, T2](P.unit(h))
       uniformity(f, g, h)
     }
   }
@@ -345,7 +345,7 @@ abstract class ConwaySpec(
   import types.{T2, T3, given}
   import promonad.*
   import C.S.P
-  import P.P
+  import P.{P, >>>}
   import C.ConwayLaws.*
   import P.K.-->
 
@@ -424,7 +424,7 @@ abstract class ConwaySpec(
     forAll(observations, fs) { (observe, f) =>
       given (P[T2, Int] is Observable) = observe
       val (h, inverse)                          = bijection
-      val g = P.multiply(P.unit(h), P.multiply(f, C.S.left[Int, Int, T2](P.unit(inverse))))
+      val g = C.S.left[Int, Int, T2](P.unit(inverse)) >>> f >>> P.unit(h)
       uniformity(f, g, h)
     }
   }

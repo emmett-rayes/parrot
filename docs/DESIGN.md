@@ -88,9 +88,19 @@ where a program can tell a diverging pair from the pair of its diverging compone
 - **Names follow the mathematics.** Carriers have short aliases (`Hom`/`-->`, `F`, `P`, `M`, `C`); arrows of other
   categories are imported, renamed where categories meet (`->>`, `==>`, `~~>`); these three-symbol arrows name roles,
   while the two concrete categories have two-symbol arrows, `->` for 𝒮 and `~>` for 𝒫; objects are combined infix (`*`,
-  `+`, `B ^ A` for *B*ᴬ, `<->` for isomorphisms); every structure has its own operators (`>>>`, `>>`, `***`, `&&&`,
-  `|||`, `**`, `|>`, `=?=`, `?<`, `===`), so two structures can be imported into one scope, and none is a name that a
-  type already has: `?<`, not `<=`, which `Int`'s own `<=` would shadow. Plain forwards are `export`s.
+  `+`, `B ^ A` for *B*ᴬ, `<->` for isomorphisms); every operation has one operator (`>>>`, `***`, `&&&`, `|||`, `**`,
+  `|>`, `=?=`, `?<`, `===`), and the same operator of two structures forms an overload that Scala resolves by the type
+  of the arrow, so a category and a promonad both compose with `>>>`. Promonads once had `>>` instead; a spike showed
+  that same-named extensions from two imports do overload, which removed the reason. The exception is a value that is an
+  arrow of two structures: a Kleisli arrow `A -> M[B]` on 𝒮 is also a function, and a hom promonad's arrow is its
+  base's. There both `>>>` apply, Scala reports an ambiguity or rejects the argument (never a wrong composition: both
+  readings type-check only if *B* = *M*(*B*)), and the code imports one `>>>` and names the other composition. No
+  operator is a name that a type already has: `?<`, not `<=`, which `Int`'s own `<=` would shadow. Plain forwards are
+  `export`s.
+- **Operators are syntax.** Every symbolic extension passes its arguments one-to-one, in order, to a named method of the
+  same structure (`p >>> q` is `andThen(p, q)`, `p ** q` is `parallel(p, q)`), and computes nothing of its own. Every
+  operation then has a name that docs, laws, exports and searches can refer to, and an operator can be read by looking
+  up one method. An operator with its own logic (`**` was once `first(p) >>> second(q)`) is a hidden operation.
 - **A monad is structure on an endofunctor**: `Monad(F: Endofunctor)` with `unit` and `flatten` primitive, the monoid
   presentation, so that `Monad` and `Monoid` have the same shape; `bind` is derived. Monads are refined through their
   functor (`Monad.On[Total.type]`), because only that keeps the chain of singleton types that path-dependent code needs.

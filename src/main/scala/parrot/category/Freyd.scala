@@ -17,7 +17,7 @@ import scala.annotation.targetName
   */
 final class Freyd(tracked val S: Strong.Bistrong { val P: Promonad }) {
   import S.M.{`*`, given}
-  import S.P.P
+  import S.P.{P, >>>}
   import S.P.K.{Obj, -->}
 
   /** *first*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*), the right strength *τ*′: the arrow runs on the first component.
@@ -32,11 +32,16 @@ final class Freyd(tracked val S: Strong.Bistrong { val P: Promonad }) {
     S.left[A, B, C](p)
   }
 
+  /** Runs *p*, then *q*, side by side: *p* ⋉ *q* = *second*(*q*) ∘ *first*(*p*). */
+  final def parallel[A: Obj, B: Obj, C: Obj, D: Obj](p: P[A, B], q: P[C, D]): P[A * C, B * D] = {
+    first[A, B, C](p) >>> second[C, D, B](q)
+  }
+
   extension [A: Obj, B: Obj](p: P[A, B])
-    /** Runs *p*, then *q*, side by side: *p* ⋉ *q* = *second*(*q*) ∘ *first*(*p*). */
+    /** Infix extension for [[parallel]]. */
     @targetName("parallelExt")
     final def **[C: Obj, D: Obj](q: P[C, D]): P[A * C, B * D] = {
-      S.P.multiply(second[C, D, B](q), first[A, B, C](p))
+      parallel(p, q)
     }
 
   /** Laws that make a strong promonad a Freyd category. */
@@ -55,7 +60,7 @@ final class Freyd(tracked val S: Strong.Bistrong { val P: Promonad }) {
     def multiply[A: Obj, B1: Obj, B2: Obj, C: Obj](p: P[A, B1], q: P[B1, B2])(
       using P[A * C, B2 * C] is Observable
     ): Boolean = {
-      first[A, B2, C](S.P.multiply(q, p)) =?= S.P.multiply(first[B1, B2, C](q), first[A, B1, C](p))
+      first[A, B2, C](p >>> q) =?= (first[A, B1, C](p) >>> first[B1, B2, C](q))
     }
 
     /** *first*(*unit*(*f*)) ⨾ *second*(*q*) = *second*(*q*) ⨾ *first*(*unit*(*f*)): pure arrows are central.
@@ -63,8 +68,7 @@ final class Freyd(tracked val S: Strong.Bistrong { val P: Promonad }) {
     def centrality[A: Obj, B: Obj, C: Obj, D: Obj](f: A --> B, q: P[C, D])(
       using P[A * C, B * D] is Observable
     ): Boolean = {
-      S.P.multiply(second[C, D, B](q), first[A, B, C](S.P.unit(f))) =?=
-        S.P.multiply(first[A, B, D](S.P.unit(f)), second[C, D, A](q))
+      (first[A, B, C](S.P.unit(f)) >>> second[C, D, B](q)) =?= (second[C, D, A](q) >>> first[A, B, D](S.P.unit(f)))
     }
   }
 }

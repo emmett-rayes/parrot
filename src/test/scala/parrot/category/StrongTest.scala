@@ -15,7 +15,7 @@ abstract class StrongSpec(
   import types.{T1, T2, T3, T4, given}
   import promonad.*
   import S.P
-  import P.P
+  import P.{P, >>>}
   import S.StrongLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[S.M.Tensor[X, Y]] = tensor[X, Y]
@@ -137,8 +137,7 @@ abstract class StrongSpec(
       q       <- arrow[T4, T3]
     } yield {
       given (P[T[T1, T4], T[T2, T3]] is Observable) = observe
-      P.multiply(S.left[T4, T3, T2](q), S.right[T1, T2, T4](p)) =?=
-        P.multiply(S.right[T1, T2, T3](p), S.left[T4, T3, T1](q))
+      (S.right[T1, T2, T4](p) >>> S.left[T4, T3, T2](q)) =?= (S.left[T4, T3, T1](q) >>> S.right[T1, T2, T3](p))
     }
   }
 }

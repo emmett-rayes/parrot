@@ -2406,7 +2406,7 @@ Problem 3 is solved as in section 3.8: a category declares `type Obj <: Type`, a
 - **Evidence that chooses an object is a parameter.** A monoidal structure is on its unit object as much as on its tensor, so it takes the unit's evidence as a `tracked` parameter, `Monoidal(K, U, T)`, and the unit object is the type that evidence is about, `I = U.Self`. 𝒮 has two units, `Unit` for its products and `Nothing` for its coproducts, so implicit search could no more choose the unit than the tensor. `Monoidal` offers the evidence to its clients as a given, `IIsObj`.
 - **An instance names its own evidence**, as `Type.TIsType`, instead of searching for it. A structure that offers evidence to its clients, such as `Monoidal.TensorIsObj`, would otherwise be found by its own definition and call itself.
 
-Infix code needs one more rule: **every structure has its own operator names.** `>>>` composes in a category, `>>` in a category of arrows (chapter 17), `***` is the tensor of a monoidal structure, `&&&` and `|||` pair and copair, `**` runs two effectful arrows side by side, `=?=` asks an `Observable` whether two values agree. Two instances that defined the same operator could not both be imported into one scope. With distinct names, code reads like the mathematics:
+Infix code needs one more rule: **every operation has one operator name.** `>>>` composes, in a category and in a category of arrows (chapter 17) alike, `***` is the tensor of a monoidal structure, `&&&` and `|||` pair and copair, `**` runs two effectful arrows side by side, `=?=` asks an `Observable` whether two values agree. Operators of the same name from two imports form an overload, which Scala resolves by the type of the arrow, so pure and effectful arrows can be composed side by side with `>>>`. The one exception is a value that is an arrow of two structures at once: an arrow A → M(B) of a Kleisli promonad on 𝒮 is also a function, so for it both `>>>` apply, and Scala reports an ambiguity or picks one and rejects the argument. Code about such arrows imports only one `>>>` and calls the other composition by its name. And every operator is only syntax: it passes its arguments, in order, to a named method that holds the logic, so `p >>> q` is `andThen(p, q)` and `p ** q` is `parallel(p, q)`, and every operation can be found, documented and exported by its name. With these names, code reads like the mathematics:
 
 ```scala library
 import parrot.category.*
@@ -3099,18 +3099,20 @@ such that the multiplication is associative and has the units of identities as i
 
 A promonad is a monoid in the category of profunctors on 𝒦, in the sense of Definition 15.3, with composition of profunctors as tensor **[Standard: from memory]**. That is why it is called a *pro*monad. Equivalently, and more concretely, a promonad is a category with the same objects as 𝒦 together with a functor from 𝒦 into it that is the identity on objects: its arrows A → B are the elements of P(A, B), its composition is the multiplication, and the functor is the unit **[Standard: from memory]**. The profunctor action of P is then determined: pre- and post-composing with pure arrows is multiplying by their units.
 
-The library's `Promonad(K)` has `unit` and `multiply`, an infix `>>` that composes in diagrammatic order, and `category`, the category of its arrows. Its laws are the category laws of `category` and the functor laws of `unit`, **[Tested]** for every instance.
+The library's `Promonad(K)` has `unit` and `multiply`, the composition `andThen` in diagrammatic and `compose` in mathematical order, written infix `>>>` and `<<<` as in a category, and `category`, the category of its arrows. Its laws are the category laws of `category` and the functor laws of `unit`, **[Tested]** for every instance.
 
 ```scala library
 import parrot.category.*
-import Kleisli.OptionKleisli.>>
+import Kleisli.OptionKleisli.>>>
 
 val parse: String -> Option[Int]  = _.toIntOption
 val positive: Int -> Option[Int]  = n => Option.when(n > 0)(n)
 val pure: Int -> Option[Int]      = Kleisli.OptionKleisli.unit[Int, Int](_ * 2)
 
-val parsePositiveTwice: String -> Option[Int] = parse >> positive >> pure
+val parsePositiveTwice: String -> Option[Int] = parse >>> positive >>> pure
 ```
+
+The example imports only the Kleisli `>>>`: its arrows are also functions, and with `Total.>>>` in scope as well, `parse >>> positive` would be ambiguous (section 11.4).
 
 Three kinds of promonad appear in this document.
 
@@ -3154,7 +3156,7 @@ A bistrong promonad is almost a structure for running arrows side by side. Name 
 
 Freyd categories were introduced to model call-by-value languages with effects **[Standard: Power and Robinson; Levy, Power and Thielecke, from memory]**, and they are the semantics of Haskell's *arrows*, which programmers know as a design pattern **[Standard: Hughes 2000; Jacobs, Heunen and Hasuo 2009, from memory]**. A strong promonad is in fact a monoid in the category of strong profunctors, so the definition is a single monoid once more **[Standard: Rivas and Jaskelioff, from memory]**.
 
-In the library, a Freyd category is not a new structure but the combination of two: the bundle `Freyd(S)` takes a bistrong `S` whose profunctor is a promonad, names its strengths `first` and `second`, states the two laws and offers the parallel composition `**`.
+In the library, a Freyd category is not a new structure but the combination of two: the bundle `Freyd(S)` takes a bistrong `S` whose profunctor is a promonad, names its strengths `first` and `second`, states the two laws and offers the parallel composition `parallel`, written `**`.
 
 ```scala library
 val OptionFreyd = Freyd(Kleisli.OptionProduct)

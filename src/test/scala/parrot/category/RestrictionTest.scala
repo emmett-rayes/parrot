@@ -97,7 +97,7 @@ abstract class ClassicalSpec(
   import types.{T1, T2, T3, given}
   import promonad.*
   import C.P
-  import P.P
+  import P.{P, >>>}
   import C.ClassicalLaws.*
 
   law("zeroRestriction") {
@@ -266,7 +266,7 @@ abstract class ClassicalSpec(
 
     forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
       given (P[T1, T3] is Observable) = observe
-      P.multiply(h, C.orElse(p, q)) =?= C.orElse(P.multiply(h, p), P.multiply(h, q))
+      (C.orElse(p, q) >>> h) =?= C.orElse(p >>> h, q >>> h)
     }
   }
 }

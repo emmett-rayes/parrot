@@ -54,16 +54,16 @@ abstract class Promonad(tracked override val K: Category) extends Endoprofunctor
   final lazy val category: Promonad.Underlying { val P: Promonad.this.type } = Promonad.Underlying(this)
 
   extension [B: Obj, C: Obj](q: P[B, C])
-    /** Infix extension of [[compose]]. */
+    /** Infix extension for [[compose]]. */
     @targetName("composeExt")
-    final def <<[A: Obj](p: P[A, B]): P[A, C] = {
+    final def <<<[A: Obj](p: P[A, B]): P[A, C] = {
       compose(q, p)
     }
 
   extension [A: Obj, B: Obj](p: P[A, B])
-    /** Infix extension of [[andThen]]. */
+    /** Infix extension for [[andThen]]. */
     @targetName("andThenExt")
-    final def >>[C: Obj](q: P[B, C]): P[A, C] = {
+    final def >>>[C: Obj](q: P[B, C]): P[A, C] = {
       andThen(p, q)
     }
 
@@ -73,7 +73,7 @@ abstract class Promonad(tracked override val K: Category) extends Endoprofunctor
     /** *η*(*g* ∘ *f*) = *η*(*g*) ∘ *η*(*f*)
       */
     def unitComposition[A: Obj, B: Obj, C: Obj](f: A --> B, g: B --> C)(using P[A, C] is Observable): Boolean = {
-      unit(f >>> g) =?= multiply(unit(g), unit(f))
+      unit(f >>> g) =?= (unit(f) >>> unit(g))
     }
 
     /** If *f* = *f*′, then *η*(*f*) = *η*(*f*′).

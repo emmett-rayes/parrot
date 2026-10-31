@@ -6,21 +6,21 @@ package category
   * Represents a promonad over **K**, where
   *   - *P*(*A*,*B*) = **K**(*A*,*M*[*B*])
   *   - *unit*(*f*) = *η* ∘ *f* embeds the pure morphisms
-  *   - *multiply*(*g*,*f*) = *g*\* ∘ *f* runs *f*, then *g* on its result
+  *   - *multiply*(*g*,*f*) = *g*∘ *f* runs *f*, then *g* on its result
   */
 open class Kleisli(tracked val M: Monad) extends Promonad(M.K) {
-  import M.K.{Obj, -->, >>>}
+  import M.K.{Obj, -->}
 
   type Self[A, B] = A --> M.M[B]
 
   private given MIsObj: [A: Obj] => (M.M[A] is Obj) = M.objects[A]
 
   def unit[A: Obj, B: Obj](f: A --> B): A --> M.M[B] = {
-    f >>> M.unit[B]
+    M.K.andThen(f, M.unit[B])
   }
 
   def multiply[A: Obj, B: Obj, C: Obj](g: B --> M.M[C], f: A --> M.M[B]): A --> M.M[C] = {
-    f >>> M.bind(g)
+    M.K.andThen(f, M.bind(g))
   }
 }
 

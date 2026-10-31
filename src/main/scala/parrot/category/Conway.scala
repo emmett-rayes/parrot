@@ -14,7 +14,7 @@ package category
   */
 abstract class Conway(tracked val S: Strong.Bistrong { val P: Promonad; val M: Cartesian }) extends caps.Pure {
   import S.M.{`*`, given}
-  import S.P.{P, >>}
+  import S.P.{P, >>>}
   import S.P.K.{Obj, -->}
 
   /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*). */
@@ -28,21 +28,21 @@ abstract class Conway(tracked val S: Strong.Bistrong { val P: Promonad; val M: C
     /** *p*† = ⟨*id*,*p*†⟩ ⨾ *p*
       */
     def fixedPoint[A: Obj, X: Obj](p: P[A * X, X])(using P[A, X] is Observable): Boolean = {
-      fix(p) =?= (S.P.unit(S.M.diagonal[A]) >> S.left[A, X, A](fix(p)) >> p)
+      fix(p) =?= (S.P.unit(S.M.diagonal[A]) >>> S.left[A, X, A](fix(p)) >>> p)
     }
 
     /** ((*h* × *id*) ⨾ *p*)† = *h* ⨾ *p*† for pure *h* */
     def parameterNaturality[A0: Obj, A1: Obj, X: Obj](p: P[A1 * X, X], h: A0 --> A1)(
       using P[A0, X] is Observable
     ): Boolean = {
-      fix(S.right[A0, A1, X](S.P.unit(h)) >> p) =?= (S.P.unit(h) >> fix(p))
+      fix(S.right[A0, A1, X](S.P.unit(h)) >>> p) =?= (S.P.unit(h) >>> fix(p))
     }
 
     /** (*f* ⨾ *g*)† = ((*id* × *g*) ⨾ *f*)† ⨾ *g* for pure *g* */
     def composition[A: Obj, X: Obj, Y: Obj](f: P[A * X, Y], g: Y --> X)(
       using P[A, X] is Observable
     ): Boolean = {
-      fix[A, X](f >> S.P.unit(g)) =?= (fix[A, Y](S.left[Y, X, A](S.P.unit(g)) >> f) >> S.P.unit(g))
+      fix[A, X](f >>> S.P.unit(g)) =?= (fix[A, Y](S.left[Y, X, A](S.P.unit(g)) >>> f) >>> S.P.unit(g))
     }
 
     /** (⟨*π*₁,*g*⟩ ⨾ *f*)† = ⟨*id*,(⟨*π*₁,*f*⟩ ⨾ *g*)†⟩ ⨾ *f* for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*: a
@@ -54,16 +54,16 @@ abstract class Conway(tracked val S: Strong.Bistrong { val P: Promonad; val M: C
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[A * Y, X], g: P[A * X, Y])(
       using P[A, X] is Observable
     ): Boolean = {
-      val keepG = S.P.unit(S.M.pair(S.M.fst[A, X], S.P.K.identity[A * X])) >> S.left[A * X, Y, A](g)
-      val keepF = S.P.unit(S.M.pair(S.M.fst[A, Y], S.P.K.identity[A * Y])) >> S.left[A * Y, X, A](f)
-      fix[A, X](keepG >> f) =?= (S.P.unit(S.M.diagonal[A]) >> S.left[A, Y, A](fix[A, Y](keepF >> g)) >> f)
+      val keepG = S.P.unit(S.M.pair(S.M.fst[A, X], S.P.K.identity[A * X])) >>> S.left[A * X, Y, A](g)
+      val keepF = S.P.unit(S.M.pair(S.M.fst[A, Y], S.P.K.identity[A * Y])) >>> S.left[A * Y, X, A](f)
+      fix[A, X](keepG >>> f) =?= (S.P.unit(S.M.diagonal[A]) >>> S.left[A, Y, A](fix[A, Y](keepF >>> g)) >>> f)
     }
 
     /** (*p*†)† = (⟨*id*,*π*₂⟩ ⨾ *p*)† */
     def doubleDagger[A: Obj, X: Obj](p: P[(A * X) * X, X])(
       using P[A, X] is Observable
     ): Boolean = {
-      fix[A, X](fix[A * X, X](p)) =?= fix[A, X](S.P.unit(S.M.pair(S.P.K.identity[A * X], S.M.snd[A, X])) >> p)
+      fix[A, X](fix[A * X, X](p)) =?= fix[A, X](S.P.unit(S.M.pair(S.P.K.identity[A * X], S.M.snd[A, X])) >>> p)
     }
 
     /** If (*id* × *h*) ⨾ *g* = *f* ⨾ *h* for pure *h*, then *f*† ⨾ *h* = *g*†.
@@ -75,7 +75,7 @@ abstract class Conway(tracked val S: Strong.Bistrong { val P: Promonad; val M: C
       g: P[A * Y, Y],
       h: X --> Y,
     )(using P[A, Y] is Observable): Boolean = {
-      (fix(f) >> S.P.unit(h)) =?= fix(g)
+      (fix(f) >>> S.P.unit(h)) =?= fix(g)
     }
 
     /** If *p* = *p*′, then *p*† = *p*′†.
@@ -110,11 +110,11 @@ object Conway {
   open class OfTraced(tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad; val M: Cartesian } })
       extends Conway(T.S) {
     import S.M.{`*`, given}
-    import S.P.{P, >>}
+    import S.P.{P, >>>}
     import S.P.K.Obj
 
     def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X] = {
-      T.trace[A, X, X](p >> S.P.unit(S.M.diagonal[X]))
+      T.trace[A, X, X](p >>> S.P.unit(S.M.diagonal[X]))
     }
   }
 }

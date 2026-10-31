@@ -212,9 +212,17 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    class`es (`Kleisli(M)`, `StateT[S](M)`, `Kleisli.ClassicalOf(P, R)`), instantiated by objects.
 8. **Instances name their evidence explicitly** (`Type.TIsType`), never `summon`: a class-level forwarding given would be
    found and recurse.
-9. **Distinct operator names per structure**: `>>>`/`<<<` (category, diagrammatic and mathematical order), `>>`
-   (promonad), `***` (tensor), `&&&`/`|||` (pairing, copairing), `+++` (coproduct tensor), `**` (Freyd parallel), `|>`
-   (override), `=?=` (observable agreement), `?<` (preorder), `===` (Eq).
+9. **One operator name per operation**: `>>>`/`<<<` (composition in a category and in a promonad, diagrammatic and
+   mathematical order), `***` (tensor), `&&&`/`|||` (pairing, copairing), `+++` (coproduct tensor), `**` (Freyd
+   parallel), `|>` (override), `=?=` (observable agreement), `?<` (preorder), `===` (Eq). Same-named extensions from two
+   imports form an overload resolved by the receiver's type, so `import S.P.K.>>>` and `import S.P.{P, >>>}` coexist.
+   **Exception:** where a promonad's arrow is also an arrow of its base, both apply to one value: a Kleisli promonad on
+   𝒮 (`A -> M[B]`) and a hom promonad. Scala then reports an ambiguity or picks one and rejects the argument, never a
+   wrong composition; such code imports one `>>>` and names the other (`M.K.andThen(f, M.bind(g))` in `Kleisli`).
+   **Operators are syntax:** every symbolic extension passes its arguments one-to-one, in order, to a named method of
+   the same structure, which holds the logic and the name (`f >>> g` is `andThen(f, g)`, `q <<< p` is `compose(q, p)`,
+   `p ** q` is `parallel(p, q)`, `~p` is `lookahead(p)`). An operator computes nothing of its own; its doc is `Infix
+   extension for [[andThen]].`
 10. **Nullary extensions that clash with a method of the same name** take `(using DummyImplicit)`.
 11. **`-Wsafe-init` is off** (commented out in `build.sbt`): a *class* that forwards a `tracked` parameter to a parent
     class with parameters gets a false "Access non-initialized value" (objects are fine; the scala3 issue draft is
@@ -230,7 +238,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     functor's target, a bifunctor's second source), `==>` for a target category (bifunctor, profunctor), `~~>` for an
     opposite category. These three-symbol arrows name roles; the two concrete categories have two-symbol arrows,
     `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside `object Partial` too). Bring the
-    role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`, `import S.P.{P, >>}`,
+    role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`, `import S.P.{P, >>>}`,
     `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.--> as ==>`), never with new type
     definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:imports` is commented
     out in `build.sbt` and `pants.toml`. Parenthesize: `+`, `-->` and `->>` share a
@@ -271,9 +279,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
 | `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
 | `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
-| `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
+| `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `category`, `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal` (+ `Module`), `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure and actions on a category | `***`, `act`/`~~`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry`, `internalHom` | `Total.Product`/`Coproduct`/`Exponential`, `Module.OfMonoidal`, `Partial.Product`/`Coproduct`, `Cartesian.Op`/`op`, `Cocartesian.Op`/`op` |
-| `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd laws and `**` | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.Bistrong.Hom`, `Strong.Bistrong.Op` |
+| `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd laws and `**` | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left`, `parallel`/`**` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.Bistrong.Hom`, `Strong.Bistrong.Op` |
 | `Restriction`, `Classical` | restriction category; zero, complement, override, attempt | `restrict`, `zero`, `complement`, `orElse`/`|>`, `attempt` | `Partial.Domains`, `Kleisli.RestrictionOf`/`ClassicalOf` |
 | `Traced`, `Conway`, `Elgot`, `Recursion` | the trace/fixed-point grid; recursion at arrow types | `trace`, `fix`, `iterate` | `Partial.Loops`/`Feedback`/`Knots`, bridges `OfElgot`/`OfConway`/`OfTraced`, guarded state |
 | `Monoid`, `Semilattice`, `Comonoid` | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
@@ -415,7 +423,7 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 ### Composition and code style
 
 - **No unicode in Scala code**: use `*`, `+`, `-->`, `>>>`; unicode is for docstrings.
-- Code uses diagrammatic composition (`>>>`, `>>`); math in docs uses `∘`.
+- Code uses diagrammatic composition (`>>>`); math in docs uses `∘`.
 
 ### Naming
 
@@ -529,6 +537,13 @@ Things that cost time once; check here before fighting the compiler.
   works; `Bistrong(M, P { val K1: M.K.type; val K2: M.K.type })` does not: for a promonad, `P.K1` then points both to
   `M.K` and to the promonad's own `P.K`, and nothing makes those two equal, so `Freyd`, `Conway` and `Elgot` lose
   `Obj` and the `Op` instances become cyclic. Intersections (`M { val K: P.K1.type & P.K2.type }`) are not needed.
+- **Overloaded operators across structures.** `import P.K.>>>` and `import P.{P, >>>}` merge into an overload, resolved
+  by the receiver's type, and extensions are also found in the implicit scope of a path-dependent type's prefix (`K.Hom`
+  finds `K.>>>` without an import). On a Kleisli promonad on 𝒮 both apply: concretely (`String -> Option[Int]`) the call
+  is ambiguous, and in code generic over `Kleisli { val M: Monad.On[Total.type] }` it resolves to `Total`'s `>>>` and
+  rejects the argument; inside `Kleisli` itself, `f >>> M.bind(g)` resolved to the promonad's. Both readings type-check
+  only if *B* = *M*(*B*), so the result is a compile error, never a wrong composition (rule 9). Settled by a spike in
+  October 2026.
 - **Anonymous classes lose the parent's tracked refinement.** Inside `new Bistrong(Promonad.Op(S.P), …) { … }` the
   body sees `P` only at its declared type, not as `Promonad.Op(S.P)`; a named class (`Bistrong.Op`) keeps it.
 - **Renamed type imports** (`import D.--> as ==>`) are reported unused even when used, in every variant tried

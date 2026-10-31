@@ -12,7 +12,7 @@ package category
   */
 abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extends caps.Pure {
   import S.M.{I, `*`, given}
-  import S.P.{P, >>}
+  import S.P.{P, >>>}
   import S.P.K.{Obj, -->}
 
   /** The trace *tr*: *P*(*A* ⊗ *U*,*B* ⊗ *U*) → *P*(*A*,*B*). */
@@ -28,7 +28,7 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
       p: P[A1 * U, B1 * U],
       g: P[B1, B0],
     )(using P[A0, B0] is Observable): Boolean = {
-      trace(S.right[A0, A1, U](f) >> p >> S.right[B1, B0, U](g)) =?= (f >> trace(p) >> g)
+      trace(S.right[A0, A1, U](f) >>> p >>> S.right[B1, B0, U](g)) =?= (f >>> trace(p) >>> g)
     }
 
     /** *tr*(*p* ⨾ (*id* ⊗ *h*)) = *tr*((*id* ⊗ *h*) ⨾ *p*) for pure *h*: *U* → *V*
@@ -37,8 +37,8 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
       p: P[A * V, B * U],
       h: U --> V,
     )(using P[A, B] is Observable): Boolean = {
-      trace[A, B, V](p >> S.P.unit(S.M.tensor(S.P.K.identity[B], h))) =?=
-        trace[A, B, U](S.P.unit(S.M.tensor(S.P.K.identity[A], h)) >> p)
+      trace[A, B, V](p >>> S.P.unit(S.M.tensor(S.P.K.identity[B], h))) =?=
+        trace[A, B, U](S.P.unit(S.M.tensor(S.P.K.identity[A], h)) >>> p)
     }
 
     /** *tr*ᴵ(*p*) = *ρ*⁻¹ ⨾ *p* ⨾ *ρ*
@@ -46,7 +46,7 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
     def vanishingUnit[A: Obj, B: Obj](p: P[A * I, B * I])(
       using P[A, B] is Observable
     ): Boolean = {
-      trace(p) =?= (S.P.unit(S.M.rightUnitor[A].from) >> p >> S.P.unit(S.M.rightUnitor[B].to))
+      trace(p) =?= (S.P.unit(S.M.rightUnitor[A].from) >>> p >>> S.P.unit(S.M.rightUnitor[B].to))
     }
 
     /** *tr*ᵁ⊗ⱽ(*p*) = *tr*ᵁ(*tr*ⱽ(*α* ⨾ *p* ⨾ *α*⁻¹))
@@ -54,7 +54,7 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
     def vanishingTensor[A: Obj, B: Obj, U: Obj, V: Obj](p: P[A * (U * V), B * (U * V)])(
       using P[A, B] is Observable
     ): Boolean = {
-      val inner = S.P.unit(S.M.associator[A, U, V].to) >> p >> S.P.unit(S.M.associator[B, U, V].from)
+      val inner = S.P.unit(S.M.associator[A, U, V].to) >>> p >>> S.P.unit(S.M.associator[B, U, V].from)
       trace[A, B, U * V](p) =?= trace[A, B, U](trace[A * U, B * U, V](inner))
     }
 
@@ -64,9 +64,9 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
       g: C --> D,
       p: P[A * U, B * U],
     )(using P[C * A, D * B] is Observable): Boolean = {
-      val lhs = S.P.unit(S.M.associator[C, A, U].to) >> S.right[C, D, A * U](S.P.unit(g)) >>
-        S.left[A * U, B * U, D](p) >> S.P.unit(S.M.associator[D, B, U].from)
-      trace[C * A, D * B, U](lhs) =?= (S.right[C, D, A](S.P.unit(g)) >> S.left[A, B, D](trace(p)))
+      val lhs = S.P.unit(S.M.associator[C, A, U].to) >>> S.right[C, D, A * U](S.P.unit(g)) >>>
+        S.left[A * U, B * U, D](p) >>> S.P.unit(S.M.associator[D, B, U].from)
+      trace[C * A, D * B, U](lhs) =?= (S.right[C, D, A](S.P.unit(g)) >>> S.left[A, B, D](trace(p)))
     }
 
     /** *tr*(*β*) = *id*
@@ -92,24 +92,24 @@ object Traced {
   /** The trace of an iteration: *tr*(*p*) = *ι*₁ ⨾ (*p* ⨾ (*id* + *ι*₂))†, a loop that starts on the left. */
   open class OfElgot(tracked val E: Elgot) extends Traced(E.S) {
     import S.M.{+, given}
-    import S.P.{P, >>}
+    import S.P.{P, >>>}
     import S.P.K.Obj
 
     def trace[A: Obj, B: Obj, U: Obj](p: P[A + U, B + U]): P[A, B] = {
-      val step = p >> S.P.unit(S.M.tensor(S.P.K.identity[B], S.M.inr[A, U]))
-      S.P.unit(S.M.inl[A, U]) >> E.iterate[B, A + U](step)
+      val step = p >>> S.P.unit(S.M.tensor(S.P.K.identity[B], S.M.inr[A, U]))
+      S.P.unit(S.M.inl[A, U]) >>> E.iterate[B, A + U](step)
     }
   }
 
   /** The trace of a parameterized fixed point: *tr*(*p*) = ((*id* × *π*₂) ⨾ *p*)† ⨾ *π*₁. */
   open class OfConway(tracked val C: Conway) extends Traced(C.S) {
     import S.M.{`*`, given}
-    import S.P.{P, >>}
+    import S.P.{P, >>>}
     import S.P.K.Obj
 
     def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B] = {
-      val step = S.P.unit(S.M.tensor(S.P.K.identity[A], S.M.snd[B, U])) >> p
-      C.fix[A, B * U](step) >> S.P.unit(S.M.fst[B, U])
+      val step = S.P.unit(S.M.tensor(S.P.K.identity[A], S.M.snd[B, U])) >>> p
+      C.fix[A, B * U](step) >>> S.P.unit(S.M.fst[B, U])
     }
   }
 }
