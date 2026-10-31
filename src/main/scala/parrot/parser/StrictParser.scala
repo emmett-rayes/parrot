@@ -60,13 +60,13 @@ class StrictParser
   }
 
   def diagnose[A, B](p: Node[A, B])(a: A, source: String): (Expected, Option[(B, Int)]) = {
-    val state = State(source, diagnostics = true)
+    val state = new State(source, diagnostics = true)
     val out   = p.run(a, state)
     (state.reported, Option.when(!out.isFailed)((out.get, state.offset)))
   }
 
   override def run[A, B](p: Node[A, B])(a: A, source: String): Option[(B, Int)] = {
-    val state = State(source, diagnostics = false)
+    val state = new State(source, diagnostics = false)
     val out   = p.run(a, state)
     Option.when(!out.isFailed)((out.get, state.offset))
   }

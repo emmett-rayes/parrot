@@ -13,13 +13,10 @@ class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.Arrows
 
 class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.Arrows)
 
-class ReferenceIsRestrictionTest
-    extends RestrictionSpec("ReferenceParser", Interpreters.reference.Choice)
-
 class ReferenceIsClassicalTest extends ClassicalSpec("ReferenceParser", Interpreters.reference.Choice)
 
-class ReferenceZippingIsStrongTest
-    extends StrongSpec("ReferenceParser (zipping)", Interpreters.reference.Zipping)
+class ReferenceZippingIsBistrongTest
+    extends BistrongSpec("ReferenceParser (zipping)", Interpreters.reference.Zipping)
 
 class ReferenceZippingIsFreydTest
     extends FreydSpec("ReferenceParser (zipping)", Interpreters.reference.Zipped) {
@@ -28,8 +25,8 @@ class ReferenceZippingIsFreydTest
   }
 }
 
-class ReferenceBranchingIsStrongTest
-    extends StrongSpec("ReferenceParser (branching)", Interpreters.reference.Branching)
+class ReferenceBranchingIsBistrongTest
+    extends BistrongSpec("ReferenceParser (branching)", Interpreters.reference.Branching)
 
 class ReferenceBranchingIsFreydTest
     extends FreydSpec("ReferenceParser (branching)", Interpreters.reference.Branched) {
@@ -81,12 +78,10 @@ class StrictIsCategoryTest extends CategorySpec(Interpreters.strict.Arrows.categ
 
 class StrictIsPromonadTest extends PromonadSpec(Interpreters.strict.Arrows)
 
-class StrictIsRestrictionTest extends RestrictionSpec("StrictParser", Interpreters.strict.Choice)
-
 class StrictIsClassicalTest extends ClassicalSpec("StrictParser", Interpreters.strict.Choice)
 
-class StrictZippingIsStrongTest
-    extends StrongSpec("StrictParser (zipping)", Interpreters.strict.Zipping)
+class StrictZippingIsBistrongTest
+    extends BistrongSpec("StrictParser (zipping)", Interpreters.strict.Zipping)
 
 class StrictZippingIsFreydTest
     extends FreydSpec("StrictParser (zipping)", Interpreters.strict.Zipped) {
@@ -95,8 +90,8 @@ class StrictZippingIsFreydTest
   }
 }
 
-class StrictBranchingIsStrongTest
-    extends StrongSpec("StrictParser (branching)", Interpreters.strict.Branching)
+class StrictBranchingIsBistrongTest
+    extends BistrongSpec("StrictParser (branching)", Interpreters.strict.Branching)
 
 class StrictBranchingIsFreydTest
     extends FreydSpec("StrictParser (branching)", Interpreters.strict.Branched) {

@@ -9,76 +9,79 @@ import Sample.given
 abstract class RestrictionSpec(
   name: String,
   tracked val R: Restriction { val P: Promonad { val K: Category { type Obj = Type } } },
+  structure: String = "Restriction",
 )(using
   promonad: PromonadFixture.On[R.P.type],
   types: SampleTypes,
-) extends LawSuite("Restriction", name) {
+) extends LawSuite(structure, name) {
   import types.{T1, T2, T3, given}
   import promonad.*
   import R.P
   import P.P
   import R.RestrictionLaws.*
 
-  law("r1") {
-    val observations = observe[T1, T2]
-    val ps           = arrow[T1, T2]
+  also("Restriction") {
+    law("r1") {
+      val observations = observe[T1, T2]
+      val ps           = arrow[T1, T2]
 
-    forAll(observations, ps) { (observe, p) =>
-      given (P[T1, T2] is Observable) = observe
-      r1(p)
+      forAll(observations, ps) { (observe, p) =>
+        given (P[T1, T2] is Observable) = observe
+        r1(p)
+      }
     }
-  }
 
-  law("r2") {
-    val observations = observe[T1, T1]
-    val ps           = arrow[T1, T2]
-    val qs           = arrow[T1, T3]
+    law("r2") {
+      val observations = observe[T1, T1]
+      val ps           = arrow[T1, T2]
+      val qs           = arrow[T1, T3]
 
-    forAll(observations, ps, qs) { (observe, p, q) =>
-      given (P[T1, T1] is Observable) = observe
-      r2(p, q)
+      forAll(observations, ps, qs) { (observe, p, q) =>
+        given (P[T1, T1] is Observable) = observe
+        r2(p, q)
+      }
     }
-  }
 
-  law("r3") {
-    val observations = observe[T1, T1]
-    val ps           = arrow[T1, T2]
-    val qs           = arrow[T1, T3]
+    law("r3") {
+      val observations = observe[T1, T1]
+      val ps           = arrow[T1, T2]
+      val qs           = arrow[T1, T3]
 
-    forAll(observations, ps, qs) { (observe, p, q) =>
-      given (P[T1, T1] is Observable) = observe
-      r3(p, q)
+      forAll(observations, ps, qs) { (observe, p, q) =>
+        given (P[T1, T1] is Observable) = observe
+        r3(p, q)
+      }
     }
-  }
 
-  law("r4") {
-    val observations = observe[T1, T2]
-    val ps           = arrow[T1, T2]
-    val qs           = arrow[T2, T3]
+    law("r4") {
+      val observations = observe[T1, T2]
+      val ps           = arrow[T1, T2]
+      val qs           = arrow[T2, T3]
 
-    forAll(observations, ps, qs) { (observe, p, q) =>
-      given (P[T1, T2] is Observable) = observe
-      r4(p, q)
+      forAll(observations, ps, qs) { (observe, p, q) =>
+        given (P[T1, T2] is Observable) = observe
+        r4(p, q)
+      }
     }
-  }
 
-  law("pureTotal") {
-    val observations = observe[T1, T1]
-    val fs           = base.arrow[T1, T2]
+    law("pureTotal") {
+      val observations = observe[T1, T1]
+      val fs           = base.arrow[T1, T2]
 
-    forAll(observations, fs) { (observe, f) =>
-      given (P[T1, T1] is Observable) = observe
-      pureTotal(f)
+      forAll(observations, fs) { (observe, f) =>
+        given (P[T1, T1] is Observable) = observe
+        pureTotal(f)
+      }
     }
-  }
 
-  law("congruence") {
-    val observations = observe[T1, T1]
-    val ps           = arrow[T1, T2]
+    law("congruence") {
+      val observations = observe[T1, T1]
+      val ps           = arrow[T1, T2]
 
-    forAll(observations, ps) { (observe, p) =>
-      given (P[T1, T1] is Observable) = observe
-      congruence(p, variant(p))
+      forAll(observations, ps) { (observe, p) =>
+        given (P[T1, T1] is Observable) = observe
+        congruence(p, variant(p))
+      }
     }
   }
 }
@@ -86,19 +89,19 @@ abstract class RestrictionSpec(
 /** The laws of [[Classical]], for classical structures over the coproducts of 𝒮. */
 abstract class ClassicalSpec(
   name: String,
-  tracked val C: Classical {
+  tracked override val R: Classical {
     val P: Promonad { val K: Category { type Obj = Type } }
     val C: Cocartesian { val T: Bifunctor { type Self = Either } }
   },
 )(using
-  promonad: PromonadFixture.On[C.P.type],
+  promonad: PromonadFixture.On[R.P.type],
   types: SampleTypes,
-) extends LawSuite("Classical", name) {
+) extends RestrictionSpec(name, R, "Classical") {
   import types.{T1, T2, T3, given}
   import promonad.*
-  import C.P
+  import R.P
   import P.{P, >>>}
-  import C.ClassicalLaws.*
+  import R.ClassicalLaws.*
 
   law("zeroRestriction") {
     val observations = observe[T1, T1]
@@ -266,7 +269,7 @@ abstract class ClassicalSpec(
 
     forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
       given (P[T1, T3] is Observable) = observe
-      (C.orElse(p, q) >>> h) =?= C.orElse(p >>> h, q >>> h)
+      (R.orElse(p, q) >>> h) =?= R.orElse(p >>> h, q >>> h)
     }
   }
 }
@@ -282,16 +285,10 @@ object PartialProgramsFixture extends PromonadFixture("Partial", Partial.Program
   def observe[X: Sample, Y: Sample]: Gen[(X ~> Y) is Observable] = PartialFixture.observe[X, Y]
 }
 
-class OptionKleisliIsRestrictionTest
-    extends RestrictionSpec("Kleisli[Option]", Kleisli.OptionDomains)
-
 class OptionKleisliIsClassicalTest extends ClassicalSpec("Kleisli[Option]", Kleisli.OptionDomains)
 
 class PartialIsRestrictionTest
     extends RestrictionSpec("Partial (total programs)", Partial.Domains)
-
-class StringStateIsRestrictionTest
-    extends RestrictionSpec("Kleisli[State[String, Option]]", StringStateDomains)
 
 class StringStateIsClassicalTest
     extends ClassicalSpec("Kleisli[State[String, Option]]", StringStateDomains)

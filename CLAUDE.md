@@ -468,11 +468,25 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - **Instance names from types**: a spec whose instance is named after a type takes a `TypeName[T]` named `typename`
   (a macro, resolved where the test class is declared), so that callers pass only types:
   `class IntIsEqTest extends EqSpec[Int]`, `BifunctorSpec(Total, Total.Tuple2IsBifunctor)` is "Tuple2 on Total".
-- **One generic spec per structure** (`EqSpec`, `ObservableSpec`, `PreorderSpec`, `CategorySpec`, `FunctorSpec`,
+- **One generic spec per laws object** (`EqSpec`, `ObservableSpec`, `PreorderSpec`, `CategorySpec`, `FunctorSpec`,
   `BifunctorSpec`, `PromonadSpec`, `MonoidalSpec`, `SymmetricSpec`, `CartesianSpec`, `CocartesianSpec`, `ModuleSpec`,
-  `StrongSpec`, `FreydSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`, `ConwaySpec`, `TracedSpec`,
-  `RecursionSpec`, `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`, `ParserLawSpec`), **one class per
-  instance**.
+  `ClosedSpec`, `StrongSpec`, `BistrongSpec`, `FreydSpec`, `RestrictionSpec`, `ClassicalSpec`, `ElgotSpec`,
+  `ConwaySpec`, `TracedSpec`, `RecursionSpec`, `MonadSpec`, `MonoidSpec`, `SemilatticeSpec`, `ComonoidSpec`,
+  `ParserLawSpec`), **one class per instance**, at its most specific structure. A spec lives in the test file named
+  after the source file of its laws (`ElgotSpec` in `ElgotTest.scala`); laws objects that share a source file share a
+  test file (`RestrictionSpec` and `ClassicalSpec` in `RestrictionTest.scala`, `StrongSpec` and `BistrongSpec` in
+  `StrongTest.scala`). Helpers that several test files use go in a fixture file without the `Test` suffix
+  (`GridFixture.scala`). The one laws object without a spec is `IsoLaws`: `MonoidalLaws` and `ModuleLaws` check it on
+  every unitor and associator.
+- **The spec of a refinement extends the spec of its parent**, forwarding its subject under the same name, as the
+  structures do: `SymmetricSpec(tracked override val M: Symmetric …) extends MonoidalSpec(M, structure)`,
+  `CartesianSpec(…) extends SymmetricSpec(M, "Cartesian")`. A spec that another spec extends takes the structure under
+  test as its last parameter, `structure: String = "<Name>"`, passes it to `LawSuite`, and registers its laws in
+  `also("<Name>")`, so that in a child they are reported under its own name. Coverage is transitive:
+  `TotalProductIsCartesianTest` checks the Cartesian, Symmetric and Monoidal laws, so `Total.Product` has no Symmetric
+  or Monoidal test class, while `Partial.Product`, symmetric but not cartesian, has `PartialProductIsSymmetricTest`.
+  Where the parent's spec needs other fixtures, the child copies the parent's laws into an `also` block instead
+  (`FreydSpec` with `also("Category")`, `PromonadSpec` with `also("Profunctor")`).
 - **Fixtures** (`Sample.scala`, `CategoryFixture.scala`, `PromonadFixture.scala`): `Sample[X]` (generator,
   cogenerator, `Eq`; a carrier without an `Eq` is sampled at an instance where it is data, as `StateT` at `Boolean`
   states), `CategoryFixture` (arrows of a category whose objects are all types: `arrow`, `variant`, `observe`),
@@ -518,7 +532,8 @@ and for library changes that the tutorial uses, run the snippet checker (§2).
    refinement forwarding its parameters), its operations with infix extensions, and `object FooLaws`.
 2. Instances as `object`s (concrete) or `open class`es (generic) in the companion or next to their carrier.
 3. `src/test/scala/parrot/category/FooTest.scala`: an abstract `FooSpec(structure)(using fixture, …)` with one
-   `law(...)` per law, and one test class per instance; a new category or promonad also needs a given fixture.
+   `law(...)` per law, and one test class per instance; a new category or promonad also needs a given fixture. If `Foo`
+   refines `Bar`, `FooSpec` extends `BarSpec` (§8), and instances of `Foo` lose their `Bar` test classes.
 
 **Add a new parser interpreter:** choose the structures (a promonad over a category with `Obj = Type`, products and
 coproducts with `Unit`/`Tuple2` and `Nothing`/`Either`, the two strengths, a classical structure, guarded iteration and

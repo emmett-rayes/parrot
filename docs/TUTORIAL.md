@@ -3884,7 +3884,7 @@ The library is built with sbt. The library and its tests are compiled with the f
 ```sh
 sbt --client compile                 # the library
 sbt --client testFull                # every test; also regenerates docs/law-status.md
-sbt --client "testOnly parrot.category.GridTest"
+sbt --client "testOnly parrot.category.ElgotTest"
 sbt --client "Test/runMain parrot.json.JsonBenchmark nativejson-benchmark"
 docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.10.0/parrot/classes  # this document's code
 ```

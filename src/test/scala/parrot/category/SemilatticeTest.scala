@@ -4,9 +4,9 @@ package category
 import Sample.given
 
 /** The laws of [[Semilattice]] for semilattices in 𝒮. */
-abstract class SemilatticeSpec(name: String, tracked val W: Semilattice { val V: Total.Product.type })(
+abstract class SemilatticeSpec(name: String, tracked override val W: Semilattice { val V: Total.Product.type })(
   using S: Sample[W.M]
-) extends LawSuite("Semilattice", name) {
+) extends MonoidSpec(name, W, "Semilattice") {
   import W.M
   import W.V.`*`
   import W.SemilatticeLaws.*
