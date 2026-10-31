@@ -9,7 +9,7 @@ package category
   */
 abstract class Functor(tracked val C: Category, tracked val D: Category) extends caps.Pure {
   import C.-->
-  import D.--> as ->>
+  import D.--> as ==>
 
   type Self[_]
 
@@ -22,7 +22,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
 
   /** *F* maps a morphism *f* of **C** to a morphism *F*(*f*) of **D**.
     */
-  def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ->> F[B]
+  def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ==> F[B]
 
   /** Laws that any `Functor` must satisfy.
     *
@@ -33,14 +33,14 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
 
     /** *F*(*id*) = *id*
       */
-    def identity[A: C.Obj](using (F[A] ->> F[A]) is Observable): Boolean = {
+    def identity[A: C.Obj](using (F[A] ==> F[A]) is Observable): Boolean = {
       map(C.identity[A]) =?= D.identity[F[A]]
     }
 
     /** *F*(*g* ∘ *f*) = *F*(*g*) ∘ *F*(*f*)
       */
     def composition[A: C.Obj, B: C.Obj, E: C.Obj](f: A --> B, g: B --> E)(
-      using (F[A] ->> F[E]) is Observable
+      using (F[A] ==> F[E]) is Observable
     ): Boolean = {
       map(C.compose(g, f)) =?= D.compose(map(g), map(f))
     }
@@ -49,7 +49,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
       *
       * @note The premise is not checked: *f*′ must be equal to *f* by construction.
       */
-    def congruence[A: C.Obj, B: C.Obj](f: A --> B, f2: A --> B)(using (F[A] ->> F[B]) is Observable): Boolean = {
+    def congruence[A: C.Obj, B: C.Obj](f: A --> B, f2: A --> B)(using (F[A] ==> F[B]) is Observable): Boolean = {
       map(f) =?= map(f2)
     }
   }

@@ -2435,7 +2435,7 @@ val pipeline: Int -> String    = both >>> h
 val parallel: ((Int, Int)) -> (Int, String) = f *** g
 ```
 
-**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in a second one, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A1 --> A2, g: B1 ->> B2): F[A1, B1] ==> F[A2, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import M.K.{Obj, -->}` or `import D.--> as ==>`, so that `M.K.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
+**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in the second of a pair of categories, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A1 --> A2, g: B1 ->> B2): F[A1, B1] ==> F[A2, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import M.K.{Obj, -->}` or `import D.--> as ==>`, so that `M.K.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
 
 ### 11.5 Laws, tests and the status table
 
@@ -2481,11 +2481,11 @@ import parrot.category.{Category, Type}
 
 abstract class Functor(tracked val C: Category, tracked val D: Category):
   import C.-->
-  import D.--> as ->>                               // the arrows of the target category
+  import D.--> as ==>                               // the arrows of the target category
   type Self[_]
   final type F = Self                               // the object map
   def objects[A: C.Obj]: F[A] is D.Obj              // objects go to objects
-  def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ->> F[B]   // the arrow map
+  def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ==> F[B]   // the arrow map
 ```
 
 `objects` is new compared with chapter 3: the object map must send objects of 𝒞 to objects of 𝒟, and when objects carry evidence, the functor must provide it. The laws are those of Definition 1.3, checked with an `Observable` of 𝒟's arrows:

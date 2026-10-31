@@ -238,15 +238,16 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     `P` for a profunctor or promonad, `M` for a monoid (and, as `M = F.F`, for a monad), `C` for a comonoid.
     Object-level infix aliases: `*` (tensor), `+` (coproduct), `` `^` `` (`Closed.Exp` in the order of the exponential *B*ᴬ: `B `^` A` = *A* ⇒ *B*, backticked for Scalameta capture checking compatibility), `<->`
     (`Category.Iso`, `A <-> B`).
-14. **Arrows, not `.Self`.** Write morphisms infix: `-->` for the category at hand, `->>` for a second category (a
-    functor's target, a bifunctor's second source), `==>` for a target category (bifunctor, profunctor) or the base of a
-    category of arrows (`Freyd`), `~~>` for an opposite category. These three-symbol arrows name roles; the two concrete
-    categories have two-symbol arrows, `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside
-    `object Partial` too). Bring the role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`,
-    `import S.P.{P, >>>}`, `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.--> as ==>`), never
-    with new type definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:imports`
-    is commented out in `build.sbt` and `pants.toml`. Parenthesize: `+`, `-->` and `->>` share a precedence level, so
-    write `(A + B) --> C`; `*` binds tighter, `<->`, `==>` and `^` looser, `~>` and `~~>` tighter than `*`. Parenthesize
+14. **Arrows, not `.Self`.** Write morphisms infix: `-->` for the category at hand, `->>` for the second of a pair of
+    categories, another `-->` (a bifunctor's or profunctor's second source, a strength's second category), `==>` for a
+    target category (functor, bifunctor, profunctor) or the base of a category of arrows (`Freyd`), `~~>` for an
+    opposite category. These three-symbol arrows name roles; the two concrete categories have two-symbol arrows,
+    `A -> B` in `Total` and `A ~> B` in `Partial` (`type ~> = Partial`, used inside `object Partial` too). Bring the
+    role arrows and `Obj` into scope with **imports** (`import K.{Obj, -->, >>>}`, `import S.P.{P, >>>}`,
+    `import S.P.K.{Obj, -->}`), renaming where categories meet (`import D.--> as ==>`), never with new type
+    definitions. Renamed type imports trigger a false `-Wunused` warning, which is why `-Wunused:imports` is commented
+    out in `build.sbt` and `pants.toml`. Parenthesize: `+`, `-->` and `->>` share a precedence level, so write
+    `(A + B) --> C`; `*` binds tighter, `<->`, `==>` and `^` looser, `~>` and `~~>` tighter than `*`. Parenthesize
     arrows next to `->` and `is` as well: `(A ~> B) -> (A ~> B)`, `(X ~> Y) is Observable`.
 15. **Eta-reduce aliases** whose parameters are only passed on: `final type * = Tensor`, `type Self = Tuple2`.
 16. **`final`** on what is definitional: aliases and extension methods that only forward (`>>>`, `***`, `|>`, `first`,

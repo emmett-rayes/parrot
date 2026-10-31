@@ -82,7 +82,7 @@ object Bifunctor {
     */
   final class FromProduct(tracked val B: Bifunctor) extends Functor(Category.Product(B.C1, B.C2), B.D) {
     import C.-->
-    import D.--> as ->>
+    import D.--> as ==>
     import Category.Product.{Fst, Snd}
 
     type Self[X] = B.F[Fst[X], Snd[X]]
@@ -91,7 +91,7 @@ object Bifunctor {
       B.objects[Fst[X], Snd[X]](using X.fst, X.snd)
     }
 
-    def map[X: C.Obj, Y: C.Obj](f: X --> Y): F[X] ->> F[Y] = {
+    def map[X: C.Obj, Y: C.Obj](f: X --> Y): F[X] ==> F[Y] = {
       B.bimap(f._1, f._2)(using X.fst, X.snd, Y.fst, Y.snd)
     }
   }
