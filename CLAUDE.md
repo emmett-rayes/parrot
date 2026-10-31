@@ -209,7 +209,8 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
    type (`Type.TIsType`); refinements such as `Pair`, the objects of `Category.Product`, select fewer. `Eq`,
    `Observable` and `Preorder` are type classes of data, not object evidence, and do not extend `Type`. Evidence is
    passed only through context bounds, except evidence that chooses an object, which is a `tracked` parameter: the
-   unit `U` of `Monoidal(K, U, T)`, whose type is the unit object `I = U.Self`.
+   unit `U` of `Monoidal(K, U, T)`, whose type is the unit object `I = U.Self`, and the terminal object `U` of
+   `Terminal(C, U)`.
 7. **Instances are `object`s** with descriptive names, nested in what they belong to: `Total.Product`,
    `Total.Coproduct`, `Total.Exponential`, `Partial.Loops`, `Kleisli.OptionKleisli`. Generic constructions are `open
    class`es (`Kleisli(M)`, `StateT[S](M)`, `Kleisli.ClassicalOf(P, R)`), instantiated by objects.
@@ -283,10 +284,11 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | File | Structure | Key members | Instances |
 | --- | --- | --- | --- |
 | `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
-| `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
-| `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
+| `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `total`, `partial`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
+| `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`), `Category.Empty` (no objects: its evidence `Absurd` has no instances) |
 | `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Total.Identity`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
-| `Limit` (+ `Limit.Cone`) | limits of a diagram *D*: **J** → **C**, cones through which every cone factors uniquely; cones over *D* | `factor`, `LimitLaws`; `Apex`, `leg`, `induced`, `ConeLaws` | none yet |
+| `Limit` (+ `Limit.Cone`), `Limits` | limits of a diagram *D*: **J** → **C**, cones through which every cone factors uniquely; cones over *D*; limits of shape **J** in **C** | `factor`, `LimitLaws`, `Limit.Of`; `Apex`, `leg`, `induced`, `ConeLaws`; `limit` | `Total.LimitOf` (every limit of 𝒮, by abstraction), `Total.LimitsOf` |
+| `Terminal` | terminal object, chosen by evidence like `Monoidal`'s unit; a limit of the empty diagram through the view `limit` | `I`, `discard` (!), `TerminalLaws`, `limit`, `Terminal(L)`, `Terminal.Of` | `Terminal.FromLimit` (from a limit, may be overridden), `Terminal.AsLimit`, `Terminal.EmptyDiagram`, `Terminal.EmptyCone` |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `category` (`Arrows`), `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal` (+ `Module`), `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure and actions on a category | `***`, `act`/`~~`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry`, `internalHom` | `Total.Product`/`Coproduct`/`Exponential`, `Module.OfMonoidal`, `Partial.Product`/`Coproduct`, `Cartesian.Op`/`op`, `Cocartesian.Op`/`op` |
 | `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd: the category of arrows of a promonad with a bistrong structure | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left`, `parallel`/`**` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.Bistrong.Hom`, `Strong.Bistrong.Op` |
@@ -574,6 +576,11 @@ Things that cost time once; check here before fighting the compiler.
 - **A refinement cannot name a parameter that its members shadow.** In `Freyd(P, S: Bistrong { val P: P.type })`, the
   `P` inside the braces is the refinement's own member (a cyclic reference), and `Freyd.this` is not available in a
   constructor. Refine through an alias declared elsewhere, as `Monad.On` does: `S: Strong.Bistrong.On[P.type]`.
+  In a method signature, a `this`-qualified path works too: `Functor { val D: Limits.this.C.type }`.
+- **Applied constructor types** (`Functor(J, Total)` as a type, for `Functor { val C: J.type; val D: Total.type }`)
+  resolve their arguments outside the refinement, so they avoid that shadowing, and scalac accepts them under
+  `-language:experimental.modularity`. Scalameta rejects them, so Pants fails: write the refinement, with an alias
+  (`Limit.Of[D.type]`) or a `this`-qualified path where a member would shadow a name.
 - **Renamed type imports** (`import D.--> as ==>`) are reported unused even when used, in every variant tried
   (renaming `-->`, `Hom` or `Self`, with or without other imports), which is why `-Wunused:imports` is commented out in
   `build.sbt` and `pants.toml`.

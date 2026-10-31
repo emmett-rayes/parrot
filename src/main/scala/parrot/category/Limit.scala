@@ -4,8 +4,7 @@ package category
 /** A limit of a diagram *D*: **J** → **C**.
   *
   * Represents a limit (*X*, *ψ*), i.e. a cone over *D*, where
-  *   - ⟨*φ*⟩: *Y* → *X* is the factorization of a cone (*Y*, *φ*) over *D*, the unique morphism with *ψ* ∘ ⟨*φ*⟩ =
-  *     *φ*
+  *   - ⟨*φ*⟩: *Y* → *X* is the factorization of a cone (*Y*, *φ*) over *D*, the unique morphism with *ψ* ∘ ⟨*φ*⟩ = *φ*
   */
 abstract class Limit(tracked override val D: Functor) extends Limit.Cone(D) {
   import D.F
@@ -37,6 +36,9 @@ abstract class Limit(tracked override val D: Functor) extends Limit.Cone(D) {
 }
 
 object Limit {
+
+  /** The limits of the diagram *F*. */
+  type Of[F <: Functor] = Limit { val D: F }
 
   /** A cone over a diagram *D*: **J** → **C**.
     *
@@ -88,4 +90,15 @@ object Limit {
       }
     }
   }
+}
+
+/** Limits of shape **J** in a category **C**.
+  *
+  * Represents a category **C** with limits of shape **J**, where
+  *   - lim *D* is a limit of each diagram *D*: **J** → **C**
+  */
+abstract class Limits(tracked val J: Category, tracked val C: Category) extends caps.Pure {
+
+  /** The limit lim *D* of a diagram *D*: **J** → **C**. */
+  def limit(D: Functor { val C: J.type; val D: Limits.this.C.type }): Limit.Of[D.type]
 }

@@ -1836,6 +1836,8 @@ Why does this make the opaque type behave like the subset? Because of representa
 
 In the model, an opaque type is an existential type: an abstract type packaged with its operations. So `LawfulLens[S, A]` is an object of 𝒮, a type, whose values are representations, and up to what clients can observe it *is* the subset. **Abstraction is Scala's substitute for subset types.**
 
+Abstraction also gives every limit of 𝒮 at once, the limits whose construction in Set needs a subset: equalizers, pullbacks, and the limit of any diagram D : 𝒥 → 𝒮 (`Total.LimitOf`). In Set, the limit of D is the subset of the product ∏ D(A) of the families of points (x_A), one for each object A of 𝒥, that are natural: D(f)(x_A) = x_B for every arrow f : A → B. In 𝒮 the objects are types, so the product is a polymorphic function type, `[A] => (A is J.Obj) ?-> D.F[A]`, which holds every family. The subset is the abstract type of points: its constructor is private to the limit, and the only operation that builds a point is the factorization of a cone, from the cone's legs, which are natural by the cone law. Clients observe a point only through the legs, so to them the abstract type is the subset, and the construction does not depend on the shape of 𝒥. Its obligation is weaker than that of `LawfulLens`, whose module builds every value itself: here clients supply the cones, and the points are natural only if their cones are lawful **[Convention]**. It gives no representing type for an equalizer in the sense of Fact 2, a type whose values are exactly the subset, so that question stays open.
+
 Three cautions. The opaque type is not literally the subset: inside the defining scope, an unlawful lens can be given the opaque type by mistake. The proof obligation is real: each exported constructor must produce lawful lenses, and composition must preserve lawfulness (section 3.6), established by proof, by Stainless or by tests. And the guarantee depends on C3: a cast outside the module breaks it, which is one more reason to compile with safe mode.
 
 ### 6.6 Workaround 3: put the invariant into the type
@@ -2788,7 +2790,7 @@ def below(a: Int, b: Int): Boolean = join(a, b) == b
 
 ### 14.8 What is missing
 
-𝒮 has finite products, finite coproducts, exponentials, a natural numbers object (chapter 16) and initial algebras of many functors. It lacks, uniformly, the constructions that need subsets or quotients: equalizers and pullbacks (chapter 6), coequalizers (chapter 7). It also lacks a **subobject classifier**, an object that classifies all subsets: `Boolean` classifies only the decidable ones. So 𝒮 is not a **topos**, the kind of category that behaves most like Set.
+𝒮 has finite products, finite coproducts, exponentials, a natural numbers object (chapter 16) and initial algebras of many functors. It has no subset or quotient types, so the constructions that need them have no representing type in general: equalizers and pullbacks (chapter 6), coequalizers (chapter 7). Every limit, equalizers and pullbacks among them, still exists uniformly by abstraction, for lawful cones (section 6.5). It also lacks a **subobject classifier**, an object that classifies all subsets: `Boolean` classifies only the decidable ones. So 𝒮 is not a **topos**, the kind of category that behaves most like Set.
 
 | Construction | Set | 𝒮 | 𝒫 |
 | --- | --- | --- | --- |
@@ -2796,7 +2798,7 @@ def below(a: Int, b: Int): Boolean = join(a, b) == b
 | products | yes | tuples | not products; tuples form a symmetric monoidal structure (restriction products, chapter 18) |
 | coproducts | yes | `Either` | `Either` |
 | exponentials | yes | function types | not in the sense of section 14.1 |
-| equalizers, pullbacks | yes | no uniform construction (chapter 6) | — |
+| equalizers, pullbacks | yes | by abstraction, `Total.LimitOf` (section 6.5); no representing type in general (chapter 6) | — |
 | coequalizers | yes | no uniform construction (chapter 7) | — |
 | subobject classifier | yes | no; `Boolean` classifies decidable subsets only | no |
 | polymorphic types as ends | no counterpart in the same form | yes (chapter 9) | yes |
@@ -3774,7 +3776,7 @@ With effects, more changes. Effectful arrows run side by side only in an order, 
 
 ### 21.4 What is lost
 
-Subset types and quotient types are not available as type formers, so equalizers, pullbacks and coequalizers have no uniform construction, and categories whose homs are subsets or quotients, such as lawful lenses, monoid homomorphisms and Rel, are not Scala categories as they stand (chapters 6 and 7). Functors and other maps that exist only by non-constructive arguments have no Scala counterpart (chapter 5). Objects that are values need an encoding (chapter 8). Polymorphism over kinds is missing, so each kind of object needs its own class (chapter 10).
+Subset types and quotient types are not available as type formers, so equalizers, pullbacks and coequalizers have no representing type in general, limits exist uniformly only by abstraction (section 6.5), and categories whose homs are subsets or quotients, such as lawful lenses, monoid homomorphisms and Rel, are not Scala categories as they stand (chapters 6 and 7). Functors and other maps that exist only by non-constructive arguments have no Scala counterpart (chapter 5). Objects that are values need an encoding (chapter 8). Polymorphism over kinds is missing, so each kind of object needs its own class (chapter 10).
 
 General recursion is lost from 𝒮: a bicartesian closed category with fixed points for all arrows collapses (Proposition 14.3), so 𝒮 has only guarded fixed points, and unguarded ones live in 𝒫, which in turn has no products and no terminal object. In a strict language, fixed points over products are nearly useless, since computing one requires it first (section 19.4).
 
@@ -3809,7 +3811,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Products and a terminal object in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Product` | [Proved] | 14, 18 |
 | Monoidal, symmetric, cartesian, cocartesian, closed structure | yes | yes | yes | `Monoidal` … `Closed` | [Tested] | 14 |
 | Joins; semilattices | yes | yes | yes | `Semilattice` | [Tested] | 14, 15 |
-| Equalizers, pullbacks | yes | no uniform construction | no | ad hoc representations | [Open] in general | 6 |
+| Equalizers, pullbacks, all limits | yes | by abstraction | yes | `Total.LimitOf`, for lawful cones | [Convention]; representing types [Open] | 6 |
 | Coequalizers, quotients | yes | no uniform construction | by setoids, canonical forms, abstraction | — | per workaround | 7 |
 | Subobject classifier | yes | no | no | `Boolean` classifies decidable subsets | — | 14 |
 | Monads and transformers | yes | yes | yes | `Monad`, `Writer`, `OptionT`, `StateT` | [Tested] | 15 |

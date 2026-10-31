@@ -127,4 +127,58 @@ object Total extends Category {
       c => a => f((c, a))
     }
   }
+
+  /** The limit of a diagram *D*: **J** → 𝒮: the natural families of points of *D*.
+    *
+    * Represents the limit (*X*, *ψ*), where
+    *   - *X* is the type of natural families *x* = (*x*_*A*)_*A*, a point *x*_*A* of *D*[*A*] for each object *A* of
+    *     **J**, with *D*(*f*)(*x*_*A*) = *x*_*B* for every *f*: *A* → *B* of **J** ([[Point]])
+    *   - *ψ*_*A*(*x*) = *x*_*A*: the leg at *A* picks the point at *A*
+    *   - ⟨*φ*⟩(*y*) = (*φ*_*A*(*y*))_*A*: a cone (*Y*, *φ*) factors through the family of its legs at *y*
+    *
+    * This is the construction of limits from products and equalizers. The families of points are the product
+    * ∏_*A* *D*[*A*], which exists in 𝒮 because its objects are types: it is a polymorphic function type. The natural
+    * families are a subset of the product, the equalizer of *x* ↦ *x*_*B* and *x* ↦ *D*(*f*)(*x*_*A*), and Scala has
+    * no subset types; [[Point]] makes the subset by abstraction (tutorial, §6.5). Neither step looks at the shape of
+    * **J**, so this one construction gives every limit of 𝒮.
+    */
+  final class LimitOf(tracked override val D: Functor { val D: Total.type }) extends Limit(D) {
+    import D.C as J
+
+    /** A point of the limit: a natural family of points (*x*_*A*)_*A* of the diagram, where `at[A]` is *x*_*A*.
+      *
+      * The type of `at` holds every family, natural or not. The constructor is private to the limit, and the only
+      * operation that builds points is [[factor]], from the legs of a cone, which are natural by
+      * [[Limit.Cone.ConeLaws.commutes]]. So every point that exists is natural, and since clients see a point only
+      * through the legs, `Point` is, to them, the subset of natural families: by representation independence, as for
+      * any abstract type (tutorial, §6.5).
+      *
+      * @note Naturality is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
+      *   cones are lawful, and it is the cone law of the limit itself, *D*(*f*) ∘ *ψ*_*A* = *ψ*_*B*, at each point.
+      */
+    final class Point private[LimitOf] (val at: [A] -> (A is J.Obj) ?-> D.F[A]) extends caps.Pure
+
+    type Apex = Point
+
+    def apex: Point is Type = {
+      Type.TIsType
+    }
+
+    def leg[A: J.Obj]: Point -> D.F[A] = {
+      _.at[A]
+    }
+
+    def factor(K: Limit.Cone { val D: LimitOf.this.D.type }): K.Apex -> Point = {
+      y => Point([A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y))
+    }
+  }
+
+  /** The limits of shape **J** in 𝒮: every diagram *D*: **J** → 𝒮 has the limit [[LimitOf]](*D*), so 𝒮 has limits of
+    * every shape.
+    */
+  final class LimitsOf(tracked override val J: Category) extends Limits(J, Total) {
+    def limit(D: Functor { val C: J.type; val D: Total.type }): Limit.Of[D.type] = {
+      LimitOf(D)
+    }
+  }
 }

@@ -9,12 +9,12 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 
 | Relation | In the code | Examples |
 | --- | --- | --- |
-| *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Module(K, M, T)` on a category and a monoidal category acting on it; `Strong(P, L1, L2)` on a profunctor and two modules; `Monad(F)` on an endofunctor; `Limit.Cone(D)` on a functor, its diagram; `Restriction(P)` on a promonad |
+| *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Module(K, M, T)` on a category and a monoidal category acting on it; `Strong(P, L1, L2)` on a profunctor and two modules; `Monad(F)` on an endofunctor; `Limit.Cone(D)` on a functor, its diagram; `Limits(J, C)` on a shape and a category; `Terminal(C, U)` on a category and an object; `Restriction(P)` on a promonad |
 | *refines*: more operations and laws | `extends`, forwarding the parameters | `Symmetric` refines `Monoidal`; `Cartesian` and `Cocartesian` refine `Symmetric`; `Bistrong` refines `Strong` over a symmetric structure acting on itself; `Classical` refines `Restriction`; `Semilattice` refines `Monoid`; `Limit` refines `Limit.Cone`; `Freyd` refines a category of arrows with a bistrong structure |
 | *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K₁**ᵒᵖ × **K₂**; an `Endoprofunctor` is a `Profunctor` from **K** to **K**; `Option`'s monad is `OptionT` over `Monad.Identity`, `State[S]` is `StateT[S]` over it, and `Writer(W)` is `WriterT(W, Monad.Identity)` |
 | *dual*: the same structure on the opposite | an `Op` class | `Category.Op`; `Bifunctor.Op`; `Cartesian.Op` is `Cocartesian`; `Promonad.Op`; `Bistrong.Op`; `Conway.OfElgot` |
-| *induces*: a construction from one structure to another | an `open class` or a method | a category gives a promonad (`Promonad.Hom`); a promonad gives its category of arrows (`Promonad.Arrows`); a monoidal category acts on itself (`Module.OfMonoidal`); a symmetric monoidal category makes its hom bistrong (`Bistrong.Hom`); a monad gives a promonad (`Kleisli`); a monoid gives a monad (`Writer`); a semilattice gives a preorder (`Preorder.of`) |
-| *bridge*: two structures that define each other | `Of…` classes | `Traced.OfElgot` and `Elgot.OfTraced`; `Traced.OfConway` and `Conway.OfTraced` |
+| *induces*: a construction from one structure to another | an `open class` or a method | a category gives a promonad (`Promonad.Hom`); a promonad gives its category of arrows (`Promonad.Arrows`); a monoidal category acts on itself (`Module.OfMonoidal`); a symmetric monoidal category makes its hom bistrong (`Bistrong.Hom`); a monad gives a promonad (`Kleisli`); a monoid gives a monad (`Writer`); a semilattice gives a preorder (`Preorder.of`); a diagram into 𝒮 has a limit (`Total.LimitOf`) |
+| *bridge*: two structures that define each other | `Of…` classes | `Traced.OfElgot` and `Elgot.OfTraced`; `Traced.OfConway` and `Conway.OfTraced`; a terminal object is a limit of the empty diagram (`Terminal.AsLimit`) and the other way round (`Terminal.FromLimit`) |
 | *bundle*: structures used together | a class of `tracked` parameters | `parser.ParserAlgebra` |
 
 ## The map
@@ -23,12 +23,12 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 Type                                                                           object evidence
 Eq ─ induces ─ Observable ─ counterpart ─ Preorder                             equality and oracles
 
-Category (Op, Product, Iso)                                                    𝒮 = Total, 𝒫 = Partial
+Category (Op, Product, Iso, Empty)                                             𝒮 = Total, 𝒫 = Partial
 └─ on ─ Functor ─ is a ─ Endofunctor ─ on ─ Monad ─ induces ─ Kleisli (a Promonad)
    │                                         ├─ on ─ Monad.Restriction ─ Monad.Classical, Monad.Elgot
    │                                         ├─ transformers: OptionT, StateT, WriterT (+ Monoid)
    │                                         └─ Identity; over it, Option (OptionT), State (StateT), Writer (WriterT)
-   ├─ on ─ Limit.Cone ─ refines ─ Limit
+   ├─ on ─ Limit.Cone ─ refines ─ Limit ⇄ Terminal (of the empty diagram); Limits, of every diagram of a shape
    └─ Bifunctor (Op) ─ is a ─ Functor out of Category.Product
       ├─ on ─ Monoidal ─ refines ─ Symmetric ─ refines ─ Cartesian ⇄ Cocartesian (dual)
       │       ├─ on ─ Module (OfMonoidal)
@@ -53,8 +53,8 @@ Each item needs only those before it:
 
 1. `Type`, `Eq`
 2. `Observable`
-3. `Category` (with `Op`, `Product`, `Iso`), `Total`, `Partial`
-4. `Functor`, `Endofunctor`, then `Limit.Cone`, `Limit`
+3. `Category` (with `Op`, `Product`, `Iso`, `Empty`), `Total`, `Partial`
+4. `Functor`, `Endofunctor`, then `Limit.Cone`, `Limit`, `Limits`, `Terminal`
 5. `Bifunctor`
 6. `Monoidal`, `Symmetric`, `Module`
 7. `Cartesian`, `Cocartesian`

@@ -195,4 +195,31 @@ object Category {
     }
   }
 
+  /** The empty category **0**.
+    *
+    * Represents **0**, where
+    *   - there are no objects
+    *   - there are no morphisms
+    *
+    * Identity and composition take evidence of an object, so they can never be called.
+    */
+  object Empty extends Category {
+    type Self[A, B] = Nothing
+    type Obj        = Absurd
+
+    /** Evidence that a type is an object of **0**. */
+    trait Absurd extends Type {
+
+      /** A value of `Nothing`, from which anything follows. */
+      def absurd: Nothing
+    }
+
+    def identity[A: Absurd]: A --> A = {
+      A.absurd
+    }
+
+    def compose[A: Absurd, B: Absurd, C: Absurd](g: B --> C, f: A --> B): A --> C = {
+      A.absurd
+    }
+  }
 }

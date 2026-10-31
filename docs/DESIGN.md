@@ -171,6 +171,21 @@ Each structure sits at the lowest level where its laws can be stated.
   not distribute over ⊳; precomposition does.
 - Comonoids are the dual of monoids. Every object of a cartesian category is a comonoid in exactly one way; pairs in 𝒫
   have comonoids that programs do not preserve, which by Fox's theorem is why they are not products.
+- **Limits.** `Limit(D)` is a cone over a diagram *D* (`Limit.Cone`) through which every cone factors, and
+  `Limits(J, C)` gives one for every diagram of shape **J**. 𝒮 has all of them by one construction, `Total.LimitOf`,
+  the construction from products and equalizers: the product of the components is a polymorphic function type,
+  since the objects are types, and the equalizer of the natural families is made by abstraction (tutorial, §6.5).
+  Points are private to the limit and only the factorization builds them, from the legs of a cone, so they are
+  natural as long as the cones are lawful; to clients, who see points only through the legs, the abstract type is
+  the limit. It gives no representing type for an equalizer, which stays open (tutorial, §6.3).
+- **A terminal object is a structure with a view.** `Terminal(C, U)` chooses its object by evidence, as `Monoidal`
+  does, has its own operation `discard` (!) and law, and is a limit of the empty diagram through the view `limit`.
+  `Terminal.FromLimit` computes one from a limit, and an instance may override ! with a better implementation, which
+  `TerminalLaws` and, through the view, `LimitLaws` check. It was first an alias, `Terminal[C] = Limit.Of[…]`: any
+  limit of the empty diagram counted as terminal, but a terminal object had no operation of its own to override.
+- Rejected: applied constructor types (`Functor(J, C)` as a type, `Limit(D)` as a result type), which avoid the
+  refinement shadowing that `Limit.Of[D.type]` and `Limits.this.C` work around; scalac accepts them, Scalameta and
+  so Pants do not.
 - **One level of enrichment.** A category with a semantic equality on its homs and congruence laws is enrichment over
   setoids, stated directly; parsers with a preorder on their homs are enrichment over preorders, stated directly. The
   earlier parallel hierarchy of enriched categories, functors and promonads, joined to the ordinary one by bridges and
