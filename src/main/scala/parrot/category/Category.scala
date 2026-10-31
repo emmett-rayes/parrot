@@ -147,7 +147,7 @@ object Category {
     *   - the composition is componentwise: (*g*₁,*g*₂) ∘ (*f*₁,*f*₂) = (*g*₁ ∘ *f*₁,*g*₂ ∘ *f*₂)
     *
     * @note A morphism type is computed from two object types, so the components of a pair type *X* are taken apart by
-    *   the match types [[Product.Fst]] and [[Product.Snd]]. The object evidence ([[ProductObj]]) is stated about the
+    *   the match types [[Product.Fst]] and [[Product.Snd]]. The object evidence ([[Pair]]) is stated about the
     *   components themselves, so generic code never needs a match type to reduce; on a pair type (*A*₁,*A*₂) they
     *   reduce to *A*₁ and *A*₂.
     */
@@ -155,30 +155,29 @@ object Category {
     import Product.{Fst, Snd}
 
     type Self[X, Y] = (C1.Hom[Fst[X], Fst[Y]], C2.Hom[Snd[X], Snd[Y]])
+    type Obj        = Pair
 
     /** Evidence that a pair type is an object: its components are objects of **C₁** and **C₂**. */
-    trait ProductObj extends Type {
+    trait Pair extends Type {
 
       /** The first component is an object of **C₁**. */
-      def fst: Fst[ProductObj.this.Self] is C1.Obj
+      def fst: Fst[Pair.this.Self] is C1.Obj
 
       /** The second component is an object of **C₂**. */
-      def snd: Snd[ProductObj.this.Self] is C2.Obj
+      def snd: Snd[Pair.this.Self] is C2.Obj
     }
 
-    type Obj = ProductObj
-
     /** Pairs of objects are objects. */
-    given PairIsObj: [A1: C1.Obj as first, A2: C2.Obj as second] => ((A1, A2) is ProductObj) {
+    given PairIsObj: [A1: C1.Obj as first, A2: C2.Obj as second] => ((A1, A2) is Pair) {
       def fst: A1 is C1.Obj = first
       def snd: A2 is C2.Obj = second
     }
 
-    def identity[X: Obj]: X --> X = {
+    def identity[X: Pair]: X --> X = {
       (C1.identity[Fst[X]](using X.fst), C2.identity[Snd[X]](using X.snd))
     }
 
-    def compose[X: Obj, Y: Obj, Z: Obj](g: Y --> Z, f: X --> Y): X --> Z = {
+    def compose[X: Pair, Y: Pair, Z: Pair](g: Y --> Z, f: X --> Y): X --> Z = {
       (C1.compose(g._1, f._1)(using X.fst, Y.fst, Z.fst), C2.compose(g._2, f._2)(using X.snd, Y.snd, Z.snd))
     }
   }
@@ -195,4 +194,5 @@ object Category {
       case (a, b) => b
     }
   }
+
 }
