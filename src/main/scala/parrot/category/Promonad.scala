@@ -3,65 +3,80 @@ package category
 
 import scala.annotation.targetName
 
-/** A promonad on **K** valued in 𝒮: a monoid in the endoprofunctors on **K**, i.e. a category of arrows built on top
-  * of **K**.
+/** A promonad on **K** valued in 𝒮.
   *
-  * Represents a profunctor *P*: **K**ᵒᵖ × **K** → 𝒮 with
-  *   - *unit*: **K**(*A*,*B*) → *P*(*A*,*B*), which embeds the morphisms of **K**
-  *   - *multiply*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*), which composes arrows
-  *
-  * The profunctor action is derived: *P*(*f*,*g*)(*p*) = *unit*(*g*) ∘ *p* ∘ *unit*(*f*). The arrows form a category,
-  * [[category]], with the objects of **K**, and *unit* is an identity-on-objects functor from **K** into it. Kleisli
-  * categories and reified arrows such as parsers are promonads.
+  * Represents a promonad (*P*, *η*, *μ*), where
+  *   - *η*: **K**(*A*,*B*) → *P*(*A*,*B*), the unit
+  *   - *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*), the multiplication
   */
 abstract class Promonad(tracked override val K: Category) extends Endoprofunctor(K, Total) {
   import K.{Obj, -->}
   import K.op.--> as ~~>
 
-  /** *unit*: **K**(*A*,*B*) → *P*(*A*,*B*).
+  /** The unit *η*: **K**(*A*,*B*) → *P*(*A*,*B*).
+    *
+    * This is the identity-on-objects functor from **K** to the category induced by *P*. See [[category]].
     */
   def unit[A: Obj, B: Obj](f: A --> B): P[A, B]
 
-  /** *multiply*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*).
-    */
+  /** The multiplication *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*). */
   def multiply[A: Obj, B: Obj, C: Obj](g: P[B, C], f: P[A, B]): P[A, C]
-
-  /** The identity arrow *unit*(*id*). */
-  final def identity[A: Obj]: P[A, A] = {
-    unit(K.identity[A])
-  }
 
   /** Arrows are values of 𝒮, so every arrow type is an object of 𝒮. */
   final def objects[A: Obj, B: Obj]: P[A, B] is Type = {
     Type.TIsType
   }
 
-  /** *P*(*f*,*g*)(*p*) = *unit*(*g*) ∘ *p* ∘ *unit*(*f*)
+  /** *P*(*f*,*g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*)
     */
   override def bimap[A1: Obj, B1: Obj, A2: Obj, B2: Obj](f: A1 ~~> A2, g: B1 --> B2): P[A1, B1] -> P[A2, B2] = {
     p => multiply(unit(g), multiply(p, unit[A2, A1](f)))
   }
 
-  /** The category of arrows: the objects of **K**, morphisms *P*(*A*,*B*), identity and composition of *P*. */
+  /** The identity arrow *η*(*id*). */
+  final def identity[A: Obj]: P[A, A] = {
+    unit(K.identity[A])
+  }
+
+  /** Composes *P*(*B*,*C*) and *P*(*A*,*B*) to *P*(*A*,*C*). */
+  final def compose[A: Obj, B: Obj, C: Obj](q: P[B, C], p: P[A, B]): P[A, C] = {
+    multiply(q, p)
+  }
+
+  /** Composes *P*(*A*,*B*) and *P*(*B*,*C*) to *P*(*A*,*C*) in the diagrammatic order. */
+  final def andThen[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[B, C]): P[A, C] = {
+    compose(q, p)
+  }
+
+  /** Every profunctor induces a category of arrows, where the objects are the objects of **K**, the morphisms are
+    * *P*(*A*,*B*), the identity is given by *η*, and composition is given by *μ*.
+    */
   final lazy val category: Promonad.Underlying { val P: Promonad.this.type } = Promonad.Underlying(this)
 
-  extension [A: Obj, B: Obj](p: P[A, B])
-    /** Sequences arrows in diagrammatic order: *p* ⨾ *q* = *multiply*(*q*,*p*). */
-    @targetName("sequenceExt")
-    final def >>[C: Obj](q: P[B, C]): P[A, C] = {
-      multiply(q, p)
+  extension [B: Obj, C: Obj](q: P[B, C])
+    /** Infix extension of [[compose]]. */
+    @targetName("composeExt")
+    final def <<[A: Obj](p: P[A, B]): P[A, C] = {
+      compose(q, p)
     }
 
-  /** Laws that any `Promonad` must satisfy beyond the [[Category.CategoryLaws]] of [[category]]. */
+  extension [A: Obj, B: Obj](p: P[A, B])
+    /** Infix extension of [[andThen]]. */
+    @targetName("andThenExt")
+    final def >>[C: Obj](q: P[B, C]): P[A, C] = {
+      andThen(p, q)
+    }
+
+  /** Laws that any `Promonad` must satisfy. */
   object PromonadLaws {
 
-    /** *unit*(*g* ∘ *f*) = *unit*(*g*) ∘ *unit*(*f*)
+    /** *η*(*g* ∘ *f*) = *η*(*g*) ∘ *η*(*f*)
       */
     def unitComposition[A: Obj, B: Obj, C: Obj](f: A --> B, g: B --> C)(using P[A, C] is Observable): Boolean = {
-      unit(K.compose(g, f)) =?= multiply(unit(g), unit(f))
+      unit(f >>> g) =?= multiply(unit(g), unit(f))
     }
 
-    /** If *f* = *f*′, then *unit*(*f*) = *unit*(*f*′).
+    /** If *f* = *f*′, then *η*(*f*) = *η*(*f*′).
       *
       * @note The premise is not checked: *f*′ must be equal to *f* by construction.
       */
@@ -102,7 +117,10 @@ object Promonad {
     }
   }
 
-  /** The hom promonad of a category **K**: its arrows are the morphisms of **K** itself. */
+  /** The hom promonad of a category **K**.
+    *
+    * The hom promonad's arrows are the morphisms of **K** itself.
+    */
   open class Hom(tracked override val K: Category) extends Promonad(K) {
     import K.{Obj, -->}
 
