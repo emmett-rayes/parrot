@@ -54,7 +54,7 @@ abstract class FunctorSpec(
   }
 }
 
-class IdentityIsFunctorTest  extends FunctorSpec("Identity", Endofunctor.Identity)
+class IdentityIsFunctorTest  extends FunctorSpec("Identity", Total.Identity)
 class OptionIsFunctorTest    extends FunctorSpec("Option", Monad.OptionIsMonad.F)
 class WriterIsFunctorTest    extends FunctorSpec("Writer[String]", StringWriter.F)
 class OptionTIsFunctorTest   extends FunctorSpec("OptionT[Writer[String]]", FailingStringWriter.F)

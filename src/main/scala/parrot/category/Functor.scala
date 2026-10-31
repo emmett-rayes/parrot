@@ -24,10 +24,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
     */
   def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ==> F[B]
 
-  /** Laws that any `Functor` must satisfy.
-    *
-    * A functor preserves identity and composition of morphisms.
-    */
+  /** Laws that any `Functor` must satisfy. */
   object FunctorLaws {
     private given FIsObj: [A: C.Obj] => (F[A] is D.Obj) = objects[A]
 
@@ -60,22 +57,3 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
   * Represents a functor *F*: **K** → **K**.
   */
 abstract class Endofunctor(tracked val K: Category) extends Functor(K, K)
-
-object Endofunctor {
-
-  /** The identity endofunctor on 𝒮, where
-    *   - *F*[*A*] = *A*
-    *   - *F*(*f*) = *f*
-    */
-  object Identity extends Endofunctor(Total) {
-    type Self[A] = A
-
-    def objects[A: Type]: A is Type = {
-      Type.TIsType
-    }
-
-    def map[A: Type, B: Type](f: A -> B): A -> B = {
-      f
-    }
-  }
-}

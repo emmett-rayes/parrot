@@ -76,7 +76,7 @@ object Monad {
     *   - *M*[*A*] = *A*
     *   - *η* = *id* and *μ* = *id*
     */
-  object Identity extends Monad(Endofunctor.Identity) {
+  object Identity extends Monad(Total.Identity) {
 
     def unit[A: Type]: A -> A = {
       a => a

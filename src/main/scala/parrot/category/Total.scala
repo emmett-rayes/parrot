@@ -26,6 +26,22 @@ object Total extends Category {
     a => g(f(a))
   }
 
+  /** The identity endofunctor on 𝒮, where
+    *   - *F*[*A*] = *A*
+    *   - *F*(*f*) = *f*
+    */
+  object Identity extends Endofunctor(Total) {
+    type Self[A] = A
+
+    def objects[A: Type]: A is Type = {
+      Type.TIsType
+    }
+
+    def map[A: Type, B: Type](f: A -> B): A -> B = {
+      f
+    }
+  }
+
   /** 𝒮 as a promonad over itself. */
   object Functions extends Promonad.Hom(Total)
 
@@ -37,7 +53,7 @@ object Total extends Category {
       Type.TIsType
     }
 
-    def bimap[A1: Type, B1: Type, A2: Type, B2: Type](f: A1 -> A2, g: B1 -> B2): ((A1, B1)) -> (A2, B2) = {
+    def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 -> B1, g: A2 -> B2): ((A1, A2)) -> (B1, B2) = {
       (a, b) => (f(a), g(b))
     }
   }
@@ -50,7 +66,7 @@ object Total extends Category {
       Type.TIsType
     }
 
-    def bimap[A1: Type, B1: Type, A2: Type, B2: Type](f: A1 -> A2, g: B1 -> B2): Either[A1, B1] -> Either[A2, B2] = {
+    def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 -> B1, g: A2 -> B2): Either[A1, A2] -> Either[B1, B2] = {
       case Left(a)  => Left(f(a))
       case Right(b) => Right(g(b))
     }

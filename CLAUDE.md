@@ -284,7 +284,7 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
 | `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
-| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.Identity`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
+| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Total.Identity`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `category` (`Arrows`), `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal` (+ `Module`), `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure and actions on a category | `***`, `act`/`~~`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry`, `internalHom` | `Total.Product`/`Coproduct`/`Exponential`, `Module.OfMonoidal`, `Partial.Product`/`Coproduct`, `Cartesian.Op`/`op`, `Cocartesian.Op`/`op` |
 | `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd: the category of arrows of a promonad with a bistrong structure | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left`, `parallel`/`**` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.Bistrong.Hom`, `Strong.Bistrong.Op` |
@@ -437,6 +437,8 @@ depend on the JVM's stack size; `JsonCorporaTest` asserts every corpus document 
 - Law objects: `<Structure>Laws`, methods named after the law (`leftIdentity`, `fixedPoint`, `overrideAssociativity`).
 - Extension `@targetName`s: `<method>Ext`.
 - Structure parameters are capitalized (`K`, `P`, `M`, `S`, `E`); type parameters follow the docs (`A, B, C, X, U`).
+  Morphisms run from `A` to `B`, as in `map(f: A --> B): F[A] ==> F[B]`, and a pair of them indexes the component:
+  `bimap(f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]`, `dimap(f: B1 --> A1, g: A2 ->> B2)`.
 
 ### General
 

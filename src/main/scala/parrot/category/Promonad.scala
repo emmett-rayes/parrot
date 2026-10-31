@@ -29,8 +29,8 @@ abstract class Promonad(tracked override val K: Category) extends Endoprofunctor
 
   /** *P*(*f*,*g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*)
     */
-  override def bimap[A1: Obj, B1: Obj, A2: Obj, B2: Obj](f: A1 ~~> A2, g: B1 --> B2): P[A1, B1] -> P[A2, B2] = {
-    p => multiply(unit(g), multiply(p, unit[A2, A1](f)))
+  override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 ~~> B1, g: A2 --> B2): P[A1, A2] -> P[B1, B2] = {
+    p => multiply(unit(g), multiply(p, unit[B1, A1](f)))
   }
 
   /** The identity arrow *η*(*id*). */

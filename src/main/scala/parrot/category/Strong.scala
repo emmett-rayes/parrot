@@ -48,13 +48,13 @@ abstract class Strong(
 
     /** *τ*(*P*(*f*,*g*)(*p*)) = *P*(*id* ⊘₁ *f*,*id* ⊘₂ *g*)(*τ*(*p*))
       */
-    def naturality[A1: Obj1, B1: Obj2, A2: Obj1, B2: Obj2, C: ObjM](
-      p: P[A1, B1],
-      f: A2 --> A1,
-      g: B1 ->> B2,
-    )(using P[C `~1` A2, C `~2` B2] is Observable): Boolean = {
-      left[A2, B2, C](P.dimap(f, g)(p)) =?=
-        P.dimap(L1.act(M.K.identity[C], f), L2.act(M.K.identity[C], g))(left[A1, B1, C](p))
+    def naturality[A1: Obj1, A2: Obj2, B1: Obj1, B2: Obj2, C: ObjM](
+      p: P[A1, A2],
+      f: B1 --> A1,
+      g: A2 ->> B2,
+    )(using P[C `~1` B1, C `~2` B2] is Observable): Boolean = {
+      left[B1, B2, C](P.dimap(f, g)(p)) =?=
+        P.dimap(L1.act(M.K.identity[C], f), L2.act(M.K.identity[C], g))(left[A1, A2, C](p))
     }
 
     /** *P*(*h* ⊘₁ *id*,*id*)(*τ*(*p*)) = *P*(*id*,*h* ⊘₂ *id*)(*τ*(*p*)), dinaturality in *C*

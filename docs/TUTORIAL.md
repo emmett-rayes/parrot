@@ -2435,7 +2435,7 @@ val pipeline: Int -> String    = both >>> h
 val parallel: ((Int, Int)) -> (Int, String) = f *** g
 ```
 
-**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in the second of a pair of categories, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A1 --> A2, g: B1 ->> B2): F[A1, B1] ==> F[A2, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import M.K.{Obj, -->}` or `import D.--> as ==>`, so that `M.K.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
+**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in the second of a pair of categories, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import M.K.{Obj, -->}` or `import D.--> as ==>`, so that `M.K.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
 
 ### 11.5 Laws, tests and the status table
 
@@ -2494,7 +2494,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category):
 - `FunctorLaws.composition`: F(g ∘ f) = F(g) ∘ F(f)
 - `FunctorLaws.congruence`: if f = f′ then F(f) = F(f′)
 
-**Endofunctors on 𝒮.** Most of what programmers call functors are functors from a category to itself, **endofunctors**, and most of those are functors from 𝒮 to itself. The library's `Endofunctor(K)` is `Functor(K, K)`. The simplest is the identity, `Endofunctor.Identity`, with F(A) = A and F(f) = f. `Option` is one too: the library takes it from the monad `Monad.OptionIsMonad` of chapter 15, as its functor `Monad.OptionIsMonad.F`:
+**Endofunctors on 𝒮.** Most of what programmers call functors are functors from a category to itself, **endofunctors**, and most of those are functors from 𝒮 to itself. The library's `Endofunctor(K)` is `Functor(K, K)`. The simplest is the identity, `Total.Identity`, with F(A) = A and F(f) = f. `Option` is one too: the library takes it from the monad `Monad.OptionIsMonad` of chapter 15, as its functor `Monad.OptionIsMonad.F`:
 
 ```scala library
 import parrot.category.*
@@ -2520,9 +2520,9 @@ Its laws hold because `Partial.fromTotal(f)` is `f` itself; Proposition 2.9 says
 
 ### 12.3 Bifunctors
 
-Pairs and tagged unions are functorial in *two* arguments: given f : A → A₂ and g : B → B₂, there is an arrow (A, B) → (A₂, B₂) that applies f on the left and g on the right, and similarly for `Either`. A functor of two arguments is called a **bifunctor**. The definition needs no new ideas: a bifunctor F : 𝒞₁ × 𝒞₂ → 𝒟 assigns an object F(A, B) to two objects and an arrow F(f, g) to two arrows, preserving identities and composition in both arguments at once.
+Pairs and tagged unions are functorial in *two* arguments: given f : A₁ → B₁ and g : A₂ → B₂, there is an arrow (A₁, A₂) → (B₁, B₂) that applies f on the left and g on the right, and similarly for `Either`. A functor of two arguments is called a **bifunctor**. The definition needs no new ideas: a bifunctor F : 𝒞₁ × 𝒞₂ → 𝒟 assigns an object F(A, B) to two objects and an arrow F(f, g) to two arrows, preserving identities and composition in both arguments at once.
 
-**Definition 12.1 (bifunctor).** A bifunctor F from 𝒞₁ and 𝒞₂ to 𝒟 consists of an object F(A, B) of 𝒟 for objects A of 𝒞₁ and B of 𝒞₂, and an arrow F(f, g) : F(A, B) → F(A₂, B₂) of 𝒟 for arrows f : A → A₂ of 𝒞₁ and g : B → B₂ of 𝒞₂, such that F(id, id) = id and F(f₂ ∘ f₁, g₂ ∘ g₁) = F(f₂, g₂) ∘ F(f₁, g₁).
+**Definition 12.1 (bifunctor).** A bifunctor F from 𝒞₁ and 𝒞₂ to 𝒟 consists of an object F(A₁, A₂) of 𝒟 for objects A₁ of 𝒞₁ and A₂ of 𝒞₂, and an arrow F(f, g) : F(A₁, A₂) → F(B₁, B₂) of 𝒟 for arrows f : A₁ → B₁ of 𝒞₁ and g : A₂ → B₂ of 𝒞₂, such that F(id, id) = id and F(f₂ ∘ f₁, g₂ ∘ g₁) = F(f₂, g₂) ∘ F(f₁, g₁).
 
 ```scala library
 val pairs: ((Int, String)) -> (Long, Boolean) =
@@ -2550,9 +2550,9 @@ The same two type constructors are bifunctors on 𝒫 as well, `Partial.Tuple2Is
 
 A predicate `A -> Boolean` can be pulled back along a function `f: B -> A` to a predicate on `B`: first apply f, then the predicate. The direction is reversed: an arrow B → A gives a map from predicates on A to predicates on B. A functor that reverses arrows is a functor out of the **opposite category** (section 3.7), and is called **contravariant**.
 
-Function types do both at once. A function `A1 -> B1` can be pre-composed with `f: A2 -> A1` and post-composed with `g: B1 -> B2`, giving `A2 -> B2`. The first argument is contravariant and the second covariant. Such a functor is a **profunctor**.
+Function types do both at once. A function `A1 -> A2` can be pre-composed with `f: B1 -> A1` and post-composed with `g: A2 -> B2`, giving `B1 -> B2`. The first argument is contravariant and the second covariant. Such a functor is a **profunctor**.
 
-**Definition 12.2 (profunctor).** A profunctor P, valued in 𝒱, is a bifunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒱. Its action on arrows is written P(f, g), for f : A₂ → A₁ of 𝒦₁ and g : B₁ → B₂ of 𝒦₂, and maps P(A₁, B₁) to P(A₂, B₂). A profunctor on a category 𝒦, a bifunctor P : 𝒦ᵒᵖ × 𝒦 → 𝒱, is an **endoprofunctor**.
+**Definition 12.2 (profunctor).** A profunctor P, valued in 𝒱, is a bifunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒱. Its action on arrows is written P(f, g), for f : B₁ → A₁ of 𝒦₁ and g : A₂ → B₂ of 𝒦₂, and maps P(A₁, A₂) to P(B₁, B₂). A profunctor on a category 𝒦, a bifunctor P : 𝒦ᵒᵖ × 𝒦 → 𝒱, is an **endoprofunctor**.
 
 The library's `Profunctor(K1, K2, V)` is exactly `Bifunctor(K1.op, K2, V)`, with a method `dimap` that spells out the variance, and its `Endoprofunctor(K, V)` is `Profunctor(K, K, V)`. The most important example is the **hom profunctor** of a category, an endoprofunctor whose value at (A, B) is the type of arrows A → B and whose action pre- and post-composes. For 𝒮 it is `Total.Functions`:
 

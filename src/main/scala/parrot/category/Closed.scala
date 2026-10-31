@@ -93,8 +93,8 @@ object Closed {
       C.objects[A, B]
     }
 
-    def bimap[A1: Obj, B1: Obj, A2: Obj, B2: Obj](f: A2 --> A1, g: B1 --> B2): P[A1, B1] --> P[A2, B2] = {
-      C.curry((C.M.K.identity[P[A1, B1]] *** f) >>> C.eval[A1, B1] >>> g)
+    def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: B1 --> A1, g: A2 --> B2): P[A1, A2] --> P[B1, B2] = {
+      C.curry((C.M.K.identity[P[A1, A2]] *** f) >>> C.eval[A1, A2] >>> g)
     }
   }
 }
