@@ -103,10 +103,15 @@ abstract class ParserAlgebra(
 
   // ==== Sequencing: the promonad ====
 
-  /** From the promonad: *unit*(*f*) applies *f* to the semantic input without consuming anything, and the identity
-    * arrow *id* succeeds without consuming anything, returning its semantic input.
-    */
-  export Arrows.{identity as success, unit as pure}
+  /** Succeeds without consuming anything, returning its semantic input: the identity arrow *id*. */
+  final def success[A]: P[A, A] = {
+    Arrows.identity[A]
+  }
+
+  /** Applies *f* to the semantic input without consuming anything: *unit*(*f*). */
+  final def pure[A, B](f: A --> B): P[A, B] = {
+    Arrows.unit(f)
+  }
 
   /** Runs *p*, then *q* on the remaining input with the result of *p* as its semantic input: *p* ⨾ *q*. */
   def andThen[A, B, C](p: P[A, B], q: P[B, C]): P[A, C] = {
@@ -148,15 +153,29 @@ abstract class ParserAlgebra(
 
   // ==== Choice: the classical restriction structure ====
 
-  /** From the classical restriction structure:
-    *   - 0 fails without consuming anything: the restriction zero
-    *   - *p̄* succeeds if and only if *p* succeeds, consuming nothing and returning the semantic input: lookahead
-    *   - *p̄*ᶜ succeeds if and only if *p* fails, consuming nothing and returning the semantic input: negation
-    *   - *attempt*(*p*) never fails: the result of *p* on the left, or the untouched semantic input on the right where
-    *     *p* fails
-    *   - *p* ⊳ *q* tries *p* and, only where it fails, *q* on the original input: override, PEG ordered choice
+  export Choice.{attempt, orElse}
+
+  /** Fails without consuming anything: the restriction zero 0. */
+  final def failure[A, B]: P[A, B] = {
+    Choice.zero[A, B]
+  }
+
+  /** Succeeds if and only if *p* succeeds, consuming nothing and returning the semantic input: the restriction *p̄*. */
+  final def lookahead[A, B](p: P[A, B]): P[A, A] = {
+    Choice.restrict(p)
+  }
+
+  /** Succeeds if and only if *p* fails, consuming nothing and returning the semantic input: the complement *p̄*ᶜ. */
+  final def not[A, B](p: P[A, B]): P[A, A] = {
+    Choice.complement(p)
+  }
+
+  /** Never fails: the result of *p* on the left, or the untouched semantic input on the right where *p* fails:
+    * *attempt*(*p*).
     */
-  export Choice.{attempt, attempt as optional, complement as not, orElse, restrict as lookahead, zero as failure}
+  final def optional[A, B](p: P[A, B]): P[A, Either[B, A]] = {
+    Choice.attempt(p)
+  }
 
   /** Ordered choice that tags the alternative that succeeded: (*p* ⨾ *ι*₁) ⊳ (*q* ⨾ *ι*₂). */
   def or[A, B, C](p: P[A, B], q: P[A, C]): P[A, Either[B, C]] = {

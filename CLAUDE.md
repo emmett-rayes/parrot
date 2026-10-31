@@ -252,9 +252,10 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     `restricted`, the parser syntax); **`override` without `final`** when redefining an inherited member. A member that
     only forwards to a member of a parameter, under its own name and with the same type parameters, is an **`export`**,
     not a new `def` (`Monad` exports `K`, `map`, `objects` from its functor, and names its carrier `F as M`, as rule 13
-    does). Exports are final and carry no scaladoc: the members keep their own docs. A forward that gives a member a new
-    name or meaning is instead a `final def` with its own scaladoc that delegates to it (`ParserAlgebra.zip`, *p* ⋉ *q*
-    in `Zipped`, is `Zipped.parallel(p, q)`).
+    does; `ParserAlgebra` exports `attempt` and `orElse` from `Choice`). Exports are final and carry no scaladoc: the
+    members keep their own docs. A forward that gives a member a new name or meaning is instead a `final def` with its
+    own scaladoc that delegates to it (`ParserAlgebra`: `pure` is `Arrows.unit(f)`, `not` is `Choice.complement(p)`,
+    `zip` is `Zipped.parallel(p, q)`).
 17. **Monads have their functor**: `abstract class Monad(tracked val F: Endofunctor)` with primitives `unit` and
     `flatten`; `map`, `objects` are exported from `F`, `bind` is derived. Refine monads through the functor, `Monad.On[Total.type]` =
     `Monad { val F: Endofunctor { val K: Total.type } }`, not `Monad { val K: Total.type }`: only the former keeps the
