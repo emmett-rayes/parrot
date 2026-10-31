@@ -54,8 +54,10 @@ abstract class FunctorSpec(
   }
 }
 
-class OptionIsFunctorTest    extends FunctorSpec("Option", Endofunctor.OptionIsEndofunctor)
+class IdentityIsFunctorTest  extends FunctorSpec("Identity", Endofunctor.Identity)
+class OptionIsFunctorTest    extends FunctorSpec("Option", Monad.OptionIsMonad.F)
 class WriterIsFunctorTest    extends FunctorSpec("Writer[String]", StringWriter.F)
 class OptionTIsFunctorTest   extends FunctorSpec("OptionT[Writer[String]]", FailingStringWriter.F)
-class StateIsFunctorTest     extends FunctorSpec("State[Boolean, Option]", BooleanState.F)
+class StateIsFunctorTest     extends FunctorSpec("State[Boolean]", BooleanState.F)
+class StateTIsFunctorTest    extends FunctorSpec("State[Boolean, Option]", FailingBooleanState.F)
 class InclusionIsFunctorTest extends FunctorSpec("Inclusion of Total in Partial", Partial.Inclusion)

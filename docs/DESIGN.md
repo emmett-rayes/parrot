@@ -106,7 +106,9 @@ where a program can tell a diverging pair from the pair of its diverging compone
   presentation, so that `Monad` and `Monoid` have the same shape; `bind` is derived. Monads are refined through their
   functor (`Monad.On[Total.type]`), because only that keeps the chain of singleton types that path-dependent code needs.
   The structures on a monad whose laws are those of the Kleisli structures they induce, `Monad.Restriction`,
-  `Monad.Classical` and `Monad.Elgot`, live in its companion.
+  `Monad.Classical` and `Monad.Elgot`, live in its companion. The plain monads are transformers over the identity monad,
+  `Monad.OptionIsMonad` = `OptionT(Monad.Identity)` and `State[S]` = `StateT[S](Monad.Identity)`, so that each effect is
+  defined once.
 - **Products of categories use match types.** `Category.Product(C1, C2)` has pair types as objects. A morphism type is
   computed from two object types, and the only way to take a type apart at the type level is a match type
   (`Fst[(A1, A2)] = A1`): evidence is a value and cannot index a type, and projecting a type member of an abstract type

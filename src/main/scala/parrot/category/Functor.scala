@@ -63,19 +63,19 @@ abstract class Endofunctor(tracked val K: Category) extends Functor(K, K)
 
 object Endofunctor {
 
-  /** `Option` as an endofunctor on 𝒮, where
-    *   - *F*[*A*] = *A* + 1: a value or none
-    *   - *F*(*f*) applies *f* to a value if available and otherwise keeps none
+  /** The identity endofunctor on 𝒮, where
+    *   - *F*[*A*] = *A*
+    *   - *F*(*f*) = *f*
     */
-  object OptionIsEndofunctor extends Endofunctor(Total) {
-    type Self = Option
+  object Identity extends Endofunctor(Total) {
+    type Self[A] = A
 
-    def objects[A: Type]: Option[A] is Type = {
+    def objects[A: Type]: A is Type = {
       Type.TIsType
     }
 
-    def map[A: Type, B: Type](f: A -> B): Option[A] -> Option[B] = {
-      _.map(f)
+    def map[A: Type, B: Type](f: A -> B): A -> B = {
+      f
     }
   }
 }

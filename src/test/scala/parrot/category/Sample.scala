@@ -109,10 +109,15 @@ object Sample {
     [X] => (_: Sample[X]) ?=> Tuple2Sample[A, Option[X]]
   }
 
+  /** Samples of computations on `Boolean` states, for all result types: the samples of a state monad. */
+  given BooleanStateSamples: ([X] => Sample[X] ?-> Sample[Boolean -> (X, Boolean)]) = {
+    [X] => (_: Sample[X]) ?=> BooleanFunctionSample[(X, Boolean)]
+  }
+
   /** Samples of computations on `Boolean` states that may fail, for all result types: the samples of a state
     * transformer over `Option`.
     */
-  given BooleanStateSamples: ([X] => Sample[X] ?-> Sample[Boolean -> Option[(X, Boolean)]]) = {
+  given FailingBooleanStateSamples: ([X] => Sample[X] ?-> Sample[Boolean -> Option[(X, Boolean)]]) = {
     [X] => (_: Sample[X]) ?=> BooleanFunctionSample[Option[(X, Boolean)]]
   }
 

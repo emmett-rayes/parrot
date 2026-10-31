@@ -11,7 +11,7 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 | --- | --- | --- |
 | *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Module(K, M, T)` on a category and a monoidal category acting on it; `Strong(P, L1, L2)` on a profunctor and two modules; `Monad(F)` on an endofunctor; `Restriction(P)` on a promonad |
 | *refines*: more operations and laws | `extends`, forwarding the parameters | `Symmetric` refines `Monoidal`; `Cartesian` and `Cocartesian` refine `Symmetric`; `Bistrong` refines `Strong` over a symmetric structure acting on itself; `Classical` refines `Restriction`; `Semilattice` refines `Monoid`; `Freyd` refines a category of arrows with a bistrong structure |
-| *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K₁**ᵒᵖ × **K₂**; an `Endoprofunctor` is a `Profunctor` from **K** to **K** |
+| *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K₁**ᵒᵖ × **K₂**; an `Endoprofunctor` is a `Profunctor` from **K** to **K**; `Option`'s monad is `OptionT` over `Monad.Identity`, and `State[S]` is `StateT[S]` over it |
 | *dual*: the same structure on the opposite | an `Op` class | `Category.Op`; `Bifunctor.Op`; `Cartesian.Op` is `Cocartesian`; `Promonad.Op`; `Bistrong.Op`; `Conway.OfElgot` |
 | *induces*: a construction from one structure to another | an `open class` or a method | a category gives a promonad (`Promonad.Hom`); a promonad gives its category of arrows (`Promonad.Arrows`); a monoidal category acts on itself (`Module.OfMonoidal`); a symmetric monoidal category makes its hom bistrong (`Bistrong.Hom`); a monad gives a promonad (`Kleisli`); a monoid gives a monad (`Writer`); a semilattice gives a preorder (`Preorder.of`) |
 | *bridge*: two structures that define each other | `Of…` classes | `Traced.OfElgot` and `Elgot.OfTraced`; `Traced.OfConway` and `Conway.OfTraced` |
@@ -25,7 +25,8 @@ Type ─ refines ─ Eq ─ induces ─ Observable ─ counterpart ─ Preorder 
 Category (Op, Product, Iso)                                                    𝒮 = Total, 𝒫 = Partial
 └─ on ─ Functor ─ is a ─ Endofunctor ─ on ─ Monad ─ induces ─ Kleisli (a Promonad)
    │                                         ├─ on ─ Monad.Restriction ─ Monad.Classical, Monad.Elgot
-   │                                         └─ transformers: Writer (from a Monoid), OptionT, StateT
+   │                                         ├─ transformers: Writer (from a Monoid), OptionT, StateT
+   │                                         └─ Identity; over it, Option (OptionT) and State (StateT)
    └─ Bifunctor (Op) ─ is a ─ Functor out of Category.Product
       ├─ on ─ Monoidal ─ refines ─ Symmetric ─ refines ─ Cartesian ⇄ Cocartesian (dual)
       │       ├─ on ─ Module (OfMonoidal)
@@ -61,8 +62,8 @@ Each item needs only those before it:
 11. `Strong`, `Bistrong`, `Freyd`
 12. `Restriction`, `Classical`
 13. `Elgot`, `Conway`, `Traced`, `Recursion`
-14. `Monad`, `Kleisli`
-15. `Monad.Restriction`, `Monad.Classical`, `Monad.Elgot`; `Writer`, `OptionT`, `StateT`
+14. `Monad` (with `Identity`), `Kleisli`
+15. `Monad.Restriction`, `Monad.Classical`, `Monad.Elgot`; `Writer`, `OptionT`, `StateT`; `Option`, `State`
 
 `Total` and `Partial` are categories in item 3; their instances of later structures belong to the item of the
 structure.

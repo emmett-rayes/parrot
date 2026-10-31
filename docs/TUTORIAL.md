@@ -2481,12 +2481,12 @@ abstract class Functor(tracked val C: Category, tracked val D: Category):
 - `FunctorLaws.composition`: F(g ∘ f) = F(g) ∘ F(f)
 - `FunctorLaws.congruence`: if f = f′ then F(f) = F(f′)
 
-**Endofunctors on 𝒮.** Most of what programmers call functors are functors from a category to itself, **endofunctors**, and most of those are functors from 𝒮 to itself. The library's `Endofunctor(K)` is `Functor(K, K)`. `Option` is one, `Endofunctor.OptionIsEndofunctor`, and the monad `Monad.OptionIsMonad` of chapter 15 is structure on it:
+**Endofunctors on 𝒮.** Most of what programmers call functors are functors from a category to itself, **endofunctors**, and most of those are functors from 𝒮 to itself. The library's `Endofunctor(K)` is `Functor(K, K)`. The simplest is the identity, `Endofunctor.Identity`, with F(A) = A and F(f) = f. `Option` is one too: the library takes it from the monad `Monad.OptionIsMonad` of chapter 15, as its functor `Monad.OptionIsMonad.F`:
 
 ```scala library
 import parrot.category.*
 
-val O                                  = Endofunctor.OptionIsEndofunctor
+val O                                  = Monad.OptionIsMonad.F
 val lengths: Option[String] -> Option[Int] = O.map[String, Int](_.length)
 ```
 
@@ -2602,7 +2602,7 @@ object ListFunctor extends Endofunctor(Total):
 val headOption: [X] => List[X] -> Option[X] = [X] => (xs: List[X]) => xs.headOption
 
 val checked: Boolean =
-  naturality(ListFunctor, Endofunctor.OptionIsEndofunctor)(headOption, List(1, 2, 3), (n: Int) => n * 2)
+  naturality(ListFunctor, Monad.OptionIsMonad.F)(headOption, List(1, 2, 3), (n: Int) => n * 2)
 ```
 
 By A2, every polymorphic function between functors of 𝒮 is natural (section 9.3). So `headOption`, `reverse`, `flatten` and every other polymorphic function of this shape satisfy the naturality law without it being checked. The law is still worth testing, because a violation reveals a breach of the contract, such as a type test.
@@ -2836,12 +2836,14 @@ So a monad is a way of building a new category of effectful arrows on top of �
 
 | Monad | `M[A]` | Effect | In the library |
 | --- | --- | --- | --- |
-| `Option` | `Option[A]` | possible absence of a result | `Monad.OptionIsMonad` |
+| identity | `A` | none | `Monad.Identity` |
+| `Option` | `Option[A]` | possible absence of a result | `Monad.OptionIsMonad`, which is `OptionT(Monad.Identity)` |
 | Writer | `(W, A)`, with W a monoid | producing output | `Writer(W)` |
+| State | `S -> (A, S)` | reading and updating a state | `State[S]`, which is `StateT[S](Monad.Identity)` |
 | failure transformer | `M[Option[A]]` | failure, on top of the effects of M | `OptionT(M)` |
 | state transformer | `S -> M[(A, S)]` | reading and updating a state, with the effects of M | `StateT[S](M)` |
 
-For instance, the reference parser of chapter 20 is the Kleisli category of `StateT[Input](OptionT(Writer(E)))`: it reads and consumes input, reports diagnostics, and may fail. `Either[E, *]`, `List` and the reader monad `R -> A` are monads too, and the tests use `Writer` for strings, whose order of output matters (chapter 17).
+The identity monad has no effect, so a transformer over it is its effect alone: the library defines `Option` and the state monad that way. For instance, the reference parser of chapter 20 is the Kleisli category of `StateT[Input](OptionT(Writer(E)))`: it reads and consumes input, reports diagnostics, and may fail. `Either[E, *]`, `List` and the reader monad `R -> A` are monads too, and the tests use `Writer` for strings, whose order of output matters (chapter 17).
 
 The laws also justify the rewriting of `for`-comprehensions. `for { x <- m; y <- f(x) } yield y` is the same computation as `m.flatMap(f)` by the right unit law, and nested comprehensions can be flattened by associativity. These rewrites are sound for every lawful monad and only for lawful ones.
 
@@ -2889,7 +2891,7 @@ for all objects a and b, natural in both. F is the **left adjoint** and G the **
 
 **Currying is an adjunction.** For a fixed type S, the functor `[A] =>> (A, S)` is left adjoint to `[B] =>> S -> B`. The bijection is `Total.Exponential.curry` and its inverse `uncurry`, natural in both arguments, which is the exponential property of section 14.2 again. **[Proved]**
 
-**Every adjunction gives a monad.** If F ⊣ G, then G ∘ F is a monad **[Standard: Mac Lane 1998, from memory]**. For currying, G ∘ F sends A to `S -> (A, S)`, which is the state monad. So State is not an ad hoc invention: it is what the currying adjunction produces. The library's `StateT[S](M)` places the effects of another monad between the two adjoints, `S -> M[(A, S)]`:
+**Every adjunction gives a monad.** If F ⊣ G, then G ∘ F is a monad **[Standard: Mac Lane 1998, from memory]**. For currying, G ∘ F sends A to `S -> (A, S)`, which is the state monad. So State is not an ad hoc invention: it is what the currying adjunction produces. The library's `State[S]` is this monad, and `StateT[S](M)` places the effects of another monad between the two adjoints, `S -> M[(A, S)]`:
 
 ```scala library
 object Counter extends StateT[Int](Monad.OptionIsMonad)

@@ -257,11 +257,12 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
     own scaladoc that delegates to it (`ParserAlgebra`: `pure` is `Arrows.unit(f)`, `not` is `Choice.complement(p)`,
     `zip` is `Zipped.parallel(p, q)`).
 17. **Monads have their functor**: `abstract class Monad(tracked val F: Endofunctor)` with primitives `unit` and
-    `flatten`; `map`, `objects` are exported from `F`, `bind` is derived. Refine monads through the functor, `Monad.On[Total.type]` =
-    `Monad { val F: Endofunctor { val K: Total.type } }`, not `Monad { val K: Total.type }`: only the former keeps the
-    chain of singleton types (`M.K` = `M.F.K` = `Total`) that lets `Strong.Bistrong(P, Total.Product)` type-check.
-    Transformers define their endofunctor in their companion (`Writer.FunctorOf`, `OptionT.FunctorOf`,
-    `StateT.FunctorOf`).
+    `flatten`; `map`, `objects` are exported from `F`, `bind` is derived. Refine monads through the functor,
+    `Monad.On[Total.type]` = `Monad { val F: Endofunctor { val K: Total.type } }`, not `Monad { val K: Total.type }`:
+    only the former keeps the chain of singleton types (`M.K` = `M.F.K` = `Total`) that lets
+    `Strong.Bistrong(P, Total.Product)` type-check. Transformers define their endofunctor in their companion
+    (`Writer.FunctorOf`, `OptionT.FunctorOf`, `StateT.FunctorOf`). Plain monads are transformers over `Monad.Identity`:
+    `Monad.OptionIsMonad` is `OptionT(Identity)` and `State[S]` is `StateT[S](Identity)`.
 
 ### 4.2 Two categories of programs
 
@@ -280,14 +281,14 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 | `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `function`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
 | `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`) |
-| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.OptionIsEndofunctor`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
+| `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Endofunctor.Identity`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
 | `Promonad` | monoid in endoprofunctors: a category of arrows over **K** | `unit`, `multiply`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `category` (`Arrows`), `Op`, `Hom` | `Kleisli(M)`, `Total.Functions`, `Partial.Programs` |
 | `Monoidal` (+ `Module`), `Symmetric`, `Cartesian`, `Cocartesian`, `Closed` | monoidal structure and actions on a category | `***`, `act`/`~~`, unitors, `braid`, `fst`/`snd`/`&&&`, `inl`/`inr`/`|||`, `curry`, `internalHom` | `Total.Product`/`Coproduct`/`Exponential`, `Module.OfMonoidal`, `Partial.Product`/`Coproduct`, `Cartesian.Op`/`op`, `Cocartesian.Op`/`op` |
 | `Strong` (+ `Strong.Bistrong`), `Freyd` | strength on a profunctor over left modules (a Tambara module); bistrong: over a symmetric structure acting on itself, with a right strength; Freyd: the category of arrows of a promonad with a bistrong structure | `left` (*τ*), `right` (*τ*′), `compatibility`; Freyd's `first` = `right`, `second` = `left`, `parallel`/`**` | `Kleisli.ProductStrength`/`CoproductStrength`, `Strong.Bistrong.Hom`, `Strong.Bistrong.Op` |
 | `Restriction`, `Classical` | restriction category; zero, complement, override, attempt | `restrict`, `zero`, `complement`, `orElse`/`|>`, `attempt` | `Partial.Domains`, `Kleisli.RestrictionOf`/`ClassicalOf` |
 | `Traced`, `Conway`, `Elgot`, `Recursion` | the trace/fixed-point grid; recursion at arrow types | `trace`, `fix`, `iterate` | `Partial.Loops`/`Feedback`/`Knots`, bridges `OfElgot`/`OfConway`/`OfTraced`, guarded state |
 | `Monoid`, `Semilattice`, `Comonoid` | monoid and comonoid objects in a monoidal **V** | `M`/`C`, `unit`, `multiply`, `counit`, `comultiply` | tests; `parser.Expected.Furthest`; `Cartesian.comonoid`, `Partial.Product.comonoid` |
-| `Monad`, `Kleisli`, `Writer`, `OptionT`, `StateT` | monads on an endofunctor; the Kleisli promonad; transformers | `unit`, `flatten`; derived `map`, `bind` | `Monad.OptionIsMonad`, `Kleisli.OptionKleisli` |
+| `Monad`, `Kleisli`, `Writer`, `Option`, `State` | monads on an endofunctor; the Kleisli promonad; the transformers `OptionT` and `StateT`, and the plain monads as transformers over the identity | `unit`, `flatten`; derived `map`, `bind` | `Monad.Identity`, `Monad.OptionIsMonad` (`OptionT(Identity)`), `State[S]` (`StateT[S](Identity)`), `Kleisli.OptionKleisli` |
 | `Monad.Restriction`, `Monad.Classical`, `Monad.Elgot`, `Measure` | monad-level presentations whose laws are the Kleisli ones | `restrict`, `orElse`, `attempt`, `iterate` | `Monad.Classical.OptionIsClassical`, `StateT.ClassicalOf`, `OptionT.ClassicalOf` |
 
 ### 4.4 Laws
@@ -596,13 +597,15 @@ Things that cost time once; check here before fighting the compiler.
   given defined in the algebra is not found for the caller's `parser.P`; and an abstract type constructor cannot take
   wildcards (`P[?, ?]`). Evidence about the caller's types goes in a `using` parameter, resolved at the call site
   (`ParserAlgebra.Parsers` for `recursive[T <: Tuple]`).
-- **sbt 2** caches task results, which needs a hash for every input; tasks with side effects need `Def.uncached`.
-  `test` is incremental; use `testFull`. Cached compilation does not replay warnings: to see every warning, compile
-  from scratch. The compile cache can also restore **stale class files**: after `Observable` changed from an abstract
-  class to a trait, tests failed with `IncompatibleClassChangeError` even after `clean`, while a from-scratch `scalac`
-  build passed. `clean` together with any source edit forces a fresh compile. sbt 2.0.10 restored semanticdb files as
+- **sbt 2** caches task results, which needs a hash for every input; tasks with side effects need `Def.uncached`. `test`
+  is incremental; use `testFull`. Cached compilation does not replay warnings: to see every warning, compile from
+  scratch. The compile cache can also restore **stale class files**: after `Observable` changed from an abstract class
+  to a trait, tests failed with `IncompatibleClassChangeError` even after `clean`, while a from-scratch `scalac` build
+  passed. `clean` together with any source edit forces a fresh compile. sbt 2.0.10 restored semanticdb files as
   read-only symlinks into its cache, so the next recompile failed with `AccessDeniedException` (sbt#9877, fixed in
-  2.0.11).
+  2.0.11). It caches failed compiles too, by the hash of the sources: after a failure from stale incremental state
+  (once, right after renaming files), `clean; compile` replayed it for as long as the sources were unchanged, while
+  Pants and scala-cli accepted them. Change a source to compile afresh.
 - **scalafmt 3.11.3** cannot parse some given syntax (§7); **Pants** requires the `scala_override` plugin with `Scala3Future` to parse `tracked` (§2).
 - **Spikes first.** For a question about what the type system accepts, a twenty-line spike compiled at the library's
   version, `scala compile --server=false -S 3.10.0` with each flag passed as `-O flag` (Scala CLI, so that the

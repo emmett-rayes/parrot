@@ -72,21 +72,27 @@ object Monad {
   /** The monads on **C**: refines the endofunctor, so that the category of a monad *M* is known as **C**. */
   type On[C <: Category] = Monad { val F: Endofunctor { val K: C } }
 
-  /** `Option` is a monad on 𝒮, where
+  /** The identity monad on 𝒮: computations without effects, where
+    *   - *M*[*A*] = *A*
+    *   - *η* = *id* and *μ* = *id*
+    */
+  object Identity extends Monad(Endofunctor.Identity) {
+
+    def unit[A: Type]: A -> A = {
+      a => a
+    }
+
+    def flatten[A: Type]: A -> A = {
+      a => a
+    }
+  }
+
+  /** `Option` is a monad on 𝒮, the failure transformer [[OptionT]] over the identity, where
     *   - *M*[*A*] = *A* + 1: a result or none
     *   - *η* = *Some*
     *   - *μ* keeps the inner result, or none
     */
-  object OptionIsMonad extends Monad(Endofunctor.OptionIsEndofunctor) {
-
-    def unit[A: Type]: A -> Option[A] = {
-      a => Some(a)
-    }
-
-    def flatten[A: Type]: Option[Option[A]] -> Option[A] = {
-      _.flatten
-    }
-  }
+  object OptionIsMonad extends OptionT(Identity)
 
   /** A restriction structure on a monad on 𝒮: a computation can be asked whether it succeeds, without its result.
     *
@@ -131,29 +137,10 @@ object Monad {
 
   object Classical {
 
-    /** `Option` is classical: `None` fails, and success can be tested. */
-    object OptionIsClassical extends Classical(OptionIsMonad) {
-
-      def restrict[A](m: Option[A]): Option[Unit] = {
-        m.map(_ => ())
-      }
-
-      def zero[A]: Option[A] = {
-        None
-      }
-
-      def complement[A](m: Option[A]): Option[Unit] = {
-        if m.isEmpty then Some(()) else None
-      }
-
-      def orElse[A](m: Option[A], n: -> Option[A]): Option[A] = {
-        m.orElse(n)
-      }
-
-      override def attempt[A](m: Option[A]): Option[Option[A]] = {
-        Some(m)
-      }
-    }
+    /** `Option` is classical: `None` fails, and success can be tested. It is the classical structure of the failure
+      * transformer over the identity.
+      */
+    object OptionIsClassical extends OptionT.ClassicalOf(OptionIsMonad)
   }
 
   /** An iteration operator on a monad on 𝒮.

@@ -68,10 +68,15 @@ object StringWriter extends Writer(StringConcat)
 /** Computations that log strings and may fail: the effects of the reference parser without its state. */
 object FailingStringWriter extends OptionT(StringWriter)
 
-/** Computations that read and update a `Boolean` state and may fail: few enough states for computations to be data. */
-object BooleanState extends StateT[Boolean](Monad.OptionIsMonad)
+/** Computations that read and update a `Boolean` state: few enough states for computations to be data. */
+object BooleanState extends State[Boolean]
 
-class OptionIsMonadTest  extends MonadSpec("Option", Monad.OptionIsMonad)
-class WriterIsMonadTest  extends MonadSpec("Writer[String]", StringWriter)
-class OptionTIsMonadTest extends MonadSpec("OptionT[Writer[String]]", FailingStringWriter)
-class StateIsMonadTest   extends MonadSpec("State[Boolean, Option]", BooleanState)
+/** Computations that read and update a `Boolean` state and may fail. */
+object FailingBooleanState extends StateT[Boolean](Monad.OptionIsMonad)
+
+class IdentityIsMonadTest extends MonadSpec("Identity", Monad.Identity)
+class OptionIsMonadTest   extends MonadSpec("Option", Monad.OptionIsMonad)
+class WriterIsMonadTest   extends MonadSpec("Writer[String]", StringWriter)
+class OptionTIsMonadTest  extends MonadSpec("OptionT[Writer[String]]", FailingStringWriter)
+class StateIsMonadTest    extends MonadSpec("State[Boolean]", BooleanState)
+class StateTIsMonadTest   extends MonadSpec("State[Boolean, Option]", FailingBooleanState)

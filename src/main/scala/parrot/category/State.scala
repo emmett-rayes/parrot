@@ -22,7 +22,8 @@ trait Measure extends Type {
   *   - *μ*(*m*) = *s* ↦ (((*n*,*s*′) ↦ *n*(*s*′))\*′)(*m*(*s*)): run the outer computation, then the inner one from the
   *     state it left
   *
-  * It is the monad of the adjunction (− × *S*) ⊣ (*S* ⇒ −), with the effects of *M* in between.
+  * It is the monad of the adjunction (− × *S*) ⊣ (*S* ⇒ −), with the effects of *M* in between. Over the identity, it
+  * is the state monad, [[State]].
   */
 open class StateT[S](tracked val M: Monad.On[Total.type]) extends Monad(StateT.FunctorOf[S](M)) {
 
@@ -143,3 +144,14 @@ object StateT {
     }
   }
 }
+
+/** The state monad on 𝒮: computations that read and update a state *S*, the state transformer [[StateT]] over the
+  * identity.
+  *
+  * Represents a monad on 𝒮, where
+  *   - *M*[*A*] = *S* → *A* × *S*
+  *   - *η*(*a*) = *s* ↦ (*a*,*s*)
+  *   - *μ*(*m*) = *s* ↦ ((*n*,*s*′) ↦ *n*(*s*′))(*m*(*s*)): run the outer computation, then the inner one from the
+  *     state it left
+  */
+open class State[S] extends StateT[S](Monad.Identity)
