@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Module]], for left actions on a category whose objects are all types. */
 abstract class ModuleSpec(
   tracked val A: Module {

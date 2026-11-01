@@ -2,6 +2,7 @@ package parrot
 package parser
 
 import category.*
+import category.Category.Type
 
 /** Something a parser expected: a `label` (a literal, a pattern or a rule name), in the `context` of the rules that
   * enclosed it, innermost first.

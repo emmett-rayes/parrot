@@ -4,6 +4,7 @@ package category
 import org.scalacheck.Gen
 
 import Sample.given
+import Category.Type
 
 /** The laws of [[Conway]], with arrows whose fixed points are defined. */
 abstract class ConwaySpec(

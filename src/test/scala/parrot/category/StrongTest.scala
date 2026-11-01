@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Strong]], for bistrong promonads over 𝒮: every strength in the library is bistrong. */
 abstract class StrongSpec(
   name: String,

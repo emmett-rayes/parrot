@@ -3,6 +3,8 @@ package category
 
 import org.scalacheck.Gen
 
+import Category.Type
+
 /** Generators, variants and observations for the morphisms of a category whose objects are all types. */
 abstract class CategoryFixture(val name: String, tracked val K: Category { type Obj = Type }) extends caps.Pure {
   import K.-->

@@ -4,6 +4,7 @@ package category
 import org.scalacheck.Gen
 
 import Sample.given
+import Category.Type
 
 /** The laws of [[Promonad]] beyond those of its category: the unit is a functor, and the derived profunctor action
   * satisfies the [[Bifunctor]] laws.

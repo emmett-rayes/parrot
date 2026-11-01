@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Symmetric]], for structures on a category whose objects are all types. */
 abstract class SymmetricSpec(
   tracked override val M: Symmetric { val K: Category { type Obj = Type } },

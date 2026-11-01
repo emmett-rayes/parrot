@@ -4,6 +4,7 @@ package category
 import org.scalacheck.Gen
 
 import Sample.given
+import Category.Type
 
 /** The laws of [[Elgot]], with steps whose loops stop (in 𝒫) or that make progress (guarded instances). */
 abstract class ElgotSpec(

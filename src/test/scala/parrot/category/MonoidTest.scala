@@ -2,6 +2,7 @@ package parrot
 package category
 
 import Sample.given
+import Category.Type
 
 /** Strings under concatenation: a monoid in 𝒮 that is neither commutative nor idempotent. */
 object StringConcat extends Monoid(Total.Product) {

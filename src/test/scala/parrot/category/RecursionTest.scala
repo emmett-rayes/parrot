@@ -4,6 +4,7 @@ package category
 import org.scalacheck.Gen
 
 import Sample.given
+import Category.Type
 
 /** The laws of [[Recursion]], with functions that recurse on smaller arguments (𝒫) or after progress (guarded). */
 abstract class RecursionSpec(

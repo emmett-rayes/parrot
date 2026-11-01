@@ -4,6 +4,7 @@ package category
 import org.scalacheck.Gen
 
 import Sample.given
+import Category.Type
 
 /** The laws of [[Closed]], for closed structures on a category whose objects are all types.
   *

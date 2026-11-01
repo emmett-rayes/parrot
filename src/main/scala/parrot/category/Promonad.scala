@@ -3,6 +3,8 @@ package category
 
 import scala.annotation.targetName
 
+import Category.Type
+
 /** A promonad on **K** valued in 𝒮.
   *
   * Represents a promonad (*P*, *η*, *μ*), where

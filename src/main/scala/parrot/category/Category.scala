@@ -18,7 +18,7 @@ abstract class Category extends caps.Pure {
   type Self[_, _]
 
   /** The type class selecting the objects. */
-  type Obj <: Type
+  type Obj <: Category.Type
 
   /** The hom-object of **C**. */
   final type Hom = Self
@@ -119,6 +119,23 @@ abstract class Category extends caps.Pure {
 }
 
 object Category {
+
+  /** A base trait for type classes.
+    *
+    * Used to represent evidence that a type belongs to a certain type class.
+    */
+  trait Type extends caps.Pure {
+    type Self
+  }
+
+  object Type {
+
+    /** Summons the `Type` instance of `T`. */
+    def apply[T: Type]: T is Type = summon
+
+    /** Every type of kind `*` is trivially a `Type`. */
+    given TIsType: [T] => T is Type {}
+  }
 
   /** The opposite **K**ᵒᵖ of a category **K**.
     *
@@ -232,37 +249,42 @@ object Category {
     */
   object Discrete2 extends Category {
     type Self = =:=
-    type Obj  = Two
+    type Obj  = Disc2
 
-    /** Evidence that a type is an object of **2**, with case analysis on which object it is.
-      *
-      * @note Total code can write no instance but `Zero` and `One`: another would have to produce an *R*[*A*] from an
-      *   *R*[0] and an *R*[1] for every *R*.
-      */
-    trait Two extends Type {
+    /** Evidence that a type is an object of **2**. */
+    trait Disc2 extends Type {
 
-      /** The case analysis on the object: *zero* if it is `0`, *one* if it is `1`, for a family of types *R*. */
-      def fold[R[_]](zero: => R[0], one: => R[1]): R[Two.this.Self]
+      /** The object, as an index: `Index.Zero` if it is `0`, `Index.One` if it is `1`. */
+      def index: Disc2.Index[Disc2.this.Self]
     }
 
-    object Two {
+    object Disc2 {
+
+      /** The indices of the objects of **2**.
+        *
+        * Matching on an `Index[A]` tells which object *A* is.
+        */
+      enum Index[A] extends caps.Pure {
+        case Zero extends Index[0]
+        case One  extends Index[1]
+      }
 
       /** `0` is an object of **2**. */
-      given Zero: (0 is Two) {
-        def fold[R[_]](zero: => R[0], one: => R[1]): R[0] = zero
+      given Zero: (0 is Disc2) {
+        def index: Index[0] = Index.Zero
       }
 
       /** `1` is an object of **2**. */
-      given One: (1 is Two) {
-        def fold[R[_]](zero: => R[0], one: => R[1]): R[1] = one
+      given One: (1 is Disc2) {
+        def index: Index[1] = Index.One
       }
     }
 
-    def identity[A: Two]: A =:= A = {
+    def identity[A: Disc2]: A =:= A = {
       summon
     }
 
-    def compose[A: Two, B: Two, C: Two](g: B =:= C, f: A =:= B): A =:= C = {
+    def compose[A: Disc2, B: Disc2, C: Disc2](g: B =:= C, f: A =:= B): A =:= C = {
       g.compose(f)
     }
   }

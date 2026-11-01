@@ -205,8 +205,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 5. **Combinations are bundles**, not inheritance: `ParserAlgebra(…)` takes all the parser's structures as `tracked`
    parameters and derives or `export`s their operations. A structure that is another with more operations extends it
    instead: `Freyd(P, S)` is the category of arrows `Promonad.Arrows(P)` with a strength `S`.
-6. **Object evidence**: a category's objects are the types with evidence `type Obj <: Type`. `Type` holds for every
-   type (`Type.TIsType`); refinements such as `Pair`, the objects of `Category.Product`, select fewer. `Eq`,
+6. **Object evidence**: a category's objects are the types with evidence `type Obj <: Type`, where `Type` is
+   `Category.Type`, in the companion of `Category` (`import Category.Type`). `Type` holds for every type
+   (`Type.TIsType`); refinements such as `Pair`, the objects of `Category.Product`, select fewer. `Eq`,
    `Observable` and `Preorder` are type classes of data, not object evidence, and do not extend `Type`. Evidence is
    passed only through context bounds, except evidence that chooses an object, which is a `tracked` parameter: the
    unit `U` of `Monoidal(K, U, T)`, whose type is the unit object `I = U.Self`, the terminal object `U` of
@@ -283,9 +284,9 @@ The rationale is in `docs/DESIGN.md` §3; the rules:
 
 | File | Structure | Key members | Instances |
 | --- | --- | --- | --- |
-| `Type`, `Eq` | object evidence; semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
+| `Eq` | semantic equality on data | `equal`, `===`, `EqLaws`, `structural` | primitives via `structural`; `Option`, `Either`, tuples and `Seq`s componentwise |
 | `Observable`, `Preorder` | law-checking oracles for = and ⊑ | `agree`/`=?=`, `below`/`?<`, `through`, `total`, `partial`, `ObservableLaws`, `PreorderLaws` | data via `Eq`; pairs componentwise (in the parent `ComponentwiseObservable`); `Preorder.of` a semilattice |
-| `Category` | category with object evidence | `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`), `Category.Empty` (no objects: its evidence `Absurd` has no instances), `Category.Discrete2` (the objects `0` and `1`, told apart by `Two.fold`) |
+| `Category` | category with object evidence | `Type` (`TIsType`), `Hom`/`-->`, `identity`, `compose`/`<<<`, `andThen`/`>>>`, `Iso`/`<->`, `op`, `CategoryLaws`, `IsoLaws` | `Total`, `Partial`, `Fns`, `Category.Op`, `Category.Product` (pair types, taken apart by the match types `Fst`, `Snd`), `Category.Empty` (no objects: its evidence `Absurd` has no instances), `Category.Discrete2` (the objects `0` and `1`, told apart by matching on the GADT `Disc2.index`) |
 | `Functor` (+ `Endofunctor`), `Bifunctor`, `Profunctor` (+ `Endoprofunctor`) | (bi/pro/endo)functors between given categories; a bifunctor is a functor out of the product via the view `functor` (`Bifunctor.FromProduct`), whose functor laws are its laws | `F`, `map`, `bimap`, `dimap`, `functor`, `op` | `Total.Identity`, `Partial.Inclusion` (𝒮 → 𝒫), `Total.Tuple2IsBifunctor`, `Bifunctor.Op`, … |
 | `Limit` (+ `Limit.Cone`), `Limits` | limits of a diagram *D*: **J** → **C**, cones through which every cone factors uniquely; cones over *D*; limits of shape **J** in **C** | `factor`, `LimitLaws`, `Limit.Of`; `Apex`, `leg`, `induced`, `ConeLaws`; `limit` | `Total.LimitOf` (every limit of 𝒮, by abstraction), `Total.LimitsOf` |
 | `Terminal` | terminal object, chosen by evidence like `Monoidal`'s unit; a limit of the empty diagram through the view `limit` | `I`, `discard` (!), `TerminalLaws`, `limit`, `Terminal(L)`, `Terminal.Of` | `Terminal.FromLimit` (from a limit, may be overridden), `Terminal.AsLimit`, `Terminal.EmptyDiagram`, `Terminal.EmptyCone` |
@@ -615,6 +616,10 @@ Things that cost time once; check here before fighting the compiler.
   the re-check puts a capture variable on `(Int, Long)` and the match type no longer reduces. Declare such givens in
   reduced form (`given ((Int -> String, Partial[Long, Boolean]) is Observable)`); values with an expected type are
   fine.
+- **GADTs and evidence.** Pattern matching refines type parameters, not type members: a match on evidence `A is Disc2`
+  never refines `A`, with typed or stable patterns. Carry a GADT on the evidence and match on that (`A.index match {
+  case Index.Zero => … }` in `Product`). The evidence cannot itself be a parameterized enum (`type Obj = Disc2[?]`): a
+  context bound needs an abstract `Self`. Settled by a spike in November 2026.
 - **Scala 3.10 and capture checking.** The upgrade from 3.9.0 needed three kinds of change. Patterns of case classes
   without fields (`Proj1()`, `Success()`) crash the capture checker or fail with `Found: Proj1[…]`, `Required: Boolean`
   (`docs/DESIGN.md` §10): write type patterns, `case _: Proj1[?, ?]`, which match the same values and refine the same

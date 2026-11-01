@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The category 𝒮 of total, pure Scala programs.
   *
   * Represents 𝒮, where

@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Monoidal]], for structures on a category whose objects are all types. */
 abstract class MonoidalSpec(
   tracked val M: Monoidal { val K: Category { type Obj = Type } },

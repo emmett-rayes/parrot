@@ -7,6 +7,8 @@ import scala.annotation.targetName
 import scala.util.Try
 import scala.util.matching.Regex
 
+import category.Category.Type
+
 /** An algebra of parsers: the combinators of parsing expression grammars, derived from categorical structure.
   *
   * A parser *P*(*A*,*B*) consumes a prefix of the input while turning a semantic input *A* into a semantic result *B*.

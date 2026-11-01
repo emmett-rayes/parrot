@@ -5,8 +5,8 @@ package category
   *
   * Represents a product *P* = *A*₁ × *A*₂, where
   *   - *π*₁: *P* → *A*₁ and *π*₂: *P* → *A*₂ are the projections
-  *   - ⟨*f*,*g*⟩: *X* → *P* is the pairing of *f*: *X* → *A*₁ and *g*: *X* → *A*₂, the unique morphism with
-  *     *π*₁ ∘ ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
+  *   - ⟨*f*,*g*⟩: *X* → *P* is the pairing of *f*: *X* → *A*₁ and *g*: *X* → *A*₂, the unique morphism with *π*₁ ∘
+  *     ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
   */
 abstract class Product(tracked val C: Category, tracked val U1: C.Obj, tracked val U2: C.Obj, tracked val U: C.Obj)
     extends caps.Pure {
@@ -78,7 +78,7 @@ abstract class Product(tracked val C: Category, tracked val U1: C.Obj, tracked v
 
 object Product {
   import Category.Discrete2
-  import Discrete2.Two
+  import Discrete2.Disc2
 
   /** The products of **K**. */
   type Of[K <: Category] = Product { val C: K }
@@ -125,8 +125,11 @@ object Product {
       P.U
     }
 
-    def leg[A: Two]: P.P --> D.F[A] = {
-      A.fold[[T] =>> P.P --> D.F[T]](P.fst, P.snd)
+    def leg[A: Disc2]: P.P --> D.F[A] = {
+      A.index match {
+        case Disc2.Index.Zero => P.fst
+        case Disc2.Index.One  => P.snd
+      }
     }
 
     def factor(K: Limit.Cone { val D: AsLimit.this.D.type }): K.Apex --> P.P = {
@@ -147,8 +150,11 @@ object Product {
       Y
     }
 
-    def leg[A: Two]: Y.Self --> D.F[A] = {
-      A.fold[[T] =>> Y.Self --> D.F[T]](f, g)
+    def leg[A: Disc2]: Y.Self --> D.F[A] = {
+      A.index match {
+        case Disc2.Index.Zero => f
+        case Disc2.Index.One  => g
+      }
     }
   }
 
@@ -163,11 +169,14 @@ object Product {
       case 1 => Y.Self
     }
 
-    def objects[A: Two]: F[A] is K.Obj = {
-      A.fold[[T] =>> F[T] is K.Obj](X, Y)
+    def objects[A: Disc2]: F[A] is K.Obj = {
+      A.index match {
+        case Disc2.Index.Zero => X
+        case Disc2.Index.One  => Y
+      }
     }
 
-    def map[A: Two, B: Two](f: A --> B): F[A] ==> F[B] = {
+    def map[A: Disc2, B: Disc2](f: A --> B): F[A] ==> F[B] = {
       f.substituteCo[[T] =>> F[A] ==> F[T]](K.identity[F[A]](using objects[A]))
     }
   }

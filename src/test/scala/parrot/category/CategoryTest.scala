@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Category]], for a category whose objects are all types. */
 abstract class CategorySpec(tracked val K: Category { type Obj = Type })(
   using

@@ -3,6 +3,8 @@ package category
 
 import org.scalacheck.Gen
 
+import Category.Type
+
 /** Generators, variants and observations for the arrows of a promonad over a category whose objects are all types. */
 abstract class PromonadFixture(val name: String, tracked val P: Promonad { val K: Category { type Obj = Type } })
     extends caps.Pure {

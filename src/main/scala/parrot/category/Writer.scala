@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The writer transformer: computations of a monad *M* on 𝒮 that also produce output, combined with a monoid *W*.
   *
   * Represents a monad *T* on 𝒮, where

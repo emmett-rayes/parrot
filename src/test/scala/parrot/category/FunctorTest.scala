@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Functor]], for functors between categories whose objects are all types.
   *
   * Arrows come from the fixture of the source category, observations from the fixture of the target category.

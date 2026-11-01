@@ -3,6 +3,8 @@ package category
 
 import org.scalacheck.Gen
 
+import Category.Type
+
 /** The laws of [[Bifunctor]], for bifunctors **K** × **K** → **K** on a category whose objects are all types. */
 abstract class BifunctorSpec(
   tracked val K: Category { type Obj = Type },

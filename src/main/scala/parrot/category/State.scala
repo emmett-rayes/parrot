@@ -3,6 +3,8 @@ package category
 
 import scala.annotation.unused
 
+import Category.Type
+
 /** A measure on a type of states: a natural number that guarded iteration and recursion must decrease.
   *
   * For a parser the state is the remaining input and its measure is its length: a loop step or a recursive call that

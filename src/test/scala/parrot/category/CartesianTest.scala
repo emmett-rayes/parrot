@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Cartesian]]: the universal property of products. */
 abstract class CartesianSpec(tracked override val M: Cartesian { val K: Category { type Obj = Type } })(using
   category: CategoryFixture.On[M.K.type],

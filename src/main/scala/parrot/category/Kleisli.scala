@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The Kleisli promonad of a monad *M* on **K**: effectful arrows *A* → *M*[*B*].
   *
   * Represents a promonad over **K**, where

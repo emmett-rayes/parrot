@@ -3,6 +3,8 @@ package category
 
 import scala.annotation.unused
 
+import Category.Type
+
 /** A program from *A* to *B* that may diverge. */
 opaque type Partial[A, B] = A -> B
 

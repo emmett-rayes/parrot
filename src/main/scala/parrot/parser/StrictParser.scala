@@ -8,6 +8,8 @@ import scala.collection.mutable
 import scala.util.matching.Regex
 import scala.util.{Try, Failure as TryFailure, Success as TrySuccess}
 
+import category.Category.Type
+
 /** An optimizing [[ParserAlgebra]] interpreter that normalizes parsers at construction time and runs them without
   * allocating intermediate structure.
   *

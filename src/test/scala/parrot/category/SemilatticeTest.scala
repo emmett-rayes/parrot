@@ -2,6 +2,7 @@ package parrot
 package category
 
 import Sample.given
+import Category.Type
 
 /** The laws of [[Semilattice]] for semilattices in 𝒮. */
 abstract class SemilatticeSpec(name: String, tracked override val W: Semilattice { val V: Total.Product.type })(

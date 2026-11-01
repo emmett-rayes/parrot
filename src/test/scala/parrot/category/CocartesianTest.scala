@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Cocartesian]]: the universal property of coproducts. */
 abstract class CocartesianSpec(tracked override val M: Cocartesian { val K: Category { type Obj = Type } })(using
   category: CategoryFixture.On[M.K.type],

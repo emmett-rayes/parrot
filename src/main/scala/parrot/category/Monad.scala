@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** A monad on a category **K**.
   *
   * Represents a monad (*M*, *η*, *μ*), where

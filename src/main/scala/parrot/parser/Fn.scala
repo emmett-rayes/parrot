@@ -2,6 +2,7 @@ package parrot
 package parser
 
 import category.*
+import category.Category.Type
 
 /** Reified pure functions: the morphisms of [[Fns]], a category equivalent to 𝒮 on the types used by parsers.
   *

@@ -3,6 +3,8 @@ package category
 
 import org.scalacheck.Gen
 
+import Category.Type
+
 /** The laws of [[Freyd]] and of its [[Category]], for Freyd categories on promonads over 𝒮. */
 abstract class FreydSpec(
   name: String,

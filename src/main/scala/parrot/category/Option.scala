@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The failure transformer: computations of a monad *M* on 𝒮 that may also fail.
   *
   * Represents a monad *T* on 𝒮, where

@@ -89,7 +89,12 @@ where a program can tell a diverging pair from the pair of its diverging compone
   discusses coherence). `Eq` once extended `Type` too, so that the types with an equality could be the objects of a
   category. No category used it, and every `import Eq.given` then changed what answered `A is Type`; `Eq` is now a type
   class of data, like `Observable` and `Preorder`, and a category of types with equality takes an evidence class that
-  carries an `Eq` (`EqType`, tutorial, section 3.8).
+  carries an `Eq` (`EqType`, tutorial, section 3.8). `Type` is `Category.Type`, in the companion of `Category`: it is
+  object evidence and nothing else. Evidence as a type constructor, `type Obj[_]` with `Obj[A]`, was tried (branch
+  `higher-kinded-obj`) to make the evidence of **2** a plain GADT, and set aside: such evidence has no `Self`, so a
+  parameter that chooses an object (the unit of `Monoidal`, the factors of `Product`) needed a wrapper pairing a type
+  with its evidence, and every structure changed, while a GADT carried by the evidence (section 4) gives the same case
+  analysis with a change local to **2**.
 - **Names follow the mathematics.** Carriers have short aliases (`Hom`/`-->`, `F`, `P`, `M`, `C`); arrows of other
   categories are imported, renamed where categories meet (`->>`, `==>`, `~~>`); these three-symbol arrows name roles,
   while the two concrete categories have two-symbol arrows, `->` for 𝒮 and `~>` for 𝒫; objects are combined infix (`*`,
@@ -185,8 +190,11 @@ Each structure sits at the lowest level where its laws can be stated.
   limit of the empty diagram counted as terminal, but a terminal object had no operation of its own to override.
   Products follow the same pattern: `Product(C, U1, U2, U)` has `fst`, `snd`, `pair` and the laws of `Cartesian`'s
   products, the view `limit` over a diagram of shape **2** (`Category.Discrete2`), and `Product.FromLimit`. **2**
-  tells its objects apart by a case analysis carried by the evidence, `Two.fold`: a GADT would need a match on the
-  evidence to refine `A`, and Scala derives GADT constraints from type parameters, not from the `Self` of `A is Two`.
+  tells its objects apart by a GADT carried by the evidence: `Disc2.index` is an `Index[A]`, and matching on its cases
+  `Zero` and `One` refines `A`. A match on the evidence itself would not, because Scala derives GADT constraints from
+  type parameters, not from the `Self` of `A is Disc2`; nor can the evidence be the GADT, because a context bound needs
+  an abstract `Self`. The index replaced a Church encoding, `fold[R[_]](zero: => R[0], one: => R[1])`, which needed a
+  type lambda at every use.
 - Rejected: applied constructor types (`Functor(J, C)` as a type, `Limit(D)` as a result type), which avoid the
   refinement shadowing that `Limit.Of[D.type]` and `Limits.this.C` work around; scalac accepts them, Scalameta and
   so Pants do not.

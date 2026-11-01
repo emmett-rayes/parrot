@@ -1,6 +1,8 @@
 package parrot
 package category
 
+import Category.Type
+
 /** The laws of [[Comonoid]], for comonoids in a monoidal structure on a category whose objects are all types. */
 abstract class ComonoidSpec(
   name: String,

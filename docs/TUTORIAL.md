@@ -2367,6 +2367,7 @@ Scala 3 offers a better tool. A class parameter declared `val` is a **stable pat
 
 ```scala library
 import parrot.category.*
+import Category.Type
 
 abstract class MyFunctor(tracked val C: Category, tracked val D: Category):
   type Self[_]
@@ -2383,6 +2384,7 @@ Because `C` is tracked, the type of `OptionMap.C` is `Total.type`, not just `Cat
 
 ```scala unit=Untracked fails library
 import parrot.category.*
+import Category.Type
 
 abstract class MyFunctor(val C: Category, val D: Category):
   type Self[_]
@@ -2479,7 +2481,7 @@ A functor (Definition 1.3) sends objects to objects and arrows to arrows, preser
 The library's functor takes its two categories as parameters:
 
 ```scala unit=Shape library
-import parrot.category.{Category, Type}
+import parrot.category.Category
 
 abstract class Functor(tracked val C: Category, tracked val D: Category):
   import C.-->
@@ -2500,6 +2502,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category):
 
 ```scala library
 import parrot.category.*
+import Category.Type
 
 val O                                  = Monad.OptionIsMonad.F
 val lengths: Option[String] -> Option[Int] = O.map[String, Int](_.length)
@@ -2601,6 +2604,7 @@ A natural transformation between endofunctors of 𝒮 is a polymorphic function 
 
 ```scala library
 import parrot.category.*
+import Category.Type
 
 /** Endofunctors of 𝒮. */
 type Endo = Endofunctor { val K: Total.type }
@@ -2836,6 +2840,7 @@ The library's `Monad(F)` is the first presentation. It takes the endofunctor F a
 
 ```scala library
 import parrot.category.*
+import Category.Type
 
 val O = Monad.OptionIsMonad
 
@@ -2960,6 +2965,7 @@ A recursive data type is the initial algebra of its **pattern functor**, the fun
 
 ```scala library
 import parrot.category.*
+import Category.Type
 
 enum ExprF[R]:
   case Lit(n: BigInt)
