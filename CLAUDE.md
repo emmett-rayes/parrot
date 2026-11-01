@@ -1,9 +1,9 @@
 # CLAUDE.md — Parrot
 
 Onboarding for AI coding agents (`AGENTS.md` points here). The reasons behind every rule below are in
-`docs/DESIGN.md`, together with the rejected alternatives, what the library leaves out on purpose, and the known
-compiler issues: check it before adding a construct or fighting the compiler. Treat its decisions as settled; reopen
-one only with a new argument, and record the result there.
+`docs/DESIGN.md`, together with the rejected alternatives and what the library leaves out on purpose; the known
+compiler issues, with reproductions, are in `docs/compiler-issues.md`. Check them before adding a construct or fighting
+the compiler. Treat the design decisions as settled; reopen one only with a new argument, and record the result there.
 
 ## What Parrot is
 
