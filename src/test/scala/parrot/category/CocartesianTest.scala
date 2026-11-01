@@ -3,7 +3,7 @@ package category
 
 import Category.Type
 
-/** The laws of [[Cocartesian]]: the universal property of coproducts. */
+/** The laws of [[Cocartesian]]: the unitors, the associator and the braiding are those of the coproducts. */
 abstract class CocartesianSpec(tracked override val M: Cocartesian { val K: Category { type Obj = Type } })(using
   category: CategoryFixture.On[M.K.type],
   typename: TypeName[M.type],
@@ -11,78 +11,51 @@ abstract class CocartesianSpec(tracked override val M: Cocartesian { val K: Cate
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends SymmetricSpec(M, "Cocartesian") {
-  import types.{T1, T2, T3, T4, given}
+  import types.{T1, T2, T3, given}
   import category.*
   import M.K.-->
-  import M.+
+  import M.{I, +}
   import M.CocartesianLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
 
-  law("copairInl") {
-    val observations = observe[T1, T4]
-    val fs           = arrow[T1, T4]
-    val gs           = arrow[T2, T4]
+  law("braidIsCopairing") {
+    val observations = observe[T1 + T2, T2 + T1]
 
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given ((T1 --> T4) is Observable) = observe
-      copairInl(f, g)
+    forAll(observations) { observe =>
+      given (((T1 + T2) --> (T2 + T1)) is Observable) = observe
+      braidIsCopairing[T1, T2]
     }
   }
 
-  law("copairInr") {
-    val observations = observe[T2, T4]
-    val fs           = arrow[T1, T4]
-    val gs           = arrow[T2, T4]
+  law("leftUnitorInverseIsInr") {
+    val observations = observe[T1, I + T1]
 
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given ((T2 --> T4) is Observable) = observe
-      copairInr(f, g)
+    forAll(observations) { observe =>
+      given ((T1 --> (I + T1)) is Observable) = observe
+      leftUnitorInverseIsInr[T1]
     }
   }
 
-  law("copairUniqueness") {
-    val observations = observe[T1 + T2, T4]
-    val hs           = arrow[T1 + T2, T4]
+  law("rightUnitorInverseIsInl") {
+    val observations = observe[T1, T1 + I]
 
-    forAll(observations, hs) { (observe, h) =>
-      given (((T1 + T2) --> T4) is Observable) = observe
-      copairUniqueness(h)
+    forAll(observations) { observe =>
+      given ((T1 --> (T1 + I)) is Observable) = observe
+      rightUnitorInverseIsInl[T1]
     }
   }
 
-  law("absurdUniqueness") {
-    val observations = observe[M.I, T1]
-    val fs           = arrow[M.I, T1]
+  law("associatorIsCopairing") {
+    val observations = observe[(T1 + T2) + T3, T1 + (T2 + T3)]
 
-    forAll(observations, fs) { (observe, f) =>
-      given ((M.I --> T1) is Observable) = observe
-      absurdUniqueness(f)
-    }
-  }
-
-  law("tensorIsCoproduct") {
-    val observations = observe[T1 + T2, T4 + T3]
-    val fs           = arrow[T1, T4]
-    val gs           = arrow[T2, T3]
-
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given (((T1 + T2) --> (T4 + T3)) is Observable) = observe
-      tensorIsCoproduct(f, g)
-    }
-  }
-
-  law("copairCongruence") {
-    val observations = observe[T1 + T2, T4]
-    val fs           = arrow[T1, T4]
-    val gs           = arrow[T2, T4]
-
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given (((T1 + T2) --> T4) is Observable) = observe
-      copairCongruence(f, variant(f), g, variant(g))
+    forAll(observations) { observe =>
+      given ((((T1 + T2) + T3) --> (T1 + (T2 + T3))) is Observable) = observe
+      associatorIsCopairing[T1, T2, T3]
     }
   }
 }
 
 class ScalaCoproductIsCocartesianTest   extends CocartesianSpec(Total.Coproducts)
 class PartialCoproductIsCocartesianTest extends CocartesianSpec(Partial.Coproduct)
+class TotalColimitIsCocartesianTest     extends CocartesianSpec(ColimitCocartesian)

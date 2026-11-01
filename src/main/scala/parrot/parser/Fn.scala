@@ -180,17 +180,39 @@ object Fns extends Category {
     }
   }
 
-  /** Tagged unions as a bifunctor on [[Fns]]. */
-  object EitherIsBifunctor extends Endobifunctor(Fns) {
+  /** The empty type as the initial object of [[Fns]], with ¡ as data. */
+  object NothingIsInitial extends Initial(Fns, Type.TIsType[Nothing]) {
+    def absurd[A: Type]: Fn[Nothing, A] = {
+      Fn.Absurd()
+    }
+  }
+
+  /** Tagged unions as the binary coproducts of [[Fns]], with injections and copairing as data. */
+  object EitherIsCoproducts extends Coproducts(Fns) {
     type Self = Either
 
     def objects[A: Type, B: Type]: Either[A, B] is Type = {
       Type.TIsType
     }
 
-    def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: Fn[A1, B1], g: Fn[A2, B2])
-      : Fn[Either[A1, A2], Either[B1, B2]] = {
-      Fn.copair(Fn.andThen(f, Fn.Inl()), Fn.andThen(g, Fn.Inr()))
+    def coproduct[A: Type, B: Type]: EitherIsCoproduct[A, B] = {
+      EitherIsCoproduct()
+    }
+  }
+
+  /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of [[Fns]], with injections and copairing as data. */
+  final class EitherIsCoproduct[A, B]
+      extends Coproduct(Fns, Type.TIsType[A], Type.TIsType[B], Type.TIsType[Either[A, B]]) {
+    def inl: Fn[A, Either[A, B]] = {
+      Fn.Inl()
+    }
+
+    def inr: Fn[B, Either[A, B]] = {
+      Fn.Inr()
+    }
+
+    def copair[X: Type](f: Fn[A, X], g: Fn[B, X]): Fn[Either[A, B], X] = {
+      Fn.copair(f, g)
     }
   }
 
@@ -198,21 +220,5 @@ object Fns extends Category {
   object Product extends Cartesian(Fns, UnitIsTerminal, Tuple2IsProducts)
 
   /** Reified coproducts: tagged unions, with injections and copairing as data. */
-  object Coproduct extends Cocartesian(Fns, Category.Object(Fns, Type.TIsType[Nothing]), EitherIsBifunctor) {
-    def inl[A: Type, B: Type]: Fn[A, Either[A, B]] = {
-      Fn.Inl()
-    }
-
-    def inr[A: Type, B: Type]: Fn[B, Either[A, B]] = {
-      Fn.Inr()
-    }
-
-    def copair[A: Type, B: Type, X: Type](f: Fn[A, X], g: Fn[B, X]): Fn[Either[A, B], X] = {
-      Fn.copair(f, g)
-    }
-
-    def absurd[A: Type]: Fn[Nothing, A] = {
-      Fn.Absurd()
-    }
-  }
+  object Coproduct extends Cocartesian(Fns, NothingIsInitial, EitherIsCoproducts)
 }

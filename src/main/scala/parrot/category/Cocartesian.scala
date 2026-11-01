@@ -16,10 +16,12 @@ import scala.annotation.targetName
   */
 abstract class Cocartesian(
   tracked override val K: Category,
-  tracked override val U: K.Object,
-  tracked override val T: Endobifunctor.On[K.type],
+  tracked override val U: Initial.Of[K.type],
+  tracked override val T: Coproducts.Of[K.type],
 ) extends Symmetric(K, U, T) {
   import K.{Iso, Obj, -->, <->, >>>}
+
+  export U.absurd
 
   /** Infix alias for [[Tensor]]: the coproduct *A* + *B*. */
   final type + = Tensor
@@ -28,17 +30,20 @@ abstract class Cocartesian(
 
   private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = T.objects[A, B]
 
-  /** The left injection *ι*₁: *A* → *A* + *B*. */
-  def inl[A: Obj, B: Obj]: A --> (A + B)
+  /** The first injection *ι*₁: *A* → *A* + *B* of the coproduct of *A* and *B*. */
+  final def inl[A: Obj, B: Obj]: A --> (A + B) = {
+    T.coproduct[A, B].inl
+  }
 
-  /** The right injection *ι*₂: *B* → *A* + *B*. */
-  def inr[A: Obj, B: Obj]: B --> (A + B)
+  /** The second injection *ι*₂: *B* → *A* + *B* of the coproduct of *A* and *B*. */
+  final def inr[A: Obj, B: Obj]: B --> (A + B) = {
+    T.coproduct[A, B].inr
+  }
 
-  /** The copairing [*f*,*g*]: *A* + *B* → *X* of *f*: *A* → *X* and *g*: *B* → *X*. */
-  def copair[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X): (A + B) --> X
-
-  /** The unique morphism ¡: *I* → *A* out of the initial object. */
-  def absurd[A: Obj]: I --> A
+  /** The copairing [*f*,*g*]: *A* + *B* → *X* of *f*: *A* → *X* and *g*: *B* → *X* in the coproduct of *A* and *B*. */
+  final def copair[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X): (A + B) --> X = {
+    T.coproduct[A, B].copair(f, g)
+  }
 
   /** The codiagonal ∇ = [*id*,*id*]: *A* + *A* → *A*. */
   final def codiagonal[A: Obj]: (A + A) --> A = {
@@ -87,58 +92,34 @@ abstract class Cocartesian(
     Iso(to, from)
   }
 
-  /** Laws that any `Cocartesian` structure must satisfy.
-    *
-    * The coproduct and initial object satisfy the usual universal properties.
-    */
+  /** Laws that any `Cocartesian` structure must satisfy. */
   object CocartesianLaws {
 
-    /** [*f*,*g*] ∘ *ι*₁ = *f* */
-    def copairInl[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X)(
-      using (A --> X) is Observable
-    ): Boolean = {
-      (inl[A, B] >>> (f ||| g)) =?= f
-    }
-
-    /** [*f*,*g*] ∘ *ι*₂ = *g* */
-    def copairInr[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X)(
-      using (B --> X) is Observable
-    ): Boolean = {
-      (inr[A, B] >>> (f ||| g)) =?= g
-    }
-
-    /** [*h* ∘ *ι*₁,*h* ∘ *ι*₂] = *h*: a morphism out of a coproduct is determined by its injections. */
-    def copairUniqueness[A: Obj, B: Obj, X: Obj](h: (A + B) --> X)(
-      using ((A + B) --> X) is Observable
-    ): Boolean = {
-      ((inl[A, B] >>> h) ||| (inr[A, B] >>> h)) =?= h
-    }
-
-    /** *f* = ¡ for every *f*: *I* → *A*
+    /** *β* = [*ι*₂,*ι*₁]
       */
-    def absurdUniqueness[A: Obj](f: I --> A)(using (I --> A) is Observable): Boolean = {
-      f =?= absurd[A]
+    def braidIsCopairing[A: Obj, B: Obj](using ((A + B) --> (B + A)) is Observable): Boolean = {
+      braid[A, B] =?= (inr[B, A] ||| inl[B, A])
     }
 
-    /** *f* + *g* = [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*]: the tensor is the coproduct.
+    /** *λ*⁻¹ = *ι*₂
       */
-    def tensorIsCoproduct[A: Obj, B: Obj, C: Obj, D: Obj](f: A --> B, g: C --> D)(
-      using ((A + C) --> (B + D)) is Observable
+    def leftUnitorInverseIsInr[A: Obj](using (A --> (I + A)) is Observable): Boolean = {
+      leftUnitor[A].from =?= inr[I, A]
+    }
+
+    /** *ρ*⁻¹ = *ι*₁
+      */
+    def rightUnitorInverseIsInl[A: Obj](using (A --> (A + I)) is Observable): Boolean = {
+      rightUnitor[A].from =?= inl[A, I]
+    }
+
+    /** *α* = [[*ι*₁,*ι*₂ ∘ *ι*₁],*ι*₂ ∘ *ι*₂]
+      */
+    def associatorIsCopairing[A: Obj, B: Obj, C: Obj](
+      using (((A + B) + C) --> (A + (B + C))) is Observable
     ): Boolean = {
-      (f +++ g) =?= ((f >>> inl[B, D]) ||| (g >>> inr[B, D]))
-    }
-
-    /** If *f* = *f*′ and *g* = *g*′, then [*f*,*g*] = [*f*′,*g*′].
-      *
-      * @note The premise is not checked: *f*′ and *g*′ must be equal to *f* and *g* by construction.
-      */
-    def copairCongruence[A: Obj, B: Obj, X: Obj](
-      f: A --> X,
-      f2: A --> X,
-      g: B --> X,
-      g2: B --> X,
-    )(using ((A + B) --> X) is Observable): Boolean = {
-      (f ||| g) =?= (f2 ||| g2)
+      val copairing = (inl[A, B + C] ||| (inl[B, C] >>> inr[A, B + C])) ||| (inr[B, C] >>> inr[A, B + C])
+      associator[A, B, C].to =?= copairing
     }
   }
 }

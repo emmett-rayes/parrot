@@ -96,17 +96,46 @@ object Partial extends Category {
     }
   }
 
-  /** Tagged unions as a bifunctor on 𝒫. */
-  object EitherIsBifunctor extends Endobifunctor(Partial) {
+  /** The empty type 0 as the initial object of 𝒫. */
+  object NothingIsInitial extends Initial(Partial, Type.TIsType[Nothing]) {
+    def absurd[A: Type]: Nothing ~> A = {
+      n => n
+    }
+  }
+
+  /** Tagged unions as the binary coproducts *A* + *B* of 𝒫. */
+  object EitherIsCoproducts extends Coproducts(Partial) {
     type Self = Either
 
     def objects[A: Type, B: Type]: Either[A, B] is Type = {
       Type.TIsType
     }
 
-    def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 ~> B1, g: A2 ~> B2): Either[A1, A2] ~> Either[B1, B2] = {
+    def coproduct[A: Type, B: Type]: EitherIsCoproduct[A, B] = {
+      EitherIsCoproduct()
+    }
+
+    override def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 ~> B1, g: A2 ~> B2)
+      : Either[A1, A2] ~> Either[B1, B2] = {
       case Left(a)  => Left(f(a))
       case Right(b) => Right(g(b))
+    }
+  }
+
+  /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of 𝒫. */
+  final class EitherIsCoproduct[A, B]
+      extends Coproduct(Partial, Type.TIsType[A], Type.TIsType[B], Type.TIsType[Either[A, B]]) {
+    def inl: A ~> Either[A, B] = {
+      a => Left(a)
+    }
+
+    def inr: B ~> Either[A, B] = {
+      b => Right(b)
+    }
+
+    def copair[X: Type](f: A ~> X, g: B ~> X): Either[A, B] ~> X = {
+      case Left(a)  => f(a)
+      case Right(b) => g(b)
     }
   }
 
@@ -149,24 +178,7 @@ object Partial extends Category {
   }
 
   /** The coproducts of 𝒫: tagged unions, with the empty type 0 as initial object. */
-  object Coproduct extends Cocartesian(Partial, Category.Object(Partial, Type.TIsType[Nothing]), EitherIsBifunctor) {
-    def inl[A: Type, B: Type]: A ~> Either[A, B] = {
-      a => Left(a)
-    }
-
-    def inr[A: Type, B: Type]: B ~> Either[A, B] = {
-      b => Right(b)
-    }
-
-    def copair[A: Type, B: Type, X: Type](f: A ~> X, g: B ~> X): Either[A, B] ~> X = {
-      case Left(a)  => f(a)
-      case Right(b) => g(b)
-    }
-
-    def absurd[A: Type]: Nothing ~> A = {
-      n => n
-    }
-  }
+  object Coproduct extends Cocartesian(Partial, NothingIsInitial, EitherIsCoproducts)
 
   /** Programs run side by side on pairs: the first component first. */
   object Parallel extends Strong.Bistrong.Hom(Programs, Product)

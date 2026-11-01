@@ -162,6 +162,11 @@ Each structure sits at the lowest level where its laws can be stated.
   so a diagram of a discrete shape is determined by its objects, and the apex can be too; for any other shape it
   cannot, since the limit depends on the morphisms. In 𝒮 (`Total.DiscreteLimitsOf`) every family of points is natural,
   so the apex is the type of all families, without abstraction.
+- **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**: `Cocone(D)`,
+  `Colimit(D)` with `factor` out of its apex, `Colimits(J, C)` and `DiscreteColimits(J, C)` with the apex
+  `Colim[F]`. In 𝒮, the colimit of a discrete diagram is the sum of its points (`Total.DiscreteColimitsOf`):
+  `Total.Sum[O, F]` is a point of *F*[*A*] together with the evidence for its object *A*, a type that it hides, and the
+  factorization applies the leg at that object. No two points are identified, so the sum needs no quotient.
 - **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` is an object with `discard` (!);
   `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of the empty diagram
   and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit. `Products(C)`, the
@@ -169,11 +174,15 @@ Each structure sits at the lowest level where its laws can be stated.
   laws are its laws, and `bimap` defaults to ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩. `Products(L)` (`Products.FromLimits`) builds
   them from discrete limits of shape **2**, with the apexes Lim[(*A*,*B*)] as tensor, as `Terminal(L)` builds a
   terminal object; an instance with a tensor of its own implements one `Product` per pair of objects
-  (`Total.Tuple2IsProduct[A, B]`).
+  (`Total.Tuple2IsProduct[A, B]`). Dually, `Initial(C, U)` has `absurd` (¡) and `Coproduct(C, U1, U2, U)` has `inl`,
+  `inr` and `copair`, each a colimit through its view `colimit` and built from one by `FromColimit`, and
+  `Coproducts(C)` has a `Coproduct` on every image, `coproduct[A, B]`, with `Coproducts(L)` from discrete colimits.
 - **A cartesian structure is a terminal object and products,** `Cartesian(K, U, T)` with a `Terminal` *U* and
   `Products` *T*: the universal properties are stated once, in its parameters, and `Cartesian` derives the unitors,
   the associator and the braiding from them, with laws that check an instance overriding them against the projections.
   Its `fst`, `snd` and `pair` are those of `T.product`, named once for the code that works in a cartesian category.
+  Dually, `Cocartesian(K, U, T)` takes an `Initial` *U* and `Coproducts` *T*, names `inl`, `inr` and `copair`, and
+  checks the unitors, the associator and the braiding against the injections.
 - **2 tells its objects apart by a GADT carried by the evidence:** `Disc2.index` is an `Index[A]`, and matching on its
   cases `Zero` and `One` refines `A`. A match on the evidence itself would not, because Scala derives GADT constraints
   from type parameters, not from the `Self` of `A is Disc2`; nor can the evidence be the GADT, because a context bound
@@ -195,7 +204,9 @@ Rejected:
   of arrows and cannot share a guard between separately tied knots;
 - a terminal object as an alias of a limit of the empty diagram, which leaves it no operation to override;
 - `Cartesian` with projections, pairing and ! of its own, which restates the operations and laws of `Terminal` and
-  `Products`;
+  `Products`, and `Cocartesian` with injections, copairing and ¡ of its own;
+- colimits as limits in **C**ᵒᵖ, whose legs and factorizations are morphisms of **C**ᵒᵖ that every client would have
+  to reverse;
 - products from any limits of shape **2** (`Limits(Discrete2, C)`): the apex of a limit is a type member of each
   limit, not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types;
   `DiscreteLimits` gives the apex as a type function instead;

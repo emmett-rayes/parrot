@@ -112,8 +112,8 @@ warning-free.
 
 One file per structure in `src/main/scala/parrot/category/`; the instances on 𝒮 and 𝒫 are in `Total.scala` and
 `Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
-family of structures shares its member's file: `Products` is in `Product.scala`, `Limits` and `DiscreteLimits` in
-`Limit.scala`.
+family of structures shares its member's file: `Products` is in `Product.scala` and `Coproducts` in `Coproduct.scala`,
+`Limits` and `DiscreteLimits` in `Limit.scala`, `Colimits` and `DiscreteColimits` in `Colimit.scala`.
 
 ## `parrot.parser`
 
@@ -219,9 +219,14 @@ family of structures shares its member's file: `Products` is in `Product.scala`,
   type and declare a private given instead (`Monoidal.I = U.A` and `IIsObj`).
 - **Nullary extensions** that clash with a method of the same name take `(using DummyImplicit)`.
 - **Imports.** `import M.{*, ***}` is an error, since `*` is the wildcard; import a tensor alias `*` backticked:
-  ``import M.{I, `*`, given}``.
+  ``import M.{I, `*`, given}``. Pants infers no dependency from a relative import at the top of a file
+  (`import Category.Discrete2.Disc2` after the package clauses), and `pants check` can then fail with "Not found": put
+  the import inside the definition that uses it (`object Sample`).
 - **GADTs and evidence.** Matching refines type parameters, not type members, so a match on `A is Disc2` never refines
-  `A`: carry a GADT on the evidence and match on it (`A.index match { case Index.Zero => … }`).
+  `A`: carry a GADT on the evidence and match on it (`A.index match { case Index.Zero => … }`). A match type at the
+  refined parameter still does not reduce where a value must conform to its case (`x: Components[X, Y][A]` is not an
+  `X` in the case `Zero`): convert with the case's equality,
+  `summon[A =:= 0].substituteCo[[T] =>> Components[X, Y][T]](x)`.
 - **Capture checking.** Patterns of case classes without fields (`Proj1()`) crash it: write `case _: Proj1[?, ?]`. A
   given declared with an unreduced match type (`given (K.-->[(Int, Long), …] is Observable)`) fails: declare it in
   reduced form. A polymorphic function type cannot wrap an impure one: `[X] => Sample[X] ?-> Sample[F[X]]`.
