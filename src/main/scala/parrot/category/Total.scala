@@ -62,20 +62,27 @@ object Total extends Category {
       Type.TIsType
     }
 
-    def fst[A: Type, B: Type]: ((A, B)) -> A = {
-      _._1
-    }
-
-    def snd[A: Type, B: Type]: ((A, B)) -> B = {
-      _._2
-    }
-
-    def pair[X: Type, A: Type, B: Type](f: X -> A, g: X -> B): X -> (A, B) = {
-      x => (f(x), g(x))
+    def product[A: Type, B: Type]: Tuple2IsProduct[A, B] = {
+      Tuple2IsProduct()
     }
 
     override def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 -> B1, g: A2 -> B2): ((A1, A2)) -> (B1, B2) = {
       (a, b) => (f(a), g(b))
+    }
+  }
+
+  /** The pair type (*A*,*B*) as the product *A* × *B* of 𝒮. */
+  final class Tuple2IsProduct[A, B] extends Product(Total, Type.TIsType[A], Type.TIsType[B], Type.TIsType[(A, B)]) {
+    def fst: ((A, B)) -> A = {
+      _._1
+    }
+
+    def snd: ((A, B)) -> B = {
+      _._2
+    }
+
+    def pair[X: Type](f: X -> A, g: X -> B): X -> (A, B) = {
+      x => (f(x), g(x))
     }
   }
 
@@ -154,7 +161,7 @@ object Total extends Category {
       *
       * The type of `at` holds every family, natural or not. The constructor is private to the limit, and the only
       * operation that builds points is [[factor]], from the legs of a cone, which are natural by
-      * [[Limit.Cone.ConeLaws.commutes]]. So every point that exists is natural, and since clients see a point only
+      * [[Cone.ConeLaws.commutes]]. So every point that exists is natural, and since clients see a point only
       * through the legs, `Point` is, to them, the subset of natural families: by representation independence, as for
       * any abstract type (tutorial, §6.5).
       *
@@ -173,7 +180,7 @@ object Total extends Category {
       _.at[A]
     }
 
-    def factor(K: Limit.Cone { val D: LimitOf.this.D.type }): K.Apex -> Point = {
+    def factor(K: Cone { val D: LimitOf.this.D.type }): K.Apex -> Point = {
       y => Point([A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y))
     }
   }
@@ -184,6 +191,50 @@ object Total extends Category {
   final class LimitsOf(tracked override val J: Category) extends Limits(J, Total) {
     def limit(D: Functor { val C: J.type; val D: Total.type }): Limit.Of[D.type] = {
       LimitOf(D)
+    }
+  }
+
+  /** The limit of a diagram *D*: **J** → 𝒮 of a discrete shape: all families of points of *D*.
+    *
+    * Represents the limit (*X*, *ψ*), where
+    *   - *X* = ∏_*A* *D*[*A*] is the type of families *x* = (*x*_*A*)_*A*, a point *x*_*A* of *D*[*A*] for each object
+    *     *A* of **J**
+    *   - *ψ*_*A*(*x*) = *x*_*A*: the leg at *A* picks the point at *A*
+    *   - ⟨*φ*⟩(*y*) = (*φ*_*A*(*y*))_*A*: a cone (*Y*, *φ*) factors through the family of its legs at *y*
+    *
+    * The only morphisms of **J** are identities, so every family is natural and the limit is the product itself: unlike
+    * [[LimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
+    */
+  final class DiscreteLimitOf(
+    tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },
+  ) extends Limit(D) {
+    import D.C as J
+
+    type Apex = [A] -> (A is J.Obj) ?-> D.F[A]
+
+    def apex: Apex is Type = {
+      Type.TIsType
+    }
+
+    def leg[A: J.Obj]: Apex -> D.F[A] = {
+      x => x[A]
+    }
+
+    def factor(K: Cone { val D: DiscreteLimitOf.this.D.type }): K.Apex -> Apex = {
+      y => [A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y)
+    }
+  }
+
+  /** The limits of a discrete shape **J** in 𝒮: the limit of a diagram with object map *F* is [[DiscreteLimitOf]], the
+    * type of families Lim[*F*] = ∏_*A* *F*[*A*].
+    */
+  final class DiscreteLimitsOf(tracked override val J: Category { type Self[A, B] <: A =:= B })
+      extends DiscreteLimits(J, Total) {
+    type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
+
+    def limit(G: Functor { val C: DiscreteLimitsOf.this.J.type; val D: Total.type })
+      : Limit.Of[G.type] { type Apex = Lim[G.F] } = {
+      DiscreteLimitOf(G)
     }
   }
 }

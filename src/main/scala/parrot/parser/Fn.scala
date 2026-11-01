@@ -160,15 +160,22 @@ object Fns extends Category {
       Type.TIsType
     }
 
-    def fst[A: Type, B: Type]: Fn[(A, B), A] = {
+    def product[A: Type, B: Type]: Tuple2IsProduct[A, B] = {
+      Tuple2IsProduct()
+    }
+  }
+
+  /** The pair type (*A*,*B*) as the product *A* × *B* of [[Fns]], with projections and pairing as data. */
+  final class Tuple2IsProduct[A, B] extends Product(Fns, Type.TIsType[A], Type.TIsType[B], Type.TIsType[(A, B)]) {
+    def fst: Fn[(A, B), A] = {
       Fn.Proj1()
     }
 
-    def snd[A: Type, B: Type]: Fn[(A, B), B] = {
+    def snd: Fn[(A, B), B] = {
       Fn.Proj2()
     }
 
-    def pair[X: Type, A: Type, B: Type](f: Fn[X, A], g: Fn[X, B]): Fn[X, (A, B)] = {
+    def pair[X: Type](f: Fn[X, A], g: Fn[X, B]): Fn[X, (A, B)] = {
       Fn.fanout(f, g)
     }
   }

@@ -2,6 +2,7 @@ package parrot
 package category
 
 import Category.Type
+import LimitTerminal.IName
 
 /** The laws of [[Terminal]], for terminal objects of a category whose objects are all types. */
 abstract class TerminalSpec(tracked val T: Terminal { val C: Category { type Obj = Type } })(using
@@ -27,4 +28,5 @@ abstract class TerminalSpec(tracked val T: Terminal { val C: Category { type Obj
   }
 }
 
-class ScalaUnitIsTerminalTest extends TerminalSpec(Total.UnitIsTerminal)
+class ScalaUnitIsTerminalTest  extends TerminalSpec(Total.UnitIsTerminal)
+class TotalLimitIsTerminalTest extends TerminalSpec(LimitTerminal)

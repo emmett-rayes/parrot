@@ -71,7 +71,7 @@ object Terminal {
       A.absurd
     }
 
-    def factor(K: Limit.Cone { val D: AsLimit.this.D.type }): K.Apex --> T.I = {
+    def factor(K: Cone { val D: AsLimit.this.D.type }): K.Apex --> T.I = {
       T.discard[K.Apex](using K.apex)
     }
   }
@@ -81,7 +81,7 @@ object Terminal {
     * The empty cone has no legs.
     */
   final class EmptyCone(tracked override val D: Functor { val C: Empty.type }, tracked val Y: D.D.Obj)
-      extends Limit.Cone(D) {
+      extends Cone(D) {
     import D.D.-->
 
     type Apex = Y.Self

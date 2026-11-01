@@ -57,3 +57,4 @@ abstract class CartesianSpec(tracked override val M: Cartesian { val K: Category
 }
 
 class TotalProductIsCartesianTest extends CartesianSpec(Total.Products)
+class TotalLimitIsCartesianTest   extends CartesianSpec(LimitCartesian)

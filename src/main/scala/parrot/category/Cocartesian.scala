@@ -162,8 +162,7 @@ object Cocartesian {
 
   /** The coproducts of a cocartesian category **K**, as the binary products of **K**ᵒᵖ.
     *
-    * The projections are the injections, the pairing is the copairing, and the product of morphisms is the coproduct
-    * of their opposites.
+    * The product of two objects is their coproduct, and the product of morphisms is the coproduct of their opposites.
     */
   final class OpProducts(tracked val M: Cocartesian) extends Products(M.K.op) {
     import K.{Obj, -->}
@@ -174,20 +173,38 @@ object Cocartesian {
       M.T.objects[A, B]
     }
 
-    def fst[A: Obj, B: Obj]: F[A, B] --> A = {
-      M.inl[A, B]
-    }
-
-    def snd[A: Obj, B: Obj]: F[A, B] --> B = {
-      M.inr[A, B]
-    }
-
-    def pair[X: Obj, A: Obj, B: Obj](f: X --> A, g: X --> B): X --> F[A, B] = {
-      M.copair(f, g)
+    def product[A: Obj as first, B: Obj as second]
+      : OpProduct { val M: OpProducts.this.M.type; val U1: first.type; val U2: second.type } = {
+      OpProduct(M, first, second)
     }
 
     override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
       M.tensor(f, g)
+    }
+  }
+
+  /** The coproduct *A*₁ + *A*₂ in a cocartesian category **K**, as a product of **K**ᵒᵖ.
+    *
+    * The projections are the injections, and the pairing is the copairing.
+    */
+  final class OpProduct(tracked val M: Cocartesian, tracked override val U1: M.K.Obj, tracked override val U2: M.K.Obj)
+      extends Product(M.K.op, U1, U2, M.T.objects[U1.Self, U2.Self](using U1, U2)) {
+    import C.{Obj, -->}
+
+    private given A1IsObj: (A1 is Obj) = U1
+
+    private given A2IsObj: (A2 is Obj) = U2
+
+    def fst: P --> A1 = {
+      M.inl[A1, A2]
+    }
+
+    def snd: P --> A2 = {
+      M.inr[A1, A2]
+    }
+
+    def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P = {
+      M.copair(f, g)
     }
   }
 }

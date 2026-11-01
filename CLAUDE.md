@@ -111,7 +111,9 @@ warning-free.
     (`f2`); conditional laws state their premise in a `@note`.
 
 One file per structure in `src/main/scala/parrot/category/`; the instances on 𝒮 and 𝒫 are in `Total.scala` and
-`Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`.
+`Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
+family of structures shares its member's file: `Products` is in `Product.scala`, `Limits` and `DiscreteLimits` in
+`Limit.scala`.
 
 ## `parrot.parser`
 

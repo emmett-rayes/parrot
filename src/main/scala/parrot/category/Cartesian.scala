@@ -22,11 +22,25 @@ abstract class Cartesian(
   import K.{Iso, Obj, -->, <->, >>>}
 
   export U.discard
-  export T.{fst, snd, pair}
 
   private given IIsObj: (I is Obj) = U.U
 
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]
+
+  /** The first projection *π*₁: *A* ⊗ *B* → *A* of the product of *A* and *B*. */
+  final def fst[A: Obj, B: Obj]: (A * B) --> A = {
+    T.product[A, B].fst
+  }
+
+  /** The second projection *π*₂: *A* ⊗ *B* → *B* of the product of *A* and *B*. */
+  final def snd[A: Obj, B: Obj]: (A * B) --> B = {
+    T.product[A, B].snd
+  }
+
+  /** The pairing ⟨*f*,*g*⟩: *X* → *A* ⊗ *B* of *f*: *X* → *A* and *g*: *X* → *B* in the product of *A* and *B*. */
+  final def pair[X: Obj, A: Obj, B: Obj](f: X --> A, g: X --> B): X --> (A * B) = {
+    T.product[A, B].pair(f, g)
+  }
 
   /** The diagonal Δ = ⟨*id*,*id*⟩: *A* → *A* ⊗ *A*. */
   final def diagonal[A: Obj]: A --> (A * A) = {

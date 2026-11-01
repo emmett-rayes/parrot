@@ -9,6 +9,9 @@ import org.scalacheck.{Arbitrary, Cogen, Gen}
 final class Sample[X](val gen: Gen[X], val cogen: Cogen[X], val eq: X is Eq, val inhabited: Boolean = true)
 
 object Sample {
+  import Category.Discrete2.Disc2
+  import Category.Empty.Absurd
+  import Product.Components
 
   /** The number of generated points per function observation. */
   private val points: Int = 10
@@ -80,11 +83,60 @@ object Sample {
     )
   }
 
+  /** Families of points of a diagram (*X*,*Y*) of shape **2**, which are data: a family is determined by its two
+    * points.
+    */
+  given Discrete2FamilySample: [X: Sample, Y: Sample] => Sample[[A] -> (A is Disc2) ?-> Components[X, Y][A]] = {
+    def family(x: X, y: Y): [A] -> (A is Disc2) ?-> Components[X, Y][A] = {
+      [A] => (a: A is Disc2) ?=> {
+        a.index match {
+          case Disc2.Index.Zero => x
+          case Disc2.Index.One  => y
+        }
+      }
+    }
+    val points: ([A] -> (A is Disc2) ?-> Components[X, Y][A]) -> (X, Y) = p => (p[0], p[1])
+    val familyIsEq: ([A] -> (A is Disc2) ?-> Components[X, Y][A]) is Eq = new Eq {
+      type Self = [A] -> (A is Disc2) ?-> Components[X, Y][A]
+
+      def equal(p: Self, q: Self): Boolean = {
+        X.eq.equal(p[0], q[0]) && Y.eq.equal(p[1], q[1])
+      }
+    }
+    Sample(
+      Gen.zip(X.gen, Y.gen).map(family),
+      Cogen.tuple2(using X.cogen, Y.cogen).contramap(points),
+      familyIsEq,
+      X.inhabited && Y.inhabited,
+    )
+  }
+
+  /** The family of points of the empty diagram, the only one: it has no points. */
+  given EmptyFamilySample: Sample[[A] -> (A is Absurd) ?-> Nothing] = {
+    val empty: [A] -> (A is Absurd) ?-> Nothing = [A] => (a: A is Absurd) ?=> a.absurd
+    val familyIsEq: ([A] -> (A is Absurd) ?-> Nothing) is Eq = new Eq {
+      type Self = [A] -> (A is Absurd) ?-> Nothing
+
+      def equal(p: Self, q: Self): Boolean = {
+        true
+      }
+    }
+    Sample(Gen.const(empty), Cogen[Unit].contramap(_ => ()), familyIsEq)
+  }
+
   /** Samples of pairs from samples of their components, for all component types: the samples of the carrier of a
     * bifunctor.
     */
   given Tuple2Samples: ([X, Y] => (Sample[X], Sample[Y]) ?-> Sample[(X, Y)]) = {
     [X, Y] => (_: Sample[X], _: Sample[Y]) ?=> Tuple2Sample[X, Y]
+  }
+
+  /** Samples of families of points of shape **2** from samples of their points, for all point types: the samples of
+    * the carrier of the products of limits.
+    */
+  given Discrete2FamilySamples
+    : ([X, Y] => (Sample[X], Sample[Y]) ?-> Sample[[A] -> (A is Disc2) ?-> Components[X, Y][A]]) = {
+    [X, Y] => (_: Sample[X], _: Sample[Y]) ?=> Discrete2FamilySample[X, Y]
   }
 
   /** Samples of tagged unions from samples of their alternatives, for all alternative types. */

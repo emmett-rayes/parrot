@@ -150,20 +150,30 @@ Each structure sits at the lowest level where its laws can be stated.
   not distribute over ⊳; precomposition does.
 - **Comonoids** are the dual of monoids. Every object of a cartesian category is a comonoid in exactly one way; pairs in
   𝒫 have comonoids that programs do not preserve, which by Fox's theorem is why they are not products.
-- **Limits.** `Limit(D)` is a cone over a diagram *D* (`Limit.Cone`) through which every cone factors, and
+- **Limits.** `Limit(D)` is a cone over a diagram *D* (`Cone`) through which every cone factors, and
   `Limits(J, C)` gives one for every diagram of shape **J**. 𝒮 has all of them by one construction, `Total.LimitOf`:
   the product of the components is a polymorphic function type, since the objects are types, and the equalizer of the
   natural families is made by abstraction. Points are private to the limit and only the factorization builds them,
   from the legs of a cone, so they are natural as long as the cones are lawful; to clients, who see points only
   through the legs, the abstract type is the limit.
+- **Limits of a discrete shape have a type of apexes.** `DiscreteLimits(J, C)` refines `Limits` for a shape whose
+  only morphisms are identities, stated as a bound (`J.Self[A, B] <: A =:= B`, which **2** and **0** satisfy), and
+  gives the apex of each limit as a type function `Lim[F]` of the diagram's object map. A functor preserves identities,
+  so a diagram of a discrete shape is determined by its objects, and the apex can be too; for any other shape it
+  cannot, since the limit depends on the morphisms. In 𝒮 (`Total.DiscreteLimitsOf`) every family of points is natural,
+  so the apex is the type of all families, without abstraction.
 - **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` is an object with `discard` (!);
   `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of the empty diagram
   and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit. `Products(C)`, the
-  binary products of **C**, is a bifunctor with `fst`, `snd` and `pair` at every two objects, whose `bimap` defaults to
-  ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩; its view `product[A, B]` is a `Product`, whose laws are its laws.
+  binary products of **C**, is a bifunctor with a `Product` on every image, `product[A, B]` on *F*[*A*,*B*], whose
+  laws are its laws, and `bimap` defaults to ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩. `Products(L)` (`Products.FromLimits`) builds
+  them from discrete limits of shape **2**, with the apexes Lim[(*A*,*B*)] as tensor, as `Terminal(L)` builds a
+  terminal object; an instance with a tensor of its own implements one `Product` per pair of objects
+  (`Total.Tuple2IsProduct[A, B]`).
 - **A cartesian structure is a terminal object and products,** `Cartesian(K, U, T)` with a `Terminal` *U* and
   `Products` *T*: the universal properties are stated once, in its parameters, and `Cartesian` derives the unitors,
   the associator and the braiding from them, with laws that check an instance overriding them against the projections.
+  Its `fst`, `snd` and `pair` are those of `T.product`, named once for the code that works in a cartesian category.
 - **2 tells its objects apart by a GADT carried by the evidence:** `Disc2.index` is an `Index[A]`, and matching on its
   cases `Zero` and `One` refines `A`. A match on the evidence itself would not, because Scala derives GADT constraints
   from type parameters, not from the `Self` of `A is Disc2`; nor can the evidence be the GADT, because a context bound
@@ -186,9 +196,14 @@ Rejected:
 - a terminal object as an alias of a limit of the empty diagram, which leaves it no operation to override;
 - `Cartesian` with projections, pairing and ! of its own, which restates the operations and laws of `Terminal` and
   `Products`;
-- products as the limits of shape **2** (`Limits(Discrete2, C)`): the apex of a limit is a type member of each limit,
-  not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types, and `Products` has a
-  view to `Product` but no construction from limits;
+- products from any limits of shape **2** (`Limits(Discrete2, C)`): the apex of a limit is a type member of each
+  limit, not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types;
+  `DiscreteLimits` gives the apex as a type function instead;
+- a type function of the object map as the apex of every `Limits`: the limit of a shape with morphisms depends on them,
+  and in 𝒮 a shared type of points would let a point natural for one diagram reach the legs of another with the same
+  objects;
+- `fst`, `snd` and `pair` on `Products`, as primitives with `product` a view assembled from them or as forwarders to
+  `product`: they restate at every two objects what a `Product` is, and their clients work in a `Cartesian`;
 - a Church-encoded case analysis on the objects of **2** (`fold[R[_]]`), which needs a type lambda at every use;
 - applied constructor types (`Functor(J, C)` as a type), which avoid the refinement shadowing that `Limit.Of` and
   `this`-qualified paths work around: scalac accepts them, but Scalameta, and so Pants, does not.
