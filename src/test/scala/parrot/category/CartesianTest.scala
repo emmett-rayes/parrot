@@ -3,7 +3,7 @@ package category
 
 import Category.Type
 
-/** The laws of [[Cartesian]]: the universal property of products. */
+/** The laws of [[Cartesian]]: the unitors, the associator and the braiding are those of the products. */
 abstract class CartesianSpec(tracked override val M: Cartesian { val K: Category { type Obj = Type } })(using
   category: CategoryFixture.On[M.K.type],
   typename: TypeName[M.type],
@@ -11,77 +11,49 @@ abstract class CartesianSpec(tracked override val M: Cartesian { val K: Category
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
   unit: Sample[M.I],
 ) extends SymmetricSpec(M, "Cartesian") {
-  import types.{T1, T2, T3, T4, given}
+  import types.{T1, T2, T3, given}
   import category.*
   import M.K.-->
-  import M.`*`
+  import M.{I, `*`}
   import M.CartesianLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
 
-  law("fstPair") {
-    val observations = observe[T1, T2]
-    val fs           = arrow[T1, T2]
-    val gs           = arrow[T1, T3]
+  law("braidIsPairing") {
+    val observations = observe[T1 * T2, T2 * T1]
 
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given ((T1 --> T2) is Observable) = observe
-      fstPair(f, g)
+    forAll(observations) { observe =>
+      given (((T1 * T2) --> (T2 * T1)) is Observable) = observe
+      braidIsPairing[T1, T2]
     }
   }
 
-  law("sndPair") {
-    val observations = observe[T1, T3]
-    val fs           = arrow[T1, T2]
-    val gs           = arrow[T1, T3]
+  law("leftUnitorIsSnd") {
+    val observations = observe[I * T1, T1]
 
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given ((T1 --> T3) is Observable) = observe
-      sndPair(f, g)
+    forAll(observations) { observe =>
+      given (((I * T1) --> T1) is Observable) = observe
+      leftUnitorIsSnd[T1]
     }
   }
 
-  law("pairUniqueness") {
-    val observations = observe[T1, T2 * T3]
-    val hs           = arrow[T1, T2 * T3]
+  law("rightUnitorIsFst") {
+    val observations = observe[T1 * I, T1]
 
-    forAll(observations, hs) { (observe, h) =>
-      given ((T1 --> (T2 * T3)) is Observable) = observe
-      pairUniqueness(h)
+    forAll(observations) { observe =>
+      given (((T1 * I) --> T1) is Observable) = observe
+      rightUnitorIsFst[T1]
     }
   }
 
-  law("discardUniqueness") {
-    val observations = observe[T1, M.I]
-    val fs           = arrow[T1, M.I]
+  law("associatorIsPairing") {
+    val observations = observe[(T1 * T2) * T3, T1 * (T2 * T3)]
 
-    forAll(observations, fs) { (observe, f) =>
-      given ((T1 --> M.I) is Observable) = observe
-      discardUniqueness(f)
-    }
-  }
-
-  law("tensorIsProduct") {
-    val observations = observe[T1 * T2, T4 * T3]
-    val fs           = arrow[T1, T4]
-    val gs           = arrow[T2, T3]
-
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given (((T1 * T2) --> (T4 * T3)) is Observable) = observe
-      tensorIsProduct(f, g)
-    }
-  }
-
-  law("pairCongruence") {
-    val observations = observe[T1, T2 * T3]
-    val fs           = arrow[T1, T2]
-    val gs           = arrow[T1, T3]
-
-    forAll(observations, fs, gs) { (observe, f, g) =>
-      given ((T1 --> (T2 * T3)) is Observable) = observe
-      pairCongruence(f, variant(f), g, variant(g))
+    forAll(observations) { observe =>
+      given ((((T1 * T2) * T3) --> (T1 * (T2 * T3))) is Observable) = observe
+      associatorIsPairing[T1, T2, T3]
     }
   }
 }
 
-class TotalProductIsCartesianTest extends CartesianSpec(Total.Product)
+class TotalProductIsCartesianTest extends CartesianSpec(Total.Products)

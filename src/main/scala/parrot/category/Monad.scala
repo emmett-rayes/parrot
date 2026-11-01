@@ -72,7 +72,7 @@ abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
 object Monad {
 
   /** The monads on **C**: refines the endofunctor, so that the category of a monad *M* is known as **C**. */
-  type On[C <: Category] = Monad { val F: Endofunctor { val K: C } }
+  type On[C <: Category] = Monad { val F: Endofunctor.On[C] }
 
   /** The identity monad on 𝒮: computations without effects, where
     *   - *M*[*A*] = *A*

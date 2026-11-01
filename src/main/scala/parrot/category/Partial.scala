@@ -84,7 +84,7 @@ object Partial extends Category {
   object Programs extends Promonad.Hom(Partial)
 
   /** Pairs as a bifunctor on 𝒫: *f* × *g* runs *f*, then *g*. */
-  object Tuple2IsBifunctor extends Bifunctor(Partial, Partial, Partial) {
+  object Tuple2IsBifunctor extends Endobifunctor(Partial) {
     type Self = Tuple2
 
     def objects[A: Type, B: Type]: (A, B) is Type = {
@@ -97,7 +97,7 @@ object Partial extends Category {
   }
 
   /** Tagged unions as a bifunctor on 𝒫. */
-  object EitherIsBifunctor extends Bifunctor(Partial, Partial, Partial) {
+  object EitherIsBifunctor extends Endobifunctor(Partial) {
     type Self = Either
 
     def objects[A: Type, B: Type]: Either[A, B] is Type = {
@@ -113,7 +113,7 @@ object Partial extends Category {
   /** Pairs on 𝒫: a symmetric monoidal structure, but not a product. *π*₁ ∘ ⟨*f*,*g*⟩ diverges where *g* does, so it
     * equals *f* only where *g* terminates: the pairs of 𝒫 are its restriction products.
     */
-  object Product extends Symmetric(Partial, Type.TIsType[Unit], Tuple2IsBifunctor) {
+  object Product extends Symmetric(Partial, Category.Object(Partial, Type.TIsType[Unit]), Tuple2IsBifunctor) {
     def braid[A: Type, B: Type]: (A, B) ~> (B, A) = {
       (a, b) => (b, a)
     }
@@ -149,7 +149,7 @@ object Partial extends Category {
   }
 
   /** The coproducts of 𝒫: tagged unions, with the empty type 0 as initial object. */
-  object Coproduct extends Cocartesian(Partial, Type.TIsType[Nothing], EitherIsBifunctor) {
+  object Coproduct extends Cocartesian(Partial, Category.Object(Partial, Type.TIsType[Nothing]), EitherIsBifunctor) {
     def inl[A: Type, B: Type]: A ~> Either[A, B] = {
       a => Left(a)
     }

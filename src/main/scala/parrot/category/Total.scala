@@ -47,21 +47,40 @@ object Total extends Category {
   /** 𝒮 as a promonad over itself. */
   object Functions extends Promonad.Hom(Total)
 
-  /** Pairs as a bifunctor *A* × *B* on 𝒮. */
-  object Tuple2IsBifunctor extends Bifunctor(Total, Total, Total) {
+  /** The unit type 1 as the terminal object of 𝒮. */
+  object UnitIsTerminal extends Terminal(Total, Type.TIsType[Unit]) {
+    def discard[A: Type]: A -> Unit = {
+      _ => ()
+    }
+  }
+
+  /** Pairs as the binary products *A* × *B* of 𝒮. */
+  object Tuple2IsProducts extends Products(Total) {
     type Self = Tuple2
 
     def objects[A: Type, B: Type]: (A, B) is Type = {
       Type.TIsType
     }
 
-    def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 -> B1, g: A2 -> B2): ((A1, A2)) -> (B1, B2) = {
+    def fst[A: Type, B: Type]: ((A, B)) -> A = {
+      _._1
+    }
+
+    def snd[A: Type, B: Type]: ((A, B)) -> B = {
+      _._2
+    }
+
+    def pair[X: Type, A: Type, B: Type](f: X -> A, g: X -> B): X -> (A, B) = {
+      x => (f(x), g(x))
+    }
+
+    override def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 -> B1, g: A2 -> B2): ((A1, A2)) -> (B1, B2) = {
       (a, b) => (f(a), g(b))
     }
   }
 
   /** Tagged unions as a bifunctor *A* + *B* on 𝒮. */
-  object EitherIsBifunctor extends Bifunctor(Total, Total, Total) {
+  object EitherIsBifunctor extends Endobifunctor(Total) {
     type Self = Either
 
     def objects[A: Type, B: Type]: Either[A, B] is Type = {
@@ -75,26 +94,10 @@ object Total extends Category {
   }
 
   /** The products of 𝒮: pairs, with the unit type 1 as terminal object. */
-  object Product extends Cartesian(Total, Type.TIsType[Unit], Tuple2IsBifunctor) {
-    def fst[A: Type, B: Type]: ((A, B)) -> A = {
-      _._1
-    }
-
-    def snd[A: Type, B: Type]: ((A, B)) -> B = {
-      _._2
-    }
-
-    def pair[X: Type, A: Type, B: Type](f: X -> A, g: X -> B): X -> (A, B) = {
-      x => (f(x), g(x))
-    }
-
-    def discard[A: Type]: A -> Unit = {
-      _ => ()
-    }
-  }
+  object Products extends Cartesian(Total, UnitIsTerminal, Tuple2IsProducts)
 
   /** The coproducts of 𝒮: tagged unions, with the empty type 0 as initial object. */
-  object Coproduct extends Cocartesian(Total, Type.TIsType[Nothing], EitherIsBifunctor) {
+  object Coproducts extends Cocartesian(Total, Category.Object(Total, Type.TIsType[Nothing]), EitherIsBifunctor) {
     def inl[A: Type, B: Type]: A -> Either[A, B] = {
       a => Left(a)
     }
@@ -114,7 +117,7 @@ object Total extends Category {
   }
 
   /** The internal homs of 𝒮: function types, with evaluation and currying. */
-  object Exponential extends Closed(Product) {
+  object Exponentials extends Closed(Products) {
     type Exp[A, B] = A -> B
 
     def objects[A: Type, B: Type]: (A -> B) is Type = {

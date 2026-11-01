@@ -6,20 +6,16 @@ package category
   * Represents a terminal object *I*, where
   *   - !: *A* → *I* is the unique morphism from an object *A*
   */
-abstract class Terminal(tracked val C: Category, tracked val U: C.Obj) extends caps.Pure {
+abstract class Terminal(tracked override val C: Category, tracked override val U: C.Obj) extends Category.Object(C, U) {
   import C.{Obj, -->}
 
   /** The terminal object *I*. */
   final type I = U.Self
 
-  /** Evidence that *I* is an object. */
-  given IIsObj: (I is Obj) = U
-
   /** The unique morphism !: *A* → *I*. */
   def discard[A: Obj]: A --> I
 
-  /** The terminal object as a limit of the empty diagram, with ! as the factorization.
-    */
+  /** The terminal object as a limit of the empty diagram, with ! as the factorization. */
   final lazy val limit: Terminal.AsLimit { val T: Terminal.this.type } = Terminal.AsLimit(this)
 
   /** Laws that any `Terminal` must satisfy. */

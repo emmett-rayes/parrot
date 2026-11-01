@@ -5,7 +5,7 @@ import Sample.given
 import Category.Type
 
 /** The laws of [[Semilattice]] for semilattices in 𝒮. */
-abstract class SemilatticeSpec(name: String, tracked override val W: Semilattice { val V: Total.Product.type })(
+abstract class SemilatticeSpec(name: String, tracked override val W: Semilattice { val V: Total.Products.type })(
   using S: Sample[W.M]
 ) extends MonoidSpec(name, W, "Semilattice") {
   import W.M
@@ -32,7 +32,7 @@ abstract class SemilatticeSpec(name: String, tracked override val W: Semilattice
 }
 
 /** Booleans under disjunction: a semilattice with least element `false`. */
-object BooleanOr extends Semilattice(Total.Product) {
+object BooleanOr extends Semilattice(Total.Products) {
   type Self = Boolean
 
   def carrier: Boolean is Type = Type.TIsType
@@ -47,7 +47,7 @@ object BooleanOr extends Semilattice(Total.Product) {
 }
 
 /** Integers under maximum: a semilattice with least element `Int.MinValue`. */
-object IntMax extends Semilattice(Total.Product) {
+object IntMax extends Semilattice(Total.Products) {
   type Self = Int
 
   def carrier: Int is Type = Type.TIsType
@@ -62,7 +62,7 @@ object IntMax extends Semilattice(Total.Product) {
 }
 
 /** String concatenation, wrongly claimed to be a semilattice; the counterexample tests refute the claim. */
-object ConcatClaimedSemilattice extends Semilattice(Total.Product) {
+object ConcatClaimedSemilattice extends Semilattice(Total.Products) {
   type Self = String
 
   def carrier: String is Type = Type.TIsType

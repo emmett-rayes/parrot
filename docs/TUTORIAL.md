@@ -2402,13 +2402,13 @@ The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and eve
 Problem 2 asks when a structure should be found by its carrier, the way `given Int is Eq` is found by `Int`, and when it should be named. The library's rule:
 
 - **A structure with its own carrier has a `Self`**, and instances can be found by carrier: `Category` (its arrows), `Functor` (its object map), `Monad`, `Monoid`, `Eq`, `Observable`.
-- **A structure on something else has no `Self`** and is always named: `Monoidal`, `Strong`, `Restriction`, `Traced`. 𝒮 carries two monoidal structures, and they are the objects `Total.Product` and `Total.Coproduct`:
+- **A structure on something else has no `Self`** and is always named: `Monoidal`, `Strong`, `Restriction`, `Traced`. 𝒮 carries two monoidal structures, and they are the objects `Total.Products` and `Total.Coproducts`:
 
 ```scala library
 import parrot.category.*
 
-val swap: ((Int, String)) -> (String, Int)       = Total.Product.braid[Int, String]
-val mirror: Either[Int, String] -> Either[String, Int] = Total.Coproduct.braid[Int, String]
+val swap: ((Int, String)) -> (String, Int)       = Total.Products.braid[Int, String]
+val mirror: Either[Int, String] -> Either[String, Int] = Total.Coproducts.braid[Int, String]
 ```
 
 Both are called `braid`, both act on 𝒮, and nothing about the carrier tells them apart; the name does.
@@ -2420,15 +2420,15 @@ Combinations of structures are not expressed by inheritance either. A class that
 Problem 3 is solved as in section 3.8: a category declares `type Obj <: Type`, and its identity and composition take context bounds `[A: Obj]`. The library adds three rules that matter in practice.
 
 - **Evidence is passed only through context bounds**, never through an explicit `using` clause before the value parameters. Scala resolves a `using` clause where it appears, so a clause before the arrows would be resolved before the arrows had told the compiler which types are meant. Context bounds are placed after the value parameters, so infix code such as `f >>> g` infers every type.
-- **Evidence that chooses an object is a parameter.** A monoidal structure is on its unit object as much as on its tensor, so it takes the unit's evidence as a `tracked` parameter, `Monoidal(K, U, T)`, and the unit object is the type that evidence is about, `I = U.Self`. 𝒮 has two units, `Unit` for its products and `Nothing` for its coproducts, so implicit search could no more choose the unit than the tensor. `Monoidal` offers the evidence to its clients as a given, `IIsObj`.
-- **An instance names its own evidence**, as `Type.TIsType`, instead of searching for it. A structure that offers evidence to its clients, such as `Monoidal.TensorIsObj`, would otherwise be found by its own definition and call itself.
+- **Evidence that chooses an object is a parameter.** A monoidal structure is on its unit object as much as on its tensor, so it takes the unit as a `tracked` parameter, `Monoidal(K, U, T)`. The parameter is an object of **K** as a structure, `K.Object`: a `Category.Object(K, U)` carries the evidence `U`, and the unit object is the type that evidence is about, `I = U.A`. Unlike bare evidence, a structure can be refined, so `Cartesian` can ask for a `Terminal` object, which is an `Object` with `discard` (chapter 14). 𝒮 has two units, `Unit` for its products and `Nothing` for its coproducts, so implicit search could no more choose the unit than the tensor. The object offers the evidence to its clients as a given, `AIsObj`.
+- **An instance names its own evidence**, as `Type.TIsType`, instead of searching for it. A structure that offers evidence to its clients, such as `Bifunctor.FIsObj`, would otherwise be found by its own definition and call itself.
 
 Infix code needs one more rule: **every operation has one operator name.** `>>>` composes, in a category and in a category of arrows (chapter 17) alike, `***` is the tensor of a monoidal structure, `&&&` and `|||` pair and copair, `**` runs two effectful arrows side by side, `=?=` asks an `Observable` whether two values agree. Operators of the same name from two imports form an overload, which Scala resolves by the type of the arrow, so pure and effectful arrows can be composed side by side with `>>>`. The one exception is a value that is an arrow of two structures at once: an arrow A → M(B) of a Kleisli promonad on 𝒮 is also a function, so for it both `>>>` apply, and Scala reports an ambiguity or picks one and rejects the argument. Code about such arrows imports only one `>>>` and calls the other composition by its name. And every operator is only syntax: it passes its arguments, in order, to a named method that holds the logic, so `p >>> q` is `andThen(p, q)` and `p ** q` is `parallel(p, q)`, and every operation can be found, documented and exported by its name. With these names, code reads like the mathematics:
 
 ```scala library
 import parrot.category.*
 import Total.>>>
-import Total.Product.{***, &&&}
+import Total.Products.{***, &&&}
 
 val f: Int -> Int        = _ + 1
 val g: Int -> String     = _.toString
@@ -2531,16 +2531,18 @@ Pairs and tagged unions are functorial in *two* arguments: given f : A₁ → B�
 
 ```scala library
 val pairs: ((Int, String)) -> (Long, Boolean) =
-  Total.Tuple2IsBifunctor.bimap[Int, String, Long, Boolean](_.toLong, _.isEmpty)
+  Total.Tuple2IsProducts.bimap[Int, String, Long, Boolean](_.toLong, _.isEmpty)
 
 val tags: Either[Int, String] -> Either[Long, Boolean] =
   Total.EitherIsBifunctor.bimap[Int, String, Long, Boolean](_.toLong, _.isEmpty)
 ```
 
+Both are **endobifunctors**, bifunctors from a category and itself to itself: the library's `Endobifunctor(K)` is `Bifunctor(K, K, K)`, as `Endofunctor(K)` is `Functor(K, K)`, and the tensors of chapter 14 are endobifunctors. On 𝒮, pairs are more than that: `Total.Tuple2IsProducts` is the products of chapter 14, an endobifunctor with projections and pairing, so its `bimap` is the one they determine.
+
 Mathematicians usually define a bifunctor as a functor out of the **product category** 𝒞₁ × 𝒞₂, whose objects are pairs of objects and whose arrows are pairs of arrows, composed componentwise. The library has the product, `Category.Product(C1, C2)`, but a bifunctor still takes its categories separately, `Bifunctor(C1, C2, D)`, and implements `bimap`. The two descriptions are related by a construction rather than by inheritance: `functor` reads a bifunctor as a functor out of the product, in the same way as `category` reads a promonad as a category (chapter 17). The bifunctor laws are stated once, as the functor laws of `functor`.
 
 ```scala library
-val pairsAsFunctor = Total.Tuple2IsBifunctor.functor
+val pairsAsFunctor = Total.Tuple2IsProducts.functor
 import pairsAsFunctor.C.given
 
 val bothLengths: ((String, String)) -> (Int, Int) =
@@ -2607,7 +2609,7 @@ import parrot.category.*
 import Category.Type
 
 /** Endofunctors of 𝒮. */
-type Endo = Endofunctor { val K: Total.type }
+type Endo = Endofunctor.On[Total.type]
 
 def naturality[A, B](F: Endo, G: Endo)(alpha: [X] => F.F[X] -> G.F[X], fa: F.F[A], h: A -> B)(
     using G.F[B] is Observable): Boolean =
@@ -2712,12 +2714,12 @@ Objects defined by a universal property are unique up to a unique isomorphism. F
 
 The last item is the precise form of the "three roles" of section 2.1: arrows A → B correspond to arrows `Unit` → `(A -> B)`, that is, to values of the function type.
 
-In the library these are three objects: `Total.Product`, `Total.Coproduct` and `Total.Exponential`. Their laws, which are the universal properties above written as equations, are **[Tested]**:
+In the library these are three objects: `Total.Products`, `Total.Coproducts` and `Total.Exponentials`. Their laws, which are the universal properties above written as equations, are **[Tested]**:
 
 ```scala library
 import parrot.category.*
-import Total.Product.{fst, snd, &&&}
-import Total.Coproduct.{inl, inr, |||}
+import Total.Products.{fst, snd, &&&}
+import Total.Coproducts.{inl, inr, |||}
 
 val f: Int -> String = _.toString
 val g: Int -> Boolean = _ > 0
@@ -2726,7 +2728,7 @@ val paired: Int -> (String, Boolean)   = f &&& g
 val first: Int -> String                = Total.compose(fst[String, Boolean], paired)  // = f, by the product law
 val merged: Either[Int, Int] -> String = f ||| (n => (-n).toString)
 
-val curried: Int -> Int -> Int = Total.Exponential.curry[Int, Int, Int]((c, a) => c + a)
+val curried: Int -> Int -> Int = Total.Exponentials.curry[Int, Int, Int]((c, a) => c + a)
 ```
 
 The equation "uniqueness" becomes a law too: `pairUniqueness` says that every arrow into a product is the pairing of its two projections. When the mediating arrow is given by a program, uniqueness is an equation that can be tested like any other law.
@@ -2759,19 +2761,19 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 
 | Class | Adds | Instances |
 | --- | --- | --- |
-| `Monoidal(K, U, T)` | a unit object `I`, given by its evidence `U`, a tensor bifunctor `T`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
+| `Monoidal(K, U, T)` | a unit object `I`, given by an object `U` of `K` (`K.Object`), a tensor `T`, an endobifunctor on `K`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
 | `Symmetric(K, U, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, symmetry, hexagon | `Partial.Product` |
-| `Cartesian(K, U, T)` | the tensor is a product: `fst`, `snd`, `pair` (`&&&`), `discard`; the isomorphisms are derived | `Total.Product` |
-| `Cocartesian(K, U, T)` | the tensor is a coproduct: `inl`, `inr`, `copair` (`|||`), `absurd` | `Total.Coproduct`, `Partial.Coproduct` |
-| `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry`, and the internal hom as a profunctor, `internalHom` | `Total.Exponential` |
+| `Cartesian(K, U, T)` | the unit is a `Terminal` object, with `discard`, and the tensor is `Products`, with `fst`, `snd` and `pair` (`&&&`); the isomorphisms are derived | `Total.Products` |
+| `Cocartesian(K, U, T)` | the tensor is a coproduct: `inl`, `inr`, `copair` (`|||`), `absurd` | `Total.Coproducts`, `Partial.Coproduct` |
+| `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry`, and the internal hom as a profunctor, `internalHom` | `Total.Exponentials` |
 
-`Cartesian` and `Cocartesian` are refinements of `Symmetric`, because being a product is a property of a tensor: it says that the tensor of two objects has the universal property of section 14.1. The library therefore derives their associator, unitors and braiding from the projections or injections, and checks one extra law, `tensorIsProduct` (or `tensorIsCoproduct`), that the tensor of arrows is the one the universal property gives. `Closed`, on the other hand, is structure *on* a monoidal category, so it takes one as a parameter.
+`Cartesian` and `Cocartesian` are refinements of `Symmetric`, because being a product is a property of a tensor: it says that the tensor of two objects has the universal property of section 14.1. `Cartesian` refines its parameters as well: its unit is a `Terminal` object, an object with `discard`, and its tensor is a `Products` structure, a bifunctor with `fst`, `snd` and `pair` whose tensor of arrows is the one the universal property gives, f × g = ⟨f ∘ π₁, g ∘ π₂⟩ (law `bimapIsPairing`). So the universal properties are stated once, in `Terminal` and `Products`, and `Cartesian` only derives the associator, unitors and braiding from the projections; its laws check that an instance that overrides them still agrees. `Total.Products` is `Cartesian(Total, Total.UnitIsTerminal, Total.Tuple2IsProducts)`. `Cocartesian` derives the same isomorphisms from its injections and checks one extra law, `tensorIsCoproduct`, that the tensor of arrows is the one the universal property gives. `Closed`, on the other hand, is structure *on* a monoidal category, so it takes one as a parameter.
 
 `Partial.Product` is the example of a monoidal structure that is not cartesian. Its tensor of arrows, from section 12.3, runs both arrows. Its unitors and associator are the obvious reshufflings of tuples, and its laws are **[Tested]** on total programs; for programs that do not terminate they hold by the argument of chapter 18.
 
 ### 14.6 Universal constructions in your own categories
 
-A universal property can be stated for any category as a class, and its "exactly one" part becomes an equational law. That is how `Cartesian` and `Cocartesian` work: their laws `fstPair`, `sndPair` and `pairUniqueness` are the universal property of section 14.1, read as equations. To show that your own category has products, extend `Cartesian` with your category and a bifunctor for the tensor, implement `fst`, `snd`, `pair` and `discard`, and run the generic specification of chapter 22.
+A universal property can be stated for any category as a class, and its "exactly one" part becomes an equational law. That is how `Terminal`, `Products` and `Cocartesian` work: the laws `fstPair`, `sndPair` and `pairUniqueness` of `Products`, `uniqueness` of `Terminal`, and `copairInl`, `copairInr` and `copairUniqueness` of `Cocartesian` are the universal properties of section 14.1, read as equations. To show that your own category has finite products, extend `Terminal` with your category and its terminal object and implement `discard`, extend `Products` with your category and implement `objects`, `fst`, `snd` and `pair`, pass both to `Cartesian`, and run the generic specifications of chapter 22.
 
 ### 14.7 Joins: coproducts in a preorder
 
@@ -2877,7 +2879,7 @@ Section 1.2 defined a monoid as a set with an associative operation and a unit. 
 In 𝒮 with pairs, η picks out an element and μ is a binary operation, so a monoid object is an ordinary monoid whose operations are programs:
 
 ```scala library
-object Concatenation extends Monoid(Total.Product):
+object Concatenation extends Monoid(Total.Products):
   type Self = String
   def carrier: String is Type                 = Type.TIsType
   def unit: Unit -> String                    = _ => ""
@@ -2896,7 +2898,7 @@ Two descriptions of one structure are useful because each makes different things
 
 Strings under concatenation are a monoid but not a semilattice: `"ab"` is not `"ba"`, and `"aa"` is not `"a"`. The tests record both failures as counterexamples. Positions under `max`, from section 14.7, are a semilattice, as are booleans under `||` and sets under union.
 
-**Comonoids.** Reversing the arrows of Definition 15.3 gives a **comonoid**: an object C with a counit ε : C → I and a comultiplication δ : C → C ⊗ C, satisfying the mirrored laws. A comonoid is something that can be deleted and copied. In a cartesian category every object is a comonoid in exactly one way, with ! and Δ, which the library offers as `Total.Product.comonoid[A]`. This characterizes cartesian categories: a symmetric monoidal category is cartesian exactly when every object has a comonoid structure that every arrow preserves **[Standard: Fox 1976, from memory]**. Pairs in 𝒫 show what the second condition adds. Copying and deleting are total programs, so every type is a comonoid for the pairs of 𝒫 (`Partial.Product.comonoid[A]`), but a program that does not terminate cannot be deleted: running it and discarding its result is not the same as discarding its argument. So the pairs of 𝒫 are not products, as section 14.3 found by another route, and chapter 17 meets the same distinction as effects that can or cannot be copied and discarded. The comonoid laws of both instances are **[Tested]**.
+**Comonoids.** Reversing the arrows of Definition 15.3 gives a **comonoid**: an object C with a counit ε : C → I and a comultiplication δ : C → C ⊗ C, satisfying the mirrored laws. A comonoid is something that can be deleted and copied. In a cartesian category every object is a comonoid in exactly one way, with ! and Δ, which the library offers as `Total.Products.comonoid[A]`. This characterizes cartesian categories: a symmetric monoidal category is cartesian exactly when every object has a comonoid structure that every arrow preserves **[Standard: Fox 1976, from memory]**. Pairs in 𝒫 show what the second condition adds. Copying and deleting are total programs, so every type is a comonoid for the pairs of 𝒫 (`Partial.Product.comonoid[A]`), but a program that does not terminate cannot be deleted: running it and discarding its result is not the same as discarding its argument. So the pairs of 𝒫 are not products, as section 14.3 found by another route, and chapter 17 meets the same distinction as effects that can or cannot be copied and discarded. The comonoid laws of both instances are **[Tested]**.
 
 ### 15.4 A monad is a monoid in the category of endofunctors
 
@@ -2910,7 +2912,7 @@ With `Category1` of chapter 10, the slogan becomes a precise comparison. Composi
 
 for all objects a and b, natural in both. F is the **left adjoint** and G the **right adjoint**, written F ⊣ G.
 
-**Currying is an adjunction.** For a fixed type S, the functor `[A] =>> (A, S)` is left adjoint to `[B] =>> S -> B`. The bijection is `Total.Exponential.curry` and its inverse `uncurry`, natural in both arguments, which is the exponential property of section 14.2 again. **[Proved]**
+**Currying is an adjunction.** For a fixed type S, the functor `[A] =>> (A, S)` is left adjoint to `[B] =>> S -> B`. The bijection is `Total.Exponentials.curry` and its inverse `uncurry`, natural in both arguments, which is the exponential property of section 14.2 again. **[Proved]**
 
 **Every adjunction gives a monad.** If F ⊣ G, then G ∘ F is a monad **[Standard: Mac Lane 1998, from memory]**. For currying, G ∘ F sends A to `S -> (A, S)`, which is the state monad. So State is not an ad hoc invention: it is what the currying adjunction produces. The library's `State[S]` is this monad, and `StateT[S](M)` places the effects of another monad between the two adjoints, `S -> M[(A, S)]`:
 
@@ -3813,7 +3815,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Functor categories in general | yes | no hom type in general | no | — | [Open] | 13 |
 | Yoneda lemma for endofunctors on 𝒮 | yes | yes | yes | `toYoneda`, `fromYoneda` | [Proved, given A1, A2] | 13 |
 | Equivalence of categories | yes | yes | yes | examples | [Proved] for the examples | 13 |
-| Terminal, initial, products, coproducts, exponentials | yes | yes | yes | `Total.Product`, `Total.Coproduct`, `Total.Exponential` | [Proved]; laws [Tested] | 14 |
+| Terminal, initial, products, coproducts, exponentials | yes | yes | yes | `Total.Products`, `Total.Coproducts`, `Total.Exponentials` | [Proved]; laws [Tested] | 14 |
 | Products and a terminal object in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Product` | [Proved] | 14, 18 |
 | Monoidal, symmetric, cartesian, cocartesian, closed structure | yes | yes | yes | `Monoidal` … `Closed` | [Tested] | 14 |
 | Joins; semilattices | yes | yes | yes | `Semilattice` | [Tested] | 14, 15 |
@@ -4075,6 +4077,8 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Elgot operator (iteration operator).** An operation sending a step X → A + X to an arrow X → A that runs it until it stops, with its laws. Definition 19.2.
 
+**Endobifunctor.** A bifunctor from a category and itself to itself; in the library, `Endobifunctor(K)`. Section 12.3.
+
 **Endofunctor.** A functor from a category to itself; in the library, `Endofunctor(K)`. Section 12.2.
 
 **Endoprofunctor.** A profunctor 𝒦ᵒᵖ × 𝒦 → 𝒱 on a single category; in the library, `Endoprofunctor(K, V)`. Definition 12.2.
@@ -4267,7 +4271,7 @@ Each concept is introduced where a problem needs it. This index lists, for each,
 | Encoding: tracked bases, bundles, evidence | 11 | duplication and missing "has a" in Parts I–II | a functor between two categories |
 | Bifunctors, profunctors | 12 | pairs and `Either` map on both sides; `A -> B` is contravariant in A | `dimap` on functions |
 | Natural transformations, Yoneda, equivalence | 13 | polymorphic functions and their uniformity | `headOption`; `toYoneda` |
-| Universal constructions; monoidal structures | 14 | universal properties in 𝒮 need code; pairs in 𝒫 are not products | `Total.Product`; `Partial.Product` |
+| Universal constructions; monoidal structures | 14 | universal properties in 𝒮 need code; pairs in 𝒫 are not products | `Total.Products`; `Partial.Product` |
 | Joins as coproducts in a preorder | 14 | combining reports of the furthest failure | positions under `max` |
 | Monads, transformers, monoid and comonoid objects, adjunctions | 15 | making effects visible; "a monad is a monoid" made precise; why pairs in 𝒫 are not products | `Option`; `StateT` from currying; copying and deleting |
 | Semilattices | 15 | a monoid that is also an order | sets under union; positions under `max` |

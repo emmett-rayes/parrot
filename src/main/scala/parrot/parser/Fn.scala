@@ -145,21 +145,36 @@ object Fns extends Category {
     Fn.andThen(f, g)
   }
 
-  /** Pairs as a bifunctor on [[Fns]]. */
-  object Tuple2IsBifunctor extends Bifunctor(Fns, Fns, Fns) {
+  /** The unit type as the terminal object of [[Fns]], with ! as data. */
+  object UnitIsTerminal extends Terminal(Fns, Type.TIsType[Unit]) {
+    def discard[A: Type]: Fn[A, Unit] = {
+      Fn.Bang()
+    }
+  }
+
+  /** Pairs as the binary products of [[Fns]], with projections and pairing as data. */
+  object Tuple2IsProducts extends Products(Fns) {
     type Self = Tuple2
 
     def objects[A: Type, B: Type]: (A, B) is Type = {
       Type.TIsType
     }
 
-    def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: Fn[A1, B1], g: Fn[A2, B2]): Fn[(A1, A2), (B1, B2)] = {
-      Fn.fanout(Fn.andThen(Fn.Proj1(), f), Fn.andThen(Fn.Proj2(), g))
+    def fst[A: Type, B: Type]: Fn[(A, B), A] = {
+      Fn.Proj1()
+    }
+
+    def snd[A: Type, B: Type]: Fn[(A, B), B] = {
+      Fn.Proj2()
+    }
+
+    def pair[X: Type, A: Type, B: Type](f: Fn[X, A], g: Fn[X, B]): Fn[X, (A, B)] = {
+      Fn.fanout(f, g)
     }
   }
 
   /** Tagged unions as a bifunctor on [[Fns]]. */
-  object EitherIsBifunctor extends Bifunctor(Fns, Fns, Fns) {
+  object EitherIsBifunctor extends Endobifunctor(Fns) {
     type Self = Either
 
     def objects[A: Type, B: Type]: Either[A, B] is Type = {
@@ -173,26 +188,10 @@ object Fns extends Category {
   }
 
   /** Reified products: pairs, with projections and pairing as data. */
-  object Product extends Cartesian(Fns, Type.TIsType[Unit], Tuple2IsBifunctor) {
-    def fst[A: Type, B: Type]: Fn[(A, B), A] = {
-      Fn.Proj1()
-    }
-
-    def snd[A: Type, B: Type]: Fn[(A, B), B] = {
-      Fn.Proj2()
-    }
-
-    def pair[X: Type, A: Type, B: Type](f: Fn[X, A], g: Fn[X, B]): Fn[X, (A, B)] = {
-      Fn.fanout(f, g)
-    }
-
-    def discard[A: Type]: Fn[A, Unit] = {
-      Fn.Bang()
-    }
-  }
+  object Product extends Cartesian(Fns, UnitIsTerminal, Tuple2IsProducts)
 
   /** Reified coproducts: tagged unions, with injections and copairing as data. */
-  object Coproduct extends Cocartesian(Fns, Type.TIsType[Nothing], EitherIsBifunctor) {
+  object Coproduct extends Cocartesian(Fns, Category.Object(Fns, Type.TIsType[Nothing]), EitherIsBifunctor) {
     def inl[A: Type, B: Type]: Fn[A, Either[A, B]] = {
       Fn.Inl()
     }

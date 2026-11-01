@@ -3,8 +3,8 @@
 Scala compiler behaviors that cost time in this repository, with minimal reproductions ready to be filed upstream.
 The design of the library is in [`DESIGN.md`](DESIGN.md).
 
-All three have been verified with Scala 3.10.0. The first two are worked around by turning the flags (`-Wsafe-init`,
-`-Wunused:imports`) off in `build.sbt` and `pants.toml`, the third by type patterns.
+All four have been verified with Scala 3.10.0. The first two are worked around by turning the flags (`-Wsafe-init`,
+`-Wunused:imports`) off in `build.sbt` and `pants.toml`, the third by type patterns, the fourth by not exporting givens.
 
 **`-Wsafe-init` false positive when a `tracked` constructor parameter is forwarded to a parent class.** Options:
 `-source:future -language:experimental.modularity -Wsafe-init`.
@@ -63,6 +63,25 @@ def both[A, B, C](f: Fn[A, B], g: Fn[A, C]): Boolean = (f, g) match {
 Scala 3.9.0 compiles both. The pattern matcher combines the `unapply` of a case class without fields with `&&`, as a
 `Boolean`, but capture checking types it as returning the case class. A type pattern, `case _: Id[?]`, matches the same
 values and refines the type arguments the same way; `Fn` and `StrictParser` use it.
+
+**Capture checking rejects the export of a given whose type depends on a path.** Also in 3.10.1-RC1. Options:
+`-language:experimental.captureChecking`.
+
+```scala
+trait Ev { type Self }
+
+class Chosen(val U: Ev) {
+  given IIsEv: (Ev { type Self = U.Self }) = U
+}
+
+class Mon(val U: Chosen) {
+  export U.IIsEv // error: Found: Ev{type Self = Mon.this.U.U².Self}, Required: (Mon.this.U.IIsEv : -> Ev{…})
+}
+```
+
+Without capture checking it compiles, and so does exporting `IIsEv` declared as a `val`. A given of a type that does
+not depend on a path (`given Int`) exports. `Monoidal` names the unit's type (`I = U.A`) instead of exporting it with
+the given of its `Object`.
 
 Not a bug, but costly: under capture checking, a `given` declared with an unreduced match type fails, because the check
 adds a capture variable to the scrutinee; declare it in reduced form.

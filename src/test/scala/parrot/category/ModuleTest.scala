@@ -106,8 +106,8 @@ abstract class ModuleSpec(
   }
 }
 
-object ProductSelfModule   extends Module.OfMonoidal(Total.Product)
-object CoproductSelfModule extends Module.OfMonoidal(Total.Coproduct)
+object ProductSelfModule   extends Module.OfMonoidal(Total.Products)
+object CoproductSelfModule extends Module.OfMonoidal(Total.Coproducts)
 
 class ProductSelfModuleTest   extends ModuleSpec(ProductSelfModule)
 class CoproductSelfModuleTest extends ModuleSpec(CoproductSelfModule)

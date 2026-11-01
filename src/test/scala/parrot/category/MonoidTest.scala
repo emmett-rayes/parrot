@@ -5,7 +5,7 @@ import Sample.given
 import Category.Type
 
 /** Strings under concatenation: a monoid in 𝒮 that is neither commutative nor idempotent. */
-object StringConcat extends Monoid(Total.Product) {
+object StringConcat extends Monoid(Total.Products) {
   type Self = String
 
   def carrier: String is Type = Type.TIsType
@@ -22,7 +22,7 @@ object StringConcat extends Monoid(Total.Product) {
 /** The laws of [[Monoid]] for monoids in 𝒮 with pairs. */
 abstract class MonoidSpec(
   name: String,
-  tracked val W: Monoid { val V: Total.Product.type },
+  tracked val W: Monoid { val V: Total.Products.type },
   structure: String = "Monoid",
 )(using S: Sample[W.M])
     extends LawSuite(structure, name) {

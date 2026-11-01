@@ -26,6 +26,9 @@ abstract class Category extends caps.Pure {
   /** Infix alias for [[Hom]]. */
   final type --> = Hom
 
+  /** Evidence that a type is an object of the category. */
+  final type Object = Category.Object { val C: Category.this.type }
+
   /** The identity morphism *id*: *A* → *A*. */
   def identity[A: Obj]: A --> A
 
@@ -135,6 +138,19 @@ object Category {
 
     /** Every type of kind `*` is trivially a `Type`. */
     given TIsType: [T] => T is Type {}
+  }
+
+  /** An object *A* of a category **C**, as specified by its evidence *U*.
+    *
+    * This allows structures on an object of the category to be refined in substructures. See [[Monoidal]],
+    * [[Cartesian]] and [[Terminal]] for an example.
+    */
+  open class Object(tracked val C: Category, tracked val U: C.Obj) extends caps.Pure {
+    /** The object *A*. */
+    final type A = U.Self
+
+    /** Evidence that *A* is an object of **C**. */
+    given AIsObj: (A is C.Obj) = U
   }
 
   /** The opposite **K**ᵒᵖ of a category **K**.

@@ -85,7 +85,6 @@ object Closed {
   final class InternalHom(tracked val C: Closed) extends Endoprofunctor(C.M.K, C.M.K) {
     import C.M.{***, given}
     import C.M.K.{Obj, -->, >>>}
-    import C.given
 
     type Self = C.Exp
 

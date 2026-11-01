@@ -108,4 +108,4 @@ abstract class ClosedSpec(tracked val C: Closed { val M: Monoidal { val K: Categ
   }
 }
 
-class ScalaExponentialIsClosedTest extends ClosedSpec(Total.Exponential)
+class ScalaExponentialIsClosedTest extends ClosedSpec(Total.Exponentials)

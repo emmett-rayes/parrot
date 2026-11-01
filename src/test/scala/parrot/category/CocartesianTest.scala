@@ -84,5 +84,5 @@ abstract class CocartesianSpec(tracked override val M: Cocartesian { val K: Cate
   }
 }
 
-class ScalaCoproductIsCocartesianTest   extends CocartesianSpec(Total.Coproduct)
+class ScalaCoproductIsCocartesianTest   extends CocartesianSpec(Total.Coproducts)
 class PartialCoproductIsCocartesianTest extends CocartesianSpec(Partial.Coproduct)

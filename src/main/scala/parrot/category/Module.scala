@@ -24,9 +24,6 @@ abstract class Module(
   /** Infix alias for [[Action]]. */
   final type ~ = Action
 
-  /** Evidence that actions of objects are objects in **K**. */
-  given actionIsObj: [X: ObjM, A: Obj] => ((X ~ A) is Obj) = T.objects[X, A]
-
   /** *λ*: *I* ⊘ *A* ≅ *A*
     */
   def leftUnitor[A: Obj]: (I ~ A) <-> A

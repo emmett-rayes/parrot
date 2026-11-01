@@ -78,8 +78,9 @@ warning-free.
    (`Monad.On`, `Limit.Of`) are only for pure refinements.
 5. **Objects are types with evidence:** `type Obj <: Type` (`import Category.Type`; `Type.TIsType` holds for every
    type), passed only through context bounds, except evidence that *chooses* an object, which is a `tracked` parameter
-   (`Monoidal(K, U, T)` with `I = U.Self`, `Terminal(C, U)`, `Product(C, U1, U2, U)`).
-6. **Instances are `object`s** nested in what they belong to (`Total.Product`, `Partial.Loops`); generic constructions
+   (`Terminal(C, U)`, `Product(C, U1, U2, U)`). A structure on an object takes a `K.Object` (`Category.Object(C, U)`,
+   *A* = `U.Self`), which refinements refine: `Monoidal(K, U, T)` has `I = U.A`, and `Cartesian` asks for a `Terminal`.
+6. **Instances are `object`s** nested in what they belong to (`Total.Products`, `Partial.Loops`); generic constructions
    are `open class`es (`Kleisli(M)`, `StateT[S](M)`). Instances name evidence explicitly (`Type.TIsType`), never
    `summon`: a class-level forwarding given would recurse.
 7. **Operators are syntax:** each symbolic extension is `final`, passes its arguments in order to a named method
@@ -107,7 +108,7 @@ warning-free.
     (`f2`); conditional laws state their premise in a `@note`.
 
 One file per structure in `src/main/scala/parrot/category/`; the instances on ùíÆ and ùí´ are in `Total.scala` and
-`Partial.scala`; `Category.scala` also holds `Type`, `Op`, the product category, `Empty` and `Discrete2`.
+`Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`.
 
 ## `parrot.parser`
 
@@ -166,7 +167,7 @@ One file per structure in `src/main/scala/parrot/category/`; the instances on ù
   names: `"<Instance> is <Structure>: <law>"`.
 - **One generic spec per laws object**, in the test file named after the laws' source file (`ElgotSpec` in
   `ElgotTest.scala`), and **one test class per instance**, at its most specific structure. A refinement's spec extends
-  its parent's, forwarding the subject under the same name; coverage is transitive (`Total.Product` has only a
+  its parent's, forwarding the subject under the same name; coverage is transitive (`Total.Products` has only a
   Cartesian test class). An extensible spec takes `structure: String = "<Name>"` last, passes it to `LawSuite` and
   registers its laws in `also("<Name>")`, so a child reports them under its own name. Where the parent's spec needs
   other fixtures, the child copies its laws into an `also` block instead (`FreydSpec`, `PromonadSpec`). `IsoLaws` has
@@ -209,6 +210,8 @@ One file per structure in `src/main/scala/parrot/category/`; the instances on ù
 - **Givens.** No given with `Self = Nothing`: it matches every `T is TC` (`Eq.NothingIsEq` is a `val`). A generic and a
   specific given in one object are ambiguous: put the fallback in a parent trait of the companion
   (`object Observable extends ComponentwiseObservable`). `CanEqual` is not an equality: build `Eq` with `Eq.structural`.
+  Exporting a given whose type depends on a path fails under capture checking (`docs/compiler-issues.md`): name the
+  type instead (`Monoidal.I = U.A`).
 - **Nullary extensions** that clash with a method of the same name take `(using DummyImplicit)`.
 - **Imports.** `import M.{*, ***}` is an error, since `*` is the wildcard; import a tensor alias `*` backticked:
   ``import M.{I, `*`, given}``.

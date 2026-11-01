@@ -16,8 +16,8 @@ import scala.annotation.targetName
   */
 abstract class Cocartesian(
   tracked override val K: Category,
-  tracked override val U: K.Obj,
-  tracked override val T: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
+  tracked override val U: K.Object,
+  tracked override val T: Endobifunctor.On[K.type],
 ) extends Symmetric(K, U, T) {
   import K.{Iso, Obj, -->, <->, >>>}
 
@@ -145,23 +145,45 @@ object Cocartesian {
     *
     * The coproducts, injections and copairing in **K** become products, projections and pairing in **K**ᵒᵖ.
     */
-  final class Op(tracked val C: Cocartesian) extends Cartesian(C.K.op, C.U, C.T.op) {
-    import K.{Obj, -->}
+  final class Op(tracked val C: Cocartesian) extends Cartesian(C.K.op, OpTerminal(C), OpProducts(C))
 
-    def fst[A: Obj, B: Obj]: (A * B) --> A = {
-      C.inl[A, B]
-    }
-
-    def snd[A: Obj, B: Obj]: (A * B) --> B = {
-      C.inr[A, B]
-    }
-
-    def pair[X: Obj, A: Obj, B: Obj](f: X --> A, g: X --> B): X --> (A * B) = {
-      C.copair(f, g)
-    }
+  /** The initial object of a cocartesian category **K**, as the terminal object of **K**ᵒᵖ: ! is ¡. */
+  final class OpTerminal(tracked val M: Cocartesian) extends Terminal(M.K.op, M.U.U) {
+    import C.{Obj, -->}
 
     def discard[A: Obj]: A --> I = {
-      C.absurd[A]
+      M.absurd[A]
+    }
+  }
+
+  /** The coproducts of a cocartesian category **K**, as the binary products of **K**ᵒᵖ.
+    *
+    * The projections are the injections, the pairing is the copairing, and the product of morphisms is the coproduct
+    * of their opposites.
+    */
+  final class OpProducts(tracked val M: Cocartesian) extends Products(M.K.op) {
+    import K.{Obj, -->}
+
+    type Self = M.Tensor
+
+    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
+      M.T.objects[A, B]
+    }
+
+    def fst[A: Obj, B: Obj]: F[A, B] --> A = {
+      M.inl[A, B]
+    }
+
+    def snd[A: Obj, B: Obj]: F[A, B] --> B = {
+      M.inr[A, B]
+    }
+
+    def pair[X: Obj, A: Obj, B: Obj](f: X --> A, g: X --> B): X --> F[A, B] = {
+      M.copair(f, g)
+    }
+
+    override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
+      M.tensor(f, g)
     }
   }
 }

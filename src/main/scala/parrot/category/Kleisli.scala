@@ -34,7 +34,7 @@ object Kleisli {
     * The effect of *p* happens; *c* is passed along unchanged.
     */
   open class ProductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
-      extends Strong.Bistrong(P, Total.Product) {
+      extends Strong.Bistrong(P, Total.Products) {
     def left[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): ((C, A)) -> P.M.M[(C, B)] = {
       (c, a) => P.M.map[B, (C, B)](b => (c, b))(p(a))
     }
@@ -46,7 +46,7 @@ object Kleisli {
     * On the left the value passes through without effect; on the right the arrow runs.
     */
   open class CoproductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
-      extends Strong.Bistrong(P, Total.Coproduct) {
+      extends Strong.Bistrong(P, Total.Coproducts) {
     def left[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): Either[C, A] -> P.M.M[Either[C, B]] = {
       case Left(c)  => P.M.unit[Either[C, B]](Left(c))
       case Right(a) => P.M.map[B, Either[C, B]](b => Right(b))(p(a))
@@ -73,7 +73,7 @@ object Kleisli {
   open class ClassicalOf(
     tracked override val P: Kleisli { val M: Monad.On[Total.type] },
     tracked val R: Monad.Classical { val M: P.M.type },
-  ) extends Classical(P, Total.Coproduct) {
+  ) extends Classical(P, Total.Coproducts) {
 
     def restrict[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
       a => P.M.map[Unit, A](_ => a)(R.restrict(p(a)))
@@ -103,7 +103,7 @@ object Kleisli {
   /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */
   open class ElgotOf(
     tracked override val S: Strong.Bistrong {
-      val P: Kleisli { val M: Monad.On[Total.type] }; val M: Total.Coproduct.type
+      val P: Kleisli { val M: Monad.On[Total.type] }; val M: Total.Coproducts.type
     },
     tracked val E: Monad.Elgot { val M: S.P.M.type },
   ) extends Elgot(S) {

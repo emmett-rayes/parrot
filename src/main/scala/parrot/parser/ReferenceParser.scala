@@ -16,8 +16,8 @@ import scala.util.matching.Regex
 class ReferenceParser
     extends ParserAlgebra(
       ReferenceParser.Arrows,
-      Total.Product,
-      Total.Coproduct,
+      Total.Products,
+      Total.Coproducts,
       ReferenceParser.Zipping,
       ReferenceParser.Branching,
       ReferenceParser.Choice,

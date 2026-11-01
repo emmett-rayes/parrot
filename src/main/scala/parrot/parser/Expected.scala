@@ -59,7 +59,7 @@ object Expected {
   given ExpectedIsEq: (Expected is Eq) = Eq.structural
 
   /** Diagnostics form a semilattice in 𝒮. */
-  object Furthest extends Semilattice(Total.Product) {
+  object Furthest extends Semilattice(Total.Products) {
     type Self = Expected
 
     def carrier: Expected is Type = Type.TIsType

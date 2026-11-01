@@ -57,3 +57,9 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
   * Represents a functor *F*: **K** → **K**.
   */
 abstract class Endofunctor(tracked val K: Category) extends Functor(K, K)
+
+object Endofunctor {
+
+  /** The endofunctors on **K**. */
+  type On[K <: Category] = Endofunctor { val K: K }
+}

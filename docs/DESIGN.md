@@ -39,14 +39,17 @@ Rejected:
   path, so its type members can be named and imported, and `tracked` keeps its singleton type in the instance's type,
   so `Kleisli.OptionKleisli.K` is known to be `Total` without casts.
 - **What a structure is on is a parameter; what it adds is a member.** `Monoidal(K, U, T)` is on a category, a unit
-  object and a tensor, and names their types `I = U.Self` and `Tensor = T.F`, which `tracked` makes known to clients
-  (`Total.Product.I` is `Unit`). The unitors, the associator and the braiding are members, because refinements derive
-  them (`Cartesian`); so is the internal hom, which is what `Closed` adds: ⊗ determines it up to isomorphism, and
-  evaluation and currying determine its action on morphisms (`Closed.InternalHom`).
-- **Evidence that chooses an object is a value parameter** (the unit `U` of `Monoidal`, the object of `Terminal`, the
-  factors and product of `Product`), offered to clients as a given (`IIsObj`). 𝒮 has two units and two tensors, so
-  implicit search cannot choose them (for a `using` parameter it chose `Type.TIsType[Any]`), and `deferred` givens
-  exist only in traits.
+  object and a tensor, an `Endobifunctor`, and names their types `I = U.A` and `Tensor = T.F`, which `tracked` makes
+  known to clients (`Total.Products.I` is `Unit`). The unitors, the associator and the braiding are members, because
+  refinements derive them (`Cartesian`); so is the internal hom, which is what `Closed` adds: ⊗ determines it up to
+  isomorphism, and evaluation and currying determine its action on morphisms (`Closed.InternalHom`).
+- **Evidence that chooses an object is a value parameter** (the object of `Terminal`, the factors and product of
+  `Product`), offered to clients as a given (`Category.Object.AIsObj`). 𝒮 has two units and two tensors, so implicit
+  search cannot choose them (for a `using` parameter it chose `Type.TIsType[Any]`), and `deferred` givens exist only
+  in traits.
+- **A structure on an object takes it as a structure,** `Category.Object(C, U)`, written `K.Object`, so that a
+  refinement can ask for more: `Monoidal(K, U, T)` is on an `Object`, and `Cartesian` refines it to a `Terminal`, an
+  `Object` with `discard`, as it refines the endobifunctor `T` to `Products`.
 - **Structures are abstract classes,** because a refinement passes arguments to its parent (`Promonad(K)` extends
   `Endoprofunctor(K, Total)`), which a trait cannot. Type classes without parameters that are not structures
   (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
@@ -90,6 +93,10 @@ Rejected:
 
 Rejected:
 - bases as type parameters, which cannot be imported from and need `ValueOf` and casts to recover the base values;
+- the unit of a monoidal structure as bare evidence (`U: K.Obj`): `Obj` is an abstract type, which no class can
+  extend, so no refinement could ask for a terminal object;
+- `Object` as a class nested in `Category`: a structure that extends it through a parameter (`C.Object`) is not an
+  object of the argument (`Total.Object`), so a terminal object could not be passed as a unit;
 - object evidence as a type constructor (`type Obj[_]`, evidence `Obj[A]`), which would make the evidence of **2** a
   plain GADT but has no `Self`: every parameter that chooses an object would need a wrapper pairing a type with its
   evidence;
@@ -141,9 +148,14 @@ Each structure sits at the lowest level where its laws can be stated.
   natural families is made by abstraction. Points are private to the limit and only the factorization builds them,
   from the legs of a cone, so they are natural as long as the cones are lawful; to clients, who see points only
   through the legs, the abstract type is the limit.
-- **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` chooses its object by evidence and
-  has `discard` (!); `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of
-  the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit.
+- **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` is an object with `discard` (!);
+  `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of the empty diagram
+  and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit. `Products(C)`, the
+  binary products of **C**, is a bifunctor with `fst`, `snd` and `pair` at every two objects, whose `bimap` defaults to
+  ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩; its view `product[A, B]` is a `Product`, whose laws are its laws.
+- **A cartesian structure is a terminal object and products,** `Cartesian(K, U, T)` with a `Terminal` *U* and
+  `Products` *T*: the universal properties are stated once, in its parameters, and `Cartesian` derives the unitors,
+  the associator and the braiding from them, with laws that check an instance overriding them against the projections.
 - **2 tells its objects apart by a GADT carried by the evidence:** `Disc2.index` is an `Index[A]`, and matching on its
   cases `Zero` and `One` refines `A`. A match on the evidence itself would not, because Scala derives GADT constraints
   from type parameters, not from the `Self` of `A is Disc2`; nor can the evidence be the GADT, because a context bound
@@ -164,6 +176,11 @@ Rejected:
 - solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number
   of arrows and cannot share a guard between separately tied knots;
 - a terminal object as an alias of a limit of the empty diagram, which leaves it no operation to override;
+- `Cartesian` with projections, pairing and ! of its own, which restates the operations and laws of `Terminal` and
+  `Products`;
+- products as the limits of shape **2** (`Limits(Discrete2, C)`): the apex of a limit is a type member of each limit,
+  not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types, and `Products` has a
+  view to `Product` but no construction from limits;
 - a Church-encoded case analysis on the objects of **2** (`fold[R[_]]`), which needs a type lambda at every use;
 - applied constructor types (`Functor(J, C)` as a type), which avoid the refinement shadowing that `Limit.Of` and
   `this`-qualified paths work around: scalac accepts them, but Scalameta, and so Pants, does not.
