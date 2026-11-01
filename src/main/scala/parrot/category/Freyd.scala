@@ -16,8 +16,10 @@ import scala.annotation.targetName
   */
 final class Freyd(tracked override val P: Promonad, tracked val S: Strong.Bistrong.On[P.type])
     extends Promonad.Arrows(P) {
-  import S.M.{`*`, given}
+  import S.M.`*`
   import P.K.--> as ==>
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = S.M.T.objects[A, B]
 
   /** *first*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*), the right strength *τ*′: the arrow runs on the first component.
     */

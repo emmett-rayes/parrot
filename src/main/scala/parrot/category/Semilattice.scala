@@ -10,10 +10,12 @@ package category
   * The induced preorder *a* ⊑ *b* ⇔ *a* ⊔ *b* = *b* has ⊔ as join and the unit ⊥ as least element.
   */
 abstract class Semilattice(tracked override val V: Cartesian) extends Monoid(V) {
-  import V.{`*`, given}
+  import V.`*`
   import V.K.{Obj, -->, >>>}
 
   private given MIsObj: (M is Obj) = carrier
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = V.T.objects[A, B]
 
   /** Laws that any `Semilattice` must satisfy. */
   object SemilatticeLaws {

@@ -22,9 +22,6 @@ abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tra
     */
   def objects[A: C1.Obj, B: C2.Obj]: F[A, B] is D.Obj
 
-  /** Evidence that *F*[*A*,*B*] is an object of **D** for objects *A* and *B*, for clients of the structure. */
-  given FIsObj: [A: C1.Obj, B: C2.Obj] => (F[A, B] is D.Obj) = objects[A, B]
-
   /** *F* maps a pair of morphisms *f* of **C₁** and *g* of **C₂** to a morphism *F*(*f*,*g*) of **D**.
     */
   def bimap[A1: C1.Obj, A2: C2.Obj, B1: C1.Obj, B2: C2.Obj](f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]

@@ -45,7 +45,7 @@ object Terminal {
     * The terminal object is the apex of *L*, and ! is the factorization through *L* of the cone with apex *A*, which
     * has no legs.
     */
-  open class FromLimit(tracked val L: Limit.Of[EmptyDiagram]) extends Terminal(L.D.K, L.ApexIsObj) {
+  open class FromLimit(tracked val L: Limit.Of[EmptyDiagram]) extends Terminal(L.D.K, L.apex) {
     import C.{Obj, -->}
 
     def discard[A: Obj as obj]: A --> I = {

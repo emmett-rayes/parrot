@@ -44,9 +44,12 @@ Rejected:
   refinements derive them (`Cartesian`); so is the internal hom, which is what `Closed` adds: ⊗ determines it up to
   isomorphism, and evaluation and currying determine its action on morphisms (`Closed.InternalHom`).
 - **Evidence that chooses an object is a value parameter** (the object of `Terminal`, the factors and product of
-  `Product`), offered to clients as a given (`Category.Object.AIsObj`). 𝒮 has two units and two tensors, so implicit
-  search cannot choose them (for a `using` parameter it chose `Type.TIsType[Any]`), and `deferred` givens exist only
-  in traits.
+  `Product`). 𝒮 has two units and two tensors, so implicit search cannot choose them (for a `using` parameter it chose
+  `Type.TIsType[Any]`), and `deferred` givens exist only in traits.
+- **Structures offer evidence as values, and every given is private** to the class that uses it: a bifunctor has
+  `objects`, an object its evidence `U`, a cone its `apex`, and a class that needs a given declares one from them
+  (`private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]`), refinements included. The
+  only public givens are instances of type classes, next to their type class (`Type.TIsType`, `Eq`, `Observable`).
 - **A structure on an object takes it as a structure,** `Category.Object(C, U)`, written `K.Object`, so that a
   refinement can ask for more: `Monoidal(K, U, T)` is on an `Object`, and `Cartesian` refines it to a `Terminal`, an
   `Object` with `discard`, as it refines the endobifunctor `T` to `Products`.
@@ -102,7 +105,12 @@ Rejected:
   evidence;
 - `Bifunctor` extending `Functor`, which puts match types into every instance's signatures, and a separate class for
   categories whose objects are pairs of types, which duplicates `Category`;
-- operators with logic of their own, which hide an operation.
+- operators with logic of their own, which hide an operation;
+- givens that structures offer to their clients: a given member is found through the prefix of every type that
+  mentions its structure, so two structures offering the same evidence, a monoidal structure and its tensor, are
+  ambiguous for every client;
+- `protected` givens shared with refinements: they are in scope in instances too, where a given defined from a member
+  that the instance implements by implicit search makes that member call itself.
 
 ## 4. The structures
 

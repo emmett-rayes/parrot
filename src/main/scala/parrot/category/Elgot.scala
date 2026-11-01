@@ -13,9 +13,11 @@ package category
   * ([[Traced.OfElgot]], [[Elgot.OfTraced]]).
   */
 abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Cocartesian }) extends caps.Pure {
-  import S.M.{+, given}
+  import S.M.+
   import S.P.{P, >>>}
   import S.P.K.{Obj, -->}
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = S.M.T.objects[A, B]
 
   /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*). */
   def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A]
@@ -107,9 +109,11 @@ object Elgot {
   /** The iteration of a trace on coproducts: *p*† = *tr*(∇ ⨾ *p*). */
   open class OfTraced(tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad; val M: Cocartesian } })
       extends Elgot(T.S) {
-    import S.M.{+, given}
+    import S.M.+
     import S.P.{P, >>>}
     import S.P.K.Obj
+
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = S.M.T.objects[A, B]
 
     def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A] = {
       T.trace[X, A, X](S.P.unit(S.M.codiagonal[X]) >>> p)

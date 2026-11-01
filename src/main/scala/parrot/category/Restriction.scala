@@ -93,9 +93,11 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
   */
 abstract class Classical(tracked override val P: Promonad, tracked val C: Cocartesian { val K: P.K.type })
     extends Restriction(P) {
-  import C.{+, given}
+  import C.+
   import P.{P, >>>}
   import P.K.Obj
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = C.T.objects[A, B]
 
   /** The restriction zero 0: *A* → *B*, defined nowhere. */
   def zero[A: Obj, B: Obj]: P[A, B]

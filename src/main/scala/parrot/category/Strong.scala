@@ -26,6 +26,14 @@ abstract class Strong(
   val M: L1.M.type = L1.M
   import M.`*`
 
+  private given IIsObj: (M.I is ObjM) = M.U.U
+
+  private given TensorIsObj: [C: ObjM, D: ObjM] => ((C * D) is ObjM) = M.T.objects[C, D]
+
+  private given Action1IsObj: [C: ObjM, A: Obj1] => ((C `~1` A) is Obj1) = L1.T.objects[C, A]
+
+  private given Action2IsObj: [C: ObjM, B: Obj2] => ((C `~2` B) is Obj2) = L2.T.objects[C, B]
+
   /** The left strength *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*).
     */
   def left[A: Obj1, B: Obj2, C: ObjM](p: P[A, B]): P[C `~1` A, C `~2` B]
@@ -109,9 +117,11 @@ object Strong {
     tracked override val P: Profunctor { val V: Total.type; val K2: K1.type },
     tracked override val M: Symmetric { val K: P.K1.type },
   ) extends Strong(P, Module.OfMonoidal(M), Module.OfMonoidal(M)) {
-    import M.{`*`, given}
+    import M.`*`
     import P.P
     import M.K.Obj
+
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = M.T.objects[A, B]
 
     /** The right strength *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*).
       *

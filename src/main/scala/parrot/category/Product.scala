@@ -21,14 +21,11 @@ abstract class Product(tracked val C: Category, tracked val U1: C.Obj, tracked v
   /** The product *P*. */
   final type P = U.Self
 
-  /** Evidence that *A*₁ is an object, for clients of the structure. */
-  given A1IsObj: (A1 is Obj) = U1
+  private given A1IsObj: (A1 is Obj) = U1
 
-  /** Evidence that *A*₂ is an object, for clients of the structure. */
-  given A2IsObj: (A2 is Obj) = U2
+  private given A2IsObj: (A2 is Obj) = U2
 
-  /** Evidence that *P* is an object, for clients of the structure. */
-  given PIsObj: (P is Obj) = U
+  private given PIsObj: (P is Obj) = U
 
   /** The first projection *π*₁: *P* → *A*₁. */
   def fst: P --> A1
@@ -95,7 +92,7 @@ object Product {
     * *L* of the cone with legs *f* and *g*.
     */
   open class FromLimit(tracked val L: Limit.Of[Discrete2Diagram])
-      extends Product(L.D.K, L.D.X, L.D.Y, L.ApexIsObj) {
+      extends Product(L.D.K, L.D.X, L.D.Y, L.apex) {
     import C.{Obj, -->}
 
     def fst: P --> A1 = {

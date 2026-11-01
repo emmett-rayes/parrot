@@ -12,6 +12,8 @@ package category
 abstract class Products(tracked override val K: Category) extends Endobifunctor(K) {
   import K.{Obj, -->, >>>}
 
+  private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
+
   /** The first projection *π*₁: *A* × *B* → *A*. */
   def fst[A: Obj, B: Obj]: F[A, B] --> A
 
@@ -89,6 +91,10 @@ object Products {
   final class AsProduct(tracked val T: Products, tracked override val U1: T.K.Obj, tracked override val U2: T.K.Obj)
       extends Product(T.K, U1, U2, T.objects[U1.Self, U2.Self](using U1, U2)) {
     import C.{Obj, -->}
+
+    private given A1IsObj: (A1 is Obj) = U1
+
+    private given A2IsObj: (A2 is Obj) = U2
 
     def fst: P --> A1 = {
       T.fst[A1, A2]

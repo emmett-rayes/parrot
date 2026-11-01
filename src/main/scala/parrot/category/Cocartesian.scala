@@ -24,6 +24,10 @@ abstract class Cocartesian(
   /** Infix alias for [[Tensor]]: the coproduct *A* + *B*. */
   final type + = Tensor
 
+  private given IIsObj: (I is Obj) = U.U
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = T.objects[A, B]
+
   /** The left injection *ι*₁: *A* → *A* + *B*. */
   def inl[A: Obj, B: Obj]: A --> (A + B)
 

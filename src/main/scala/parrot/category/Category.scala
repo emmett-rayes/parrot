@@ -148,9 +148,6 @@ object Category {
   open class Object(tracked val C: Category, tracked val U: C.Obj) extends caps.Pure {
     /** The object *A*. */
     final type A = U.Self
-
-    /** Evidence that *A* is an object of **C**. */
-    given AIsObj: (A is C.Obj) = U
   }
 
   /** The opposite **K**ᵒᵖ of a category **K**.

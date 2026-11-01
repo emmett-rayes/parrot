@@ -24,6 +24,12 @@ abstract class Module(
   /** Infix alias for [[Action]]. */
   final type ~ = Action
 
+  private given IIsObj: (I is ObjM) = M.U.U
+
+  private given TensorIsObj: [X: ObjM, Y: ObjM] => ((X * Y) is ObjM) = M.T.objects[X, Y]
+
+  private given ActionIsObj: [X: ObjM, A: Obj] => ((X ~ A) is Obj) = T.objects[X, A]
+
   /** *λ*: *I* ⊘ *A* ≅ *A*
     */
   def leftUnitor[A: Obj]: (I ~ A) <-> A

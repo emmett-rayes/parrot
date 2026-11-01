@@ -13,6 +13,8 @@ abstract class Symmetric(
 ) extends Monoidal(K, U, T) {
   import K.{Iso, Obj, -->, <->, >>>}
 
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]
+
   /** The braiding *β*: *A* ⊗ *B* → *B* ⊗ *A*.
     *
     * @note The braiding is its own inverse. See [[braiding]].

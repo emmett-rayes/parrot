@@ -9,7 +9,7 @@ package category
   *   - Λ(*f*): *C* → (*A* ⇒ *B*) is the curried form of *f*: *C* ⊗ *A* → *B*
   */
 abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
-  import M.{`*`, ***, given}
+  import M.{`*`, ***}
   import M.K.{Obj, -->, >>>}
 
   /** The internal hom *A* ⇒ *B*. */
@@ -21,8 +21,9 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
   /** Internal homs of objects are objects. */
   def objects[A: Obj, B: Obj]: (B `^` A) is Obj
 
-  /** Evidence that internal homs of objects are objects, for clients of the structure. */
-  given ExpIsObj: [A: Obj, B: Obj] => ((B `^` A) is Obj) = objects[A, B]
+  private given ExpIsObj: [A: Obj, B: Obj] => ((B `^` A) is Obj) = objects[A, B]
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = M.T.objects[A, B]
 
   /** Evaluation *ev*: (*A* ⇒ *B*) ⊗ *A* → *B*. */
   def eval[A: Obj, B: Obj]: ((B `^` A) * A) --> B
@@ -83,10 +84,14 @@ object Closed {
     *   laws `beta` and `eta` of [[Closed]].
     */
   final class InternalHom(tracked val C: Closed) extends Endoprofunctor(C.M.K, C.M.K) {
-    import C.M.{***, given}
+    import C.M.{`*`, ***}
     import C.M.K.{Obj, -->, >>>}
 
     type Self = C.Exp
+
+    private given PIsObj: [A: Obj, B: Obj] => (P[A, B] is Obj) = C.objects[A, B]
+
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = C.M.T.objects[A, B]
 
     def objects[A: Obj, B: Obj]: P[A, B] is Obj = {
       C.objects[A, B]

@@ -11,9 +11,13 @@ package category
   * dinaturality (sliding) and superposing restricted to pure arrows, which are central.
   */
 abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extends caps.Pure {
-  import S.M.{I, `*`, given}
+  import S.M.{I, `*`}
   import S.P.{P, >>>}
   import S.P.K.{Obj, -->}
+
+  private given IIsObj: (I is Obj) = S.M.U.U
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = S.M.T.objects[A, B]
 
   /** The trace *tr*: *P*(*A* ⊗ *U*,*B* ⊗ *U*) → *P*(*A*,*B*). */
   def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B]
@@ -91,9 +95,11 @@ object Traced {
 
   /** The trace of an iteration: *tr*(*p*) = *ι*₁ ⨾ (*p* ⨾ (*id* + *ι*₂))†, a loop that starts on the left. */
   open class OfElgot(tracked val E: Elgot) extends Traced(E.S) {
-    import S.M.{+, given}
+    import S.M.+
     import S.P.{P, >>>}
     import S.P.K.Obj
+
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = S.M.T.objects[A, B]
 
     def trace[A: Obj, B: Obj, U: Obj](p: P[A + U, B + U]): P[A, B] = {
       val step = p >>> S.P.unit(S.M.tensor(S.P.K.identity[B], S.M.inr[A, U]))
@@ -103,9 +109,11 @@ object Traced {
 
   /** The trace of a parameterized fixed point: *tr*(*p*) = ((*id* × *π*₂) ⨾ *p*)† ⨾ *π*₁. */
   open class OfConway(tracked val C: Conway) extends Traced(C.S) {
-    import S.M.{`*`, given}
+    import S.M.`*`
     import S.P.{P, >>>}
     import S.P.K.Obj
+
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = S.M.T.objects[A, B]
 
     def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B] = {
       val step = S.P.unit(S.M.tensor(S.P.K.identity[A], S.M.snd[B, U])) >>> p

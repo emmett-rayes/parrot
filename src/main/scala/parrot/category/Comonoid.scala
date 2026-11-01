@@ -9,7 +9,7 @@ package category
   *   - *δ*: *C* → *C* ⊗ *C* is the comultiplication
   */
 abstract class Comonoid(tracked val V: Monoidal) extends caps.Pure {
-  import V.{I, `*`, ***, given}
+  import V.{I, `*`, ***}
   import V.K.{Obj, -->, >>>}
 
   type Self
@@ -22,6 +22,10 @@ abstract class Comonoid(tracked val V: Monoidal) extends caps.Pure {
   def carrier: C is Obj
 
   private given CIsObj: (C is Obj) = carrier
+
+  private given IIsObj: (I is Obj) = V.U.U
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = V.T.objects[A, B]
 
   /** The counit *ε*: *C* → *I*. */
   def counit: C --> I

@@ -13,9 +13,11 @@ package category
   * iteration: an Elgot operator is a Conway operator on the opposite category.
   */
 abstract class Conway(tracked val S: Strong.Bistrong { val P: Promonad; val M: Cartesian }) extends caps.Pure {
-  import S.M.{`*`, given}
+  import S.M.`*`
   import S.P.{P, >>>}
   import S.P.K.{Obj, -->}
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = S.M.T.objects[A, B]
 
   /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*). */
   def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X]
@@ -109,9 +111,11 @@ object Conway {
   /** The fixed point of a trace on products: *p*† = *tr*(*p* ⨾ Δ). */
   open class OfTraced(tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad; val M: Cartesian } })
       extends Conway(T.S) {
-    import S.M.{`*`, given}
+    import S.M.`*`
     import S.P.{P, >>>}
     import S.P.K.Obj
+
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = S.M.T.objects[A, B]
 
     def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X] = {
       T.trace[A, X, X](p >>> S.P.unit(S.M.diagonal[X]))

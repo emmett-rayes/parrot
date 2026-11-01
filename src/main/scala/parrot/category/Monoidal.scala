@@ -26,6 +26,10 @@ abstract class Monoidal(
   /** The unit object *I*. */
   final type I = U.A
 
+  private given IIsObj: (I is Obj) = U.U
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]
+
   /** *λ*: *I* ⊗ *A* ≅ *A*
     */
   def leftUnitor[A: Obj]: (I * A) <-> A

@@ -13,6 +13,10 @@ abstract class Limit(tracked override val D: Functor) extends Limit.Cone(D) {
   import C.--> as ==>
   import Limit.Cone
 
+  private given ApexIsObj: Apex is C.Obj = apex
+
+  private given FIsObj: [A: J.Obj] => (F[A] is C.Obj) = D.objects[A]
+
   /** The factorization ⟨*φ*⟩: *Y* → *X* of a cone *K* = (*Y*, *φ*) through the limit. */
   def factor(K: Cone { val D: Limit.this.D.type }): K.Apex ==> Apex
 
@@ -59,11 +63,9 @@ object Limit {
     /** Evidence that *X* is an object of **C**. */
     def apex: Apex is C.Obj
 
-    /** Evidence that *X* is an object, for clients of the structure. */
-    given ApexIsObj: Apex is C.Obj = apex
+    private given ApexIsObj: Apex is C.Obj = apex
 
-    /** Evidence that the objects *D*[*A*] of the diagram are objects, for clients of the structure. */
-    given FIsObj: [A: J.Obj] => (F[A] is C.Obj) = D.objects[A]
+    private given FIsObj: [A: J.Obj] => (F[A] is C.Obj) = D.objects[A]
 
     /** *ψ*_*A*: *X* → *D*[*A*]
       *

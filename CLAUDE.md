@@ -80,6 +80,9 @@ warning-free.
    type), passed only through context bounds, except evidence that *chooses* an object, which is a `tracked` parameter
    (`Terminal(C, U)`, `Product(C, U1, U2, U)`). A structure on an object takes a `K.Object` (`Category.Object(C, U)`,
    *A* = `U.Self`), which refinements refine: `Monoidal(K, U, T)` has `I = U.A`, and `Cartesian` asks for a `Terminal`.
+   Structures offer evidence only as values (`objects`, `U`, `apex`): every given is `private` to the class that uses
+   it, refinements included (`private given IIsObj: (I is Obj) = U.U`), and the only public givens are type class
+   instances next to their type class.
 6. **Instances are `object`s** nested in what they belong to (`Total.Products`, `Partial.Loops`); generic constructions
    are `open class`es (`Kleisli(M)`, `StateT[S](M)`). Instances name evidence explicitly (`Type.TIsType`), never
    `summon`: a class-level forwarding given would recurse.
@@ -211,7 +214,7 @@ One file per structure in `src/main/scala/parrot/category/`; the instances on ù
   specific given in one object are ambiguous: put the fallback in a parent trait of the companion
   (`object Observable extends ComponentwiseObservable`). `CanEqual` is not an equality: build `Eq` with `Eq.structural`.
   Exporting a given whose type depends on a path fails under capture checking (`docs/compiler-issues.md`): name the
-  type instead (`Monoidal.I = U.A`).
+  type and declare a private given instead (`Monoidal.I = U.A` and `IIsObj`).
 - **Nullary extensions** that clash with a method of the same name take `(using DummyImplicit)`.
 - **Imports.** `import M.{*, ***}` is an error, since `*` is the wildcard; import a tensor alias `*` backticked:
   ``import M.{I, `*`, given}``.

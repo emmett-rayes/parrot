@@ -24,6 +24,10 @@ abstract class Cartesian(
   export U.discard
   export T.{fst, snd, pair}
 
+  private given IIsObj: (I is Obj) = U.U
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]
+
   /** The diagonal Δ = ⟨*id*,*id*⟩: *A* → *A* ⊗ *A*. */
   final def diagonal[A: Obj]: A --> (A * A) = {
     pair(K.identity[A], K.identity[A])

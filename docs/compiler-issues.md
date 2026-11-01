@@ -80,8 +80,8 @@ class Mon(val U: Chosen) {
 ```
 
 Without capture checking it compiles, and so does exporting `IIsEv` declared as a `val`. A given of a type that does
-not depend on a path (`given Int`) exports. `Monoidal` names the unit's type (`I = U.A`) instead of exporting it with
-the given of its `Object`.
+not depend on a path (`given Int`) exports. The library exports no givens: each class declares the private givens it
+uses, as `Monoidal` does for its unit `I = U.A`.
 
 Not a bug, but costly: under capture checking, a `given` declared with an unreduced match type fails, because the check
 adds a capture variable to the scrutinee; declare it in reduced form.
