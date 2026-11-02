@@ -4,30 +4,31 @@ package category
 /** A limit of a diagram *D*: **J** → **C**.
   *
   * Represents a limit (*X*, *ψ*), i.e. a cone over *D*, where
-  *   - ⟨*φ*⟩: *Y* → *X* is the factorization of a cone (*Y*, *φ*) over *D*, the unique morphism with *ψ* ∘ ⟨*φ*⟩ = *φ*
+  *   - ⟨*φ*⟩: *Y* → *X* is the factorization of a cone (*Y*, *φ*) over *D*
   */
-abstract class Limit(tracked override val D: Functor) extends Cone(D) {
-  import D.F
+abstract class Limit(tracked override val D: Functor, tracked override val X: D.D.Obj) extends Cone(D, X) {
+  import D.F as D
   import D.C as J
   import D.D as C
   import C.--> as ==>
 
-  private given ApexIsObj: Apex is C.Obj = apex
+  private given ApexIsObj: Apex is C.Obj = X
 
-  private given FIsObj: [A: J.Obj] => (F[A] is C.Obj) = D.objects[A]
+  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
 
-  /** The factorization ⟨*φ*⟩: *Y* → *X* of a cone *K* = (*Y*, *φ*) through the limit. */
-  def factor(K: Cone { val D: Limit.this.D.type }): K.Apex ==> Apex
+  /** The factorization ⟨*φ*⟩: *Y* → *X* of a cone *K* = (*Y*, *φ*) through the limit.
+    *
+    * This is the unique morphism with *φ* = *ψ* ∘ ⟨*φ*⟩.
+    */
+  def factor(K: Cone.Of[D.type]): K.Apex ==> Apex
 
   /** Laws that any `Limit` must satisfy. */
   object LimitLaws {
 
     /** *ψ*_*A* ∘ ⟨*φ*⟩ = *φ*_*A*
       */
-    def universal[A: J.Obj](K: Cone { val D: Limit.this.D.type })(
-      using (K.Apex ==> F[A]) is Observable
-    ): Boolean = {
-      given (K.Apex is C.Obj) = K.apex
+    def universal[A: J.Obj](K: Cone.Of[D.type])(using (K.Apex ==> D[A]) is Observable): Boolean = {
+      given (K.Apex is C.Obj) = K.X
       (factor(K) >>> leg[A]) =?= K.leg[A]
     }
 
@@ -40,7 +41,7 @@ abstract class Limit(tracked override val D: Functor) extends Cone(D) {
 
 object Limit {
 
-  /** The limits of the diagram *F*. */
+  /** Refines `Limit` to a specific functor **F**. */
   type Of[F <: Functor] = Limit { val D: F }
 }
 
@@ -75,5 +76,5 @@ abstract class DiscreteLimits(
 
   /** The limit lim *G* of a diagram *G*: **J** → **C**, with apex Lim[*F*] for the object map *F* of *G*. */
   override def limit(G: Functor { val C: DiscreteLimits.this.J.type; val D: DiscreteLimits.this.C.type })
-    : Limit.Of[G.type] { type Apex = Lim[G.F] }
+    : Limit.Of[G.type] { val X: Lim[G.F] is C.Obj }
 }

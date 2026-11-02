@@ -44,10 +44,12 @@ Rejected:
   refinements derive them (`Cartesian`); so is the internal hom, which is what `Closed` adds: ⊗ determines it up to
   isomorphism, and evaluation and currying determine its action on morphisms (`Closed.InternalHom`).
 - **Evidence that chooses an object is a value parameter** (the object of `Terminal`, the factors and product of
-  `Product`). 𝒮 has two units and two tensors, so implicit search cannot choose them (for a `using` parameter it chose
-  `Type.TIsType[Any]`), and `deferred` givens exist only in traits.
+  `Product`, the apex of `Cone`). 𝒮 has two units and two tensors, so implicit search cannot choose them (for a `using`
+  parameter it chose `Type.TIsType[Any]`), and `deferred` givens exist only in traits; that makes it a value. It is a
+  parameter because a structure is on the objects it is about: a cone is a natural transformation from the constant
+  functor at its apex to its diagram, so it is on both, and a limit passes the apex it chooses to its parent.
 - **Structures offer evidence as values, and every given is private** to the class that uses it: a bifunctor has
-  `objects`, an object its evidence `U`, a cone its `apex`, and a class that needs a given declares one from them
+  `objects`, an object its evidence `U`, a cone its apex `X`, and a class that needs a given declares one from them
   (`private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]`), refinements included. The
   only public givens are instances of type classes, next to their type class (`Type.TIsType`, `Eq`, `Observable`).
 - **A structure on an object takes it as a structure,** `Category.Object(C, U)`, written `K.Object`, so that a
@@ -150,27 +152,27 @@ Each structure sits at the lowest level where its laws can be stated.
   not distribute over ⊳; precomposition does.
 - **Comonoids** are the dual of monoids. Every object of a cartesian category is a comonoid in exactly one way; pairs in
   𝒫 have comonoids that programs do not preserve, which by Fox's theorem is why they are not products.
-- **Limits.** `Limit(D)` is a cone over a diagram *D* (`Cone`) through which every cone factors, and
-  `Limits(J, C)` gives one for every diagram of shape **J**. 𝒮 has all of them by one construction, `Total.LimitOf`:
-  the product of the components is a polymorphic function type, since the objects are types, and the equalizer of the
-  natural families is made by abstraction. Points are private to the limit and only the factorization builds them,
-  from the legs of a cone, so they are natural as long as the cones are lawful; to clients, who see points only
-  through the legs, the abstract type is the limit.
+- **Limits.** `Limit(D, X)` is a cone over a diagram *D* with apex *X* (`Cone`) through which every cone factors, and
+  `Limits(J, C)` gives one for every diagram of shape **J**. 𝒮 has all of them by one construction, `Total.LimitOf`: the
+  product of the components is a polymorphic function type, since the objects are types, and the equalizer of the
+  natural families is made by abstraction. Points are private to the construction, a class indexed by the diagram
+  (`LimitOf.Point`), and only the factorization builds them, from the legs of a cone, so they are natural as long as the
+  cones are lawful; to clients, who see points only through the legs, the abstract type is the limit.
 - **Limits of a discrete shape have a type of apexes.** `DiscreteLimits(J, C)` refines `Limits` for a shape whose
   only morphisms are identities, stated as a bound (`J.Self[A, B] <: A =:= B`, which **2** and **0** satisfy), and
   gives the apex of each limit as a type function `Lim[F]` of the diagram's object map. A functor preserves identities,
   so a diagram of a discrete shape is determined by its objects, and the apex can be too; for any other shape it
   cannot, since the limit depends on the morphisms. In 𝒮 (`Total.DiscreteLimitsOf`) every family of points is natural,
   so the apex is the type of all families, without abstraction.
-- **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**: `Cocone(D)`,
-  `Colimit(D)` with `factor` out of its apex, `Colimits(J, C)` and `DiscreteColimits(J, C)` with the apex
-  `Colim[F]`. 𝒮 has all of them by the dual construction, `Total.ColimitOf`: the sum of the points is an existential
-  type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object *A*, a type that it hides,
-  and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are private to the colimit and
-  only the factorization reads them, through the legs of a cocone, so glued points are indistinguishable as long as
-  the cocones are lawful; to clients, the abstract type is the colimit. In a discrete diagram no two points are glued,
-  so the colimit is the sum itself (`Total.DiscreteColimitsOf`), and the factorization applies the leg at the object
-  of a point.
+- **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**:
+  `Cocone(D, X)`, `Colimit(D, X)` with `factor` out of its apex, `Colimits(J, C)` and `DiscreteColimits(J, C)` with the
+  apex `Colim[F]`. 𝒮 has all of them by the dual construction, `Total.ColimitOf`: the sum of the points is an
+  existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object *A*, a type that it
+  hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are private to the
+  construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a cocone, so glued points
+  are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the colimit. In a discrete
+  diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimitsOf`), and the factorization
+  applies the leg at the object of a point.
 - **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` is an object with `discard` (!);
   `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of the empty diagram
   and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit. `Products(C)`, the
@@ -211,9 +213,12 @@ Rejected:
   `Products`, and `Cocartesian` with injections, copairing and ¡ of its own;
 - colimits as limits in **C**ᵒᵖ, whose legs and factorizations are morphisms of **C**ᵒᵖ that every client would have
   to reverse;
-- products from any limits of shape **2** (`Limits(Discrete2, C)`): the apex of a limit is a type member of each
-  limit, not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types;
-  `DiscreteLimits` gives the apex as a type function instead;
+- products from any limits of shape **2** (`Limits(Discrete2, C)`): the apex of a limit is a type of each limit, not a
+  type constructor, so it cannot be the tensor that monoidal signatures apply to two types; `DiscreteLimits` gives the
+  apex as a type function instead;
+- the apex of a cone as a type member with evidence, which an implementation defines in its body: it lets a limit of 𝒮
+  nest its type of points in itself, but every other cone restates a parameter as two members, and the apex of a cone is
+  what it is on, like the object of a terminal object;
 - a type function of the object map as the apex of every `Limits`: the limit of a shape with morphisms depends on them,
   and in 𝒮 a shared type of points would let a point natural for one diagram reach the legs of another with the same
   objects;

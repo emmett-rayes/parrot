@@ -7,35 +7,31 @@ package category
   *   - *X* is the apex, an object of **C**
   *   - *ψ*_*A*: *X* → *D*[*A*] is the leg at an object *A* of **J**
   */
-abstract class Cone(tracked val D: Functor) extends caps.Pure {
-  import D.{F, map}
+abstract class Cone(tracked val D: Functor, tracked val X: D.D.Obj) extends caps.Pure {
+  import D.{F as D, map}
   import D.C as J
   import D.D as C
   import J.-->
   import C.--> as ==>
 
   /** The apex *X*. */
-  type Apex
+  final type Apex = X.Self
 
-  /** Evidence that *X* is an object of **C**. */
-  def apex: Apex is C.Obj
-
-  private given ApexIsObj: Apex is C.Obj = apex
-
-  private given FIsObj: [A: J.Obj] => (F[A] is C.Obj) = D.objects[A]
+  private given ApexIsObj: Apex is C.Obj              = X
+  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
 
   /** *ψ*_*A*: *X* → *D*[*A*]
     *
     * The legs form a natural transformation from the constant functor at *X* to *D*.
     */
-  def leg[A: J.Obj]: Apex ==> F[A]
+  def leg[A: J.Obj]: Apex ==> D[A]
 
   /** The cone (*Y*, *ψ* ∘ *h*) induced by a morphism *h*: *Y* → *X*. */
-  final def induced[Y: C.Obj as obj](h: Y ==> Apex): Cone { val D: Cone.this.D.type; type Apex = Y } = {
-    new Cone(D) {
-      type Apex = Y
-      def apex: Y is C.Obj             = obj
-      def leg[A: J.Obj]: Apex ==> F[A] = h >>> Cone.this.leg[A]
+  final def induced[Y: C.Obj as obj](h: Y ==> Apex): Cone.Of[D.type] { val X: obj.type } = {
+    new Cone(D, obj) {
+      def leg[A: J.Obj]: Y ==> D[A] = {
+        h >>> Cone.this.leg[A]
+      }
     }
   }
 
@@ -44,8 +40,14 @@ abstract class Cone(tracked val D: Functor) extends caps.Pure {
 
     /** *D*(*f*) ∘ *ψ*_*A* = *ψ*_*B*
       */
-    def commutes[A: J.Obj, B: J.Obj](f: A --> B)(using (Apex ==> F[B]) is Observable): Boolean = {
+    def commutes[A: J.Obj, B: J.Obj](f: A --> B)(using (Apex ==> D[B]) is Observable): Boolean = {
       (leg[A] >>> map(f)) =?= leg[B]
     }
   }
+}
+
+object Cone {
+
+  /** Refines `Cone` to a specific functor **F**. */
+  type Of[F <: Functor] = Cone { val D: F }
 }

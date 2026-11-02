@@ -78,11 +78,11 @@ warning-free.
    (`Monad.On`, `Limit.Of`) are only for pure refinements.
 5. **Objects are types with evidence:** `type Obj <: Type` (`import Category.Type`; `Type.TIsType` holds for every
    type), passed only through context bounds, except evidence that *chooses* an object, which is a `tracked` parameter
-   (`Terminal(C, U)`, `Product(C, U1, U2, U)`). A structure on an object takes a `K.Object` (`Category.Object(C, U)`,
-   *A* = `U.Self`), which refinements refine: `Monoidal(K, U, T)` has `I = U.A`, and `Cartesian` asks for a `Terminal`.
-   Structures offer evidence only as values (`objects`, `U`, `apex`): every given is `private` to the class that uses
-   it, refinements included (`private given IIsObj: (I is Obj) = U.U`), and the only public givens are type class
-   instances next to their type class.
+   (`Terminal(C, U)`, `Product(C, U1, U2, U)`, the apex of `Cone(D, X)`). A structure on an object takes a `K.Object`
+   (`Category.Object(C, U)`, *A* = `U.Self`), which refinements refine: `Monoidal(K, U, T)` has `I = U.A`, and
+   `Cartesian` asks for a `Terminal`. Structures offer evidence only as values (`objects`, `U`, `X`): every given is
+   `private` to the class that uses it, refinements included (`private given IIsObj: (I is Obj) = U.U`), and the only
+   public givens are type class instances next to their type class.
 6. **Instances are `object`s** nested in what they belong to (`Total.Products`, `Partial.Loops`); generic constructions
    are `open class`es (`Kleisli(M)`, `StateT[S](M)`). Instances name evidence explicitly (`Type.TIsType`), never
    `summon`: a class-level forwarding given would recurse.
@@ -204,6 +204,9 @@ family of structures shares its member's file: `Products` is in `Product.scala` 
 - **A refinement cannot name a parameter its members shadow** (`Freyd(P, S: Bistrong { val P: P.type })` is cyclic):
   refine through an alias declared elsewhere (`Strong.Bistrong.On[P.type]`), or a `this`-qualified path in methods.
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
+- **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
+  passes to its parent (the points of `Total.LimitOf`) goes into the companion, indexed by the parameter it depends on
+  (`LimitOf.Point.Of[D.type]`).
 - **`export F.K`** creates a stable alias: imports from it and singleton chains keep working.
 - **Same-named extensions from two imports overload** by the receiver's type, and extensions are also found through a
   path-dependent type's prefix (`K.Hom` finds `K.>>>` without an import). Where one value is an arrow of two

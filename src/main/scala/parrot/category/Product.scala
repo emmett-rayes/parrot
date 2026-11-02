@@ -91,7 +91,7 @@ object Product {
     * The product is the apex of *L*, its projections are the legs of *L*, and ⟨*f*,*g*⟩ is the factorization through
     * *L* of the cone with legs *f* and *g*.
     */
-  open class FromLimit(tracked val L: Limit.Of[Discrete2Diagram]) extends Product(L.D.K, L.D.X, L.D.Y, L.apex) {
+  open class FromLimit(tracked val L: Limit.Of[Discrete2Diagram]) extends Product(L.D.K, L.D.X, L.D.Y, L.X) {
     import C.{Obj, -->}
 
     def fst: P --> A1 = {
@@ -112,14 +112,8 @@ object Product {
     * The apex of the limit is *P*, its legs are the projections, and the factorization of a cone is the pairing of its
     * legs.
     */
-  final class AsLimit(tracked val P: Product) extends Limit(Discrete2Diagram(P.C, P.U1, P.U2)) {
+  final class AsLimit(tracked val P: Product) extends Limit(Discrete2Diagram(P.C, P.U1, P.U2), P.U) {
     import P.C.-->
-
-    type Apex = P.P
-
-    def apex: P.P is P.C.Obj = {
-      P.U
-    }
 
     def leg[A: Disc2]: P.P --> D.F[A] = {
       A.index match {
@@ -128,25 +122,19 @@ object Product {
       }
     }
 
-    def factor(K: Cone { val D: AsLimit.this.D.type }): K.Apex --> P.P = {
-      P.pair[K.Apex](K.leg[0], K.leg[1])(using K.apex)
+    def factor(K: Cone.Of[D.type]): K.Apex --> P.P = {
+      P.pair[K.Apex](K.leg[0], K.leg[1])(using K.X)
     }
   }
 
-  /** The cone with apex *Y* over a diagram of shape **2** whose legs are *f* and *g*. */
-  final class PairCone(tracked override val D: Functor { val C: Discrete2.type }, tracked val Y: D.D.Obj)(
-    f: D.D.-->[Y.Self, D.F[0]],
-    g: D.D.-->[Y.Self, D.F[1]],
-  ) extends Cone(D) {
+  /** The cone with apex *X* over a diagram of shape **2** whose legs are *f* and *g*. */
+  final class PairCone(tracked override val D: Functor { val C: Discrete2.type }, tracked override val X: D.D.Obj)(
+    f: D.D.-->[X.Self, D.F[0]],
+    g: D.D.-->[X.Self, D.F[1]],
+  ) extends Cone(D, X) {
     import D.D.-->
 
-    type Apex = Y.Self
-
-    def apex: Y.Self is D.D.Obj = {
-      Y
-    }
-
-    def leg[A: Disc2]: Y.Self --> D.F[A] = {
+    def leg[A: Disc2]: Apex --> D.F[A] = {
       A.index match {
         case Disc2.Index.Zero => f
         case Disc2.Index.One  => g
@@ -273,7 +261,7 @@ object Products {
     type Self[A, B] = L.Lim[Components[A, B]]
 
     def objects[A: Obj as first, B: Obj as second]: F[A, B] is Obj = {
-      L.limit(Discrete2Diagram(K, first, second)).apex
+      L.limit(Discrete2Diagram(K, first, second)).X
     }
 
     def product[A: Obj as first, B: Obj as second]

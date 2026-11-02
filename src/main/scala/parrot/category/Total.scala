@@ -156,23 +156,37 @@ object Total extends Category {
     *
     * Represents the limit (*X*, *ψ*), where
     *   - *X* is the type of natural families *x* = (*x*_*A*)_*A*, a point *x*_*A* of *D*[*A*] for each object *A* of
-    *     **J**, with *D*(*f*)(*x*_*A*) = *x*_*B* for every *f*: *A* → *B* of **J** ([[Point]])
+    *     **J**, with *D*(*f*)(*x*_*A*) = *x*_*B* for every *f*: *A* → *B* of **J** ([[LimitOf.Point]])
     *   - *ψ*_*A*(*x*) = *x*_*A*: the leg at *A* picks the point at *A*
     *   - ⟨*φ*⟩(*y*) = (*φ*_*A*(*y*))_*A*: a cone (*Y*, *φ*) factors through the family of its legs at *y*
     *
     * This is the construction of limits from products and equalizers. The families of points are the product
     * ∏_*A* *D*[*A*], which exists in 𝒮 because its objects are types: it is a polymorphic function type. The natural
     * families are a subset of the product, the equalizer of *x* ↦ *x*_*B* and *x* ↦ *D*(*f*)(*x*_*A*), and Scala has
-    * no subset types; [[Point]] makes the subset by abstraction (tutorial, §6.5). Neither step looks at the shape of
-    * **J**, so this one construction gives every limit of 𝒮.
+    * no subset types; [[LimitOf.Point]] makes the subset by abstraction (tutorial, §6.5). Neither step looks at the
+    * shape of **J**, so this one construction gives every limit of 𝒮.
     */
-  final class LimitOf(tracked override val D: Functor { val D: Total.type }) extends Limit(D) {
+  final class LimitOf(tracked override val D: Functor { val D: Total.type })
+      extends Limit(D, Type.TIsType[LimitOf.Point.Of[D.type]]) {
     import D.C as J
+    import LimitOf.Point
 
-    /** A point of the limit: a natural family of points (*x*_*A*)_*A* of the diagram, where `at[A]` is *x*_*A*.
+    def leg[A: J.Obj]: Apex -> D.F[A] = {
+      _.at[A]
+    }
+
+    def factor(K: Cone.Of[D.type]): K.Apex -> Apex = {
+      y => Point(D)([A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y))
+    }
+  }
+
+  object LimitOf {
+
+    /** A point of the limit of a diagram *D*: a natural family of points (*x*_*A*)_*A* of *D*, where `at[A]` is
+      * *x*_*A*.
       *
-      * The type of `at` holds every family, natural or not. The constructor is private to the limit, and the only
-      * operation that builds points is [[factor]], from the legs of a cone, which are natural by
+      * The type of `at` holds every family, natural or not. The constructor is private to [[LimitOf]], and the only
+      * operation that builds points is [[LimitOf.factor]], from the legs of a cone, which are natural by
       * [[Cone.ConeLaws.commutes]]. So every point that exists is natural, and since clients see a point only
       * through the legs, `Point` is, to them, the subset of natural families: by representation independence, as for
       * any abstract type (tutorial, §6.5).
@@ -180,20 +194,14 @@ object Total extends Category {
       * @note Naturality is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
       *   cones are lawful, and it is the cone law of the limit itself, *D*(*f*) ∘ *ψ*_*A* = *ψ*_*B*, at each point.
       */
-    final class Point private[LimitOf] (val at: [A] -> (A is J.Obj) ?-> D.F[A]) extends caps.Pure
+    final class Point private[LimitOf] (tracked val D: Functor { val D: Total.type })(
+      val at: [A] -> (A is D.C.Obj) ?-> D.F[A],
+    ) extends caps.Pure
 
-    type Apex = Point
+    object Point {
 
-    def apex: Point is Type = {
-      Type.TIsType
-    }
-
-    def leg[A: J.Obj]: Point -> D.F[A] = {
-      _.at[A]
-    }
-
-    def factor(K: Cone { val D: LimitOf.this.D.type }): K.Apex -> Point = {
-      y => Point([A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y))
+      /** Refines `Point` to a specific diagram *F*. */
+      type Of[F <: Functor] = Point { val D: F }
     }
   }
 
@@ -219,20 +227,14 @@ object Total extends Category {
     */
   final class DiscreteLimitOf(
     tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },
-  ) extends Limit(D) {
+  ) extends Limit(D, Type.TIsType[[A] -> (A is D.C.Obj) ?-> D.F[A]]) {
     import D.C as J
-
-    type Apex = [A] -> (A is J.Obj) ?-> D.F[A]
-
-    def apex: Apex is Type = {
-      Type.TIsType
-    }
 
     def leg[A: J.Obj]: Apex -> D.F[A] = {
       x => x[A]
     }
 
-    def factor(K: Cone { val D: DiscreteLimitOf.this.D.type }): K.Apex -> Apex = {
+    def factor(K: Cone.Of[D.type]): K.Apex -> Apex = {
       y => [A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y)
     }
   }
@@ -245,7 +247,7 @@ object Total extends Category {
     type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
 
     def limit(G: Functor { val C: DiscreteLimitsOf.this.J.type; val D: Total.type })
-      : Limit.Of[G.type] { type Apex = Lim[G.F] } = {
+      : Limit.Of[G.type] { val X: Lim[G.F] is C.Obj } = {
       DiscreteLimitOf(G)
     }
   }
@@ -283,45 +285,52 @@ object Total extends Category {
     *
     * Represents the colimit (*X*, *ψ*), where
     *   - *X* is the type of glued points (*A*, *x*), a point *x* of *D*[*A*] at one object *A* of **J**, with
-    *     (*A*, *x*) = (*B*, *D*(*f*)(*x*)) for every *f*: *A* → *B* of **J** ([[Point]])
+    *     (*A*, *x*) = (*B*, *D*(*f*)(*x*)) for every *f*: *A* → *B* of **J** ([[ColimitOf.Point]])
     *   - *ψ*_*A*(*x*) = (*A*, *x*): the leg at *A* tags a point with *A*
     *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*): a cocone (*Y*, *φ*) factors through its leg at the object of a point
     *
     * This is the construction of colimits from coproducts and coequalizers. The points at all objects are the sum
     * Σ_*A* *D*[*A*], which exists in 𝒮 because its objects are types: it is an existential type ([[Sum]]). The glued
     * points are a quotient of the sum, the coequalizer of (*f*, *x*) ↦ (*A*, *x*) and (*f*, *x*) ↦ (*B*, *D*(*f*)(*x*)),
-    * and Scala has no quotient types; [[Point]] makes the quotient by abstraction (tutorial, §7.6). Neither step looks
-    * at the shape of **J**, so this one construction gives every colimit of 𝒮.
+    * and Scala has no quotient types; [[ColimitOf.Point]] makes the quotient by abstraction (tutorial, §7.6). Neither
+    * step looks at the shape of **J**, so this one construction gives every colimit of 𝒮.
     */
-  final class ColimitOf(tracked override val D: Functor { val D: Total.type }) extends Colimit(D) {
+  final class ColimitOf(tracked override val D: Functor { val D: Total.type })
+      extends Colimit(D, Type.TIsType[ColimitOf.Point.Of[D.type]]) {
     import D.C as J
+    import ColimitOf.Point
 
-    /** A point of the colimit: a point of the diagram at one object, where `sum` is (*A*, *x*), up to gluing.
+    def leg[A: J.Obj as obj]: D.F[A] -> Apex = {
+      x => Point(D)(Sum(obj, x))
+    }
+
+    def factor(K: Cocone.Of[D.type]): Apex -> K.Apex = {
+      p => K.leg[p.sum.A](using p.sum.obj)(p.sum.at)
+    }
+  }
+
+  object ColimitOf {
+
+    /** A point of the colimit of a diagram *D*: a point of *D* at one object, where `sum` is (*A*, *x*), up to gluing.
       *
-      * The representation holds the object of a point, so it tells glued points apart. It is private to the colimit,
-      * with the constructor: the only operation that builds points is [[leg]], and the only one that reads them is
-      * [[factor]], through the legs of a cocone, which agree on glued points by [[Cocone.CoconeLaws.commutes]]. So no
-      * client can tell glued points apart, and `Point` is, to them, the quotient of the sum by the gluing: by
-      * representation independence, as for any abstract type (tutorial, §7.6).
+      * The representation holds the object of a point, so it tells glued points apart. It is private to [[ColimitOf]],
+      * with the constructor: the only operation that builds points is [[ColimitOf.leg]], and the only one that reads
+      * them is [[ColimitOf.factor]], through the legs of a cocone, which agree on glued points by
+      * [[Cocone.CoconeLaws.commutes]]. So no client can tell glued points apart, and `Point` is, to them, the quotient
+      * of the sum by the gluing: by representation independence, as for any abstract type (tutorial, §7.6).
       *
       * @note The gluing is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
       *   cocones are lawful, and it is the cocone law of the colimit itself, *ψ*_*B* ∘ *D*(*f*) = *ψ*_*A*, at each
       *   point.
       */
-    final class Point private[ColimitOf] (private[ColimitOf] val sum: Sum[J.Obj, D.F]) extends caps.Pure
+    final class Point private[ColimitOf] (tracked val D: Functor { val D: Total.type })(
+      private[ColimitOf] val sum: Sum[D.C.Obj, D.F],
+    ) extends caps.Pure
 
-    type Apex = Point
+    object Point {
 
-    def apex: Point is Type = {
-      Type.TIsType
-    }
-
-    def leg[A: J.Obj as obj]: D.F[A] -> Point = {
-      x => Point(Sum(obj, x))
-    }
-
-    def factor(K: Cocone { val D: ColimitOf.this.D.type }): Point -> K.Apex = {
-      p => K.leg[p.sum.A](using p.sum.obj)(p.sum.at)
+      /** Refines `Point` to a specific diagram *F*. */
+      type Of[F <: Functor] = Point { val D: F }
     }
   }
 
@@ -346,20 +355,14 @@ object Total extends Category {
     */
   final class DiscreteColimitOf(
     tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },
-  ) extends Colimit(D) {
+  ) extends Colimit(D, Type.TIsType[Sum[D.C.Obj, D.F]]) {
     import D.C as J
-
-    type Apex = Sum[J.Obj, D.F]
-
-    def apex: Apex is Type = {
-      Type.TIsType
-    }
 
     def leg[A: J.Obj as obj]: D.F[A] -> Apex = {
       x => Sum(obj, x)
     }
 
-    def factor(K: Cocone { val D: DiscreteColimitOf.this.D.type }): Apex -> K.Apex = {
+    def factor(K: Cocone.Of[D.type]): Apex -> K.Apex = {
       s => K.leg[s.A](using s.obj)(s.at)
     }
   }
@@ -372,7 +375,7 @@ object Total extends Category {
     type Colim[F[_]] = Sum[J.Obj, F]
 
     def colimit(G: Functor { val C: DiscreteColimitsOf.this.J.type; val D: Total.type })
-      : Colimit.Of[G.type] { type Apex = Colim[G.F] } = {
+      : Colimit.Of[G.type] { val X: Colim[G.F] is C.Obj } = {
       DiscreteColimitOf(G)
     }
   }

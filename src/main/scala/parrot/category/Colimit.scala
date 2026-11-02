@@ -4,31 +4,31 @@ package category
 /** A colimit of a diagram *D*: **J** → **C**.
   *
   * Represents a colimit (*X*, *ψ*), i.e. a cocone under *D*, where
-  *   - [*φ*]: *X* → *Y* is the factorization of a cocone (*Y*, *φ*) under *D*, the unique morphism with [*φ*] ∘ *ψ* =
-  *     *φ*
+  *   - [*φ*]: *X* → *Y* is the factorization of a cocone (*Y*, *φ*) under *D*
   */
-abstract class Colimit(tracked override val D: Functor) extends Cocone(D) {
-  import D.F
+abstract class Colimit(tracked override val D: Functor, tracked override val X: D.D.Obj) extends Cocone(D, X) {
+  import D.F as D
   import D.C as J
   import D.D as C
   import C.--> as ==>
 
-  private given ApexIsObj: Apex is C.Obj = apex
+  private given ApexIsObj: Apex is C.Obj = X
 
-  private given FIsObj: [A: J.Obj] => (F[A] is C.Obj) = D.objects[A]
+  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
 
-  /** The factorization [*φ*]: *X* → *Y* of a cocone *K* = (*Y*, *φ*) through the colimit. */
-  def factor(K: Cocone { val D: Colimit.this.D.type }): Apex ==> K.Apex
+  /** The factorization [*φ*]: *X* → *Y* of a cocone *K* = (*Y*, *φ*) through the colimit.
+    *
+    * This is the unique morphism with *φ* = [*φ*] ∘ *ψ*.
+    */
+  def factor(K: Cocone.Of[D.type]): Apex ==> K.Apex
 
   /** Laws that any `Colimit` must satisfy. */
   object ColimitLaws {
 
     /** [*φ*] ∘ *ψ*_*A* = *φ*_*A*
       */
-    def universal[A: J.Obj](K: Cocone { val D: Colimit.this.D.type })(
-      using (F[A] ==> K.Apex) is Observable
-    ): Boolean = {
-      given (K.Apex is C.Obj) = K.apex
+    def universal[A: J.Obj](K: Cocone.Of[D.type])(using (D[A] ==> K.Apex) is Observable): Boolean = {
+      given (K.Apex is C.Obj) = K.X
       (leg[A] >>> factor(K)) =?= K.leg[A]
     }
 
@@ -41,7 +41,7 @@ abstract class Colimit(tracked override val D: Functor) extends Cocone(D) {
 
 object Colimit {
 
-  /** The colimits of the diagram *F*. */
+  /** Refines `Colimit` to a specific functor **F**. */
   type Of[F <: Functor] = Colimit { val D: F }
 }
 
@@ -76,5 +76,5 @@ abstract class DiscreteColimits(
 
   /** The colimit colim *G* of a diagram *G*: **J** → **C**, with apex Colim[*F*] for the object map *F* of *G*. */
   override def colimit(G: Functor { val C: DiscreteColimits.this.J.type; val D: DiscreteColimits.this.C.type })
-    : Colimit.Of[G.type] { type Apex = Colim[G.F] }
+    : Colimit.Of[G.type] { val X: Colim[G.F] is C.Obj }
 }

@@ -93,7 +93,7 @@ object Coproduct {
     * *L* of the cocone with legs *f* and *g*.
     */
   open class FromColimit(tracked val L: Colimit.Of[Discrete2Diagram])
-      extends Coproduct(L.D.K, L.D.X, L.D.Y, L.apex) {
+      extends Coproduct(L.D.K, L.D.X, L.D.Y, L.X) {
     import C.{Obj, -->}
 
     def inl: A1 --> S = {
@@ -114,14 +114,8 @@ object Coproduct {
     * The apex of the colimit is *S*, its legs are the injections, and the factorization of a cocone is the copairing of
     * its legs.
     */
-  final class AsColimit(tracked val S: Coproduct) extends Colimit(Discrete2Diagram(S.C, S.U1, S.U2)) {
+  final class AsColimit(tracked val S: Coproduct) extends Colimit(Discrete2Diagram(S.C, S.U1, S.U2), S.U) {
     import S.C.-->
-
-    type Apex = S.S
-
-    def apex: S.S is S.C.Obj = {
-      S.U
-    }
 
     def leg[A: Disc2]: D.F[A] --> S.S = {
       A.index match {
@@ -130,25 +124,19 @@ object Coproduct {
       }
     }
 
-    def factor(K: Cocone { val D: AsColimit.this.D.type }): S.S --> K.Apex = {
-      S.copair[K.Apex](K.leg[0], K.leg[1])(using K.apex)
+    def factor(K: Cocone.Of[D.type]): S.S --> K.Apex = {
+      S.copair[K.Apex](K.leg[0], K.leg[1])(using K.X)
     }
   }
 
-  /** The cocone with apex *Y* under a diagram of shape **2** whose legs are *f* and *g*. */
-  final class CopairCocone(tracked override val D: Functor { val C: Discrete2.type }, tracked val Y: D.D.Obj)(
-    f: D.D.-->[D.F[0], Y.Self],
-    g: D.D.-->[D.F[1], Y.Self],
-  ) extends Cocone(D) {
+  /** The cocone with apex *X* under a diagram of shape **2** whose legs are *f* and *g*. */
+  final class CopairCocone(tracked override val D: Functor { val C: Discrete2.type }, tracked override val X: D.D.Obj)(
+    f: D.D.-->[D.F[0], X.Self],
+    g: D.D.-->[D.F[1], X.Self],
+  ) extends Cocone(D, X) {
     import D.D.-->
 
-    type Apex = Y.Self
-
-    def apex: Y.Self is D.D.Obj = {
-      Y
-    }
-
-    def leg[A: Disc2]: D.F[A] --> Y.Self = {
+    def leg[A: Disc2]: D.F[A] --> Apex = {
       A.index match {
         case Disc2.Index.Zero => f
         case Disc2.Index.One  => g
@@ -253,7 +241,7 @@ object Coproducts {
     type Self[A, B] = L.Colim[Components[A, B]]
 
     def objects[A: Obj as first, B: Obj as second]: F[A, B] is Obj = {
-      L.colimit(Discrete2Diagram(K, first, second)).apex
+      L.colimit(Discrete2Diagram(K, first, second)).X
     }
 
     def coproduct[A: Obj as first, B: Obj as second]
