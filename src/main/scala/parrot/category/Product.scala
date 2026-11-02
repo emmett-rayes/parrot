@@ -8,24 +8,28 @@ package category
   *   - ⟨*f*,*g*⟩: *X* → *P* is the pairing of *f*: *X* → *A*₁ and *g*: *X* → *A*₂, the unique morphism with *π*₁ ∘
   *     ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
   */
-abstract class Product(tracked val C: Category, tracked val U1: C.Obj, tracked val U2: C.Obj, tracked val U: C.Obj)
-    extends caps.Pure {
+abstract class Product(
+  tracked val C: Category,
+  tracked val U1: C.Object,
+  tracked val U2: C.Object,
+  tracked val U: C.Object,
+) extends caps.Pure {
   import C.{Obj, -->, >>>}
 
   /** The first factor *A*₁. */
-  final type A1 = U1.Self
+  final type A1 = U1.A
 
   /** The second factor *A*₂. */
-  final type A2 = U2.Self
+  final type A2 = U2.A
 
   /** The product *P*. */
-  final type P = U.Self
+  final type P = U.A
 
-  private given A1IsObj: (A1 is Obj) = U1
+  private given A1IsObj: (A1 is Obj) = U1.U
 
-  private given A2IsObj: (A2 is Obj) = U2
+  private given A2IsObj: (A2 is Obj) = U2.U
 
-  private given PIsObj: (P is Obj) = U
+  private given PIsObj: (P is Obj) = U.U
 
   /** The first projection *π*₁: *P* → *A*₁. */
   def fst: P --> A1
@@ -81,7 +85,7 @@ object Product {
   type Of[K <: Category] = Product { val C: K }
 
   /** The product of *X* and *Y* in a category with limits of shape **2**. */
-  def apply(L: Limits { val J: Discrete2.type }, X: L.C.Obj, Y: L.C.Obj)
+  def apply(L: Limits { val J: Discrete2.type }, X: L.C.Object, Y: L.C.Object)
     : Product { val C: L.C.type; val U1: X.type; val U2: Y.type } = {
     FromLimit(L.limit(Discrete2Diagram(L.C, X, Y)))
   }
@@ -102,8 +106,8 @@ object Product {
       L.leg[1]
     }
 
-    def pair[X: Obj as obj](f: X --> A1, g: X --> A2): X --> P = {
-      L.factor(PairCone(L.D, obj)(f, g))
+    def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P = {
+      L.factor(PairCone(L.D, C.Object[X])(f, g))
     }
   }
 
@@ -123,14 +127,17 @@ object Product {
     }
 
     def factor(K: Cone.Of[D.type]): K.Apex --> P.P = {
-      P.pair[K.Apex](K.leg[0], K.leg[1])(using K.X)
+      P.pair[K.Apex](K.leg[0], K.leg[1])(using K.X.U)
     }
   }
 
   /** The cone with apex *X* over a diagram of shape **2** whose legs are *f* and *g*. */
-  final class PairCone(tracked override val D: Functor { val C: Discrete2.type }, tracked override val X: D.D.Obj)(
-    f: D.D.-->[X.Self, D.F[0]],
-    g: D.D.-->[X.Self, D.F[1]],
+  final class PairCone(
+    tracked override val D: Functor { val C: Discrete2.type },
+    tracked override val X: D.D.Object,
+  )(
+    f: D.D.-->[X.A, D.F[0]],
+    g: D.D.-->[X.A, D.F[1]],
   ) extends Cone(D, X) {
     import D.D.-->
 
@@ -149,17 +156,17 @@ object Product {
   }
 
   /** The diagram (*X*,*Y*): **2** → **K** of two objects *X* and *Y* of **K**. */
-  final class Discrete2Diagram(tracked val K: Category, tracked val X: K.Obj, tracked val Y: K.Obj)
+  final class Discrete2Diagram(tracked val K: Category, tracked val X: K.Object, tracked val Y: K.Object)
       extends Functor(Discrete2, K) {
     import K.--> as ==>
     import Discrete2.-->
 
-    type Self = Components[X.Self, Y.Self]
+    type Self = Components[X.A, Y.A]
 
     def objects[A: Disc2]: F[A] is K.Obj = {
       A.index match {
-        case Disc2.Index.Zero => X
-        case Disc2.Index.One  => Y
+        case Disc2.Index.Zero => X.U
+        case Disc2.Index.One  => Y.U
       }
     }
 
@@ -185,7 +192,8 @@ abstract class Products(tracked override val K: Category) extends Endobifunctor(
   private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
   /** The product of *A* and *B*: a [[Product]] on *A* × *B*, with its projections and pairing. */
-  def product[A: Obj, B: Obj]: Product { val C: K.type; val U1: A is Obj; val U2: B is Obj; val U: F[A, B] is Obj }
+  def product[A: Obj, B: Obj]
+    : Product { val C: K.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B]; val U: K.ObjectOf[F[A, B]] }
 
   /** *f* × *g* = ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩
     */
@@ -260,13 +268,13 @@ object Products {
 
     type Self[A, B] = L.Lim[Components[A, B]]
 
-    def objects[A: Obj as first, B: Obj as second]: F[A, B] is Obj = {
-      L.limit(Discrete2Diagram(K, first, second)).X
+    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
+      L.limit(Discrete2Diagram(K, K.Object[A], K.Object[B])).X.U
     }
 
-    def product[A: Obj as first, B: Obj as second]
-      : Product { val C: K.type; val U1: A is Obj; val U2: B is Obj; val U: F[A, B] is Obj } = {
-      Product.FromLimit(L.limit(Discrete2Diagram(K, first, second)))
+    def product[A: Obj, B: Obj]
+      : Product { val C: K.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B]; val U: K.ObjectOf[F[A, B]] } = {
+      Product.FromLimit(L.limit(Discrete2Diagram(K, K.Object[A], K.Object[B])))
     }
   }
 }

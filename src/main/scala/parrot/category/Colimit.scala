@@ -6,13 +6,13 @@ package category
   * Represents a colimit (*X*, *ψ*), i.e. a cocone under *D*, where
   *   - [*φ*]: *X* → *Y* is the factorization of a cocone (*Y*, *φ*) under *D*
   */
-abstract class Colimit(tracked override val D: Functor, tracked override val X: D.D.Obj) extends Cocone(D, X) {
+abstract class Colimit(tracked override val D: Functor, tracked override val X: D.D.Object) extends Cocone(D, X) {
   import D.F as D
   import D.C as J
   import D.D as C
   import C.--> as ==>
 
-  private given ApexIsObj: Apex is C.Obj = X
+  private given ApexIsObj: Apex is C.Obj = X.U
 
   private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
 
@@ -28,7 +28,7 @@ abstract class Colimit(tracked override val D: Functor, tracked override val X: 
     /** [*φ*] ∘ *ψ*_*A* = *φ*_*A*
       */
     def universal[A: J.Obj](K: Cocone.Of[D.type])(using (D[A] ==> K.Apex) is Observable): Boolean = {
-      given (K.Apex is C.Obj) = K.X
+      given (K.Apex is C.Obj) = K.X.U
       (leg[A] >>> factor(K)) =?= K.leg[A]
     }
 
@@ -76,5 +76,5 @@ abstract class DiscreteColimits(
 
   /** The colimit colim *G* of a diagram *G*: **J** → **C**, with apex Colim[*F*] for the object map *F* of *G*. */
   override def colimit(G: Functor { val C: DiscreteColimits.this.J.type; val D: DiscreteColimits.this.C.type })
-    : Colimit.Of[G.type] { val X: Colim[G.F] is C.Obj }
+    : Colimit.Of[G.type] { val X: C.ObjectOf[Colim[G.F]] }
 }

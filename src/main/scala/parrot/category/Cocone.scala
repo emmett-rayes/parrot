@@ -7,7 +7,7 @@ package category
   *   - *X* is the apex, an object of **C**
   *   - *ψ*_*A*: *D*[*A*] → *X* is the leg at an object *A* of **J**
   */
-abstract class Cocone(tracked val D: Functor, tracked val X: D.D.Obj) extends caps.Pure {
+abstract class Cocone(tracked val D: Functor, tracked val X: D.D.Object) extends caps.Pure {
   import D.{F as D, map}
   import D.C as J
   import D.D as C
@@ -15,9 +15,9 @@ abstract class Cocone(tracked val D: Functor, tracked val X: D.D.Obj) extends ca
   import C.--> as ==>
 
   /** The apex *X*. */
-  final type Apex = X.Self
+  final type Apex = X.A
 
-  private given ApexIsObj: Apex is C.Obj              = X
+  private given ApexIsObj: Apex is C.Obj              = X.U
   private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
 
   /** *ψ*_*A*: *D*[*A*] → *X*
@@ -27,8 +27,8 @@ abstract class Cocone(tracked val D: Functor, tracked val X: D.D.Obj) extends ca
   def leg[A: J.Obj]: D[A] ==> Apex
 
   /** The cocone (*Y*, *h* ∘ *ψ*) induced by a morphism *h*: *X* → *Y*. */
-  final def induced[Y: C.Obj as obj](h: Apex ==> Y): Cocone.Of[D.type] { val X: obj.type } = {
-    new Cocone(D, obj) {
+  final def induced[Y: C.Obj](h: Apex ==> Y): Cocone.Of[D.type] { val X: C.ObjectOf[Y] } = {
+    new Cocone(D, C.Object[Y]) {
       def leg[A: J.Obj]: D[A] ==> Y = {
         Cocone.this.leg[A] >>> h
       }

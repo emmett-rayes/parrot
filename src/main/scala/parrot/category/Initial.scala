@@ -46,11 +46,11 @@ object Initial {
     * The initial object is the apex of *L*, and ¡ is the factorization through *L* of the cocone with apex *A*, which
     * has no legs.
     */
-  open class FromColimit(tracked val L: Colimit.Of[EmptyDiagram]) extends Initial(L.D.K, L.X) {
+  open class FromColimit(tracked val L: Colimit.Of[EmptyDiagram]) extends Initial(L.D.K, L.X.U) {
     import C.{Obj, -->}
 
-    def absurd[A: Obj as obj]: I --> A = {
-      L.factor(EmptyCocone(L.D, obj))
+    def absurd[A: Obj]: I --> A = {
+      L.factor(EmptyCocone(L.D, C.Object[A]))
     }
   }
 
@@ -59,7 +59,7 @@ object Initial {
     * The apex of the colimit is *I*, its cocones have no legs, and the factorization of the cocone with apex *A* is ¡:
     * *I* → *A*.
     */
-  final class AsColimit(tracked val I: Initial) extends Colimit(EmptyDiagram(I.C), I.U) {
+  final class AsColimit(tracked val I: Initial) extends Colimit(EmptyDiagram(I.C), I) {
     import I.C.-->
 
     def leg[A: Empty.Absurd]: Nothing --> I.I = {
@@ -67,7 +67,7 @@ object Initial {
     }
 
     def factor(K: Cocone.Of[D.type]): I.I --> K.Apex = {
-      I.absurd[K.Apex](using K.X)
+      I.absurd[K.Apex](using K.X.U)
     }
   }
 
@@ -75,7 +75,7 @@ object Initial {
     *
     * The empty cocone has no legs.
     */
-  final class EmptyCocone(tracked override val D: Functor { val C: Empty.type }, tracked override val X: D.D.Obj)
+  final class EmptyCocone(tracked override val D: Functor { val C: Empty.type }, tracked override val X: D.D.Object)
       extends Cocone(D, X) {
     import D.D.-->
 

@@ -8,24 +8,28 @@ package category
   *   - [*f*,*g*]: *S* → *X* is the copairing of *f*: *A*₁ → *X* and *g*: *A*₂ → *X*, the unique morphism with [*f*,*g*]
   *     ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
   */
-abstract class Coproduct(tracked val C: Category, tracked val U1: C.Obj, tracked val U2: C.Obj, tracked val U: C.Obj)
-    extends caps.Pure {
+abstract class Coproduct(
+  tracked val C: Category,
+  tracked val U1: C.Object,
+  tracked val U2: C.Object,
+  tracked val U: C.Object,
+) extends caps.Pure {
   import C.{Obj, -->, >>>}
 
   /** The first summand *A*₁. */
-  final type A1 = U1.Self
+  final type A1 = U1.A
 
   /** The second summand *A*₂. */
-  final type A2 = U2.Self
+  final type A2 = U2.A
 
   /** The coproduct *S*. */
-  final type S = U.Self
+  final type S = U.A
 
-  private given A1IsObj: (A1 is Obj) = U1
+  private given A1IsObj: (A1 is Obj) = U1.U
 
-  private given A2IsObj: (A2 is Obj) = U2
+  private given A2IsObj: (A2 is Obj) = U2.U
 
-  private given SIsObj: (S is Obj) = U
+  private given SIsObj: (S is Obj) = U.U
 
   /** The first injection *ι*₁: *A*₁ → *S*. */
   def inl: A1 --> S
@@ -82,7 +86,7 @@ object Coproduct {
   type Of[K <: Category] = Coproduct { val C: K }
 
   /** The coproduct of *X* and *Y* in a category with colimits of shape **2**. */
-  def apply(L: Colimits { val J: Discrete2.type }, X: L.C.Obj, Y: L.C.Obj)
+  def apply(L: Colimits { val J: Discrete2.type }, X: L.C.Object, Y: L.C.Object)
     : Coproduct { val C: L.C.type; val U1: X.type; val U2: Y.type } = {
     FromColimit(L.colimit(Discrete2Diagram(L.C, X, Y)))
   }
@@ -104,8 +108,8 @@ object Coproduct {
       L.leg[1]
     }
 
-    def copair[X: Obj as obj](f: A1 --> X, g: A2 --> X): S --> X = {
-      L.factor(CopairCocone(L.D, obj)(f, g))
+    def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X = {
+      L.factor(CopairCocone(L.D, C.Object[X])(f, g))
     }
   }
 
@@ -125,14 +129,17 @@ object Coproduct {
     }
 
     def factor(K: Cocone.Of[D.type]): S.S --> K.Apex = {
-      S.copair[K.Apex](K.leg[0], K.leg[1])(using K.X)
+      S.copair[K.Apex](K.leg[0], K.leg[1])(using K.X.U)
     }
   }
 
   /** The cocone with apex *X* under a diagram of shape **2** whose legs are *f* and *g*. */
-  final class CopairCocone(tracked override val D: Functor { val C: Discrete2.type }, tracked override val X: D.D.Obj)(
-    f: D.D.-->[D.F[0], X.Self],
-    g: D.D.-->[D.F[1], X.Self],
+  final class CopairCocone(
+    tracked override val D: Functor { val C: Discrete2.type },
+    tracked override val X: D.D.Object,
+  )(
+    f: D.D.-->[D.F[0], X.A],
+    g: D.D.-->[D.F[1], X.A],
   ) extends Cocone(D, X) {
     import D.D.-->
 
@@ -162,7 +169,7 @@ abstract class Coproducts(tracked override val K: Category) extends Endobifuncto
 
   /** The coproduct of *A* and *B*: a [[Coproduct]] on *A* + *B*, with its injections and copairing. */
   def coproduct[A: Obj, B: Obj]
-    : Coproduct { val C: K.type; val U1: A is Obj; val U2: B is Obj; val U: F[A, B] is Obj }
+    : Coproduct { val C: K.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B]; val U: K.ObjectOf[F[A, B]] }
 
   /** *f* + *g* = [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*]
     */
@@ -240,13 +247,13 @@ object Coproducts {
 
     type Self[A, B] = L.Colim[Components[A, B]]
 
-    def objects[A: Obj as first, B: Obj as second]: F[A, B] is Obj = {
-      L.colimit(Discrete2Diagram(K, first, second)).X
+    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
+      L.colimit(Discrete2Diagram(K, K.Object[A], K.Object[B])).X.U
     }
 
-    def coproduct[A: Obj as first, B: Obj as second]
-      : Coproduct { val C: K.type; val U1: A is Obj; val U2: B is Obj; val U: F[A, B] is Obj } = {
-      Coproduct.FromColimit(L.colimit(Discrete2Diagram(K, first, second)))
+    def coproduct[A: Obj, B: Obj]
+      : Coproduct { val C: K.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B]; val U: K.ObjectOf[F[A, B]] } = {
+      Coproduct.FromColimit(L.colimit(Discrete2Diagram(K, K.Object[A], K.Object[B])))
     }
   }
 }

@@ -72,7 +72,7 @@ object Total extends Category {
   }
 
   /** The pair type (*A*,*B*) as the product *A* × *B* of 𝒮. */
-  final class Tuple2IsProduct[A, B] extends Product(Total, Type.TIsType[A], Type.TIsType[B], Type.TIsType[(A, B)]) {
+  final class Tuple2IsProduct[A, B] extends Product(Total, Object[A], Object[B], Object[(A, B)]) {
     def fst: ((A, B)) -> A = {
       _._1
     }
@@ -113,8 +113,7 @@ object Total extends Category {
   }
 
   /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of 𝒮. */
-  final class EitherIsCoproduct[A, B]
-      extends Coproduct(Total, Type.TIsType[A], Type.TIsType[B], Type.TIsType[Either[A, B]]) {
+  final class EitherIsCoproduct[A, B] extends Coproduct(Total, Object[A], Object[B], Object[Either[A, B]]) {
     def inl: A -> Either[A, B] = {
       a => Left(a)
     }
@@ -167,7 +166,7 @@ object Total extends Category {
     * shape of **J**, so this one construction gives every limit of 𝒮.
     */
   final class LimitOf(tracked override val D: Functor { val D: Total.type })
-      extends Limit(D, Type.TIsType[LimitOf.Point.Of[D.type]]) {
+      extends Limit(D, D.D.Object[LimitOf.Point.Of[D.type]]) {
     import D.C as J
     import LimitOf.Point
 
@@ -227,7 +226,7 @@ object Total extends Category {
     */
   final class DiscreteLimitOf(
     tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },
-  ) extends Limit(D, Type.TIsType[[A] -> (A is D.C.Obj) ?-> D.F[A]]) {
+  ) extends Limit(D, D.D.Object[[A] -> (A is D.C.Obj) ?-> D.F[A]]) {
     import D.C as J
 
     def leg[A: J.Obj]: Apex -> D.F[A] = {
@@ -247,7 +246,7 @@ object Total extends Category {
     type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
 
     def limit(G: Functor { val C: DiscreteLimitsOf.this.J.type; val D: Total.type })
-      : Limit.Of[G.type] { val X: Lim[G.F] is C.Obj } = {
+      : Limit.Of[G.type] { val X: C.ObjectOf[Lim[G.F]] } = {
       DiscreteLimitOf(G)
     }
   }
@@ -296,7 +295,7 @@ object Total extends Category {
     * step looks at the shape of **J**, so this one construction gives every colimit of 𝒮.
     */
   final class ColimitOf(tracked override val D: Functor { val D: Total.type })
-      extends Colimit(D, Type.TIsType[ColimitOf.Point.Of[D.type]]) {
+      extends Colimit(D, D.D.Object[ColimitOf.Point.Of[D.type]]) {
     import D.C as J
     import ColimitOf.Point
 
@@ -355,7 +354,7 @@ object Total extends Category {
     */
   final class DiscreteColimitOf(
     tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },
-  ) extends Colimit(D, Type.TIsType[Sum[D.C.Obj, D.F]]) {
+  ) extends Colimit(D, D.D.Object[Sum[D.C.Obj, D.F]]) {
     import D.C as J
 
     def leg[A: J.Obj as obj]: D.F[A] -> Apex = {
@@ -375,7 +374,7 @@ object Total extends Category {
     type Colim[F[_]] = Sum[J.Obj, F]
 
     def colimit(G: Functor { val C: DiscreteColimitsOf.this.J.type; val D: Total.type })
-      : Colimit.Of[G.type] { val X: Colim[G.F] is C.Obj } = {
+      : Colimit.Of[G.type] { val X: C.ObjectOf[Colim[G.F]] } = {
       DiscreteColimitOf(G)
     }
   }

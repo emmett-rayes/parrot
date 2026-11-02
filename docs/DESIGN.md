@@ -52,9 +52,12 @@ Rejected:
   `objects`, an object its evidence `U`, a cone its apex `X`, and a class that needs a given declares one from them
   (`private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]`), refinements included. The
   only public givens are instances of type classes, next to their type class (`Type.TIsType`, `Eq`, `Observable`).
-- **A structure on an object takes it as a structure,** `Category.Object(C, U)`, written `K.Object`, so that a
-  refinement can ask for more: `Monoidal(K, U, T)` is on an `Object`, and `Cartesian` refines it to a `Terminal`, an
-  `Object` with `discard`, as it refines the endobifunctor `T` to `Products`.
+- **Every object a structure chooses or is on is a structure,** `Category.Object(C, U)`, written `K.Object`: one
+  encoding for all of them, which a refinement can ask more of: `Monoidal(K, U, T)` is on an `Object`, and `Cartesian`
+  refines it to a `Terminal`, an `Object` with `discard`, as it refines the endobifunctor `T` to `Products`. Only
+  `Object` and the objects that extend it (`Terminal`, `Initial`) take bare evidence, which is what they wrap.
+  `K.Object[A]` builds one from a context bound, and `K.ObjectOf[A]` refines one to a type, since in
+  `K.Object { val U: A is Obj }` the name `A` is the member of `Object`.
 - **Structures are abstract classes,** because a refinement passes arguments to its parent (`Promonad(K)` extends
   `Endoprofunctor(K, Total)`), which a trait cannot. Type classes without parameters that are not structures
   (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
@@ -100,6 +103,10 @@ Rejected:
 - bases as type parameters, which cannot be imported from and need `ValueOf` and casts to recover the base values;
 - the unit of a monoidal structure as bare evidence (`U: K.Obj`): `Obj` is an abstract type, which no class can
   extend, so no refinement could ask for a terminal object;
+- bare evidence for the objects that no refinement asks more of, such as the factors of a product or the apex of a
+  cone: shorter, but a second encoding of one concept;
+- refining an object by its type (`K.Object { type A = X }`): values conform to it, but its evidence keeps an
+  abstract `Self`, so `X is Obj` cannot be read back from it;
 - `Object` as a class nested in `Category`: a structure that extends it through a parameter (`C.Object`) is not an
   object of the argument (`Total.Object`), so a terminal object could not be passed as a unit;
 - object evidence as a type constructor (`type Obj[_]`, evidence `Obj[A]`), which would make the evidence of **2** a

@@ -45,11 +45,11 @@ object Terminal {
     * The terminal object is the apex of *L*, and ! is the factorization through *L* of the cone with apex *A*, which
     * has no legs.
     */
-  open class FromLimit(tracked val L: Limit.Of[EmptyDiagram]) extends Terminal(L.D.K, L.X) {
+  open class FromLimit(tracked val L: Limit.Of[EmptyDiagram]) extends Terminal(L.D.K, L.X.U) {
     import C.{Obj, -->}
 
-    def discard[A: Obj as obj]: A --> I = {
-      L.factor(EmptyCone(L.D, obj))
+    def discard[A: Obj]: A --> I = {
+      L.factor(EmptyCone(L.D, C.Object[A]))
     }
   }
 
@@ -58,7 +58,7 @@ object Terminal {
     * The apex of the limit is *I*, its cones have no legs, and the factorization of the cone with apex *A* is !: *A* →
     * *I*.
     */
-  final class AsLimit(tracked val T: Terminal) extends Limit(EmptyDiagram(T.C), T.U) {
+  final class AsLimit(tracked val T: Terminal) extends Limit(EmptyDiagram(T.C), T) {
     import T.C.-->
 
     def leg[A: Empty.Absurd]: T.I --> Nothing = {
@@ -66,7 +66,7 @@ object Terminal {
     }
 
     def factor(K: Cone.Of[D.type]): K.Apex --> T.I = {
-      T.discard[K.Apex](using K.X)
+      T.discard[K.Apex](using K.X.U)
     }
   }
 
@@ -74,7 +74,7 @@ object Terminal {
     *
     * The empty cone has no legs.
     */
-  final class EmptyCone(tracked override val D: Functor { val C: Empty.type }, tracked override val X: D.D.Obj)
+  final class EmptyCone(tracked override val D: Functor { val C: Empty.type }, tracked override val X: D.D.Object)
       extends Cone(D, X) {
     import D.D.-->
 

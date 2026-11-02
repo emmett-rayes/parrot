@@ -29,6 +29,14 @@ abstract class Category extends caps.Pure {
   /** Evidence that a type is an object of the category. */
   final type Object = Category.Object { val C: Category.this.type }
 
+  /** Refines `Object` to a specific type *X*. */
+  final type ObjectOf[X] = Object { val U: X is Obj }
+
+  /** The object *X* of the category, specified by its evidence. */
+  final def Object[X: Obj]: ObjectOf[X] = {
+    Category.Object(this, summon)
+  }
+
   /** The identity morphism *id*: *A* → *A*. */
   def identity[A: Obj]: A --> A
 
@@ -146,6 +154,7 @@ object Category {
     * [[Cartesian]] and [[Terminal]] for an example.
     */
   open class Object(tracked val C: Category, tracked val U: C.Obj) extends caps.Pure {
+
     /** The object *A*. */
     final type A = U.Self
   }

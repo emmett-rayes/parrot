@@ -166,7 +166,7 @@ object Fns extends Category {
   }
 
   /** The pair type (*A*,*B*) as the product *A* × *B* of [[Fns]], with projections and pairing as data. */
-  final class Tuple2IsProduct[A, B] extends Product(Fns, Type.TIsType[A], Type.TIsType[B], Type.TIsType[(A, B)]) {
+  final class Tuple2IsProduct[A, B] extends Product(Fns, Object[A], Object[B], Object[(A, B)]) {
     def fst: Fn[(A, B), A] = {
       Fn.Proj1()
     }
@@ -201,8 +201,7 @@ object Fns extends Category {
   }
 
   /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of [[Fns]], with injections and copairing as data. */
-  final class EitherIsCoproduct[A, B]
-      extends Coproduct(Fns, Type.TIsType[A], Type.TIsType[B], Type.TIsType[Either[A, B]]) {
+  final class EitherIsCoproduct[A, B] extends Coproduct(Fns, Object[A], Object[B], Object[Either[A, B]]) {
     def inl: Fn[A, Either[A, B]] = {
       Fn.Inl()
     }

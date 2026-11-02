@@ -123,8 +123,7 @@ object Partial extends Category {
   }
 
   /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of 𝒫. */
-  final class EitherIsCoproduct[A, B]
-      extends Coproduct(Partial, Type.TIsType[A], Type.TIsType[B], Type.TIsType[Either[A, B]]) {
+  final class EitherIsCoproduct[A, B] extends Coproduct(Partial, Object[A], Object[B], Object[Either[A, B]]) {
     def inl: A ~> Either[A, B] = {
       a => Left(a)
     }
@@ -142,7 +141,7 @@ object Partial extends Category {
   /** Pairs on 𝒫: a symmetric monoidal structure, but not a product. *π*₁ ∘ ⟨*f*,*g*⟩ diverges where *g* does, so it
     * equals *f* only where *g* terminates: the pairs of 𝒫 are its restriction products.
     */
-  object Product extends Symmetric(Partial, Category.Object(Partial, Type.TIsType[Unit]), Tuple2IsBifunctor) {
+  object Product extends Symmetric(Partial, Object[Unit], Tuple2IsBifunctor) {
     def braid[A: Type, B: Type]: (A, B) ~> (B, A) = {
       (a, b) => (b, a)
     }

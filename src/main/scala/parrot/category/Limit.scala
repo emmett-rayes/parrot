@@ -6,13 +6,13 @@ package category
   * Represents a limit (*X*, *ψ*), i.e. a cone over *D*, where
   *   - ⟨*φ*⟩: *Y* → *X* is the factorization of a cone (*Y*, *φ*) over *D*
   */
-abstract class Limit(tracked override val D: Functor, tracked override val X: D.D.Obj) extends Cone(D, X) {
+abstract class Limit(tracked override val D: Functor, tracked override val X: D.D.Object) extends Cone(D, X) {
   import D.F as D
   import D.C as J
   import D.D as C
   import C.--> as ==>
 
-  private given ApexIsObj: Apex is C.Obj = X
+  private given ApexIsObj: Apex is C.Obj = X.U
 
   private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
 
@@ -28,7 +28,7 @@ abstract class Limit(tracked override val D: Functor, tracked override val X: D.
     /** *ψ*_*A* ∘ ⟨*φ*⟩ = *φ*_*A*
       */
     def universal[A: J.Obj](K: Cone.Of[D.type])(using (K.Apex ==> D[A]) is Observable): Boolean = {
-      given (K.Apex is C.Obj) = K.X
+      given (K.Apex is C.Obj) = K.X.U
       (factor(K) >>> leg[A]) =?= K.leg[A]
     }
 
@@ -76,5 +76,5 @@ abstract class DiscreteLimits(
 
   /** The limit lim *G* of a diagram *G*: **J** → **C**, with apex Lim[*F*] for the object map *F* of *G*. */
   override def limit(G: Functor { val C: DiscreteLimits.this.J.type; val D: DiscreteLimits.this.C.type })
-    : Limit.Of[G.type] { val X: Lim[G.F] is C.Obj }
+    : Limit.Of[G.type] { val X: C.ObjectOf[Lim[G.F]] }
 }
