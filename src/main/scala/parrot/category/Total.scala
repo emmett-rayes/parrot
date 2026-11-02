@@ -204,12 +204,12 @@ object Total extends Category {
     }
   }
 
-  /** The limits of shape **J** in 𝒮: every diagram *D*: **J** → 𝒮 has the limit [[LimitOf]](*D*), so 𝒮 has limits of
-    * every shape.
+  /** The limits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the limit
+    * [[LimitOf]](*D*).
     */
-  final class LimitsOf(tracked override val J: Category) extends Limits(J, Total) {
-    def limit(D: Functor { val C: J.type; val D: Total.type }): Limit.Of[D.type] = {
-      LimitOf(D)
+  object Limits extends Limit.OfDiagram[[K <: Category] =>> Functor { val D: K }](Total) {
+    def limit(G: Functor { val D: Total.type }): Limit.Of[G.type] = {
+      LimitOf(G)
     }
   }
 
@@ -238,16 +238,24 @@ object Total extends Category {
     }
   }
 
-  /** The limits of a discrete shape **J** in 𝒮: the limit of a diagram with object map *F* is [[DiscreteLimitOf]], the
-    * type of families Lim[*F*] = ∏_*A* *F*[*A*].
+  /** The limits of the diagrams of a discrete shape **J** in 𝒮: the limit of a diagram with object map *F* is
+    * [[DiscreteLimitOf]], the type of families Lim[*F*] = ∏_*A* *F*[*A*].
+    *
+    * @note A method, not a class: the type of the diagrams depends on **J**, and the parent of a class cannot depend on
+    *   its parameters.
     */
-  final class DiscreteLimitsOf(tracked override val J: Category { type Self[A, B] <: A =:= B })
-      extends DiscreteLimits(J, Total) {
-    type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
+  def DiscreteLimitsOf(J: Category { type Self[A, B] <: A =:= B })
+    : Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }] {
+      val C: Total.type
+      type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
+    } = {
+    new Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }](Total) {
+      type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
 
-    def limit(G: Functor { val C: DiscreteLimitsOf.this.J.type; val D: Total.type })
-      : Limit.Of[G.type] { val X: C.ObjectOf[Lim[G.F]] } = {
-      DiscreteLimitOf(G)
+      def limit(G: Functor { val C: J.type; val D: Total.type })
+        : Limit.Of[G.type] { val X: G.D.ObjectOf[Lim[G.F]] } = {
+        DiscreteLimitOf(G)
+      }
     }
   }
 
@@ -333,12 +341,12 @@ object Total extends Category {
     }
   }
 
-  /** The colimits of shape **J** in 𝒮: every diagram *D*: **J** → 𝒮 has the colimit [[ColimitOf]](*D*), so 𝒮 has
-    * colimits of every shape.
+  /** The colimits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the colimit
+    * [[ColimitOf]](*D*).
     */
-  final class ColimitsOf(tracked override val J: Category) extends Colimits(J, Total) {
-    def colimit(D: Functor { val C: J.type; val D: Total.type }): Colimit.Of[D.type] = {
-      ColimitOf(D)
+  object Colimits extends Colimit.OfDiagram[[K <: Category] =>> Functor { val D: K }](Total) {
+    def colimit(G: Functor { val D: Total.type }): Colimit.Of[G.type] = {
+      ColimitOf(G)
     }
   }
 
@@ -366,16 +374,24 @@ object Total extends Category {
     }
   }
 
-  /** The colimits of a discrete shape **J** in 𝒮: the colimit of a diagram with object map *F* is
+  /** The colimits of the diagrams of a discrete shape **J** in 𝒮: the colimit of a diagram with object map *F* is
     * [[DiscreteColimitOf]], the type of points Colim[*F*] = Σ_*A* *F*[*A*].
+    *
+    * @note A method, not a class: the type of the diagrams depends on **J**, and the parent of a class cannot depend on
+    *   its parameters.
     */
-  final class DiscreteColimitsOf(tracked override val J: Category { type Self[A, B] <: A =:= B })
-      extends DiscreteColimits(J, Total) {
-    type Colim[F[_]] = Sum[J.Obj, F]
+  def DiscreteColimitsOf(J: Category { type Self[A, B] <: A =:= B })
+    : Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }] {
+      val C: Total.type
+      type Colim[F[_]] = Sum[J.Obj, F]
+    } = {
+    new Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }](Total) {
+      type Colim[F[_]] = Sum[J.Obj, F]
 
-    def colimit(G: Functor { val C: DiscreteColimitsOf.this.J.type; val D: Total.type })
-      : Colimit.Of[G.type] { val X: C.ObjectOf[Colim[G.F]] } = {
-      DiscreteColimitOf(G)
+      def colimit(G: Functor { val C: J.type; val D: Total.type })
+        : Colimit.Of[G.type] { val X: G.D.ObjectOf[Colim[G.F]] } = {
+        DiscreteColimitOf(G)
+      }
     }
   }
 }

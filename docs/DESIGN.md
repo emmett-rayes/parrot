@@ -160,26 +160,29 @@ Each structure sits at the lowest level where its laws can be stated.
 - **Comonoids** are the dual of monoids. Every object of a cartesian category is a comonoid in exactly one way; pairs in
   𝒫 have comonoids that programs do not preserve, which by Fox's theorem is why they are not products.
 - **Limits.** `Limit(D, X)` is a cone over a diagram *D* with apex *X* (`Cone`) through which every cone factors, and
-  `Limits(J, C)` gives one for every diagram of shape **J**. 𝒮 has all of them by one construction, `Total.LimitOf`: the
+  `Limit.OfDiagram[D](C)` gives one for every diagram of type *D*[**C**]: *D* is a type of diagrams indexed by their
+  target, so that the structure is on its category **C**, and contravariant, so that the limits of more diagrams serve
+  for fewer. 𝒮 has all of them by one construction, `Total.LimitOf`, which `Total.Limits` gives for every diagram: the
   product of the components is a polymorphic function type, since the objects are types, and the equalizer of the
   natural families is made by abstraction. Points are private to the construction, a class indexed by the diagram
   (`LimitOf.Point`), and only the factorization builds them, from the legs of a cone, so they are natural as long as the
   cones are lawful; to clients, who see points only through the legs, the abstract type is the limit.
-- **Limits of a discrete shape have a type of apexes.** `DiscreteLimits(J, C)` refines `Limits` for a shape whose
-  only morphisms are identities, stated as a bound (`J.Self[A, B] <: A =:= B`, which **2** and **0** satisfy), and
-  gives the apex of each limit as a type function `Lim[F]` of the diagram's object map. A functor preserves identities,
-  so a diagram of a discrete shape is determined by its objects, and the apex can be too; for any other shape it
-  cannot, since the limit depends on the morphisms. In 𝒮 (`Total.DiscreteLimitsOf`) every family of points is natural,
-  so the apex is the type of all families, without abstraction.
+- **Limits of a discrete shape have a type of apexes.** `Limit.OfDiscreteDiagram[D](C)` refines `OfDiagram` for the
+  diagrams of a shape whose only morphisms are identities, stated as a bound on their source (`Self[A, B] <: A =:= B`,
+  which **2** and **0** satisfy), and gives the apex of each limit as a type function `Lim[F]` of the diagram's object
+  map. A functor preserves identities, so a diagram of a discrete shape is determined by its objects, and the apex can
+  be too; for any other shape it cannot, since the limit depends on the morphisms. In 𝒮 (`Total.DiscreteLimitsOf(J)`, a
+  method, since its type of diagrams depends on **J**) every family of points is natural, so the apex is the type of all
+  families, without abstraction.
 - **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**:
-  `Cocone(D, X)`, `Colimit(D, X)` with `factor` out of its apex, `Colimits(J, C)` and `DiscreteColimits(J, C)` with the
-  apex `Colim[F]`. 𝒮 has all of them by the dual construction, `Total.ColimitOf`: the sum of the points is an
-  existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object *A*, a type that it
-  hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are private to the
-  construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a cocone, so glued points
-  are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the colimit. In a discrete
-  diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimitsOf`), and the factorization
-  applies the leg at the object of a point.
+  `Cocone(D, X)`, `Colimit(D, X)` with `factor` out of its apex, `Colimit.OfDiagram` and `Colimit.OfDiscreteDiagram`
+  with the apex `Colim[F]`. 𝒮 has all of them by the dual construction, `Total.ColimitOf` (`Total.Colimits`): the sum of
+  the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object
+  *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are
+  private to the construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a cocone,
+  so glued points are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the colimit.
+  In a discrete diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimitsOf`), and the
+  factorization applies the leg at the object of a point.
 - **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` is an object with `discard` (!);
   `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of the empty diagram
   and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit. `Products(C)`, the
@@ -220,15 +223,20 @@ Rejected:
   `Products`, and `Cocartesian` with injections, copairing and ¡ of its own;
 - colimits as limits in **C**ᵒᵖ, whose legs and factorizations are morphisms of **C**ᵒᵖ that every client would have
   to reverse;
-- products from any limits of shape **2** (`Limits(Discrete2, C)`): the apex of a limit is a type of each limit, not a
-  type constructor, so it cannot be the tensor that monoidal signatures apply to two types; `DiscreteLimits` gives the
-  apex as a type function instead;
+- products from any limits of shape **2** (`Limit.OfDiagram[Discrete2Diagram.Of]`): the apex of a limit is a type of
+  each limit, not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types;
+  `OfDiscreteDiagram` gives the apex as a type function instead;
 - the apex of a cone as a type member with evidence, which an implementation defines in its body: it lets a limit of 𝒮
   nest its type of points in itself, but every other cone restates a parameter as two members, and the apex of a cone is
   what it is on, like the object of a terminal object;
-- a type function of the object map as the apex of every `Limits`: the limit of a shape with morphisms depends on them,
-  and in 𝒮 a shared type of points would let a point natural for one diagram reach the legs of another with the same
-  objects;
+- limits of a shape, `Limits(J, C)` with a limit of every diagram **J** → **C**: clients need the limits of one kind of
+  diagram, the empty one or the pairs of objects, and 𝒮 has the limits of every diagram, of any shape;
+- a first-order type of diagrams, `OfDiagram[D]` without its category: the type parameters of a class cannot mention its
+  parameters, so it could not say that the diagrams land in **C**, and clients that build a diagram would need the
+  category separately;
+- a type function of the object map as the apex of every `OfDiagram`: the limit of a shape with morphisms depends on
+  them, and in 𝒮 a shared type of points would let a point natural for one diagram reach the legs of another with the
+  same objects;
 - `fst`, `snd` and `pair` on `Products`, as primitives with `product` a view assembled from them or as forwarders to
   `product`: they restate at every two objects what a `Product` is, and their clients work in a `Cartesian`;
 - a Church-encoded case analysis on the objects of **2** (`fold[R[_]]`), which needs a type lambda at every use;

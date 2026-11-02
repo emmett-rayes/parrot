@@ -35,8 +35,8 @@ object Terminal {
   /** The terminal objects of **K**. */
   type Of[K <: Category] = Terminal { val C: K }
 
-  /** The terminal object of a category with limits of the empty shape: the limit of the empty diagram. */
-  def apply(L: Limits { val J: Empty.type }): Of[L.C.type] = {
+  /** The terminal object of a category with a limit of the empty diagram: that limit. */
+  def apply(L: Limit.OfDiagram[EmptyDiagram.Of]): Of[L.C.type] = {
     FromLimit(L.limit(EmptyDiagram(L.C)))
   }
 
@@ -98,5 +98,11 @@ object Terminal {
     def map[A: Absurd, B: Absurd](f: A --> B): Nothing ==> Nothing = {
       A.absurd
     }
+  }
+
+  object EmptyDiagram {
+
+    /** Refines `EmptyDiagram` to a specific category **K**. */
+    type Of[K <: Category] = EmptyDiagram { val K: K }
   }
 }

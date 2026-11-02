@@ -43,38 +43,42 @@ object Colimit {
 
   /** Refines `Colimit` to a specific functor **F**. */
   type Of[F <: Functor] = Colimit { val D: F }
-}
 
-/** Colimits of shape **J** in a category **C**.
-  *
-  * Represents a category **C** with colimits of shape **J**, where
-  *   - colim *D* is a colimit of each diagram *D*: **J** → **C**
-  */
-abstract class Colimits(tracked val J: Category, tracked val C: Category) extends caps.Pure {
+  /** Colimits of the diagrams of type *D* in a category **C**.
+    *
+    * Represents a category **C** with a colimit of each diagram of type *D*[**C**], where
+    *   - colim *G* is a colimit of a diagram *G* of type *D*[**C**]
+    *
+    * *D*[*K*] is a type of diagrams into a category *K*, and *D* is contravariant: colimits of the diagrams of type *D*
+    * are colimits of the diagrams of any subtype, so the colimits of every diagram in 𝒮 ([[Total.Colimits]]) are its
+    * colimits of the empty diagram.
+    */
+  abstract class OfDiagram[-D[K <: Category] <: Functor { val D: K }](tracked val C: Category) extends caps.Pure {
 
-  /** The colimit colim *D* of a diagram *D*: **J** → **C**. */
-  def colimit(D: Functor { val C: J.type; val D: Colimits.this.C.type }): Colimit.Of[D.type]
-}
+    /** The colimit colim *G* of a diagram *G*. */
+    def colimit(G: D[C.type]): Colimit.Of[G.type]
+  }
 
-/** Colimits of a discrete shape **J** in a category **C**.
-  *
-  * Represents a category **C** with colimits of a shape **J** whose only morphisms are identities, where
-  *   - Colim[*F*] is the apex of the colimit of every diagram with object map *F*
-  *   - colim *G* is a colimit of each diagram *G*: **J** → **C** with object map *F*, with apex Colim[*F*]
-  *
-  * On a discrete shape, a diagram is determined by its objects, since a functor maps identities to identities, so the
-  * apex of its colimit can be a type function of its object map. That makes the colimits of the diagrams of objects
-  * *A* and *B* one type constructor, which a tensor can be ([[Coproducts.FromColimits]]).
-  */
-abstract class DiscreteColimits(
-  tracked override val J: Category { type Self[A, B] <: A =:= B },
-  tracked override val C: Category,
-) extends Colimits(J, C) {
+  /** Colimits of the diagrams of type *D* in a category **C**, of a discrete shape.
+    *
+    * Represents a category **C** with a colimit of each diagram of type *D*[**C**], of a shape whose only morphisms are
+    * identities, where
+    *   - Colim[*F*] is the apex of the colimit of every diagram with object map *F*
+    *   - colim *G* is a colimit of a diagram *G* of type *D*[**C**], with apex Colim[*F*] for the object map *F* of *G*
+    *
+    * On a discrete shape, a diagram is determined by its objects, since a functor maps identities to identities, so the
+    * apex of its colimit can be a type function of its object map. That makes the colimits of the diagrams of objects
+    * *A* and *B* one type constructor, which a tensor can be ([[Coproducts.FromColimits]]).
+    */
+  abstract class OfDiscreteDiagram[
+    -D[K <: Category] <: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: K },
+  ](tracked override val C: Category)
+      extends OfDiagram[D](C) {
 
-  /** The apex Colim[*F*] of the colimit of a diagram with object map *F*. */
-  type Colim[F[_]]
+    /** The apex Colim[*F*] of the colimit of a diagram with object map *F*. */
+    type Colim[F[_]]
 
-  /** The colimit colim *G* of a diagram *G*: **J** → **C**, with apex Colim[*F*] for the object map *F* of *G*. */
-  override def colimit(G: Functor { val C: DiscreteColimits.this.J.type; val D: DiscreteColimits.this.C.type })
-    : Colimit.Of[G.type] { val X: C.ObjectOf[Colim[G.F]] }
+    /** The colimit colim *G* of a diagram *G*, with apex Colim[*F*] for the object map *F* of *G*. */
+    override def colimit(G: D[C.type]): Colimit.Of[G.type] { val X: G.D.ObjectOf[Colim[G.F]] }
+  }
 }

@@ -43,38 +43,42 @@ object Limit {
 
   /** Refines `Limit` to a specific functor **F**. */
   type Of[F <: Functor] = Limit { val D: F }
-}
 
-/** Limits of shape **J** in a category **C**.
-  *
-  * Represents a category **C** with limits of shape **J**, where
-  *   - lim *D* is a limit of each diagram *D*: **J** → **C**
-  */
-abstract class Limits(tracked val J: Category, tracked val C: Category) extends caps.Pure {
+  /** Limits of the diagrams of type *D* in a category **C**.
+    *
+    * Represents a category **C** with a limit of each diagram of type *D*[**C**], where
+    *   - lim *G* is a limit of a diagram *G* of type *D*[**C**]
+    *
+    * *D*[*K*] is a type of diagrams into a category *K*, and *D* is contravariant: limits of the diagrams of type *D*
+    * are limits of the diagrams of any subtype, so the limits of every diagram in 𝒮 ([[Total.Limits]]) are its limits
+    * of the empty diagram.
+    */
+  abstract class OfDiagram[-D[K <: Category] <: Functor { val D: K }](tracked val C: Category) extends caps.Pure {
 
-  /** The limit lim *D* of a diagram *D*: **J** → **C**. */
-  def limit(D: Functor { val C: J.type; val D: Limits.this.C.type }): Limit.Of[D.type]
-}
+    /** The limit lim *G* of a diagram *G*. */
+    def limit(G: D[C.type]): Limit.Of[G.type]
+  }
 
-/** Limits of a discrete shape **J** in a category **C**.
-  *
-  * Represents a category **C** with limits of a shape **J** whose only morphisms are identities, where
-  *   - Lim[*F*] is the apex of the limit of every diagram with object map *F*
-  *   - lim *G* is a limit of each diagram *G*: **J** → **C** with object map *F*, with apex Lim[*F*]
-  *
-  * On a discrete shape, a diagram is determined by its objects, since a functor maps identities to identities, so the
-  * apex of its limit can be a type function of its object map. That makes the limits of the diagrams of objects *A*
-  * and *B* one type constructor, which a tensor can be ([[Products.FromLimits]]).
-  */
-abstract class DiscreteLimits(
-  tracked override val J: Category { type Self[A, B] <: A =:= B },
-  tracked override val C: Category,
-) extends Limits(J, C) {
+  /** Limits of the diagrams of type *D* in a category **C**, of a discrete shape.
+    *
+    * Represents a category **C** with a limit of each diagram of type *D*[**C**], of a shape whose only morphisms are
+    * identities, where
+    *   - Lim[*F*] is the apex of the limit of every diagram with object map *F*
+    *   - lim *G* is a limit of a diagram *G* of type *D*[**C**], with apex Lim[*F*] for the object map *F* of *G*
+    *
+    * On a discrete shape, a diagram is determined by its objects, since a functor maps identities to identities, so the
+    * apex of its limit can be a type function of its object map. That makes the limits of the diagrams of objects *A*
+    * and *B* one type constructor, which a tensor can be ([[Products.FromLimits]]).
+    */
+  abstract class OfDiscreteDiagram[
+    -D[K <: Category] <: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: K },
+  ](tracked override val C: Category)
+      extends OfDiagram[D](C) {
 
-  /** The apex Lim[*F*] of the limit of a diagram with object map *F*. */
-  type Lim[F[_]]
+    /** The apex Lim[*F*] of the limit of a diagram with object map *F*. */
+    type Lim[F[_]]
 
-  /** The limit lim *G* of a diagram *G*: **J** → **C**, with apex Lim[*F*] for the object map *F* of *G*. */
-  override def limit(G: Functor { val C: DiscreteLimits.this.J.type; val D: DiscreteLimits.this.C.type })
-    : Limit.Of[G.type] { val X: C.ObjectOf[Lim[G.F]] }
+    /** The limit lim *G* of a diagram *G*, with apex Lim[*F*] for the object map *F* of *G*. */
+    override def limit(G: D[C.type]): Limit.Of[G.type] { val X: G.D.ObjectOf[Lim[G.F]] }
+  }
 }

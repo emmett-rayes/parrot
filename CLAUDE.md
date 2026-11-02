@@ -115,7 +115,8 @@ warning-free.
 One file per structure in `src/main/scala/parrot/category/`; the instances on 𝒮 and 𝒫 are in `Total.scala` and
 `Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
 family of structures shares its member's file: `Products` is in `Product.scala` and `Coproducts` in `Coproduct.scala`,
-`Limits` and `DiscreteLimits` in `Limit.scala`, `Colimits` and `DiscreteColimits` in `Colimit.scala`.
+and the limits of a type of diagrams are in `Limit`'s companion (`Limit.OfDiagram`, `Limit.OfDiscreteDiagram`), the
+colimits in `Colimit`'s.
 
 ## `parrot.parser`
 
@@ -209,7 +210,8 @@ family of structures shares its member's file: `Products` is in `Product.scala` 
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
 - **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
   passes to its parent (the points of `Total.LimitOf`) goes into the companion, indexed by the parameter it depends on
-  (`LimitOf.Point.Of[D.type]`).
+  (`LimitOf.Point.Of[D.type]`). Nor can its type arguments name the class's parameters: an instance whose type of
+  diagrams depends on a parameter is a method returning an anonymous instance (`Total.DiscreteLimitsOf(J)`).
 - **`export F.K`** creates a stable alias: imports from it and singleton chains keep working.
 - **Same-named extensions from two imports overload** by the receiver's type, and extensions are also found through a
   path-dependent type's prefix (`K.Hom` finds `K.>>>` without an import). Where one value is an arrow of two

@@ -85,9 +85,9 @@ object Coproduct {
   /** The coproducts of the category **K**. */
   type Of[K <: Category] = Coproduct { val C: K }
 
-  /** The coproduct of *X* and *Y* in a category with colimits of shape **2**. */
-  def apply(L: Colimits { val J: Discrete2.type }, X: L.C.Object, Y: L.C.Object)
-    : Coproduct { val C: L.C.type; val U1: X.type; val U2: Y.type } = {
+  /** The coproduct of *X* and *Y* in a category with colimits of the diagrams of shape **2**. */
+  def apply(L: Colimit.OfDiagram[Discrete2Diagram.Of], X: L.C.Object, Y: L.C.Object)
+    : Of[L.C.type] { val U1: X.type; val U2: Y.type } = {
     FromColimit(L.colimit(Discrete2Diagram(L.C, X, Y)))
   }
 
@@ -231,8 +231,8 @@ object Coproducts {
   /** The binary coproducts of a category with discrete colimits of shape **2**: the colimits of the diagrams
     * (*A*,*B*).
     */
-  def apply(L: DiscreteColimits { val J: Discrete2.type })
-    : Coproducts { val K: L.C.type; type Self[A, B] = L.Colim[Components[A, B]] } = {
+  def apply(L: Colimit.OfDiscreteDiagram[Discrete2Diagram.Of])
+    : Of[L.C.type] { type Self[A, B] = L.Colim[Components[A, B]] } = {
     FromColimits(L)
   }
 
@@ -242,7 +242,7 @@ object Coproducts {
     * because the shape is discrete, and its injections and copairing are those of the colimit
     * ([[Coproduct.FromColimit]]).
     */
-  open class FromColimits(tracked val L: DiscreteColimits { val J: Discrete2.type }) extends Coproducts(L.C) {
+  open class FromColimits(tracked val L: Colimit.OfDiscreteDiagram[Discrete2Diagram.Of]) extends Coproducts(L.C) {
     import K.Obj
 
     type Self[A, B] = L.Colim[Components[A, B]]

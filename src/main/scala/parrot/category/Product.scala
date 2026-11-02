@@ -84,9 +84,9 @@ object Product {
   /** The products of the category **K**. */
   type Of[K <: Category] = Product { val C: K }
 
-  /** The product of *X* and *Y* in a category with limits of shape **2**. */
-  def apply(L: Limits { val J: Discrete2.type }, X: L.C.Object, Y: L.C.Object)
-    : Product { val C: L.C.type; val U1: X.type; val U2: Y.type } = {
+  /** The product of *X* and *Y* in a category with limits of the diagrams of shape **2**. */
+  def apply(L: Limit.OfDiagram[Discrete2Diagram.Of], X: L.C.Object, Y: L.C.Object)
+    : Of[L.C.type] { val U1: X.type; val U2: Y.type } = {
     FromLimit(L.limit(Discrete2Diagram(L.C, X, Y)))
   }
 
@@ -174,6 +174,12 @@ object Product {
       f.substituteCo[[T] =>> F[A] ==> F[T]](K.identity[F[A]](using objects[A]))
     }
   }
+
+  object Discrete2Diagram {
+
+    /** Refines `Discrete2Diagram` to a specific category **K**. */
+    type Of[K <: Category] = Discrete2Diagram { val K: K }
+  }
 }
 
 /** A binary product structure on a category **K**.
@@ -253,8 +259,8 @@ object Products {
   type Of[K <: Category] = Products { val K: K }
 
   /** The binary products of a category with discrete limits of shape **2**: the limits of the diagrams (*A*,*B*). */
-  def apply(L: DiscreteLimits { val J: Discrete2.type })
-    : Products { val K: L.C.type; type Self[A, B] = L.Lim[Components[A, B]] } = {
+  def apply(L: Limit.OfDiscreteDiagram[Discrete2Diagram.Of])
+    : Of[L.C.type] { type Self[A, B] = L.Lim[Components[A, B]] } = {
     FromLimits(L)
   }
 
@@ -263,7 +269,7 @@ object Products {
     * The product *A* × *B* is the apex Lim[(*A*,*B*)] of the limit of the diagram (*A*,*B*), a type constructor
     * because the shape is discrete, and its projections and pairing are those of the limit ([[Product.FromLimit]]).
     */
-  open class FromLimits(tracked val L: DiscreteLimits { val J: Discrete2.type }) extends Products(L.C) {
+  open class FromLimits(tracked val L: Limit.OfDiscreteDiagram[Discrete2Diagram.Of]) extends Products(L.C) {
     import K.Obj
 
     type Self[A, B] = L.Lim[Components[A, B]]
