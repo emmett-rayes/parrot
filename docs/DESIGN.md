@@ -164,9 +164,13 @@ Each structure sits at the lowest level where its laws can be stated.
   so the apex is the type of all families, without abstraction.
 - **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**: `Cocone(D)`,
   `Colimit(D)` with `factor` out of its apex, `Colimits(J, C)` and `DiscreteColimits(J, C)` with the apex
-  `Colim[F]`. In 𝒮, the colimit of a discrete diagram is the sum of its points (`Total.DiscreteColimitsOf`):
-  `Total.Sum[O, F]` is a point of *F*[*A*] together with the evidence for its object *A*, a type that it hides, and the
-  factorization applies the leg at that object. No two points are identified, so the sum needs no quotient.
+  `Colim[F]`. 𝒮 has all of them by the dual construction, `Total.ColimitOf`: the sum of the points is an existential
+  type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object *A*, a type that it hides,
+  and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are private to the colimit and
+  only the factorization reads them, through the legs of a cocone, so glued points are indistinguishable as long as
+  the cocones are lawful; to clients, the abstract type is the colimit. In a discrete diagram no two points are glued,
+  so the colimit is the sum itself (`Total.DiscreteColimitsOf`), and the factorization applies the leg at the object
+  of a point.
 - **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` is an object with `discard` (!);
   `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of the empty diagram
   and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit. `Products(C)`, the

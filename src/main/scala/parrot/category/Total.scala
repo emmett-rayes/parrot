@@ -279,6 +279,61 @@ object Total extends Category {
     }
   }
 
+  /** The colimit of a diagram *D*: **J** → 𝒮: the points of *D*, glued along its morphisms.
+    *
+    * Represents the colimit (*X*, *ψ*), where
+    *   - *X* is the type of glued points (*A*, *x*), a point *x* of *D*[*A*] at one object *A* of **J**, with
+    *     (*A*, *x*) = (*B*, *D*(*f*)(*x*)) for every *f*: *A* → *B* of **J** ([[Point]])
+    *   - *ψ*_*A*(*x*) = (*A*, *x*): the leg at *A* tags a point with *A*
+    *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*): a cocone (*Y*, *φ*) factors through its leg at the object of a point
+    *
+    * This is the construction of colimits from coproducts and coequalizers. The points at all objects are the sum
+    * Σ_*A* *D*[*A*], which exists in 𝒮 because its objects are types: it is an existential type ([[Sum]]). The glued
+    * points are a quotient of the sum, the coequalizer of (*f*, *x*) ↦ (*A*, *x*) and (*f*, *x*) ↦ (*B*, *D*(*f*)(*x*)),
+    * and Scala has no quotient types; [[Point]] makes the quotient by abstraction (tutorial, §7.6). Neither step looks
+    * at the shape of **J**, so this one construction gives every colimit of 𝒮.
+    */
+  final class ColimitOf(tracked override val D: Functor { val D: Total.type }) extends Colimit(D) {
+    import D.C as J
+
+    /** A point of the colimit: a point of the diagram at one object, where `sum` is (*A*, *x*), up to gluing.
+      *
+      * The representation holds the object of a point, so it tells glued points apart. It is private to the colimit,
+      * with the constructor: the only operation that builds points is [[leg]], and the only one that reads them is
+      * [[factor]], through the legs of a cocone, which agree on glued points by [[Cocone.CoconeLaws.commutes]]. So no
+      * client can tell glued points apart, and `Point` is, to them, the quotient of the sum by the gluing: by
+      * representation independence, as for any abstract type (tutorial, §7.6).
+      *
+      * @note The gluing is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
+      *   cocones are lawful, and it is the cocone law of the colimit itself, *ψ*_*B* ∘ *D*(*f*) = *ψ*_*A*, at each
+      *   point.
+      */
+    final class Point private[ColimitOf] (private[ColimitOf] val sum: Sum[J.Obj, D.F]) extends caps.Pure
+
+    type Apex = Point
+
+    def apex: Point is Type = {
+      Type.TIsType
+    }
+
+    def leg[A: J.Obj as obj]: D.F[A] -> Point = {
+      x => Point(Sum(obj, x))
+    }
+
+    def factor(K: Cocone { val D: ColimitOf.this.D.type }): Point -> K.Apex = {
+      p => K.leg[p.sum.A](using p.sum.obj)(p.sum.at)
+    }
+  }
+
+  /** The colimits of shape **J** in 𝒮: every diagram *D*: **J** → 𝒮 has the colimit [[ColimitOf]](*D*), so 𝒮 has
+    * colimits of every shape.
+    */
+  final class ColimitsOf(tracked override val J: Category) extends Colimits(J, Total) {
+    def colimit(D: Functor { val C: J.type; val D: Total.type }): Colimit.Of[D.type] = {
+      ColimitOf(D)
+    }
+  }
+
   /** The colimit of a diagram *D*: **J** → 𝒮 of a discrete shape: the sum of the points of *D*.
     *
     * Represents the colimit (*X*, *ψ*), where
@@ -286,9 +341,8 @@ object Total extends Category {
     *   - *ψ*_*A*(*x*) = (*A*, *x*): the leg at *A* tags a point with *A*
     *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*): a cocone (*Y*, *φ*) factors through its leg at the object of a point
     *
-    * The only morphisms of **J** are identities, so no two points are identified and the colimit is the sum itself:
-    * its apex depends only on the objects of *D*. A shape with morphisms would need a quotient, which 𝒮 does not have
-    * (tutorial, chapter 7).
+    * The only morphisms of **J** are identities, so no two points are glued and the colimit is the sum itself: unlike
+    * [[ColimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
     */
   final class DiscreteColimitOf(
     tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },

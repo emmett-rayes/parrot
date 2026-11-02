@@ -1927,7 +1927,7 @@ In Set, every equivalence relation gives a quotient: the set A/~ of equivalence 
 
 A cautionary example from the standard library makes the second point concrete. Scala's immutable `Set` has an `equals` that compares elements, so `Set(1, 2) == Set(2, 1)` is `true`. But the small sets of up to four elements remember the order of insertion, so `Set(1, 2).toList` and `Set(2, 1).toList` are different lists **[Standard: behavior of the standard library's small sets, from memory]**. Some programs can therefore tell two `==`-equal sets apart. In the terms of section 2.3, `Set`'s `equals` is a custom equality coarser than observational equality, and `Set` is not a data type in our sense. It is also not a quotient type, because its own operations observe the representation.
 
-Not every colimit needs a quotient. In Set, the colimit of a diagram D : 𝒥 → Set is the disjoint union of the sets D(A), modulo x ~ D(f)(x) for every arrow f : A → B. A shape without arrows other than identities identifies nothing, so the colimit is the disjoint union itself, which 𝒮 has: a point of D(A) tagged with its object A, `Total.Sum`, whose type hides A (`Total.DiscreteColimitsOf`). The coproducts of chapter 14 are such colimits (section 14.6).
+Not every colimit needs a quotient. In Set, the colimit of a diagram D : 𝒥 → Set is the disjoint union of the sets D(A), modulo x ~ D(f)(x) for every arrow f : A → B. A shape without arrows other than identities identifies nothing, so the colimit is the disjoint union itself, which 𝒮 has: a point of D(A) tagged with its object A, `Total.Sum`, whose type hides A (`Total.DiscreteColimitsOf`). The coproducts of chapter 14 are such colimits (section 14.6). The colimits of other shapes need the quotient, which section 7.6 makes by abstraction.
 
 ### 7.4 Workaround 1: setoids
 
@@ -1983,6 +1983,8 @@ object finite:
 ```
 
 The obligation is precise: every exported operation must give equivalent results on equivalent inputs. `union`, `contains` and `flatMapSet` do. A general `fold` would not, because a fold over the underlying list sees the order; a fold is safe only with a commutative and idempotent combining operation, which is again a law the caller must establish. With this discipline, `FinSet[A]` is observationally the type of finite sets of `A`, an object of 𝒮 that plays the role of the quotient. **[Standard: abstraction theorem, from memory; assumed for Scala as part of A2]** And coherence is restored: `FinSet[A]` has exactly one equality, the one that means what the type is meant to mean.
+
+Abstraction also gives every colimit of 𝒮 at once, the colimits whose construction in Set needs a quotient: coequalizers, pushouts, and the colimit of any diagram D : 𝒥 → 𝒮 (`Total.ColimitOf`), dually to the limits of section 6.5. The disjoint union of the sets D(A) is the sum of section 7.3, `Total.Sum`, and the quotient is the abstract type of its points: the constructor and the representation are private to the colimit, the only operation that builds a point is a leg, which tags a point of D(A) with A, and the only operation that reads one is the factorization of a cocone, which applies the cocone's leg at the object of the point. The legs of a cocone agree on glued points by the cocone law, φ_B(D(f)(x)) = φ_A(x), and clients observe points only through cocones, so to them the abstract type is the quotient, and the construction does not depend on the shape of 𝒥. Its obligation is weaker than that of `FinSet`, whose module reads every value itself: here clients supply the cocones, and a cocone that is not lawful observes the representation, so glued points are indistinguishable only through lawful cocones **[Convention]**.
 
 ### 7.7 Worked example: finitely branching relations
 
@@ -2799,7 +2801,7 @@ def below(a: Int, b: Int): Boolean = join(a, b) == b
 
 ### 14.8 What is missing
 
-𝒮 has finite products, finite coproducts, exponentials, a natural numbers object (chapter 16) and initial algebras of many functors. It has no subset or quotient types, so the constructions that need them have no representing type in general: equalizers and pullbacks (chapter 6), coequalizers (chapter 7). Every limit, equalizers and pullbacks among them, still exists uniformly by abstraction, for lawful cones (section 6.5). It also lacks a **subobject classifier**, an object that classifies all subsets: `Boolean` classifies only the decidable ones. So 𝒮 is not a **topos**, the kind of category that behaves most like Set.
+𝒮 has finite products, finite coproducts, exponentials, a natural numbers object (chapter 16) and initial algebras of many functors. It has no subset or quotient types, so the constructions that need them have no representing type in general: equalizers and pullbacks (chapter 6), coequalizers (chapter 7). Every limit and every colimit, equalizers and coequalizers among them, still exists uniformly by abstraction, for lawful cones and cocones (sections 6.5 and 7.6). It also lacks a **subobject classifier**, an object that classifies all subsets: `Boolean` classifies only the decidable ones. So 𝒮 is not a **topos**, the kind of category that behaves most like Set.
 
 | Construction | Set | 𝒮 | 𝒫 |
 | --- | --- | --- | --- |
@@ -2808,7 +2810,7 @@ def below(a: Int, b: Int): Boolean = join(a, b) == b
 | coproducts | yes | `Either` | `Either` |
 | exponentials | yes | function types | not in the sense of section 14.1 |
 | equalizers, pullbacks | yes | by abstraction, `Total.LimitOf` (section 6.5); no representing type in general (chapter 6) | — |
-| coequalizers | yes | no uniform construction (chapter 7) | — |
+| coequalizers, pushouts | yes | by abstraction, `Total.ColimitOf` (section 7.6); no representing type in general (chapter 7) | — |
 | subobject classifier | yes | no; `Boolean` classifies decidable subsets only | no |
 | polymorphic types as ends | no counterpart in the same form | yes (chapter 9) | yes |
 
@@ -3787,7 +3789,7 @@ With effects, more changes. Effectful arrows run side by side only in an order, 
 
 ### 21.4 What is lost
 
-Subset types and quotient types are not available as type formers, so equalizers, pullbacks and coequalizers have no representing type in general, limits exist uniformly only by abstraction (section 6.5), and categories whose homs are subsets or quotients, such as lawful lenses, monoid homomorphisms and Rel, are not Scala categories as they stand (chapters 6 and 7). Functors and other maps that exist only by non-constructive arguments have no Scala counterpart (chapter 5). Objects that are values need an encoding (chapter 8). Polymorphism over kinds is missing, so each kind of object needs its own class (chapter 10).
+Subset types and quotient types are not available as type formers, so equalizers, pullbacks and coequalizers have no representing type in general, limits and colimits exist uniformly only by abstraction (sections 6.5 and 7.6), and categories whose homs are subsets or quotients, such as lawful lenses, monoid homomorphisms and Rel, are not Scala categories as they stand (chapters 6 and 7). Functors and other maps that exist only by non-constructive arguments have no Scala counterpart (chapter 5). Objects that are values need an encoding (chapter 8). Polymorphism over kinds is missing, so each kind of object needs its own class (chapter 10).
 
 General recursion is lost from 𝒮: a bicartesian closed category with fixed points for all arrows collapses (Proposition 14.3), so 𝒮 has only guarded fixed points, and unguarded ones live in 𝒫, which in turn has no products and no terminal object. In a strict language, fixed points over products are nearly useless, since computing one requires it first (section 19.4).
 
@@ -3823,7 +3825,8 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Monoidal, symmetric, cartesian, cocartesian, closed structure | yes | yes | yes | `Monoidal` … `Closed` | [Tested] | 14 |
 | Joins; semilattices | yes | yes | yes | `Semilattice` | [Tested] | 14, 15 |
 | Equalizers, pullbacks, all limits | yes | by abstraction | yes | `Total.LimitOf`, for lawful cones | [Convention]; representing types [Open] | 6 |
-| Coequalizers, quotients | yes | no uniform construction | by setoids, canonical forms, abstraction | — | per workaround | 7 |
+| Coequalizers, pushouts, all colimits | yes | by abstraction | yes | `Total.ColimitOf`, for lawful cocones | [Convention] | 7 |
+| Quotient types | yes | no type former | by setoids, canonical forms, abstraction | `sameElements`, `FinSet` | per workaround | 7 |
 | Subobject classifier | yes | no | no | `Boolean` classifies decidable subsets | — | 14 |
 | Monads and transformers | yes | yes | yes | `Monad`, `Writer`, `OptionT`, `StateT` | [Tested] | 15 |
 | Monoid and comonoid objects | yes | yes | yes, for kind \* | `Monoid`, `Semilattice`, `Comonoid` | [Tested] | 15 |
