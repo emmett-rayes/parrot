@@ -6,20 +6,20 @@ import Category.Type
 /** The laws of [[Comonoid]], for comonoids in a monoidal structure on a category whose objects are all types. */
 abstract class ComonoidSpec(
   name: String,
-  tracked val W: Comonoid { val V: Monoidal { val K: Category { type Obj = Type } } },
+  tracked val comonoid: Comonoid { val monoidal: Monoidal { val category: Category { type Obj = Type } } },
 )(using
-  category: CategoryFixture.On[W.V.K.type],
-  S: Sample[W.C],
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[W.V.*[X, Y]],
-  unit: Sample[W.V.I],
+  category: CategoryFixture.On[comonoid.monoidal.category.type],
+  S: Sample[comonoid.C],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[comonoid.monoidal.*[X, Y]],
+  unit: Sample[comonoid.monoidal.I],
 ) extends LawSuite("Comonoid", name) {
   import category.*
-  import W.C
-  import W.V.{I, `*`}
-  import W.ComonoidLaws.*
-  import W.V.K.-->
+  import comonoid.C
+  import comonoid.monoidal.{I, `*`}
+  import comonoid.ComonoidLaws.*
+  import comonoid.monoidal.category.-->
 
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[W.V.*[X, Y]] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[comonoid.monoidal.*[X, Y]] = tensor[X, Y]
 
   law("leftCounit") {
     val observations = observe[C, I * C]

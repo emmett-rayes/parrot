@@ -15,40 +15,40 @@ import scala.annotation.targetName
   * associator and the braiding are derived from the projections and pairing.
   */
 abstract class Cartesian(
-  tracked override val K: Category,
-  tracked override val U: Terminal.Of[K.type],
-  tracked override val T: Products.Of[K.type],
-) extends Symmetric(K, U, T) {
-  import K.{Iso, Obj, -->, <->, >>>}
+  tracked override val category: Category,
+  tracked override val unit: Terminal.Of[category.type],
+  tracked override val tensor: Products.Of[category.type],
+) extends Symmetric(category, unit, tensor) {
+  import category.{Iso, Obj, -->, <->, >>>}
 
-  export U.discard
+  export unit.discard
 
-  private given IIsObj: (I is Obj) = U.U
+  private given IIsObj: (I is Obj) = unit.evidence
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
   /** The first projection *π*₁: *A* ⊗ *B* → *A* of the product of *A* and *B*. */
   final def fst[A: Obj, B: Obj]: (A * B) --> A = {
-    T.product[A, B].fst
+    tensor.product[A, B].fst
   }
 
   /** The second projection *π*₂: *A* ⊗ *B* → *B* of the product of *A* and *B*. */
   final def snd[A: Obj, B: Obj]: (A * B) --> B = {
-    T.product[A, B].snd
+    tensor.product[A, B].snd
   }
 
   /** The pairing ⟨*f*,*g*⟩: *X* → *A* ⊗ *B* of *f*: *X* → *A* and *g*: *X* → *B* in the product of *A* and *B*. */
   final def pair[X: Obj, A: Obj, B: Obj](f: X --> A, g: X --> B): X --> (A * B) = {
-    T.product[A, B].pair(f, g)
+    tensor.product[A, B].pair(f, g)
   }
 
   /** The diagonal Δ = ⟨*id*,*id*⟩: *A* → *A* ⊗ *A*. */
   final def diagonal[A: Obj]: A --> (A * A) = {
-    pair(K.identity[A], K.identity[A])
+    pair(category.identity[A], category.identity[A])
   }
 
   /** Every object is a comonoid in exactly one way: deleting with ! and copying with Δ. */
-  final def comonoid[A: Obj]: Comonoid { val V: Cartesian.this.type; type Self = A } = {
+  final def comonoid[A: Obj]: Comonoid { val monoidal: Cartesian.this.type; type Self = A } = {
     new Comonoid(this) {
       type Self = A
 
@@ -61,7 +61,7 @@ abstract class Cartesian(
   }
 
   /** The corresponding cocartesian opposite **K**ᵒᵖ. */
-  final lazy val op: Cartesian.Op { val C: Cartesian.this.type } = Cartesian.Op(this)
+  final lazy val op: Cartesian.Op { val cartesian: Cartesian.this.type } = Cartesian.Op(this)
 
   extension [X: Obj, A: Obj](f: X --> A)
     /** Infix extension for [[pair]]. */
@@ -79,13 +79,13 @@ abstract class Cartesian(
   /** *λ* = *π*₂, with inverse ⟨!,*id*⟩
     */
   def leftUnitor[A: Obj]: (I * A) <-> A = {
-    Iso(snd[I, A], pair(discard[A], K.identity[A]))
+    Iso(snd[I, A], pair(discard[A], category.identity[A]))
   }
 
   /** *ρ* = *π*₁, with inverse ⟨*id*,!⟩
     */
   def rightUnitor[A: Obj]: (A * I) <-> A = {
-    Iso(fst[A, I], pair(K.identity[A], discard[A]))
+    Iso(fst[A, I], pair(category.identity[A], discard[A]))
   }
 
   /** *α* = ⟨*π*₁ ∘ *π*₁,⟨*π*₂ ∘ *π*₁,*π*₂⟩⟩, with the symmetric inverse
@@ -134,14 +134,16 @@ object Cartesian {
     *
     * The products, projections and pairing in **K** become coproducts, injections and copairing in **K**ᵒᵖ.
     */
-  final class Op(tracked val C: Cartesian) extends Cocartesian(C.K.op, OpInitial(C), OpCoproducts(C))
+  final class Op(tracked val cartesian: Cartesian)
+      extends Cocartesian(cartesian.category.op, OpInitial(cartesian), OpCoproducts(cartesian))
 
   /** The terminal object of a cartesian category **K**, as the initial object of **K**ᵒᵖ: ¡ is !. */
-  final class OpInitial(tracked val M: Cartesian) extends Initial(M.K.op, M.U.U) {
-    import C.{Obj, -->}
+  final class OpInitial(tracked val cartesian: Cartesian)
+      extends Initial(cartesian.category.op, cartesian.unit.evidence) {
+    import category.{Obj, -->}
 
     def absurd[A: Obj]: I --> A = {
-      M.discard[A]
+      cartesian.discard[A]
     }
   }
 
@@ -149,22 +151,24 @@ object Cartesian {
     *
     * The coproduct of two objects is their product, and the coproduct of morphisms is the product of their opposites.
     */
-  final class OpCoproducts(tracked val M: Cartesian) extends Coproducts(M.K.op) {
-    import K.{Obj, -->}
+  final class OpCoproducts(tracked val cartesian: Cartesian) extends Coproducts(cartesian.category.op) {
+    import category.{Obj, ObjectOf, -->}
 
-    type Self = M.Tensor
+    type Self = cartesian.Tensor
 
     def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
-      M.T.objects[A, B]
+      cartesian.tensor.objects[A, B]
     }
 
     def coproduct[A: Obj, B: Obj]
-      : OpCoproduct { val M: OpCoproducts.this.M.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B] } = {
-      OpCoproduct(M, K.Object[A], K.Object[B])
+      : OpCoproduct {
+        val cartesian: OpCoproducts.this.cartesian.type; val summand1: ObjectOf[A]; val summand2: ObjectOf[B]
+      } = {
+      OpCoproduct(cartesian, category.Object[A], category.Object[B])
     }
 
     override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
-      M.tensor(f, g)
+      cartesian.parallel(f, g)
     }
   }
 
@@ -173,26 +177,33 @@ object Cartesian {
     * The injections are the projections, and the copairing is the pairing.
     */
   final class OpCoproduct(
-    tracked val M: Cartesian,
-    tracked override val U1: M.K.op.Object,
-    tracked override val U2: M.K.op.Object,
-  ) extends Coproduct(M.K.op, U1, U2, M.K.op.Object(using M.T.objects[U1.A, U2.A](using U1.U, U2.U))) {
-    import C.{Obj, -->}
+    tracked val cartesian: Cartesian,
+    tracked override val summand1: cartesian.category.op.Object,
+    tracked override val summand2: cartesian.category.op.Object,
+  ) extends Coproduct(
+      cartesian.category.op,
+      summand1,
+      summand2,
+      cartesian.category.op.Object(
+        using cartesian.tensor.objects[summand1.A, summand2.A](using summand1.evidence, summand2.evidence),
+      ),
+    ) {
+    import category.{Obj, -->}
 
-    private given A1IsObj: (A1 is Obj) = U1.U
+    private given A1IsObj: (A1 is Obj) = summand1.evidence
 
-    private given A2IsObj: (A2 is Obj) = U2.U
+    private given A2IsObj: (A2 is Obj) = summand2.evidence
 
     def inl: A1 --> S = {
-      M.fst[A1, A2]
+      cartesian.fst[A1, A2]
     }
 
     def inr: A2 --> S = {
-      M.snd[A1, A2]
+      cartesian.snd[A1, A2]
     }
 
     def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X = {
-      M.pair(f, g)
+      cartesian.pair(f, g)
     }
   }
 }

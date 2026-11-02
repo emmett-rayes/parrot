@@ -6,17 +6,18 @@ package category
   * Represents an initial object *I*, where
   *   - ¡: *I* → *A* is the unique morphism to an object *A*
   */
-abstract class Initial(tracked override val C: Category, tracked override val U: C.Obj) extends Category.Object(C, U) {
-  import C.{Obj, -->}
+abstract class Initial(tracked override val category: Category, tracked override val evidence: category.Obj)
+    extends Category.Object(category, evidence) {
+  import category.{Obj, -->}
 
   /** The initial object *I*. */
-  final type I = U.Self
+  final type I = evidence.Self
 
   /** The unique morphism ¡: *I* → *A*. */
   def absurd[A: Obj]: I --> A
 
   /** The initial object as a colimit of the empty diagram, with ¡ as the factorization. */
-  final lazy val colimit: Initial.AsColimit { val I: Initial.this.type } = Initial.AsColimit(this)
+  final lazy val colimit: Initial.AsColimit { val initial: Initial.this.type } = Initial.AsColimit(this)
 
   /** Laws that any `Initial` must satisfy. */
   object InitialLaws {
@@ -34,11 +35,11 @@ object Initial {
   import Terminal.EmptyDiagram
 
   /** The initial objects of **K**. */
-  type Of[K <: Category] = Initial { val C: K }
+  type Of[K <: Category] = Initial { val category: K }
 
   /** The initial object of a category with a colimit of the empty diagram: that colimit. */
-  def apply(L: Colimit.OfDiagram[EmptyDiagram.Of]): Of[L.C.type] = {
-    FromColimit(L.colimit(EmptyDiagram(L.C)))
+  def apply(colimits: Colimit.OfDiagram[EmptyDiagram.Of]): Of[colimits.category.type] = {
+    FromColimit(colimits.colimit(EmptyDiagram(colimits.category)))
   }
 
   /** The initial object of a colimit *L* of the empty diagram.
@@ -46,11 +47,12 @@ object Initial {
     * The initial object is the apex of *L*, and ¡ is the factorization through *L* of the cocone with apex *A*, which
     * has no legs.
     */
-  open class FromColimit(tracked val L: Colimit.Of[EmptyDiagram]) extends Initial(L.D.K, L.X.U) {
-    import C.{Obj, -->}
+  open class FromColimit(tracked val cocone: Colimit.Of[EmptyDiagram])
+      extends Initial(cocone.diagram.category, cocone.apex.evidence) {
+    import category.{Obj, -->}
 
     def absurd[A: Obj]: I --> A = {
-      L.factor(EmptyCocone(L.D, C.Object[A]))
+      cocone.factor(EmptyCocone(cocone.diagram, category.Object[A]))
     }
   }
 
@@ -59,15 +61,15 @@ object Initial {
     * The apex of the colimit is *I*, its cocones have no legs, and the factorization of the cocone with apex *A* is ¡:
     * *I* → *A*.
     */
-  final class AsColimit(tracked val I: Initial) extends Colimit(EmptyDiagram(I.C), I) {
-    import I.C.-->
+  final class AsColimit(tracked val initial: Initial) extends Colimit(EmptyDiagram(initial.category), initial) {
+    import initial.category.-->
 
-    def leg[A: Empty.Absurd]: Nothing --> I.I = {
+    def leg[A: Empty.Absurd]: Nothing --> initial.I = {
       A.absurd
     }
 
-    def factor(K: Cocone.Of[D.type]): I.I --> K.Apex = {
-      I.absurd[K.Apex](using K.X.U)
+    def factor(cocone: Cocone.Of[diagram.type]): initial.I --> cocone.X = {
+      initial.absurd[cocone.X](using cocone.apex.evidence)
     }
   }
 
@@ -75,11 +77,13 @@ object Initial {
     *
     * The empty cocone has no legs.
     */
-  final class EmptyCocone(tracked override val D: Functor { val C: Empty.type }, tracked override val X: D.D.Object)
-      extends Cocone(D, X) {
-    import D.D.-->
+  final class EmptyCocone(
+    tracked override val diagram: Functor { val source: Empty.type },
+    tracked override val apex: diagram.target.Object,
+  ) extends Cocone(diagram, apex) {
+    import diagram.target.-->
 
-    def leg[A: Empty.Absurd]: D.F[A] --> Apex = {
+    def leg[A: Empty.Absurd]: diagram.F[A] --> X = {
       A.absurd
     }
   }

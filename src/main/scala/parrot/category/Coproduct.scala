@@ -9,27 +9,27 @@ package category
   *     ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
   */
 abstract class Coproduct(
-  tracked val C: Category,
-  tracked val U1: C.Object,
-  tracked val U2: C.Object,
-  tracked val U: C.Object,
+  tracked val category: Category,
+  tracked val summand1: category.Object,
+  tracked val summand2: category.Object,
+  tracked val apex: category.Object,
 ) extends caps.Pure {
-  import C.{Obj, -->, >>>}
+  import category.{Obj, -->, >>>}
 
   /** The first summand *A*₁. */
-  final type A1 = U1.A
+  final type A1 = summand1.A
 
   /** The second summand *A*₂. */
-  final type A2 = U2.A
+  final type A2 = summand2.A
 
   /** The coproduct *S*. */
-  final type S = U.A
+  final type S = apex.A
 
-  private given A1IsObj: (A1 is Obj) = U1.U
+  private given A1IsObj: (A1 is Obj) = summand1.evidence
 
-  private given A2IsObj: (A2 is Obj) = U2.U
+  private given A2IsObj: (A2 is Obj) = summand2.evidence
 
-  private given SIsObj: (S is Obj) = U.U
+  private given SIsObj: (S is Obj) = apex.evidence
 
   /** The first injection *ι*₁: *A*₁ → *S*. */
   def inl: A1 --> S
@@ -43,7 +43,7 @@ abstract class Coproduct(
   /** The coproduct as a colimit of the diagram (*A*₁,*A*₂) of shape **2**: its legs are the injections, and the
     * factorization of a cocone is the copairing of its legs.
     */
-  final lazy val colimit: Coproduct.AsColimit { val S: Coproduct.this.type } = Coproduct.AsColimit(this)
+  final lazy val colimit: Coproduct.AsColimit { val coproduct: Coproduct.this.type } = Coproduct.AsColimit(this)
 
   /** Laws that any `Coproduct` must satisfy. */
   object CoproductLaws {
@@ -83,12 +83,15 @@ object Coproduct {
   import Product.Discrete2Diagram
 
   /** The coproducts of the category **K**. */
-  type Of[K <: Category] = Coproduct { val C: K }
+  type Of[K <: Category] = Coproduct { val category: K }
 
   /** The coproduct of *X* and *Y* in a category with colimits of the diagrams of shape **2**. */
-  def apply(L: Colimit.OfDiagram[Discrete2Diagram.Of], X: L.C.Object, Y: L.C.Object)
-    : Of[L.C.type] { val U1: X.type; val U2: Y.type } = {
-    FromColimit(L.colimit(Discrete2Diagram(L.C, X, Y)))
+  def apply(
+    colimits: Colimit.OfDiagram[Discrete2Diagram.Of],
+    first: colimits.category.Object,
+    second: colimits.category.Object,
+  ): Of[colimits.category.type] { val summand1: first.type; val summand2: second.type } = {
+    FromColimit(colimits.colimit(Discrete2Diagram(colimits.category, first, second)))
   }
 
   /** The coproduct from a colimit *L* of a diagram (*X*,*Y*) of shape **2**.
@@ -96,20 +99,20 @@ object Coproduct {
     * The coproduct is the apex of *L*, its injections are the legs of *L*, and [*f*,*g*] is the factorization through
     * *L* of the cocone with legs *f* and *g*.
     */
-  open class FromColimit(tracked val L: Colimit.Of[Discrete2Diagram])
-      extends Coproduct(L.D.K, L.D.X, L.D.Y, L.X) {
-    import C.{Obj, -->}
+  open class FromColimit(tracked val cocone: Colimit.Of[Discrete2Diagram])
+      extends Coproduct(cocone.diagram.category, cocone.diagram.first, cocone.diagram.second, cocone.apex) {
+    import category.{Obj, -->}
 
     def inl: A1 --> S = {
-      L.leg[0]
+      cocone.leg[0]
     }
 
     def inr: A2 --> S = {
-      L.leg[1]
+      cocone.leg[1]
     }
 
     def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X = {
-      L.factor(CopairCocone(L.D, C.Object[X])(f, g))
+      cocone.factor(CopairCocone(cocone.diagram, category.Object[X])(f, g))
     }
   }
 
@@ -118,32 +121,33 @@ object Coproduct {
     * The apex of the colimit is *S*, its legs are the injections, and the factorization of a cocone is the copairing of
     * its legs.
     */
-  final class AsColimit(tracked val S: Coproduct) extends Colimit(Discrete2Diagram(S.C, S.U1, S.U2), S.U) {
-    import S.C.-->
+  final class AsColimit(tracked val coproduct: Coproduct)
+      extends Colimit(Discrete2Diagram(coproduct.category, coproduct.summand1, coproduct.summand2), coproduct.apex) {
+    import coproduct.category.-->
 
-    def leg[A: Disc2]: D.F[A] --> S.S = {
+    def leg[A: Disc2]: diagram.F[A] --> coproduct.S = {
       A.index match {
-        case Disc2.Index.Zero => S.inl
-        case Disc2.Index.One  => S.inr
+        case Disc2.Index.Zero => coproduct.inl
+        case Disc2.Index.One  => coproduct.inr
       }
     }
 
-    def factor(K: Cocone.Of[D.type]): S.S --> K.Apex = {
-      S.copair[K.Apex](K.leg[0], K.leg[1])(using K.X.U)
+    def factor(cocone: Cocone.Of[diagram.type]): coproduct.S --> cocone.X = {
+      coproduct.copair[cocone.X](cocone.leg[0], cocone.leg[1])(using cocone.apex.evidence)
     }
   }
 
   /** The cocone with apex *X* under a diagram of shape **2** whose legs are *f* and *g*. */
   final class CopairCocone(
-    tracked override val D: Functor { val C: Discrete2.type },
-    tracked override val X: D.D.Object,
+    tracked override val diagram: Functor { val source: Discrete2.type },
+    tracked override val apex: diagram.target.Object,
   )(
-    f: D.D.-->[D.F[0], X.A],
-    g: D.D.-->[D.F[1], X.A],
-  ) extends Cocone(D, X) {
-    import D.D.-->
+    f: diagram.target.-->[diagram.F[0], apex.A],
+    g: diagram.target.-->[diagram.F[1], apex.A],
+  ) extends Cocone(diagram, apex) {
+    import diagram.target.-->
 
-    def leg[A: Disc2]: D.F[A] --> Apex = {
+    def leg[A: Disc2]: diagram.F[A] --> X = {
       A.index match {
         case Disc2.Index.Zero => f
         case Disc2.Index.One  => g
@@ -162,14 +166,14 @@ object Coproduct {
   *
   * The structure at two objects *A* and *B* is a [[Coproduct]] on *A* + *B*.
   */
-abstract class Coproducts(tracked override val K: Category) extends Endobifunctor(K) {
-  import K.{Obj, -->, >>>}
+abstract class Coproducts(tracked override val category: Category) extends Endobifunctor(category) {
+  import category.{Obj, ObjectOf, -->, >>>}
 
   private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
   /** The coproduct of *A* and *B*: a [[Coproduct]] on *A* + *B*, with its injections and copairing. */
   def coproduct[A: Obj, B: Obj]
-    : Coproduct { val C: K.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B]; val U: K.ObjectOf[F[A, B]] }
+    : Coproduct.Of[category.type] { val summand1: ObjectOf[A]; val summand2: ObjectOf[B]; val apex: ObjectOf[F[A, B]] }
 
   /** *f* + *g* = [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*]
     */
@@ -226,14 +230,14 @@ object Coproducts {
   import Product.{Components, Discrete2Diagram}
 
   /** The binary coproducts of **K**. */
-  type Of[K <: Category] = Coproducts { val K: K }
+  type Of[K <: Category] = Coproducts { val category: K }
 
   /** The binary coproducts of a category with discrete colimits of shape **2**: the colimits of the diagrams
     * (*A*,*B*).
     */
-  def apply(L: Colimit.OfDiscreteDiagram[Discrete2Diagram.Of])
-    : Of[L.C.type] { type Self[A, B] = L.Colim[Components[A, B]] } = {
-    FromColimits(L)
+  def apply(colimits: Colimit.OfDiscreteDiagram[Discrete2Diagram.Of])
+    : Of[colimits.category.type] { type Self[A, B] = colimits.Colim[Components[A, B]] } = {
+    FromColimits(colimits)
   }
 
   /** The binary coproducts of discrete colimits *L* of shape **2**.
@@ -242,18 +246,21 @@ object Coproducts {
     * because the shape is discrete, and its injections and copairing are those of the colimit
     * ([[Coproduct.FromColimit]]).
     */
-  open class FromColimits(tracked val L: Colimit.OfDiscreteDiagram[Discrete2Diagram.Of]) extends Coproducts(L.C) {
-    import K.Obj
+  open class FromColimits(tracked val colimits: Colimit.OfDiscreteDiagram[Discrete2Diagram.Of])
+      extends Coproducts(colimits.category) {
+    import category.{Obj, ObjectOf}
 
-    type Self[A, B] = L.Colim[Components[A, B]]
+    type Self[A, B] = colimits.Colim[Components[A, B]]
 
     def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
-      L.colimit(Discrete2Diagram(K, K.Object[A], K.Object[B])).X.U
+      colimits.colimit(Discrete2Diagram(category, category.Object[A], category.Object[B])).apex.evidence
     }
 
     def coproduct[A: Obj, B: Obj]
-      : Coproduct { val C: K.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B]; val U: K.ObjectOf[F[A, B]] } = {
-      Coproduct.FromColimit(L.colimit(Discrete2Diagram(K, K.Object[A], K.Object[B])))
+      : Coproduct.Of[category.type] {
+        val summand1: ObjectOf[A]; val summand2: ObjectOf[B]; val apex: ObjectOf[F[A, B]]
+      } = {
+      Coproduct.FromColimit(colimits.colimit(Discrete2Diagram(category, category.Object[A], category.Object[B])))
     }
   }
 }

@@ -9,16 +9,15 @@ import Category.Type
 /** The laws of [[Recursion]], with functions that recurse on smaller arguments (𝒫) or after progress (guarded). */
 abstract class RecursionSpec(
   name: String,
-  tracked val R: Recursion { val P: Promonad { val K: Category { type Obj = Type } } },
+  tracked val recursion: Recursion { val promonad: Promonad { val category: Category { type Obj = Type } } },
 )(using
-  val promonad: PromonadFixture.On[R.P.type],
+  val promonad: PromonadFixture.On[recursion.promonad.type],
   types: SampleTypes,
 ) extends LawSuite("Recursion", name) {
   import types.{T2, given}
   import promonad.*
-  import R.P
-  import P.P
-  import R.RecursionLaws.*
+  import recursion.promonad.P
+  import recursion.RecursionLaws.*
 
   /** Functions from arrows to arrows whose fixed point is defined. */
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]]

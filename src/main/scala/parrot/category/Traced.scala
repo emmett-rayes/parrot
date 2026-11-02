@@ -10,14 +10,15 @@ package category
   * the equation *u* = *p*(*a*,*u*)₂: a recursive definition. The laws are those of traced monoidal categories, with
   * dinaturality (sliding) and superposing restricted to pure arrows, which are central.
   */
-abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extends caps.Pure {
-  import S.M.{I, `*`}
-  import S.P.{P, >>>}
-  import S.P.K.{Obj, -->}
+abstract class Traced(tracked val strong: Strong.Bistrong { val profunctor: Promonad }) extends caps.Pure {
+  import strong.{monoidal, profunctor}
+  import monoidal.{I, `*`}
+  import profunctor.{P, >>>}
+  import profunctor.category.{Obj, -->}
 
-  private given IIsObj: (I is Obj) = S.M.U.U
+  private given IIsObj: (I is Obj) = monoidal.unit.evidence
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = S.M.T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** The trace *tr*: *P*(*A* ⊗ *U*,*B* ⊗ *U*) → *P*(*A*,*B*). */
   def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B]
@@ -32,7 +33,7 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
       p: P[A1 * U, B1 * U],
       g: P[B1, B0],
     )(using P[A0, B0] is Observable): Boolean = {
-      trace(S.right[A0, A1, U](f) >>> p >>> S.right[B1, B0, U](g)) =?= (f >>> trace(p) >>> g)
+      trace(strong.right[A0, A1, U](f) >>> p >>> strong.right[B1, B0, U](g)) =?= (f >>> trace(p) >>> g)
     }
 
     /** *tr*(*p* ⨾ (*id* ⊗ *h*)) = *tr*((*id* ⊗ *h*) ⨾ *p*) for pure *h*: *U* → *V*
@@ -41,8 +42,8 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
       p: P[A * V, B * U],
       h: U --> V,
     )(using P[A, B] is Observable): Boolean = {
-      trace[A, B, V](p >>> S.P.unit(S.M.tensor(S.P.K.identity[B], h))) =?=
-        trace[A, B, U](S.P.unit(S.M.tensor(S.P.K.identity[A], h)) >>> p)
+      trace[A, B, V](p >>> profunctor.unit(monoidal.parallel(profunctor.category.identity[B], h))) =?=
+        trace[A, B, U](profunctor.unit(monoidal.parallel(profunctor.category.identity[A], h)) >>> p)
     }
 
     /** *tr*ᴵ(*p*) = *ρ*⁻¹ ⨾ *p* ⨾ *ρ*
@@ -50,7 +51,7 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
     def vanishingUnit[A: Obj, B: Obj](p: P[A * I, B * I])(
       using P[A, B] is Observable
     ): Boolean = {
-      trace(p) =?= (S.P.unit(S.M.rightUnitor[A].from) >>> p >>> S.P.unit(S.M.rightUnitor[B].to))
+      trace(p) =?= (profunctor.unit(monoidal.rightUnitor[A].from) >>> p >>> profunctor.unit(monoidal.rightUnitor[B].to))
     }
 
     /** *tr*ᵁ⊗ⱽ(*p*) = *tr*ᵁ(*tr*ⱽ(*α* ⨾ *p* ⨾ *α*⁻¹))
@@ -58,7 +59,8 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
     def vanishingTensor[A: Obj, B: Obj, U: Obj, V: Obj](p: P[A * (U * V), B * (U * V)])(
       using P[A, B] is Observable
     ): Boolean = {
-      val inner = S.P.unit(S.M.associator[A, U, V].to) >>> p >>> S.P.unit(S.M.associator[B, U, V].from)
+      val inner = profunctor.unit(monoidal.associator[A, U, V].to) >>> p >>>
+        profunctor.unit(monoidal.associator[B, U, V].from)
       trace[A, B, U * V](p) =?= trace[A, B, U](trace[A * U, B * U, V](inner))
     }
 
@@ -68,15 +70,15 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
       g: C --> D,
       p: P[A * U, B * U],
     )(using P[C * A, D * B] is Observable): Boolean = {
-      val lhs = S.P.unit(S.M.associator[C, A, U].to) >>> S.right[C, D, A * U](S.P.unit(g)) >>>
-        S.left[A * U, B * U, D](p) >>> S.P.unit(S.M.associator[D, B, U].from)
-      trace[C * A, D * B, U](lhs) =?= (S.right[C, D, A](S.P.unit(g)) >>> S.left[A, B, D](trace(p)))
+      val lhs = profunctor.unit(monoidal.associator[C, A, U].to) >>> strong.right[C, D, A * U](profunctor.unit(g)) >>>
+        strong.left[A * U, B * U, D](p) >>> profunctor.unit(monoidal.associator[D, B, U].from)
+      trace[C * A, D * B, U](lhs) =?= (strong.right[C, D, A](profunctor.unit(g)) >>> strong.left[A, B, D](trace(p)))
     }
 
     /** *tr*(*β*) = *id*
       */
     def yanking[U: Obj](using P[U, U] is Observable): Boolean = {
-      trace[U, U, U](S.P.unit(S.M.braid[U, U])) =?= S.P.identity[U]
+      trace[U, U, U](profunctor.unit(monoidal.braid[U, U])) =?= profunctor.identity[U]
     }
 
     /** If *p* = *p*′, then *tr*(*p*) = *tr*(*p*′).
@@ -94,30 +96,32 @@ abstract class Traced(tracked val S: Strong.Bistrong { val P: Promonad }) extend
 object Traced {
 
   /** The trace of an iteration: *tr*(*p*) = *ι*₁ ⨾ (*p* ⨾ (*id* + *ι*₂))†, a loop that starts on the left. */
-  open class OfElgot(tracked val E: Elgot) extends Traced(E.S) {
-    import S.M.+
-    import S.P.{P, >>>}
-    import S.P.K.Obj
+  open class OfElgot(tracked val elgot: Elgot) extends Traced(elgot.strong) {
+    import strong.{monoidal, profunctor}
+    import monoidal.+
+    import profunctor.{P, >>>}
+    import profunctor.category.Obj
 
-    private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = S.M.T.objects[A, B]
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
 
     def trace[A: Obj, B: Obj, U: Obj](p: P[A + U, B + U]): P[A, B] = {
-      val step = p >>> S.P.unit(S.M.tensor(S.P.K.identity[B], S.M.inr[A, U]))
-      S.P.unit(S.M.inl[A, U]) >>> E.iterate[B, A + U](step)
+      val step = p >>> profunctor.unit(monoidal.parallel(profunctor.category.identity[B], monoidal.inr[A, U]))
+      profunctor.unit(monoidal.inl[A, U]) >>> elgot.iterate[B, A + U](step)
     }
   }
 
   /** The trace of a parameterized fixed point: *tr*(*p*) = ((*id* × *π*₂) ⨾ *p*)† ⨾ *π*₁. */
-  open class OfConway(tracked val C: Conway) extends Traced(C.S) {
-    import S.M.`*`
-    import S.P.{P, >>>}
-    import S.P.K.Obj
+  open class OfConway(tracked val conway: Conway) extends Traced(conway.strong) {
+    import strong.{monoidal, profunctor}
+    import monoidal.`*`
+    import profunctor.{P, >>>}
+    import profunctor.category.Obj
 
-    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = S.M.T.objects[A, B]
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
     def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B] = {
-      val step = S.P.unit(S.M.tensor(S.P.K.identity[A], S.M.snd[B, U])) >>> p
-      C.fix[A, B * U](step) >>> S.P.unit(S.M.fst[B, U])
+      val step = profunctor.unit(monoidal.parallel(profunctor.category.identity[A], monoidal.snd[B, U])) >>> p
+      conway.fix[A, B * U](step) >>> profunctor.unit(monoidal.fst[B, U])
     }
   }
 }

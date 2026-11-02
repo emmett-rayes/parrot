@@ -9,26 +9,28 @@ import Category.Type
 /** The laws of [[Elgot]], with steps whose loops stop (in 𝒫) or that make progress (guarded instances). */
 abstract class ElgotSpec(
   name: String,
-  tracked val E: Elgot { val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } } },
+  tracked val elgot: Elgot {
+    val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } }
+  },
 )(using
-  val promonad: PromonadFixture.On[E.S.P.type],
+  val promonad: PromonadFixture.On[elgot.strong.profunctor.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[E.S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[elgot.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Elgot", name) {
   import types.{T2, T3, given}
   import promonad.*
-  import E.S.P
-  import P.{P, >>>}
-  import E.ElgotLaws.*
-  import P.K.-->
+  import elgot.strong.profunctor
+  import profunctor.{P, >>>}
+  import elgot.ElgotLaws.*
+  import profunctor.category.-->
 
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[E.S.M.Tensor[X, Y]] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[elgot.strong.monoidal.Tensor[X, Y]] = tensor[X, Y]
 
   /** Steps whose iteration is defined. */
-  def step[A: Sample]: Gen[P[Int, E.S.M.Tensor[A, Int]]]
+  def step[A: Sample]: Gen[P[Int, elgot.strong.monoidal.Tensor[A, Int]]]
 
   /** Steps with two ways to continue, for the double dagger law. */
-  def step2[A: Sample]: Gen[P[Int, E.S.M.Tensor[E.S.M.Tensor[A, Int], Int]]]
+  def step2[A: Sample]: Gen[P[Int, elgot.strong.monoidal.Tensor[elgot.strong.monoidal.Tensor[A, Int], Int]]]
 
   /** A pure map that keeps loops stopping: it does not move a state away from 0. */
   def shrink: Int --> Int
@@ -49,7 +51,7 @@ abstract class ElgotSpec(
   law("parameterNaturality") {
     val observations = observe[Int, T3]
     val ps           = step[T2]
-    val hs           = base.arrow[T2, T3]
+    val hs           = category.arrow[T2, T3]
 
     forAll(observations, ps, hs) { (observe, p, h) =>
       given (P[Int, T3] is Observable) = observe
@@ -95,7 +97,7 @@ abstract class ElgotSpec(
     forAll(observations, fs) { (observe, f) =>
       given (P[Int, T2] is Observable) = observe
       val (h, inverse)                          = bijection
-      val g = P.unit(inverse) >>> f >>> E.S.left[Int, Int, T2](P.unit(h))
+      val g = profunctor.unit(inverse) >>> f >>> elgot.strong.left[Int, Int, T2](profunctor.unit(h))
       uniformity(f, g, h)
     }
   }

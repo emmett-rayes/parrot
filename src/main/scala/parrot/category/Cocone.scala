@@ -7,28 +7,28 @@ package category
   *   - *X* is the apex, an object of **C**
   *   - *ψ*_*A*: *D*[*A*] → *X* is the leg at an object *A* of **J**
   */
-abstract class Cocone(tracked val D: Functor, tracked val X: D.D.Object) extends caps.Pure {
-  import D.{F as D, map}
-  import D.C as J
-  import D.D as C
+abstract class Cocone(tracked val diagram: Functor, tracked val apex: diagram.target.Object) extends caps.Pure {
+  import diagram.{F as D, map}
+  import diagram.source as J
+  import diagram.target as C
   import J.-->
   import C.--> as ==>
 
   /** The apex *X*. */
-  final type Apex = X.A
+  final type X = apex.A
 
-  private given ApexIsObj: Apex is C.Obj              = X.U
-  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
+  private given XIsObj: X is C.Obj                    = apex.evidence
+  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
 
   /** *ψ*_*A*: *D*[*A*] → *X*
     *
     * The legs form a natural transformation from *D* to the constant functor at *X*.
     */
-  def leg[A: J.Obj]: D[A] ==> Apex
+  def leg[A: J.Obj]: D[A] ==> X
 
   /** The cocone (*Y*, *h* ∘ *ψ*) induced by a morphism *h*: *X* → *Y*. */
-  final def induced[Y: C.Obj](h: Apex ==> Y): Cocone.Of[D.type] { val X: C.ObjectOf[Y] } = {
-    new Cocone(D, C.Object[Y]) {
+  final def induced[Y: C.Obj](h: X ==> Y): Cocone.Of[diagram.type] { val apex: C.ObjectOf[Y] } = {
+    new Cocone(diagram, C.Object[Y]) {
       def leg[A: J.Obj]: D[A] ==> Y = {
         Cocone.this.leg[A] >>> h
       }
@@ -40,7 +40,7 @@ abstract class Cocone(tracked val D: Functor, tracked val X: D.D.Object) extends
 
     /** *ψ*_*B* ∘ *D*(*f*) = *ψ*_*A*
       */
-    def commutes[A: J.Obj, B: J.Obj](f: A --> B)(using (D[A] ==> Apex) is Observable): Boolean = {
+    def commutes[A: J.Obj, B: J.Obj](f: A --> B)(using (D[A] ==> X) is Observable): Boolean = {
       (map(f) >>> leg[B]) =?= leg[A]
     }
   }
@@ -49,5 +49,5 @@ abstract class Cocone(tracked val D: Functor, tracked val X: D.D.Object) extends
 object Cocone {
 
   /** Refines `Cocone` to a specific functor **F**. */
-  type Of[F <: Functor] = Cocone { val D: F }
+  type Of[F <: Functor] = Cocone { val diagram: F }
 }

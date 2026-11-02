@@ -6,9 +6,9 @@ import Sample.given
 
 /** The laws of [[Category.Product]], for the product 𝒮 × 𝒫 of the two categories of programs. */
 class ProductIsCategoryTest extends LawSuite("Category", "Total × Partial") {
-  private val K = Category.Product(Total, Partial)
-  import K.given
-  import K.CategoryLaws.*
+  private val category = Category.Product(Total, Partial)
+  import category.given
+  import category.CategoryLaws.*
 
   law("leftIdentity") {
     val observations1 = TotalFixture.observe[Int, String]
@@ -62,19 +62,19 @@ class ProductIsCategoryTest extends LawSuite("Category", "Total × Partial") {
 
 /** The laws of [[Products]], for binary products on a category whose objects are all types. */
 abstract class ProductsSpec(
-  tracked override val K: Category { type Obj = Type },
-  tracked override val B: Products.Of[K.type],
+  tracked override val category: Category { type Obj = Type },
+  tracked override val bifunctor: Products.Of[category.type],
 )(using
-  category: CategoryFixture.On[K.type],
-  typename: TypeName[B.Self],
+  fixture: CategoryFixture.On[category.type],
+  typename: TypeName[bifunctor.Self],
   types: SampleTypes,
-  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[B.F[X, Y]],
-) extends BifunctorSpec(K, B, "Products") {
+  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[bifunctor.F[X, Y]],
+) extends BifunctorSpec(category, bifunctor, "Products") {
   import types.{T1, T2, T3, T4, given}
-  import category.*
-  import K.-->
-  import B.F
-  import B.ProductsLaws.*
+  import fixture.*
+  import category.-->
+  import bifunctor.F
+  import bifunctor.ProductsLaws.*
 
   private given BSample: [X: Sample, Y: Sample] => Sample[F[X, Y]] = sample[X, Y]
 

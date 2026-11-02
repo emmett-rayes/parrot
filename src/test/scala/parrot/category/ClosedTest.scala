@@ -11,26 +11,28 @@ import Category.Type
   * An arrow into an internal hom is observed by evaluation, through its uncurried form, and an arrow between internal
   * homs at sample elements of the first, curried from generated arrows.
   */
-abstract class ClosedSpec(tracked val C: Closed { val M: Monoidal { val K: Category { type Obj = Type } } })(using
-  category: CategoryFixture.On[C.M.K.type],
-  typename: TypeName[C.type],
+abstract class ClosedSpec(
+  tracked val closed: Closed { val monoidal: Monoidal { val category: Category { type Obj = Type } } },
+)(using
+  category: CategoryFixture.On[closed.monoidal.category.type],
+  typename: TypeName[closed.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[C.M.Tensor[X, Y]],
-  unit: Sample[C.M.I],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[closed.monoidal.Tensor[X, Y]],
+  unit: Sample[closed.monoidal.I],
 ) extends LawSuite("Closed", s"${typename.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
   import category.*
-  import C.M.{I, `*`}
-  import C.M.K.{-->, >>>}
-  import C.`^`
-  import C.ClosedLaws.*
+  import closed.monoidal.{I, `*`}
+  import closed.monoidal.category.{-->, >>>}
+  import closed.`^`
+  import closed.ClosedLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 
   /** Observes arrows *X* → (*Y* ⇒ *Z*) through their uncurried forms *X* ⊗ *Y* → *Z*. */
   private def curried[X: Sample, Y: Sample, Z: Sample]: Gen[(X --> (Z `^` Y)) is Observable] = {
     observe[X * Y, Z].map { observe =>
-      Observable.through[X --> (Z `^` Y), (X * Y) --> Z](List(g => C.uncurry[Y, Z, X](g)))(using observe)
+      Observable.through[X --> (Z `^` Y), (X * Y) --> Z](List(g => closed.uncurry[Y, Z, X](g)))(using observe)
     }
   }
 
@@ -38,7 +40,7 @@ abstract class ClosedSpec(tracked val C: Closed { val M: Monoidal { val K: Categ
   private def onHoms[A1: Sample, B1: Sample, A2: Sample, B2: Sample]
     : Gen[((B1 `^` A1) --> (B2 `^` A2)) is Observable] = {
     for {
-      elements <- Gen.listOfN(4, arrow[I * A1, B1].map((f: (I * A1) --> B1) => C.curry[A1, B1, I](f)))
+      elements <- Gen.listOfN(4, arrow[I * A1, B1].map((f: (I * A1) --> B1) => closed.curry[A1, B1, I](f)))
       observe  <- curried[I, A2, B2]
     } yield Observable.through[(B1 `^` A1) --> (B2 `^` A2), I --> (B2 `^` A2)](elements.map(e => m => e >>> m))(
       using observe
@@ -57,7 +59,7 @@ abstract class ClosedSpec(tracked val C: Closed { val M: Monoidal { val K: Categ
 
   law("eta") {
     val observations = curried[T1, T2, T4]
-    val gs           = arrow[T1 * T2, T4].map((f: (T1 * T2) --> T4) => C.curry[T2, T4, T1](f))
+    val gs           = arrow[T1 * T2, T4].map((f: (T1 * T2) --> T4) => closed.curry[T2, T4, T1](f))
 
     forAll(observations, gs) { (observe, g) =>
       given ((T1 --> (T4 `^` T2)) is Observable) = observe
@@ -76,7 +78,7 @@ abstract class ClosedSpec(tracked val C: Closed { val M: Monoidal { val K: Categ
   }
 
   also("Profunctor") {
-    import C.internalHom.BifunctorLaws.*
+    import closed.internalHom.BifunctorLaws.*
 
     law("identity") {
       forAll(onHoms[T1, T2, T1, T2]) { observe =>

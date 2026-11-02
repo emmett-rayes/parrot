@@ -16,9 +16,9 @@ package category
   * only after making progress; a total instance stops with failure where *f* would recurse without progress, so the law
   * holds for guarded *f* only.
   */
-abstract class Recursion(tracked val P: Promonad) extends caps.Pure {
-  import P.P
-  import P.K.Obj
+abstract class Recursion(tracked val promonad: Promonad) extends caps.Pure {
+  import promonad.P
+  import promonad.category.Obj
 
   /** The fixed point *fix*(*f*) of *f*: *P*(*A*,*B*) → *P*(*A*,*B*). */
   def fix[A: Obj, B: Obj](f: P[A, B] -> P[A, B]): P[A, B]

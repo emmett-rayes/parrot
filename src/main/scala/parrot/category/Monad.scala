@@ -13,10 +13,10 @@ import Category.Type
   * The unit and multiplication are the unit and multiplication of a monoid, with composition of endofunctors as the
   * tensor.
   */
-abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
-  export F.{F as M, K, map, objects}
+abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
+  export functor.{F as M, category, map, objects}
 
-  import K.{Obj, -->, >>>}
+  import category.{Obj, -->, >>>}
 
   private given MIsObj: [A: Obj] => (M[A] is Obj) = objects[A]
 
@@ -40,13 +40,13 @@ abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
     /** *μ* ∘ *η*_*M* = *id*
       */
     def leftUnit[A: Obj](using (M[A] --> M[A]) is Observable): Boolean = {
-      (unit[M[A]] >>> flatten[A]) =?= K.identity[M[A]]
+      (unit[M[A]] >>> flatten[A]) =?= category.identity[M[A]]
     }
 
     /** *μ* ∘ *M*(*η*) = *id*
       */
     def rightUnit[A: Obj](using (M[A] --> M[A]) is Observable): Boolean = {
-      (map(unit[A]) >>> flatten[A]) =?= K.identity[M[A]]
+      (map(unit[A]) >>> flatten[A]) =?= category.identity[M[A]]
     }
 
     /** *μ* ∘ *μ*_*M* = *μ* ∘ *M*(*μ*)
@@ -72,7 +72,7 @@ abstract class Monad(tracked val F: Endofunctor) extends caps.Pure {
 object Monad {
 
   /** The monads on **C**: refines the endofunctor, so that the category of a monad *M* is known as **C**. */
-  type On[C <: Category] = Monad { val F: Endofunctor.On[C] }
+  type On[C <: Category] = Monad { val functor: Endofunctor.On[C] }
 
   /** The identity monad on 𝒮: computations without effects, where
     *   - *M*[*A*] = *A*
@@ -103,10 +103,10 @@ object Monad {
     *
     * The laws are those of the Kleisli restriction structure it induces, [[Kleisli.RestrictionOf]].
     */
-  abstract class Restriction(tracked val M: On[Total.type]) extends caps.Pure {
+  abstract class Restriction(tracked val monad: On[Total.type]) extends caps.Pure {
 
     /** The restriction *m̄* of *m*. */
-    def restrict[A](m: M.M[A]): M.M[Unit]
+    def restrict[A](m: monad.M[A]): monad.M[Unit]
   }
 
   /** A classical restriction structure on a monad on 𝒮: success is decidable.
@@ -119,21 +119,21 @@ object Monad {
     *
     * The laws are those of the Kleisli classical structure it induces, [[Kleisli.ClassicalOf]].
     */
-  abstract class Classical(tracked override val M: On[Total.type]) extends Restriction(M) {
+  abstract class Classical(tracked override val monad: On[Total.type]) extends Restriction(monad) {
 
     /** The failing computation 0. */
-    def zero[A]: M.M[A]
+    def zero[A]: monad.M[A]
 
     /** The complement *m̄*ᶜ: succeeds exactly where *m* fails. */
-    def complement[A](m: M.M[A]): M.M[Unit]
+    def complement[A](m: monad.M[A]): monad.M[Unit]
 
     /** Override *m* ⊳ *n*: *m*, or *n* where *m* fails. *n* is passed by name, and computed only where *m* fails. */
-    def orElse[A](m: M.M[A], n: -> M.M[A]): M.M[A]
+    def orElse[A](m: monad.M[A], n: -> monad.M[A]): monad.M[A]
 
     /** *attempt*(*m*) = *M*(*Some*)(*m*) ⊳ *η*(*None*): the result of *m* if it succeeds.
       */
-    def attempt[A](m: M.M[A]): M.M[Option[A]] = {
-      orElse(M.map[A, Option[A]](a => Some(a))(m), M.unit[Option[A]](None))
+    def attempt[A](m: monad.M[A]): monad.M[Option[A]] = {
+      orElse(monad.map[A, Option[A]](a => Some(a))(m), monad.unit[Option[A]](None))
     }
   }
 
@@ -153,9 +153,9 @@ object Monad {
     * In 𝒮 an iteration operator is guarded: it must stop on its own (see [[StateT.GuardedIteration]]). The laws are
     * those of the Kleisli iteration it induces, [[Kleisli.ElgotOf]].
     */
-  abstract class Elgot(tracked val M: On[Total.type]) extends caps.Pure {
+  abstract class Elgot(tracked val monad: On[Total.type]) extends caps.Pure {
 
     /** The iteration *f*† of *f*. */
-    def iterate[A, X](f: X -> M.M[Either[A, X]]): X -> M.M[A]
+    def iterate[A, X](f: X -> monad.M[Either[A, X]]): X -> monad.M[A]
   }
 }

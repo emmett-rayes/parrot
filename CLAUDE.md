@@ -59,16 +59,18 @@ warning-free.
 - **`-Wnonunit-statement`:** non-final asserts in tests are `val _ = assert(...)`.
 - **Off on purpose:** `-Wsafe-init` (false positive when a *class* forwards a `tracked` parameter to a parameterized
   parent; don't add `@nowarn`, and prefer `lazy val` for members computed from parameters) and `-Wunused:imports`
-  (false positive on renamed type imports such as `import D.--> as ==>`).
+  (false positive on renamed type imports such as `import target.--> as ==>`).
 
 ## The encoding of `parrot.category`
 
 1. **Structures are `abstract class … extends caps.Pure`**. Type classes without parameters that are not structures
    (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
-2. **What a structure is on is a `tracked val` parameter** (a stable path you can import from); what it adds is a
-   member. A constraint between parameters refines the *later* one towards the earlier:
-   `Bistrong(P: Profunctor { val K2: K1.type }, M: Symmetric { val K: P.K1.type })`. A refinement forwards its parameter
-   under the same name: `Promonad(tracked override val K: Category) extends Endoprofunctor(K, Total)`.
+2. **What a structure is on is a `tracked val` parameter** (a stable path you can import from), named by its role in
+   one lowercase word (`source`, `target`, `category`, `monoidal`, `strong`), indexed when there are two (`source1`,
+   `source2`); what it adds is a member. A constraint between parameters refines the *later* one towards the earlier:
+   `Classical(promonad: Promonad, cocartesian: Cocartesian { val category: promonad.category.type })`. A refinement
+   forwards its parameter under the same name:
+   `Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total)`.
 3. **`Self` iff the structure has its own carrier** (`Category`, `Functor`, `Promonad`, `Monoid`, `Eq`, …), named by a
    `final` alias (`Hom`/`-->`, `F`, `P`, `M`, `C`). Structures *on* something (`Monoidal`, `Strong`, `Restriction`,
    `Monad`, the trace grid) have no `Self` and are named, not found by implicit search.
@@ -78,32 +80,33 @@ warning-free.
    (`Monad.On`, `Limit.Of`) are only for pure refinements.
 5. **Objects are types with evidence:** `type Obj <: Type` (`import Category.Type`; `Type.TIsType` holds for every
    type), passed only through context bounds, except an object a structure chooses or is on, which is a `tracked`
-   parameter of type `K.Object` (`Category.Object(C, U)`, *A* = `U.Self`): `Product(C, U1, U2, U)`, the apex of
-   `Cone(D, X)`, the unit of `Monoidal(K, U, T)`, which `Cartesian` refines to a `Terminal`. Only `Object` and the
-   objects that extend it (`Terminal(C, U)`, `Initial(C, U)`) take bare evidence. `K.Object[A]` builds one from a
-   context bound, and `K.ObjectOf[A]` refines one to a type. Structures offer evidence only as values (`objects`, `U`,
-   `X`): every given is `private` to the class that uses it, refinements included
-   (`private given IIsObj: (I is Obj) = U.U`), and the only public givens are type class instances next to their type
-   class.
+   parameter of type `category.Object` (`Category.Object(category, evidence)`, *A* = `evidence.Self`):
+   `Product(category, factor1, factor2, apex)`, the apex of `Cone(diagram, apex)`, the unit of
+   `Monoidal(category, unit, tensor)`, which `Cartesian` refines to a `Terminal`. Only `Object` and the objects that
+   extend it (`Terminal(category, evidence)`, `Initial(category, evidence)`) take bare evidence. `category.Object[A]`
+   builds one from a context bound, and `category.ObjectOf[A]` refines one to a type. Structures offer evidence only as
+   values (`objects`, `evidence`, `apex`): every given is `private` to the class that uses it, refinements included
+   (`private given IIsObj: (I is Obj) = unit.evidence`), and the only public givens are type class instances next to
+   their type class.
 6. **Instances are `object`s** nested in what they belong to (`Total.Products`, `Partial.Loops`); generic constructions
-   are `open class`es (`Kleisli(M)`, `StateT[S](M)`). Instances name evidence explicitly (`Type.TIsType`), never
+   are `open class`es (`Kleisli(monad)`, `StateT[S](monad)`). Instances name evidence explicitly (`Type.TIsType`), never
    `summon`: a class-level forwarding given would recurse.
 7. **Operators are syntax:** each symbolic extension is `final`, passes its arguments in order to a named method
    (`f >>> g` is `andThen(f, g)`) and is documented `Infix extension for [[andThen]].`; an infix type alias is
    documented `Infix alias for [[Hom]].` One operator per operation: `>>>`/`<<<`, `***`, `&&&`/`|||`, `+++`, `**`,
    `|>`, `=?=`, `?<`, `===`.
 8. **Arrows, not `.Self`:** write morphisms infix and bring them in with imports, never new type definitions
-   (`import K.{Obj, -->, >>>}`, `import D.--> as ==>`). Roles: `-->` the category at hand, `->>` the second category
-   of a pair (a bifunctor's or profunctor's second source, a strength's second category), `==>` a target category or
-   a Freyd base, `~~>` an opposite. Concretely `A -> B` in `Total` (𝒮) and `A ~> B` in `Partial` (𝒫). Objects: `*`,
-   `+`, `` `^` `` (`` B `^` A `` is *A* ⇒ *B*), `<->`.
+   (`import category.{Obj, -->, >>>}`, `import target.--> as ==>`). Roles: `-->` the category at hand, `->>` the second
+   category of a pair (a bifunctor's or profunctor's second source, a strength's second category), `==>` a target
+   category or a Freyd base, `~~>` an opposite. Concretely `A -> B` in `Total` (𝒮) and `A ~> B` in `Partial` (𝒫).
+   Objects: `*`, `+`, `` `^` `` (`` B `^` A `` is *A* ⇒ *B*), `<->`.
 9. **`final` on what is definitional:** aliases and members that only forward (`>>>`, `first`, `restricted`, the
    parser syntax); redefinitions are `override` without `final`. A member forwarded unchanged from a parameter is an
    `export` (no scaladoc); one that renames it or changes its meaning is a `final def` with its own doc
-   (`ParserAlgebra.pure` is `Arrows.unit(f)`). Eta-reduce aliases (`type Self = Tuple2`).
-10. **Monads are structure on their functor** (`Monad(F: Endofunctor)`, primitives `unit` and `flatten`). Refine through
-    the functor, `Monad.On[Total.type]`, not `Monad { val K: Total.type }`, or the singleton chain breaks. Plain monads
-    are transformers over `Monad.Identity`.
+   (`ParserAlgebra.pure` is `parsers.unit(f)`). Eta-reduce aliases (`type Self = Tuple2`).
+10. **Monads are structure on their functor** (`Monad(functor: Endofunctor)`, primitives `unit` and `flatten`). Refine
+    through the functor, `Monad.On[Total.type]`, not `Monad { val category: Total.type }`, or the singleton chain
+    breaks. Plain monads are transformers over `Monad.Identity`.
 11. **Totality:** 𝒮 (`Total`) has total pure functions; 𝒫 (`Partial`, opaque `A ~> B`) may diverge and has the unguarded
     structures (restriction, loops, feedback, knots). Include a total `f` with `Partial.fromTotal(f)`, not `Partial(f)`;
     `Partial.assumeTotal` is the library's single totality promise. Total iteration and recursion are guarded by a
@@ -121,7 +124,7 @@ colimits in `Colimit`'s.
 ## `parrot.parser`
 
 - A parser `P[A, B]` consumes a prefix of the input while turning a semantic input `A` into a result `B`.
-  `ParserAlgebra(Arrows, Products, Coproducts, Zipping, Branching, Choice, Loops, Knots)`: every combinator is an
+  `ParserAlgebra(parsers, products, coproducts, zipping, branching, choice, loops, knots)`: every combinator is an
   operation of one of these (`|>` is restriction override, i.e. PEG ordered choice). Loops and recursion are
   **guarded**: a step or call that makes no progress fails. Interpreters implement only `lift`, `literal`, `regex`,
   `rule` and `diagnose`.
@@ -156,15 +159,15 @@ colimits in `Colimit`'s.
   max 120 columns) has no CLI here: touch only the lines you change; files with given syntax scalafmt cannot parse are
   formatted by hand.
 - Method bodies and `match`es in braces; `if … then … else`; aligned `=`, `:` and `=>` in consecutive declarations
-  and cases; trailing commas in multi-line lists; braces in imports only around several selectors (`import K.-->`,
-  `import K.{Obj, -->}`).
+  and cases; trailing commas in multi-line lists; braces in imports only around several selectors
+  (`import category.-->`, `import category.{Obj, -->}`).
 - No unicode in code, and diagrammatic composition (`>>>`) there; unicode math and `∘` only in scaladoc.
 - **Every** public member has scaladoc, exports excepted. Math: variables in `*italics*`, categories in `**bold**` or
   as 𝒮 and 𝒫, `∘` for composition, no spaces in argument lists (`**C**(*A*,*B*)`). Laws state their equation first.
   Structure docs begin "A … on …", then "Represents …, where" and bullets. Caveats go in `@note`.
 - Names: givens `<Carrier>Is<TypeClass>`, laws objects `<Structure>Laws`, `@targetName`s `<method>Ext`, structure
-  parameters capitalized (`K`, `P`, `M`). Morphisms run from `A` to `B`, indexed per component
-  (`bimap(f: A1 --> B1, g: A2 ->> B2)`).
+  parameters lowercase role names (rule 2), while scaladoc keeps the mathematical letters (**C**, *F*). Morphisms run
+  from `A` to `B`, indexed per component (`bimap(f: A1 --> B1, g: A2 ->> B2)`).
 - Code in `category` is pure, immutable and total; mutation only in `StrictParser` state, `Scanner`, tests and
   benchmarks.
 
@@ -180,14 +183,17 @@ colimits in `Colimit`'s.
   registers its laws in `also("<Name>")`, so a child reports them under its own name. Where the parent's spec needs
   other fixtures, the child copies its laws into an `also` block instead (`FreydSpec`, `PromonadSpec`). `IsoLaws` has
   no spec: `MonoidalLaws` and `ModuleLaws` check it.
-- **Specs take their subject, not a fixture:** `tracked val M: Symmetric { … }`, with the fixture found as a given,
-  `using category: CategoryFixture.On[M.K.type]`. There is one given fixture per category or promonad, in the
-  `CategoryFixture` and `PromonadFixture` companions (the parser's in `ParserFixtures`, in `Grammars.scala`); derived
-  categories (`Total.op`) need their own. `FunctorSpec` takes two, `source` and `target`. A spec whose instance is
-  named after a type takes `typename: TypeName[T]` (`class IntIsEqTest extends EqSpec[Int]`).
+- **Specs take their subject, not a fixture:** `tracked val monoidal: Symmetric { … }`, named after its structure, with
+  the fixture found as a given, `using category: CategoryFixture.On[monoidal.category.type]`; where the subject takes
+  the fixture's name (`CategorySpec`, `BifunctorSpec`, `PromonadSpec`), the fixture is `fixture`. There is one given
+  fixture per category or promonad, in the `CategoryFixture` and `PromonadFixture` companions (the parser's in
+  `ParserFixtures`, in `Grammars.scala`); derived categories (`Total.op`) need their own. `FunctorSpec` takes two,
+  `source` and `target`. A spec whose instance is named after a type takes `typename: TypeName[T]`
+  (`class IntIsEqTest extends EqSpec[Int]`).
 - **Fixtures:** `Sample[X]` is a generator, a cogenerator and an `Eq` (a carrier without `Eq` is sampled where it is
   data: `StateT` at `Boolean` states); `CategoryFixture` has `arrow`, `variant` and `observe`; `PromonadFixture` adds
-  `base`, for pure arrows. Helpers several test files share go in a fixture file without `Test` (`GridFixture.scala`).
+  `category`, the fixture of the promonad's category, for pure arrows, and `arrows`, the fixture of its category of
+  arrows. Helpers several test files share go in a fixture file without `Test` (`GridFixture.scala`).
 - **Sample types:** specs are generic in `T1`–`T4` of `using types: SampleTypes` (`import types.{T1, T2, given}`;
   default `SampleTypes.Standard`: `Int`, `String`, `Boolean`, `Long`). Using clauses list the fixture, then `types`,
   then samples, which come from polymorphic givens (`Sample.Tuple2Samples`) where the test class is declared, so test
@@ -202,21 +208,24 @@ colimits in `Colimit`'s.
 
 - **Spike first.** For "does the type system accept X", compile a twenty-line file with Scala CLI at the library's
   version and flags: `scala compile --server=false -S 3.10.0 -O <flag> …`, one `-O` per flag in `build.sbt`.
-- **Singleton chains.** Path-dependent code type-checks only if every link is a singleton type (`P.K` = `M.F.K` =
-  `Total`); refine the parameter a member comes from (`Monad.On`), never intersect.
-- **A refinement cannot name a parameter its members shadow** (`Freyd(P, S: Bistrong { val P: P.type })` is cyclic,
-  and so is `K.Object { val U: A is Obj }`, where `A` is the member of `Object`): refine through an alias declared
-  elsewhere (`Strong.Bistrong.On[P.type]`, `K.ObjectOf[A]`), or a `this`-qualified path in methods.
+- **Singleton chains.** Path-dependent code type-checks only if every link is a singleton type (`promonad.category` =
+  `monad.functor.category` = `Total`); refine the parameter a member comes from (`Monad.On`), never intersect.
+- **A refinement sees the members of the type it refines,** so a name that is also one of them is cyclic or
+  ambiguous inside it: `Product { val category: category.type }`, `Limit.Of[diagram.type] { val apex: diagram.… }` for
+  a parameter `diagram`, and `category.Object { val evidence: A is Obj }`, where `A` is the member of `Object`. Refine
+  through an alias declared elsewhere (`Product.Of[category.type]`, `category.ObjectOf[A]`), import what the refinement
+  names (`import category.ObjectOf`), use a `this`-qualified path in methods (`OpCoproducts.this.cartesian.type`), or
+  give a method parameter another name (`limit(functor)`).
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
 - **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
   passes to its parent (the points of `Total.LimitOf`) goes into the companion, indexed by the parameter it depends on
-  (`LimitOf.Point.Of[D.type]`). Nor can its type arguments name the class's parameters: an instance whose type of
-  diagrams depends on a parameter is a method returning an anonymous instance (`Total.DiscreteLimitsOf(J)`).
-- **`export F.K`** creates a stable alias: imports from it and singleton chains keep working.
+  (`LimitOf.Point.Of[diagram.type]`). Nor can its type arguments name the class's parameters: an instance whose type of
+  diagrams depends on a parameter is a method returning an anonymous instance (`Total.DiscreteLimitsOf(index)`).
+- **`export functor.category`** creates a stable alias: imports from it and singleton chains keep working.
 - **Same-named extensions from two imports overload** by the receiver's type, and extensions are also found through a
-  path-dependent type's prefix (`K.Hom` finds `K.>>>` without an import). Where one value is an arrow of two
-  structures (a Kleisli arrow on 𝒮, a promonad and its `category`), both `>>>` apply: import one and name the other
-  (`M.K.andThen(…)`). The failure is always a compile error, never a wrong composition.
+  path-dependent type's prefix (`category.Hom` finds `category.>>>` without an import). Where one value is an arrow of
+  two structures (a Kleisli arrow on 𝒮, a promonad and its `arrows`), both `>>>` apply: import one and name the other
+  (`monad.category.andThen(…)`). The failure is always a compile error, never a wrong composition.
 - **Infix precedence** goes by first character: `*` > `+`, `-->`, `->>` > `<->` > `==>` > `^` > `is`, with `~>` and
   `~~>` tightest. Parenthesize mixed arrows and tensors (`(A + B) --> C`, `(A ~> B) is Observable`). `?<` binds tighter
   than every other term operator; `<?` would start an XML literal.
@@ -224,10 +233,10 @@ colimits in `Colimit`'s.
   specific given in one object are ambiguous: put the fallback in a parent trait of the companion
   (`object Observable extends ComponentwiseObservable`). `CanEqual` is not an equality: build `Eq` with `Eq.structural`.
   Exporting a given whose type depends on a path fails under capture checking (`docs/compiler-issues.md`): name the
-  type and declare a private given instead (`Monoidal.I = U.A` and `IIsObj`).
+  type and declare a private given instead (`Monoidal.I = unit.A` and `IIsObj`).
 - **Nullary extensions** that clash with a method of the same name take `(using DummyImplicit)`.
-- **Imports.** `import M.{*, ***}` is an error, since `*` is the wildcard; import a tensor alias `*` backticked:
-  ``import M.{I, `*`, given}``. Pants infers no dependency from a relative import at the top of a file
+- **Imports.** `import monoidal.{*, ***}` is an error, since `*` is the wildcard; import a tensor alias `*` backticked:
+  ``import monoidal.{I, `*`, given}``. Pants infers no dependency from a relative import at the top of a file
   (`import Category.Discrete2.Disc2` after the package clauses), and `pants check` can then fail with "Not found": put
   the import inside the definition that uses it (`object Sample`).
 - **GADTs and evidence.** Matching refines type parameters, not type members, so a match on `A is Disc2` never refines
@@ -236,8 +245,8 @@ colimits in `Colimit`'s.
   `X` in the case `Zero`): convert with the case's equality,
   `summon[A =:= 0].substituteCo[[T] =>> Components[X, Y][T]](x)`.
 - **Capture checking.** Patterns of case classes without fields (`Proj1()`) crash it: write `case _: Proj1[?, ?]`. A
-  given declared with an unreduced match type (`given (K.-->[(Int, Long), …] is Observable)`) fails: declare it in
-  reduced form. A polymorphic function type cannot wrap an impure one: `[X] => Sample[X] ?-> Sample[F[X]]`.
+  given declared with an unreduced match type (`given (category.-->[(Int, Long), …] is Observable)`) fails: declare it
+  in reduced form. A polymorphic function type cannot wrap an impure one: `[X] => Sample[X] ?-> Sample[F[X]]`.
 - **Capture checking in tests.** Lambdas inside ScalaTest's `assert` macro can fail ("Illegal capture reference"):
   compute the value outside. Annotate ScalaCheck lambda parameters with pure types. Helpers called from generator
   lambdas go in an object, not the test class (`Descent`).

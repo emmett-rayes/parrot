@@ -8,7 +8,7 @@ import scala.util.{Failure as TryFailure, Success as TrySuccess, Try}
 /** Behavior of [[StrictParser]]: normal forms, dispatch, left recursion and agreement on named grammars. */
 class StrictParserTest extends AnyFunSuite {
   import StrictParserTest.*
-  import parser.{Choice as _, *}
+  import parser.{choice as _, *}
   import StrictParser.Node.*
 
   given CanEqual[Any, Any] = CanEqual.derived

@@ -9,20 +9,22 @@ import Category.Type
 /** The laws of [[Conway]], with arrows whose fixed points are defined. */
 abstract class ConwaySpec(
   name: String,
-  tracked val C: Conway { val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } } },
+  tracked val conway: Conway {
+    val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } }
+  },
 )(using
-  promonad: PromonadFixture.On[C.S.P.type],
+  promonad: PromonadFixture.On[conway.strong.profunctor.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[C.S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[conway.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Conway", name) {
   import types.{T2, T3, given}
   import promonad.*
-  import C.S.P
-  import P.{P, >>>}
-  import C.ConwayLaws.*
-  import P.K.-->
+  import conway.strong.profunctor
+  import profunctor.{P, >>>}
+  import conway.ConwayLaws.*
+  import profunctor.category.-->
 
-  private type *[X, Y] = C.S.M.Tensor[X, Y]
+  private type *[X, Y] = conway.strong.monoidal.Tensor[X, Y]
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 
@@ -51,7 +53,7 @@ abstract class ConwaySpec(
   law("parameterNaturality") {
     val observations = observe[T3, Int]
     val ps           = step[T2]
-    val hs           = base.arrow[T3, T2]
+    val hs           = category.arrow[T3, T2]
 
     forAll(observations, ps, hs) { (observe, p, h) =>
       given (P[T3, Int] is Observable) = observe
@@ -97,7 +99,7 @@ abstract class ConwaySpec(
     forAll(observations, fs) { (observe, f) =>
       given (P[T2, Int] is Observable) = observe
       val (h, inverse)                          = bijection
-      val g = C.S.left[Int, Int, T2](P.unit(inverse)) >>> f >>> P.unit(h)
+      val g = conway.strong.left[Int, Int, T2](profunctor.unit(inverse)) >>> f >>> profunctor.unit(h)
       uniformity(f, g, h)
     }
   }

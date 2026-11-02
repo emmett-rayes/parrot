@@ -12,9 +12,9 @@ import scala.annotation.targetName
   * In 𝒫, *p̄* runs *p* and returns its input; in the Kleisli category of the option monad, it succeeds where *p*
   * succeeds. For parsers, *p̄* is positive lookahead.
   */
-abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
-  import P.{P, >>>}
-  import P.K.{Obj, -->}
+abstract class Restriction(tracked val promonad: Promonad) extends caps.Pure {
+  import promonad.{P, >>>}
+  import promonad.category.{Obj, -->}
 
   /** The restriction *p̄*: *A* → *A* of *p*: *A* → *B*. */
   def restrict[A: Obj, B: Obj](p: P[A, B]): P[A, A]
@@ -62,7 +62,7 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
     /** *unit*(*f*)‾ = *id*: pure arrows are total.
       */
     def pureTotal[A: Obj, B: Obj](f: A --> B)(using P[A, A] is Observable): Boolean = {
-      restrict(P.unit(f)) =?= P.identity[A]
+      restrict(promonad.unit(f)) =?= promonad.identity[A]
     }
 
     /** If *p* = *p*′, then *p̄* = *p*′‾.
@@ -91,13 +91,15 @@ abstract class Restriction(tracked val P: Promonad) extends caps.Pure {
   * commits to *p* where *p* is defined, whatever comes after. The Kleisli category of the option monad is classical;
   * 𝒫 is not, because the complement of "this program terminates" is not computable.
   */
-abstract class Classical(tracked override val P: Promonad, tracked val C: Cocartesian { val K: P.K.type })
-    extends Restriction(P) {
-  import C.+
-  import P.{P, >>>}
-  import P.K.Obj
+abstract class Classical(
+  tracked override val promonad: Promonad,
+  tracked val cocartesian: Cocartesian { val category: promonad.category.type },
+) extends Restriction(promonad) {
+  import cocartesian.+
+  import promonad.{P, >>>}
+  import promonad.category.Obj
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = C.T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = cocartesian.tensor.objects[A, B]
 
   /** The restriction zero 0: *A* → *B*, defined nowhere. */
   def zero[A: Obj, B: Obj]: P[A, B]
@@ -111,7 +113,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
   /** *attempt*(*p*) = (*p* ⨾ *ι*₁) ⊳ *ι*₂: the result of *p* on the left, or the untouched input on the right.
     */
   def attempt[A: Obj, B: Obj](p: P[A, B]): P[A, B + A] = {
-    orElse(p >>> P.unit(C.inl[B, A]), P.unit(C.inr[B, A]))
+    orElse(p >>> promonad.unit(cocartesian.inl[B, A]), promonad.unit(cocartesian.inr[B, A]))
   }
 
   extension [A: Obj, B: Obj](p: P[A, B])
@@ -200,7 +202,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
     /** *p̄* ⊳ *p̄*ᶜ = *id*: every input either is or is not in the domain of *p*.
       */
     def complementCover[A: Obj, B: Obj](p: P[A, B])(using P[A, A] is Observable): Boolean = {
-      orElse(restrict(p), complement(p)) =?= P.identity[A]
+      orElse(restrict(p), complement(p)) =?= promonad.identity[A]
     }
 
     /** (*p̄*ᶜ)‾ = *p̄*ᶜ: a complement is a restriction idempotent. */
@@ -216,7 +218,7 @@ abstract class Classical(tracked override val P: Promonad, tracked val C: Cocart
     /** *attempt*(*p*) = (*p* ⨾ *ι*₁) ⊳ *ι*₂
       */
     def attemptDefinition[A: Obj, B: Obj](p: P[A, B])(using P[A, B + A] is Observable): Boolean = {
-      attempt(p) =?= orElse(p >>> P.unit(C.inl[B, A]), P.unit(C.inr[B, A]))
+      attempt(p) =?= orElse(p >>> promonad.unit(cocartesian.inl[B, A]), promonad.unit(cocartesian.inr[B, A]))
     }
 
     /** If *p* = *p*′ and *q* = *q*′, then *p* ⊳ *q* = *p*′ ⊳ *q*′ and *p̄*ᶜ = *p*′‾ᶜ.

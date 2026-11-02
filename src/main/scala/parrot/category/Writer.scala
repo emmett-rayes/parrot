@@ -14,17 +14,17 @@ import Category.Type
   * fails has no output, unlike in the failure transformer over a writer ([[OptionT]]).
   */
 open class WriterT(
-  tracked val W: Monoid { val V: Total.Products.type },
-  tracked val M: Monad.On[Total.type],
-) extends Monad(WriterT.FunctorOf(W, M)) {
+  tracked val monoid: Monoid { val monoidal: Total.Products.type },
+  tracked val monad: Monad.On[Total.type],
+) extends Monad(WriterT.FunctorOf(monoid, monad)) {
 
-  def unit[A: Type]: A -> M.M[(W.M, A)] = {
-    a => M.unit[(W.M, A)]((W.unit(()), a))
+  def unit[A: Type]: A -> monad.M[(monoid.M, A)] = {
+    a => monad.unit[(monoid.M, A)]((monoid.unit(()), a))
   }
 
-  def flatten[A: Type]: M.M[(W.M, M.M[(W.M, A)])] -> M.M[(W.M, A)] = {
-    M.bind[(W.M, M.M[(W.M, A)]), (W.M, A)] { (w, m) =>
-      M.map[(W.M, A), (W.M, A)]((w2, a) => (W.multiply((w, w2)), a))(m)
+  def flatten[A: Type]: monad.M[(monoid.M, monad.M[(monoid.M, A)])] -> monad.M[(monoid.M, A)] = {
+    monad.bind[(monoid.M, monad.M[(monoid.M, A)]), (monoid.M, A)] { (w, m) =>
+      monad.map[(monoid.M, A), (monoid.M, A)]((w2, a) => (monoid.multiply((w, w2)), a))(m)
     }
   }
 }
@@ -33,17 +33,17 @@ object WriterT {
 
   /** The endofunctor of the writer transformer: *M*[*W* × −], which maps the result and keeps the output. */
   final class FunctorOf(
-    tracked val W: Monoid { val V: Total.Products.type },
-    tracked val M: Monad.On[Total.type],
+    tracked val monoid: Monoid { val monoidal: Total.Products.type },
+    tracked val monad: Monad.On[Total.type],
   ) extends Endofunctor(Total) {
-    type Self[A] = M.M[(W.M, A)]
+    type Self[A] = monad.M[(monoid.M, A)]
 
-    def objects[A: Type]: M.M[(W.M, A)] is Type = {
+    def objects[A: Type]: monad.M[(monoid.M, A)] is Type = {
       Type.TIsType
     }
 
-    def map[A: Type, B: Type](f: A -> B): M.M[(W.M, A)] -> M.M[(W.M, B)] = {
-      M.map[(W.M, A), (W.M, B)]((w, a) => (w, f(a)))
+    def map[A: Type, B: Type](f: A -> B): monad.M[(monoid.M, A)] -> monad.M[(monoid.M, B)] = {
+      monad.map[(monoid.M, A), (monoid.M, B)]((w, a) => (w, f(a)))
     }
   }
 }
@@ -59,4 +59,5 @@ object WriterT {
   * If *W* is commutative, the order of effects does not matter, and the Kleisli arrows form a monoidal category; if *W*
   * is also idempotent (a [[Semilattice]]), running an arrow twice is the same as running it once.
   */
-open class Writer(tracked override val W: Monoid { val V: Total.Products.type }) extends WriterT(W, Monad.Identity)
+open class Writer(tracked override val monoid: Monoid { val monoidal: Total.Products.type })
+    extends WriterT(monoid, Monad.Identity)

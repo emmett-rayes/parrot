@@ -14,16 +14,16 @@ import Category.Type
   * is produced whether or not the computation fails. This is the shape of a parser that reports what it expected on
   * success and on failure.
   */
-open class OptionT(tracked val M: Monad.On[Total.type]) extends Monad(OptionT.FunctorOf(M)) {
+open class OptionT(tracked val monad: Monad.On[Total.type]) extends Monad(OptionT.FunctorOf(monad)) {
 
-  def unit[A: Type]: A -> M.M[Option[A]] = {
-    a => M.unit[Option[A]](Some(a))
+  def unit[A: Type]: A -> monad.M[Option[A]] = {
+    a => monad.unit[Option[A]](Some(a))
   }
 
-  def flatten[A: Type]: M.M[Option[M.M[Option[A]]]] -> M.M[Option[A]] = {
-    M.bind[Option[M.M[Option[A]]], Option[A]] {
+  def flatten[A: Type]: monad.M[Option[monad.M[Option[A]]]] -> monad.M[Option[A]] = {
+    monad.bind[Option[monad.M[Option[A]]], Option[A]] {
       case Some(m) => m
-      case None    => M.unit[Option[A]](None)
+      case None    => monad.unit[Option[A]](None)
     }
   }
 }
@@ -31,15 +31,15 @@ open class OptionT(tracked val M: Monad.On[Total.type]) extends Monad(OptionT.Fu
 object OptionT {
 
   /** The endofunctor of the failure transformer: *M*[1 + −], which maps a result and keeps a failure. */
-  final class FunctorOf(tracked val M: Monad.On[Total.type]) extends Endofunctor(Total) {
-    type Self[A] = M.M[Option[A]]
+  final class FunctorOf(tracked val monad: Monad.On[Total.type]) extends Endofunctor(Total) {
+    type Self[A] = monad.M[Option[A]]
 
-    def objects[A: Type]: M.M[Option[A]] is Type = {
+    def objects[A: Type]: monad.M[Option[A]] is Type = {
       Type.TIsType
     }
 
-    def map[A: Type, B: Type](f: A -> B): M.M[Option[A]] -> M.M[Option[B]] = {
-      M.map[Option[A], Option[B]](_.map(f))
+    def map[A: Type, B: Type](f: A -> B): monad.M[Option[A]] -> monad.M[Option[B]] = {
+      monad.map[Option[A], Option[B]](_.map(f))
     }
   }
 
@@ -53,29 +53,30 @@ object OptionT {
     * while *m* ⨾ 0 and *m̄* ⨾ *m̄*ᶜ have those of *m*. Silent tests, which drop the effects of *m*, keep these laws
     * exact instead, at the cost of **R1** and **R4**.
     */
-  open class ClassicalOf(tracked val T: OptionT) extends Monad.Classical(T) {
+  open class ClassicalOf(tracked val transformer: OptionT) extends Monad.Classical(transformer) {
+    import transformer.monad.M
 
-    def restrict[A](m: T.M.M[Option[A]]): T.M.M[Option[Unit]] = {
-      T.M.map[Option[A], Option[Unit]](_.map(_ => ()))(m)
+    def restrict[A](m: M[Option[A]]): M[Option[Unit]] = {
+      transformer.monad.map[Option[A], Option[Unit]](_.map(_ => ()))(m)
     }
 
-    def zero[A]: T.M.M[Option[A]] = {
-      T.M.unit[Option[A]](None)
+    def zero[A]: M[Option[A]] = {
+      transformer.monad.unit[Option[A]](None)
     }
 
-    def complement[A](m: T.M.M[Option[A]]): T.M.M[Option[Unit]] = {
-      T.M.map[Option[A], Option[Unit]](r => if r.isEmpty then Some(()) else None)(m)
+    def complement[A](m: M[Option[A]]): M[Option[Unit]] = {
+      transformer.monad.map[Option[A], Option[Unit]](r => if r.isEmpty then Some(()) else None)(m)
     }
 
-    def orElse[A](m: T.M.M[Option[A]], n: -> T.M.M[Option[A]]): T.M.M[Option[A]] = {
-      T.M.bind[Option[A], Option[A]] {
+    def orElse[A](m: M[Option[A]], n: -> M[Option[A]]): M[Option[A]] = {
+      transformer.monad.bind[Option[A], Option[A]] {
         case None   => n
-        case result => T.M.unit[Option[A]](result)
+        case result => transformer.monad.unit[Option[A]](result)
       }(m)
     }
 
-    override def attempt[A](m: T.M.M[Option[A]]): T.M.M[Option[Option[A]]] = {
-      T.M.map[Option[A], Option[Option[A]]](r => Some(r))(m)
+    override def attempt[A](m: M[Option[A]]): M[Option[Option[A]]] = {
+      transformer.monad.map[Option[A], Option[Option[A]]](r => Some(r))(m)
     }
   }
 }

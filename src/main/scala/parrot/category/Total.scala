@@ -165,17 +165,17 @@ object Total extends Category {
     * no subset types; [[LimitOf.Point]] makes the subset by abstraction (tutorial, §6.5). Neither step looks at the
     * shape of **J**, so this one construction gives every limit of 𝒮.
     */
-  final class LimitOf(tracked override val D: Functor { val D: Total.type })
-      extends Limit(D, D.D.Object[LimitOf.Point.Of[D.type]]) {
-    import D.C as J
+  final class LimitOf(tracked override val diagram: Functor { val target: Total.type })
+      extends Limit(diagram, diagram.target.Object[LimitOf.Point.Of[diagram.type]]) {
+    import diagram.source as J
     import LimitOf.Point
 
-    def leg[A: J.Obj]: Apex -> D.F[A] = {
+    def leg[A: J.Obj]: X -> diagram.F[A] = {
       _.at[A]
     }
 
-    def factor(K: Cone.Of[D.type]): K.Apex -> Apex = {
-      y => Point(D)([A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y))
+    def factor(cone: Cone.Of[diagram.type]): cone.X -> X = {
+      y => Point(diagram)([A] => (a: A is J.Obj) ?=> cone.leg[A](using a)(y))
     }
   }
 
@@ -193,23 +193,23 @@ object Total extends Category {
       * @note Naturality is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
       *   cones are lawful, and it is the cone law of the limit itself, *D*(*f*) ∘ *ψ*_*A* = *ψ*_*B*, at each point.
       */
-    final class Point private[LimitOf] (tracked val D: Functor { val D: Total.type })(
-      val at: [A] -> (A is D.C.Obj) ?-> D.F[A],
+    final class Point private[LimitOf] (tracked val diagram: Functor { val target: Total.type })(
+      val at: [A] -> (A is diagram.source.Obj) ?-> diagram.F[A],
     ) extends caps.Pure
 
     object Point {
 
       /** Refines `Point` to a specific diagram *F*. */
-      type Of[F <: Functor] = Point { val D: F }
+      type Of[F <: Functor] = Point { val diagram: F }
     }
   }
 
   /** The limits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the limit
     * [[LimitOf]](*D*).
     */
-  object Limits extends Limit.OfDiagram[[K <: Category] =>> Functor { val D: K }](Total) {
-    def limit(G: Functor { val D: Total.type }): Limit.Of[G.type] = {
-      LimitOf(G)
+  object Limits extends Limit.OfDiagram[[K <: Category] =>> Functor { val target: K }](Total) {
+    def limit(functor: Functor { val target: Total.type }): Limit.Of[functor.type] = {
+      LimitOf(functor)
     }
   }
 
@@ -225,16 +225,18 @@ object Total extends Category {
     * [[LimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
     */
   final class DiscreteLimitOf(
-    tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },
-  ) extends Limit(D, D.D.Object[[A] -> (A is D.C.Obj) ?-> D.F[A]]) {
-    import D.C as J
+    tracked override val diagram: Functor {
+      val source: Category { type Self[A, B] <: A =:= B }; val target: Total.type
+    },
+  ) extends Limit(diagram, diagram.target.Object[[A] -> (A is diagram.source.Obj) ?-> diagram.F[A]]) {
+    import diagram.source as J
 
-    def leg[A: J.Obj]: Apex -> D.F[A] = {
+    def leg[A: J.Obj]: X -> diagram.F[A] = {
       x => x[A]
     }
 
-    def factor(K: Cone.Of[D.type]): K.Apex -> Apex = {
-      y => [A] => (a: A is J.Obj) ?=> K.leg[A](using a)(y)
+    def factor(cone: Cone.Of[diagram.type]): cone.X -> X = {
+      y => [A] => (a: A is J.Obj) ?=> cone.leg[A](using a)(y)
     }
   }
 
@@ -244,17 +246,17 @@ object Total extends Category {
     * @note A method, not a class: the type of the diagrams depends on **J**, and the parent of a class cannot depend on
     *   its parameters.
     */
-  def DiscreteLimitsOf(J: Category { type Self[A, B] <: A =:= B })
-    : Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }] {
-      val C: Total.type
-      type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
+  def DiscreteLimitsOf(index: Category { type Self[A, B] <: A =:= B })
+    : Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }] {
+      val category: Total.type
+      type Lim[F[_]] = [A] -> (A is index.Obj) ?-> F[A]
     } = {
-    new Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }](Total) {
-      type Lim[F[_]] = [A] -> (A is J.Obj) ?-> F[A]
+    new Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }](Total) {
+      type Lim[F[_]] = [A] -> (A is index.Obj) ?-> F[A]
 
-      def limit(G: Functor { val C: J.type; val D: Total.type })
-        : Limit.Of[G.type] { val X: G.D.ObjectOf[Lim[G.F]] } = {
-        DiscreteLimitOf(G)
+      def limit(functor: Functor { val source: index.type; val target: Total.type })
+        : Limit.Of[functor.type] { val apex: functor.target.ObjectOf[Lim[functor.F]] } = {
+        DiscreteLimitOf(functor)
       }
     }
   }
@@ -302,17 +304,17 @@ object Total extends Category {
     * and Scala has no quotient types; [[ColimitOf.Point]] makes the quotient by abstraction (tutorial, §7.6). Neither
     * step looks at the shape of **J**, so this one construction gives every colimit of 𝒮.
     */
-  final class ColimitOf(tracked override val D: Functor { val D: Total.type })
-      extends Colimit(D, D.D.Object[ColimitOf.Point.Of[D.type]]) {
-    import D.C as J
+  final class ColimitOf(tracked override val diagram: Functor { val target: Total.type })
+      extends Colimit(diagram, diagram.target.Object[ColimitOf.Point.Of[diagram.type]]) {
+    import diagram.source as J
     import ColimitOf.Point
 
-    def leg[A: J.Obj as obj]: D.F[A] -> Apex = {
-      x => Point(D)(Sum(obj, x))
+    def leg[A: J.Obj as obj]: diagram.F[A] -> X = {
+      x => Point(diagram)(Sum(obj, x))
     }
 
-    def factor(K: Cocone.Of[D.type]): Apex -> K.Apex = {
-      p => K.leg[p.sum.A](using p.sum.obj)(p.sum.at)
+    def factor(cocone: Cocone.Of[diagram.type]): X -> cocone.X = {
+      p => cocone.leg[p.sum.A](using p.sum.obj)(p.sum.at)
     }
   }
 
@@ -330,23 +332,23 @@ object Total extends Category {
       *   cocones are lawful, and it is the cocone law of the colimit itself, *ψ*_*B* ∘ *D*(*f*) = *ψ*_*A*, at each
       *   point.
       */
-    final class Point private[ColimitOf] (tracked val D: Functor { val D: Total.type })(
-      private[ColimitOf] val sum: Sum[D.C.Obj, D.F],
+    final class Point private[ColimitOf] (tracked val diagram: Functor { val target: Total.type })(
+      private[ColimitOf] val sum: Sum[diagram.source.Obj, diagram.F],
     ) extends caps.Pure
 
     object Point {
 
       /** Refines `Point` to a specific diagram *F*. */
-      type Of[F <: Functor] = Point { val D: F }
+      type Of[F <: Functor] = Point { val diagram: F }
     }
   }
 
   /** The colimits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the colimit
     * [[ColimitOf]](*D*).
     */
-  object Colimits extends Colimit.OfDiagram[[K <: Category] =>> Functor { val D: K }](Total) {
-    def colimit(G: Functor { val D: Total.type }): Colimit.Of[G.type] = {
-      ColimitOf(G)
+  object Colimits extends Colimit.OfDiagram[[K <: Category] =>> Functor { val target: K }](Total) {
+    def colimit(functor: Functor { val target: Total.type }): Colimit.Of[functor.type] = {
+      ColimitOf(functor)
     }
   }
 
@@ -361,16 +363,18 @@ object Total extends Category {
     * [[ColimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
     */
   final class DiscreteColimitOf(
-    tracked override val D: Functor { val C: Category { type Self[A, B] <: A =:= B }; val D: Total.type },
-  ) extends Colimit(D, D.D.Object[Sum[D.C.Obj, D.F]]) {
-    import D.C as J
+    tracked override val diagram: Functor {
+      val source: Category { type Self[A, B] <: A =:= B }; val target: Total.type
+    },
+  ) extends Colimit(diagram, diagram.target.Object[Sum[diagram.source.Obj, diagram.F]]) {
+    import diagram.source as J
 
-    def leg[A: J.Obj as obj]: D.F[A] -> Apex = {
+    def leg[A: J.Obj as obj]: diagram.F[A] -> X = {
       x => Sum(obj, x)
     }
 
-    def factor(K: Cocone.Of[D.type]): Apex -> K.Apex = {
-      s => K.leg[s.A](using s.obj)(s.at)
+    def factor(cocone: Cocone.Of[diagram.type]): X -> cocone.X = {
+      s => cocone.leg[s.A](using s.obj)(s.at)
     }
   }
 
@@ -380,17 +384,17 @@ object Total extends Category {
     * @note A method, not a class: the type of the diagrams depends on **J**, and the parent of a class cannot depend on
     *   its parameters.
     */
-  def DiscreteColimitsOf(J: Category { type Self[A, B] <: A =:= B })
-    : Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }] {
-      val C: Total.type
-      type Colim[F[_]] = Sum[J.Obj, F]
+  def DiscreteColimitsOf(index: Category { type Self[A, B] <: A =:= B })
+    : Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }] {
+      val category: Total.type
+      type Colim[F[_]] = Sum[index.Obj, F]
     } = {
-    new Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val C: J.type; val D: K }](Total) {
-      type Colim[F[_]] = Sum[J.Obj, F]
+    new Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }](Total) {
+      type Colim[F[_]] = Sum[index.Obj, F]
 
-      def colimit(G: Functor { val C: J.type; val D: Total.type })
-        : Colimit.Of[G.type] { val X: G.D.ObjectOf[Colim[G.F]] } = {
-        DiscreteColimitOf(G)
+      def colimit(functor: Functor { val source: index.type; val target: Total.type })
+        : Colimit.Of[functor.type] { val apex: functor.target.ObjectOf[Colim[functor.F]] } = {
+        DiscreteColimitOf(functor)
       }
     }
   }

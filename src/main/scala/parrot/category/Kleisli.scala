@@ -10,19 +10,19 @@ import Category.Type
   *   - *unit*(*f*) = *η* ∘ *f* embeds the pure morphisms
   *   - *multiply*(*g*,*f*) = *g*∘ *f* runs *f*, then *g* on its result
   */
-open class Kleisli(tracked val M: Monad) extends Promonad(M.K) {
-  import M.K.{Obj, -->}
+open class Kleisli(tracked val monad: Monad) extends Promonad(monad.category) {
+  import monad.category.{Obj, -->}
 
-  type Self[A, B] = A --> M.M[B]
+  type Self[A, B] = A --> monad.M[B]
 
-  private given MIsObj: [A: Obj] => (M.M[A] is Obj) = M.objects[A]
+  private given MIsObj: [A: Obj] => (monad.M[A] is Obj) = monad.objects[A]
 
-  def unit[A: Obj, B: Obj](f: A --> B): A --> M.M[B] = {
-    M.K.andThen(f, M.unit[B])
+  def unit[A: Obj, B: Obj](f: A --> B): A --> monad.M[B] = {
+    monad.category.andThen(f, monad.unit[B])
   }
 
-  def multiply[A: Obj, B: Obj, C: Obj](g: B --> M.M[C], f: A --> M.M[B]): A --> M.M[C] = {
-    M.K.andThen(f, M.bind(g))
+  def multiply[A: Obj, B: Obj, C: Obj](g: B --> monad.M[C], f: A --> monad.M[B]): A --> monad.M[C] = {
+    monad.category.andThen(f, monad.bind(g))
   }
 }
 
@@ -33,10 +33,12 @@ object Kleisli {
     *
     * The effect of *p* happens; *c* is passed along unchanged.
     */
-  open class ProductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
-      extends Strong.Bistrong(P, Total.Products) {
-    def left[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): ((C, A)) -> P.M.M[(C, B)] = {
-      (c, a) => P.M.map[B, (C, B)](b => (c, b))(p(a))
+  open class ProductStrength(tracked override val profunctor: Kleisli { val monad: Monad.On[Total.type] })
+      extends Strong.Bistrong(profunctor, Total.Products) {
+    import profunctor.monad.M
+
+    def left[A: Type, B: Type, C: Type](p: A -> M[B]): ((C, A)) -> M[(C, B)] = {
+      (c, a) => profunctor.monad.map[B, (C, B)](b => (c, b))(p(a))
     }
   }
 
@@ -45,11 +47,13 @@ object Kleisli {
     *
     * On the left the value passes through without effect; on the right the arrow runs.
     */
-  open class CoproductStrength(tracked override val P: Kleisli { val M: Monad.On[Total.type] })
-      extends Strong.Bistrong(P, Total.Coproducts) {
-    def left[A: Type, B: Type, C: Type](p: A -> P.M.M[B]): Either[C, A] -> P.M.M[Either[C, B]] = {
-      case Left(c)  => P.M.unit[Either[C, B]](Left(c))
-      case Right(a) => P.M.map[B, Either[C, B]](b => Right(b))(p(a))
+  open class CoproductStrength(tracked override val profunctor: Kleisli { val monad: Monad.On[Total.type] })
+      extends Strong.Bistrong(profunctor, Total.Coproducts) {
+    import profunctor.monad.M
+
+    def left[A: Type, B: Type, C: Type](p: A -> M[B]): Either[C, A] -> M[Either[C, B]] = {
+      case Left(c)  => profunctor.monad.unit[Either[C, B]](Left(c))
+      case Right(a) => profunctor.monad.map[B, Either[C, B]](b => Right(b))(p(a))
     }
   }
 
@@ -57,12 +61,13 @@ object Kleisli {
     *   - *p̄*(*a*) = *M*(*x* ↦ *a*)(*p*(*a*)‾): run the test of *p*, then return the input
     */
   open class RestrictionOf(
-    tracked override val P: Kleisli { val M: Monad.On[Total.type] },
-    tracked val R: Monad.Restriction { val M: P.M.type },
-  ) extends Restriction(P) {
+    tracked override val promonad: Kleisli { val monad: Monad.On[Total.type] },
+    tracked val restriction: Monad.Restriction { val monad: promonad.monad.type },
+  ) extends Restriction(promonad) {
+    import promonad.monad.M
 
-    def restrict[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
-      a => P.M.map[Unit, A](_ => a)(R.restrict(p(a)))
+    def restrict[A: Type, B: Type](p: A -> M[B]): A -> M[A] = {
+      a => promonad.monad.map[Unit, A](_ => a)(restriction.restrict(p(a)))
     }
   }
 
@@ -71,45 +76,47 @@ object Kleisli {
     *   - *attempt*(*p*)(*a*) tags the result of *p*(*a*), or returns *a* on the right where *p*(*a*) fails
     */
   open class ClassicalOf(
-    tracked override val P: Kleisli { val M: Monad.On[Total.type] },
-    tracked val R: Monad.Classical { val M: P.M.type },
-  ) extends Classical(P, Total.Coproducts) {
+    tracked override val promonad: Kleisli { val monad: Monad.On[Total.type] },
+    tracked val classical: Monad.Classical { val monad: promonad.monad.type },
+  ) extends Classical(promonad, Total.Coproducts) {
+    import promonad.monad.M
 
-    def restrict[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
-      a => P.M.map[Unit, A](_ => a)(R.restrict(p(a)))
+    def restrict[A: Type, B: Type](p: A -> M[B]): A -> M[A] = {
+      a => promonad.monad.map[Unit, A](_ => a)(classical.restrict(p(a)))
     }
 
-    def zero[A: Type, B: Type]: A -> P.M.M[B] = {
-      _ => R.zero[B]
+    def zero[A: Type, B: Type]: A -> M[B] = {
+      _ => classical.zero[B]
     }
 
-    def complement[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[A] = {
-      a => P.M.map[Unit, A](_ => a)(R.complement(p(a)))
+    def complement[A: Type, B: Type](p: A -> M[B]): A -> M[A] = {
+      a => promonad.monad.map[Unit, A](_ => a)(classical.complement(p(a)))
     }
 
-    def orElse[A: Type, B: Type](p: A -> P.M.M[B], q: A -> P.M.M[B]): A -> P.M.M[B] = {
-      a => R.orElse(p(a), q(a))
+    def orElse[A: Type, B: Type](p: A -> M[B], q: A -> M[B]): A -> M[B] = {
+      a => classical.orElse(p(a), q(a))
     }
 
-    override def attempt[A: Type, B: Type](p: A -> P.M.M[B]): A -> P.M.M[Either[B, A]] = {
+    override def attempt[A: Type, B: Type](p: A -> M[B]): A -> M[Either[B, A]] = {
       a =>
-        P.M.map[Option[B], Either[B, A]] {
+        promonad.monad.map[Option[B], Either[B, A]] {
           case Some(b) => Left(b)
           case None    => Right(a)
-        }(R.attempt(p(a)))
+        }(classical.attempt(p(a)))
     }
   }
 
   /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */
   open class ElgotOf(
-    tracked override val S: Strong.Bistrong {
-      val P: Kleisli { val M: Monad.On[Total.type] }; val M: Total.Coproducts.type
+    tracked override val strong: Strong.Bistrong {
+      val profunctor: Kleisli { val monad: Monad.On[Total.type] }; val monoidal: Total.Coproducts.type
     },
-    tracked val E: Monad.Elgot { val M: S.P.M.type },
-  ) extends Elgot(S) {
+    tracked val elgot: Monad.Elgot { val monad: strong.profunctor.monad.type },
+  ) extends Elgot(strong) {
+    import strong.profunctor.monad.M
 
-    def iterate[A: Type, X: Type](p: X -> S.P.M.M[Either[A, X]]): X -> S.P.M.M[A] = {
-      E.iterate(p)
+    def iterate[A: Type, X: Type](p: X -> M[Either[A, X]]): X -> M[A] = {
+      elgot.iterate(p)
     }
   }
 

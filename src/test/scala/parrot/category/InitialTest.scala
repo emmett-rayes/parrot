@@ -5,17 +5,17 @@ import Category.Type
 import ColimitInitial.IName
 
 /** The laws of [[Initial]], for initial objects of a category whose objects are all types. */
-abstract class InitialSpec(tracked val I: Initial { val C: Category { type Obj = Type } })(using
-  category: CategoryFixture.On[I.C.type],
-  typename: TypeName[I.I],
+abstract class InitialSpec(tracked val initial: Initial { val category: Category { type Obj = Type } })(using
+  category: CategoryFixture.On[initial.category.type],
+  typename: TypeName[initial.I],
   types: SampleTypes,
-  sample: Sample[I.I],
+  sample: Sample[initial.I],
 ) extends LawSuite("Initial", s"${typename.name} on ${category.name}") {
   import types.{T1, given}
   import category.*
-  import I.C.-->
-  import I.I
-  import I.InitialLaws.*
+  import initial.category.-->
+  import initial.I
+  import initial.InitialLaws.*
 
   law("uniqueness") {
     val observations = observe[I, T1]

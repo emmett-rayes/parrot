@@ -2367,15 +2367,15 @@ abstract class Functor:
 
 The functor can name the *types* of the arrows of 𝒞 and 𝒟, but not the categories themselves: nothing gives it the identity of 𝒞 or the composition of 𝒟, which its laws need. Adding them as type-class evidence, found by the type `C`, works for one category per arrow type, and fails as soon as two categories share an arrow type, which is the situation of problem 2. The library's previous encoding went this way and needed type casts to connect a category value with the type that named it.
 
-Scala 3 offers a better tool. A class parameter declared `val` is a **stable path**: inside the class, its type members can be named and its members imported, as `C.Self` or `D.identity`. And a parameter declared `tracked` keeps the precise type of the argument in the type of the instance:
+Scala 3 offers a better tool. A class parameter declared `val` is a **stable path**: inside the class, its type members can be named and its members imported, as `source.Self` or `target.identity`. And a parameter declared `tracked` keeps the precise type of the argument in the type of the instance:
 
 ```scala library
 import parrot.category.*
 import Category.Type
 
-abstract class MyFunctor(tracked val C: Category, tracked val D: Category):
+abstract class MyFunctor(tracked val source: Category, tracked val target: Category):
   type Self[_]
-  def map[A: C.Obj, B: C.Obj](f: C.Self[A, B]): D.Self[Self[A], Self[B]]
+  def map[A: source.Obj, B: source.Obj](f: source.Self[A, B]): target.Self[Self[A], Self[B]]
 
 object OptionMap extends MyFunctor(Total, Total):
   type Self[A] = Option[A]
@@ -2384,22 +2384,22 @@ object OptionMap extends MyFunctor(Total, Total):
 val lengths: Option[String] -> Option[Int] = OptionMap.map[String, Int](_.length)
 ```
 
-Because `C` is tracked, the type of `OptionMap.C` is `Total.type`, not just `Category`, so the compiler knows that `OptionMap.C.Self[A, B]` is `A -> B` and that `C.Obj` is `Type`. That is why `map` can be implemented with the types of 𝒮 and why `lengths` type-checks. Without `tracked`, the same code does not compile, because outside the class nothing is known about the categories:
+Because `source` is tracked, the type of `OptionMap.source` is `Total.type`, not just `Category`, so the compiler knows that `OptionMap.source.Self[A, B]` is `A -> B` and that `source.Obj` is `Type`. That is why `map` can be implemented with the types of 𝒮 and why `lengths` type-checks. Without `tracked`, the same code does not compile, because outside the class nothing is known about the categories:
 
 ```scala unit=Untracked fails library
 import parrot.category.*
 import Category.Type
 
-abstract class MyFunctor(val C: Category, val D: Category):
+abstract class MyFunctor(val source: Category, val target: Category):
   type Self[_]
-  def map[A: C.Obj, B: C.Obj](f: C.Self[A, B]): D.Self[Self[A], Self[B]]
+  def map[A: source.Obj, B: source.Obj](f: source.Self[A, B]): target.Self[Self[A], Self[B]]
 
 object OptionMap extends MyFunctor(Total, Total):
   type Self[A] = Option[A]
   def map[A: Type, B: Type](f: A -> B): Option[A] -> Option[B] = _.map(f)
 ```
 
-The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters. A refinement passes its parameter on under the same name: `Promonad(tracked override val K: Category)` extends `Endoprofunctor(K, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Strong.Bistrong` takes a profunctor `P { val K2: K1.type }` from a category to itself and a symmetric monoidal structure `M { val K: P.K1.type }` on that category, so a strength over the wrong category is a type error.
+The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters, named by the role they play, so that a path says what each of its steps is: `strong.profunctor.category` is the category of a strong profunctor. A refinement passes its parameter on under the same name: `Promonad(tracked override val category: Category)` extends `Endoprofunctor(category, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Strong.Bistrong` takes a profunctor `Profunctor { val codomain: domain.type }` from a category to itself and a symmetric monoidal structure `Symmetric { val category: profunctor.domain.type }` on that category, so a strength over the wrong category is a type error.
 
 ### 11.3 A carrier, or a name
 
@@ -2424,8 +2424,8 @@ Combinations of structures are not expressed by inheritance either. A class that
 Problem 3 is solved as in section 3.8: a category declares `type Obj <: Type`, and its identity and composition take context bounds `[A: Obj]`. The library adds three rules that matter in practice.
 
 - **Evidence is passed only through context bounds**, never through an explicit `using` clause before the value parameters. Scala resolves a `using` clause where it appears, so a clause before the arrows would be resolved before the arrows had told the compiler which types are meant. Context bounds are placed after the value parameters, so infix code such as `f >>> g` infers every type.
-- **Evidence that chooses an object is a parameter.** A monoidal structure is on its unit object as much as on its tensor, so it takes the unit as a `tracked` parameter, `Monoidal(K, U, T)`. The parameter is an object of **K** as a structure, `K.Object`: a `Category.Object(K, U)` carries the evidence `U`, and the unit object is the type that evidence is about, `I = U.A`. Unlike bare evidence, a structure can be refined, so `Cartesian` can ask for a `Terminal` object, which is an `Object` with `discard` (chapter 14). 𝒮 has two units, `Unit` for its products and `Nothing` for its coproducts, so implicit search could no more choose the unit than the tensor.
-- **Evidence is offered as values, and givens are private.** A structure exposes its evidence as members, such as the `objects` of a bifunctor and the evidence `U` of an object, and a class that needs a given declares a private one from them: `Monoidal` has `private given IIsObj: (I is Obj) = U.U`. A given member would be found through every type that mentions its structure, so a monoidal structure and its tensor, offering the same evidence, would be ambiguous for all their clients. The only public givens are the instances of type classes, such as `Type.TIsType`, next to their type class.
+- **Evidence that chooses an object is a parameter.** A monoidal structure is on its unit object as much as on its tensor, so it takes the unit as a `tracked` parameter, `Monoidal(category, unit, tensor)`. The unit is an object of **K** as a structure, `category.Object`: a `Category.Object(category, evidence)` carries the `evidence`, and the unit object is the type that evidence is about, `I = unit.A`. Unlike bare evidence, a structure can be refined, so `Cartesian` can ask for a `Terminal` object, which is an `Object` with `discard` (chapter 14). 𝒮 has two units, `Unit` for its products and `Nothing` for its coproducts, so implicit search could no more choose the unit than the tensor.
+- **Evidence is offered as values, and givens are private.** A structure exposes its evidence as members, such as the `objects` of a bifunctor and the `evidence` of an object, and a class that needs a given declares a private one from them: `Monoidal` has `private given IIsObj: (I is Obj) = unit.evidence`. A given member would be found through every type that mentions its structure, so a monoidal structure and its tensor, offering the same evidence, would be ambiguous for all their clients. The only public givens are the instances of type classes, such as `Type.TIsType`, next to their type class.
 - **An instance names its own evidence**, as `Type.TIsType`, instead of searching for it: a given in scope that forwards to the member being defined would be found by the search and call itself.
 
 Infix code needs one more rule: **every operation has one operator name.** `>>>` composes, in a category and in a category of arrows (chapter 17) alike, `***` is the tensor of a monoidal structure, `&&&` and `|||` pair and copair, `**` runs two effectful arrows side by side, `=?=` asks an `Observable` whether two values agree. Operators of the same name from two imports form an overload, which Scala resolves by the type of the arrow, so pure and effectful arrows can be composed side by side with `>>>`. The one exception is a value that is an arrow of two structures at once: an arrow A → M(B) of a Kleisli promonad on 𝒮 is also a function, so for it both `>>>` apply, and Scala reports an ambiguity or picks one and rejects the argument. Code about such arrows imports only one `>>>` and calls the other composition by its name. And every operator is only syntax: it passes its arguments, in order, to a named method that holds the logic, so `p >>> q` is `andThen(p, q)` and `p ** q` is `parallel(p, q)`, and every operation can be found, documented and exported by its name. With these names, code reads like the mathematics:
@@ -2444,7 +2444,7 @@ val pipeline: Int -> String    = both >>> h
 val parallel: ((Int, Int)) -> (Int, String) = f *** g
 ```
 
-**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in the second of a pair of categories, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import M.K.{Obj, -->}` or `import D.--> as ==>`, so that `M.K.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
+**Names for arrows and carriers.** Type members get short names too, so that signatures read like the definitions. Every class with a carrier names it: `Hom` for the morphisms of a category, `F` for the object map of a functor or bifunctor, `P` for a profunctor or promonad, `M` for a monad or monoid, `C` for a comonoid. Morphisms are written infix, and the arrow says which category they belong to: `A --> B` in the category at hand, `A ->> B` in the second of a pair of categories, `A ==> B` in a target category, `A ~~> B` in an opposite one. These three-symbol arrows name a role; the two concrete categories have two-symbol arrows: `A -> B` in 𝒮 and `A ~> B` in 𝒫. A bifunctor's arrow map therefore reads `bimap(f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]`. Objects are combined infix as well: `A * B` for a monoidal tensor, `A + B` for a coproduct, `B ^ A` for the internal hom from A to B, as in the exponential Bᴬ, and `A <-> B` for an isomorphism. A structure brings the names of the structures it is built on into scope by importing them, renaming where two categories meet, as in `import monoidal.category.{Obj, -->}` or `import target.--> as ==>`, so that `monoidal.category.Self[A * C, B * D]` becomes `(A * C) --> (B * D)`.
 
 ### 11.5 Laws, tests and the status table
 
@@ -2488,13 +2488,13 @@ The library's functor takes its two categories as parameters:
 ```scala unit=Shape library
 import parrot.category.Category
 
-abstract class Functor(tracked val C: Category, tracked val D: Category):
-  import C.-->
-  import D.--> as ==>                               // the arrows of the target category
+abstract class Functor(tracked val source: Category, tracked val target: Category):
+  import source.-->
+  import target.--> as ==>                          // the arrows of the target category
   type Self[_]
   final type F = Self                               // the object map
-  def objects[A: C.Obj]: F[A] is D.Obj              // objects go to objects
-  def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ==> F[B]   // the arrow map
+  def objects[A: source.Obj]: F[A] is target.Obj    // objects go to objects
+  def map[A: source.Obj, B: source.Obj](f: A --> B): F[A] ==> F[B]   // the arrow map
 ```
 
 `objects` is new compared with chapter 3: the object map must send objects of 𝒞 to objects of 𝒟, and when objects carry evidence, the functor must provide it. The laws are those of Definition 1.3, checked with an `Observable` of 𝒟's arrows:
@@ -2503,13 +2503,13 @@ abstract class Functor(tracked val C: Category, tracked val D: Category):
 - `FunctorLaws.composition`: F(g ∘ f) = F(g) ∘ F(f)
 - `FunctorLaws.congruence`: if f = f′ then F(f) = F(f′)
 
-**Endofunctors on 𝒮.** Most of what programmers call functors are functors from a category to itself, **endofunctors**, and most of those are functors from 𝒮 to itself. The library's `Endofunctor(K)` is `Functor(K, K)`. The simplest is the identity, `Total.Identity`, with F(A) = A and F(f) = f. `Option` is one too: the library takes it from the monad `Monad.OptionIsMonad` of chapter 15, as its functor `Monad.OptionIsMonad.F`:
+**Endofunctors on 𝒮.** Most of what programmers call functors are functors from a category to itself, **endofunctors**, and most of those are functors from 𝒮 to itself. The library's `Endofunctor(category)` is `Functor(category, category)`. The simplest is the identity, `Total.Identity`, with F(A) = A and F(f) = f. `Option` is one too: the library takes it from the monad `Monad.OptionIsMonad` of chapter 15, as its functor `Monad.OptionIsMonad.functor`:
 
 ```scala library
 import parrot.category.*
 import Category.Type
 
-val O                                  = Monad.OptionIsMonad.F
+val O                                  = Monad.OptionIsMonad.functor
 val lengths: Option[String] -> Option[Int] = O.map[String, Int](_.length)
 ```
 
@@ -2542,19 +2542,19 @@ val tags: Either[Int, String] -> Either[Long, Boolean] =
   Total.EitherIsCoproducts.bimap[Int, String, Long, Boolean](_.toLong, _.isEmpty)
 ```
 
-Both are **endobifunctors**, bifunctors from a category and itself to itself: the library's `Endobifunctor(K)` is `Bifunctor(K, K, K)`, as `Endofunctor(K)` is `Functor(K, K)`, and the tensors of chapter 14 are endobifunctors. On 𝒮, both are more than that: `Total.Tuple2IsProducts` and `Total.EitherIsCoproducts` are the products and the coproducts of chapter 14, endobifunctors with projections and pairing, and with injections and copairing, so their `bimap` is the one these determine.
+Both are **endobifunctors**, bifunctors from a category and itself to itself: the library's `Endobifunctor(category)` is `Bifunctor(category, category, category)`, as `Endofunctor(category)` is `Functor(category, category)`, and the tensors of chapter 14 are endobifunctors. On 𝒮, both are more than that: `Total.Tuple2IsProducts` and `Total.EitherIsCoproducts` are the products and the coproducts of chapter 14, endobifunctors with projections and pairing, and with injections and copairing, so their `bimap` is the one these determine.
 
-Mathematicians usually define a bifunctor as a functor out of the **product category** 𝒞₁ × 𝒞₂, whose objects are pairs of objects and whose arrows are pairs of arrows, composed componentwise. The library has the product, `Category.Product(C1, C2)`, but a bifunctor still takes its categories separately, `Bifunctor(C1, C2, D)`, and implements `bimap`. The two descriptions are related by a construction rather than by inheritance: `functor` reads a bifunctor as a functor out of the product, in the same way as `category` reads a promonad as a category (chapter 17). The bifunctor laws are stated once, as the functor laws of `functor`.
+Mathematicians usually define a bifunctor as a functor out of the **product category** 𝒞₁ × 𝒞₂, whose objects are pairs of objects and whose arrows are pairs of arrows, composed componentwise. The library has the product, `Category.Product(factor1, factor2)`, but a bifunctor still takes its categories separately, `Bifunctor(source1, source2, target)`, and implements `bimap`. The two descriptions are related by a construction rather than by inheritance: `functor` reads a bifunctor as a functor out of the product, in the same way as `arrows` reads a promonad as a category (chapter 17). The bifunctor laws are stated once, as the functor laws of `functor`.
 
 ```scala library
 val pairsAsFunctor = Total.Tuple2IsProducts.functor
-import pairsAsFunctor.C.given
+import pairsAsFunctor.source.given
 
 val bothLengths: ((String, String)) -> (Int, Int) =
   pairsAsFunctor.map[(String, String), (Int, Int)]((_.length, _.length))
 ```
 
-Why not let `Bifunctor` extend `Functor` directly? In Scala, an object of 𝒞₁ × 𝒞₂ has to be a single type, the pair type `(A1, A2)`, and the type of its arrows has to be computed from it: `(C1.-->[A1, B1], C2.-->[A2, B2])`. The only way to take a type apart at the type level is a **match type**, `Fst[(A1, A2)] = A1`. The type of arrows cannot depend on the evidence for an object, which is a value, and selecting a type member of an abstract type is not allowed, because it is unsound. So the product needs match types, and a bifunctor that extended `Functor` would carry them in the signatures that every instance implements. As a construction, they stay inside `Category.Product` and `functor`. Generic code never needs them to reduce either, because the evidence that a pair type is an object speaks about `Fst[X]` and `Snd[X]` directly; they reduce only where a concrete pair type such as `(String, String)` appears. A class for categories whose objects are pairs of types would avoid match types, at the price of the duplication described in chapter 10.
+Why not let `Bifunctor` extend `Functor` directly? In Scala, an object of 𝒞₁ × 𝒞₂ has to be a single type, the pair type `(A1, A2)`, and the type of its arrows has to be computed from it: `(factor1.-->[A1, B1], factor2.-->[A2, B2])`. The only way to take a type apart at the type level is a **match type**, `Fst[(A1, A2)] = A1`. The type of arrows cannot depend on the evidence for an object, which is a value, and selecting a type member of an abstract type is not allowed, because it is unsound. So the product needs match types, and a bifunctor that extended `Functor` would carry them in the signatures that every instance implements. As a construction, they stay inside `Category.Product` and `functor`. Generic code never needs them to reduce either, because the evidence that a pair type is an object speaks about `Fst[X]` and `Snd[X]` directly; they reduce only where a concrete pair type such as `(String, String)` appears. A class for categories whose objects are pairs of types would avoid match types, at the price of the duplication described in chapter 10.
 
 The same two type constructors are bifunctors on 𝒫 as well, `Partial.Tuple2IsBifunctor` and `Partial.EitherIsCoproducts`, but there only tagged unions are more: they are still the coproducts. On 𝒫, `bimap(f, g)` on a pair runs f, then g, so if either does not terminate, neither does the pair. That small fact is the reason pairs are not products in 𝒫 (chapter 14). The bifunctor laws for all four instances are **[Tested]**.
 
@@ -2566,7 +2566,7 @@ Function types do both at once. A function `A1 -> A2` can be pre-composed with `
 
 **Definition 12.2 (profunctor).** A profunctor P, valued in 𝒱, is a bifunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒱. Its action on arrows is written P(f, g), for f : B₁ → A₁ of 𝒦₁ and g : A₂ → B₂ of 𝒦₂, and maps P(A₁, A₂) to P(B₁, B₂). A profunctor on a category 𝒦, a bifunctor P : 𝒦ᵒᵖ × 𝒦 → 𝒱, is an **endoprofunctor**.
 
-The library's `Profunctor(K1, K2, V)` is exactly `Bifunctor(K1.op, K2, V)`, with a method `dimap` that spells out the variance, and its `Endoprofunctor(K, V)` is `Profunctor(K, K, V)`. The most important example is the **hom profunctor** of a category, an endoprofunctor whose value at (A, B) is the type of arrows A → B and whose action pre- and post-composes. For 𝒮 it is `Total.Functions`:
+The library's `Profunctor(domain, codomain, base)` is exactly `Bifunctor(domain.op, codomain, base)`, with a method `dimap` that spells out the variance, and its `Endoprofunctor(category, base)` is `Profunctor(category, category, base)`. The most important example is the **hom profunctor** of a category, an endoprofunctor whose value at (A, B) is the type of arrows A → B and whose action pre- and post-composes. For 𝒮 it is `Total.Functions`:
 
 ```scala library
 val f: Int -> String = _.toString
@@ -2628,7 +2628,7 @@ object ListFunctor extends Endofunctor(Total):
 val headOption: [X] => List[X] -> Option[X] = [X] => (xs: List[X]) => xs.headOption
 
 val checked: Boolean =
-  naturality(ListFunctor, Monad.OptionIsMonad.F)(headOption, List(1, 2, 3), (n: Int) => n * 2)
+  naturality(ListFunctor, Monad.OptionIsMonad.functor)(headOption, List(1, 2, 3), (n: Int) => n * 2)
 ```
 
 By A2, every polymorphic function between functors of 𝒮 is natural (section 9.3). So `headOption`, `reverse`, `flatten` and every other polymorphic function of this shape satisfy the naturality law without it being checked. The law is still worth testing, because a violation reveals a breach of the contract, such as a type test.
@@ -2766,7 +2766,7 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 
 | Class | Adds | Instances |
 | --- | --- | --- |
-| `Monoidal(K, U, T)` | a unit object `I`, given by an object `U` of `K` (`K.Object`), a tensor `T`, an endobifunctor on `K`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
+| `Monoidal(category, unit, tensor)` | a unit object `I`, given by an object `unit` of `category` (`category.Object`), a `tensor`, an endobifunctor on `category`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
 | `Symmetric(K, U, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, symmetry, hexagon | `Partial.Product` |
 | `Cartesian(K, U, T)` | the unit is a `Terminal` object, with `discard`, and the tensor is `Products`, a `Product` of every two objects with `fst`, `snd` and `pair` (`&&&`); the isomorphisms are derived | `Total.Products` |
 | `Cocartesian(K, U, T)` | the unit is an `Initial` object, with `absurd`, and the tensor is `Coproducts`, a `Coproduct` of every two objects with `inl`, `inr` and `copair` (`|||`); the isomorphisms are derived | `Total.Coproducts`, `Partial.Coproduct` |
@@ -2855,7 +2855,7 @@ val half: Int -> Option[Int]      = n => if n % 2 == 0 then Some(n / 2) else Non
 val quarter: Option[Int] -> Option[Int] = O.bind(half) andThen O.bind(half)
 ```
 
-`O.bind(half)` is what Scala's `flatMap(half)` does, as a function of the computation. Every monad gives a category with the same objects as 𝒦, its **Kleisli category**, whose arrows A → B are arrows A → M(B) of 𝒦, with η as identity and g\* ∘ f as composition. It generalizes `OptionKleisli` of section 3.5. In the library it is `Kleisli(M)`, a promonad (chapter 17), whose category of arrows is `Kleisli(M).category`.
+`O.bind(half)` is what Scala's `flatMap(half)` does, as a function of the computation. Every monad gives a category with the same objects as 𝒦, its **Kleisli category**, whose arrows A → B are arrows A → M(B) of 𝒦, with η as identity and g\* ∘ f as composition. It generalizes `OptionKleisli` of section 3.5. In the library it is `Kleisli(M)`, a promonad (chapter 17), whose category of arrows is `Kleisli(M).arrows`.
 
 **Proposition 15.2.** The monad laws hold exactly when the Kleisli category laws hold. **[Proved, sketch]** In terms of the extension, the left identity law of the Kleisli category is η\* = id, its right identity law is f\* ∘ η = f, and its associativity is g\* ∘ f\* = (g\* ∘ f)\*. Each follows from the monad laws and the naturality of η and μ, and conversely the three give back the monad laws with M(f) = (η ∘ f)\* and μ = id\*.
 
@@ -3130,7 +3130,7 @@ such that the multiplication is associative and has the units of identities as i
 
 A promonad is a monoid in the category of profunctors on 𝒦, in the sense of Definition 15.3, with composition of profunctors as tensor **[Standard: from memory]**. That is why it is called a *pro*monad. Equivalently, and more concretely, a promonad is a category with the same objects as 𝒦 together with a functor from 𝒦 into it that is the identity on objects: its arrows A → B are the elements of P(A, B), its composition is the multiplication, and the functor is the unit **[Standard: from memory]**. The profunctor action of P is then determined: pre- and post-composing with pure arrows is multiplying by their units.
 
-The library's `Promonad(K)` has `unit` and `multiply`, the composition `andThen` in diagrammatic and `compose` in mathematical order, written infix `>>>` and `<<<` as in a category, and `category`, the category of its arrows. Its laws are the category laws of `category` and the functor laws of `unit`, **[Tested]** for every instance.
+The library's `Promonad(category)` has `unit` and `multiply`, the composition `andThen` in diagrammatic and `compose` in mathematical order, written infix `>>>` and `<<<` as in a category, and `arrows`, the category of its arrows. Its laws are the category laws of `arrows` and the functor laws of `unit`, **[Tested]** for every instance.
 
 ```scala library
 import parrot.category.*
@@ -3187,7 +3187,7 @@ A bistrong promonad is almost a structure for running arrows side by side. Name 
 
 Freyd categories were introduced to model call-by-value languages with effects **[Standard: Power and Robinson; Levy, Power and Thielecke, from memory]**, and they are the semantics of Haskell's *arrows*, which programmers know as a design pattern **[Standard: Hughes 2000; Jacobs, Heunen and Hasuo 2009, from memory]**. A strong promonad is in fact a monoid in the category of strong profunctors, so the definition is a single monoid once more **[Standard: Rivas and Jaskelioff, from memory]**.
 
-In the library, a Freyd category is a category: `Freyd(P, S)` takes a promonad `P` and a bistrong structure `S` on it, and extends `Promonad.Arrows(P)`, the category of arrows of `P`, whose identity is η and whose composition is μ. It names the strengths `first` and `second`, states the two laws and offers the parallel composition `parallel`, written `**`.
+In the library, a Freyd category is a category: `Freyd(promonad, strong)` takes a promonad and a bistrong structure on it, and extends `Promonad.Arrows(promonad)`, the category of arrows of the promonad, whose identity is η and whose composition is μ. It names the strengths `first` and `second`, states the two laws and offers the parallel composition `parallel`, written `**`.
 
 ```scala library
 val OptionFreyd = Freyd(Kleisli.OptionKleisli, Kleisli.OptionProduct)
@@ -3484,7 +3484,7 @@ A grammar rule refers to itself by name: `json` is an array of `json` values. Th
 
 fix : (P(A, B) → P(A, B)) → P(A, B), fix(f) = f(fix(f)).
 
-It lives one level up: P(A, B) is an object of 𝒮 (the type of arrows), and `fix` is a fixed point in 𝒮 at that type, not an operation of the category of arrows. The library calls it `Recursion(P)`. Section 16.4 showed its instance for 𝒫, `Partial.Knots`, defined for every f because the type of programs contains the program that never terminates. Rules that call each other, such as the expression and term rules of an arithmetic grammar, need a fixed point of a *family* of arrows, `fixFamily`. Bekić's theorem says that a family can be solved one arrow at a time, by nested fixed points, but the nesting applies the definition exponentially often in the number of rules; the library solves the family at once, with one knot per arrow **[Standard: Bekić 1969, from memory]**.
+It lives one level up: P(A, B) is an object of 𝒮 (the type of arrows), and `fix` is a fixed point in 𝒮 at that type, not an operation of the category of arrows. The library calls it `Recursion(promonad)`. Section 16.4 showed its instance for 𝒫, `Partial.Knots`, defined for every f because the type of programs contains the program that never terminates. Rules that call each other, such as the expression and term rules of an arithmetic grammar, need a fixed point of a *family* of arrows, `fixFamily`. Bekić's theorem says that a family can be solved one arrow at a time, by nested fixed points, but the nesting applies the definition exponentially often in the number of rules; the library solves the family at once, with one knot per arrow **[Standard: Bekić 1969, from memory]**.
 
 In a cartesian closed category, recursion at function types and Conway operators are closely related: a fixed point of p : A × X → X at X = (C ⇒ D) is a recursive function definition with parameter A **[Standard: from memory]**. The library does not derive one from the other, because in 𝒮 neither exists for all arguments, and the guarded versions that do exist are simpler to state separately.
 
@@ -3585,13 +3585,13 @@ A parser `P[A, B]` consumes a prefix of the input while turning a **semantic inp
 
 | Parameter | Structure | Chapter | Combinators |
 | --- | --- | --- | --- |
-| `Arrows` | promonad over a category of pure functions `-->` | 17 | `pure`, `success`, `>>`, `map`, `mapInput` |
-| `Products`, `Coproducts` | cartesian and cocartesian structure of `-->`, on `Tuple2` and `Either` | 14 | used by the derived combinators |
-| `Zipping` | strength over products, which makes parsers a Freyd category, `Zipped` | 17 | `**`, and derived from it `&&`, `*>`, `<*`, `between` |
-| `Branching` | strength over coproducts, which makes parsers a Freyd category, `Branched` | 17 | `++`, and derived from it `\|\|` |
-| `Choice` | classical restriction structure | 18 | `failure`, `~` (lookahead), `!` (negation), `attempt`, `\|>`, `+>`, `optional` |
-| `Loops` | guarded iteration | 19 | `iterate`, and derived from it `repeated`, `times`, `atLeast`, `separatedBy` |
-| `Knots` | guarded recursion at the types of parsers | 19 | `recursive` |
+| `parsers` | promonad over a category of pure functions `-->` | 17 | `pure`, `success`, `>>`, `map`, `mapInput` |
+| `products`, `coproducts` | cartesian and cocartesian structure of `-->`, on `Tuple2` and `Either` | 14 | used by the derived combinators |
+| `zipping` | strength over products, which makes parsers a Freyd category, `zipped` | 17 | `**`, and derived from it `&&`, `*>`, `<*`, `between` |
+| `branching` | strength over coproducts, which makes parsers a Freyd category, `branched` | 17 | `++`, and derived from it `\|\|` |
+| `choice` | classical restriction structure | 18 | `failure`, `~` (lookahead), `!` (negation), `attempt`, `\|>`, `+>`, `optional` |
+| `loops` | guarded iteration | 19 | `iterate`, and derived from it `repeated`, `times`, `atLeast`, `separatedBy` |
+| `knots` | guarded recursion at the types of parsers | 19 | `recursive` |
 
 An interpreter chooses the structures and implements five primitives: `lift`, which includes Scala functions among the pure functions `-->`; `literal` and `regex`, which read the input; `rule`, which names a parser for error messages; and `diagnose`, which runs a parser. Every other combinator is defined once, in `ParserAlgebra`, from the structures. For instance:
 
@@ -3812,7 +3812,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Mat | yes | yes | with encodings | singleton types and evidence; GADT vectors | outside the model | 4, 8 |
 | Order on the natural numbers | yes | yes | yes | GADT of proofs, `Order` | [Proved, sketch]; GADTs [Open] | 4, 8 |
 | Free category on a graph | yes | yes | yes | GADT of paths, `Paths` | [Proved] | 8 |
-| Opposite category | yes | yes | yes | `opposite`, `K.op` | [Proved] | 3 |
+| Opposite category | yes | yes | yes | `opposite`, `category.op` | [Proved] | 3 |
 | Categories as data | yes | not as 𝒮-categories | yes, with partial composition | `CategoryData` | laws with side conditions | 8 |
 | Functors, bifunctors, profunctors | yes | must be programs | yes | `Functor`, `Bifunctor`, `Profunctor` | [Tested]; composition law free under A2 | 12 |
 | Non-computable functors | yes | no | no | — | [Proved] | 5 |

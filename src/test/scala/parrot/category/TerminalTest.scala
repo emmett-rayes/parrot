@@ -5,17 +5,17 @@ import Category.Type
 import LimitTerminal.IName
 
 /** The laws of [[Terminal]], for terminal objects of a category whose objects are all types. */
-abstract class TerminalSpec(tracked val T: Terminal { val C: Category { type Obj = Type } })(using
-  category: CategoryFixture.On[T.C.type],
-  typename: TypeName[T.I],
+abstract class TerminalSpec(tracked val terminal: Terminal { val category: Category { type Obj = Type } })(using
+  category: CategoryFixture.On[terminal.category.type],
+  typename: TypeName[terminal.I],
   types: SampleTypes,
-  sample: Sample[T.I],
+  sample: Sample[terminal.I],
 ) extends LawSuite("Terminal", s"${typename.name} on ${category.name}") {
   import types.{T1, given}
   import category.*
-  import T.C.-->
-  import T.I
-  import T.TerminalLaws.*
+  import terminal.category.-->
+  import terminal.I
+  import terminal.TerminalLaws.*
 
   law("uniqueness") {
     val observations = observe[T1, I]

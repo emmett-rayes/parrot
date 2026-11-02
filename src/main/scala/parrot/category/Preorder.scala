@@ -68,13 +68,15 @@ object Preorder {
   def apply[A: Preorder]: A is Preorder = summon
 
   /** The order of a semilattice in 𝒮: *a* ⊑ *b* when *a* ⊔ *b* = *b*. */
-  def of(L: Semilattice { val V: Total.Products.type })(using L.M is Eq): L.M is Preorder = {
+  def of(semilattice: Semilattice { val monoidal: Total.Products.type })(
+    using semilattice.M is Eq
+  ): semilattice.M is Preorder = {
     new Preorder {
-      import L.M
+      import semilattice.M
       type Self = M
 
       def below(a: M, b: M): Boolean = {
-        L.multiply((a, b)) === b
+        semilattice.multiply((a, b)) === b
       }
     }
   }

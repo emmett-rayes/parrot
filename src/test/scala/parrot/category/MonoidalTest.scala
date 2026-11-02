@@ -5,22 +5,22 @@ import Category.Type
 
 /** The laws of [[Monoidal]], for structures on a category whose objects are all types. */
 abstract class MonoidalSpec(
-  tracked val M: Monoidal { val K: Category { type Obj = Type } },
+  tracked val monoidal: Monoidal { val category: Category { type Obj = Type } },
   structure: String = "Monoidal",
 )(using
-  category: CategoryFixture.On[M.K.type],
-  typename: TypeName[M.type],
+  category: CategoryFixture.On[monoidal.category.type],
+  typename: TypeName[monoidal.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
-  unit: Sample[M.I],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[monoidal.Tensor[X, Y]],
+  unit: Sample[monoidal.I],
 ) extends LawSuite(structure, s"${typename.name} on ${category.name}") {
   import types.{T1, T2, T3, T4, given}
   import category.*
-  import M.{I, `*`}
-  import M.K.-->
-  import M.MonoidalLaws.*
+  import monoidal.{I, `*`}
+  import monoidal.category.-->
+  import monoidal.MonoidalLaws.*
 
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[monoidal.Tensor[X, Y]] = tensor[X, Y]
 
   also("Monoidal") {
     law("leftUnitorLeftInverse") {

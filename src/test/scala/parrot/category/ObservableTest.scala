@@ -6,10 +6,11 @@ import org.scalacheck.Gen
 /** The laws of [[Observable]], for the observations of a fixture's arrows *T1* → *T2*, sampled afresh for every case.
   * Pairs and triples are sampled so that agreeing arrows occur often: an arrow, its variant and the variant of that.
   */
-abstract class ObservableSpec(category: CategoryFixture)(using types: SampleTypes) extends LawSuite("Observable", category.name) {
+abstract class ObservableSpec(category: CategoryFixture)(using types: SampleTypes)
+    extends LawSuite("Observable", category.name) {
   import types.{T1, T2, given}
   import category.*
-  import category.K.-->
+  import category.category.-->
 
   private lazy val observations: Gen[(T1 --> T2) is Observable] = observe[T1, T2]
 
@@ -51,4 +52,4 @@ class TotalIsObservableTest extends ObservableSpec(TotalFixture) {
 }
 
 class PartialIsObservableTest     extends ObservableSpec(PartialFixture)
-class StringStateIsObservableTest extends ObservableSpec(StringStateFixture.category)
+class StringStateIsObservableTest extends ObservableSpec(StringStateFixture.arrows)

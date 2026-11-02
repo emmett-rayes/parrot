@@ -8,9 +8,9 @@ package category
   *   - *η*: *I* → *M* is the unit
   *   - *μ*: *M* ⊗ *M* → *M* is the multiplication
   */
-abstract class Monoid(tracked val V: Monoidal) extends caps.Pure {
-  import V.{I, `*`, ***}
-  import V.K.{Obj, -->, >>>}
+abstract class Monoid(tracked val monoidal: Monoidal) extends caps.Pure {
+  import monoidal.{I, `*`, ***}
+  import monoidal.category.{Obj, -->, >>>}
 
   type Self
 
@@ -23,9 +23,9 @@ abstract class Monoid(tracked val V: Monoidal) extends caps.Pure {
 
   private given MIsObj: (M is Obj) = carrier
 
-  private given IIsObj: (I is Obj) = V.U.U
+  private given IIsObj: (I is Obj) = monoidal.unit.evidence
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = V.T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** The unit *η*: *I* → *M*. */
   def unit: I --> M
@@ -39,20 +39,20 @@ abstract class Monoid(tracked val V: Monoidal) extends caps.Pure {
     /** *μ* ∘ (*η* ⊗ *id*) = *λ*
       */
     def leftUnit(using ((I * M) --> M) is Observable): Boolean = {
-      ((unit *** V.K.identity[M]) >>> multiply) =?= V.leftUnitor[M].to
+      ((unit *** monoidal.category.identity[M]) >>> multiply) =?= monoidal.leftUnitor[M].to
     }
 
     /** *μ* ∘ (*id* ⊗ *η*) = *ρ*
       */
     def rightUnit(using ((M * I) --> M) is Observable): Boolean = {
-      ((V.K.identity[M] *** unit) >>> multiply) =?= V.rightUnitor[M].to
+      ((monoidal.category.identity[M] *** unit) >>> multiply) =?= monoidal.rightUnitor[M].to
     }
 
     /** *μ* ∘ (*μ* ⊗ *id*) = *μ* ∘ (*id* ⊗ *μ*) ∘ *α*
       */
     def associativity(using (((M * M) * M) --> M) is Observable): Boolean = {
-      ((multiply *** V.K.identity[M]) >>> multiply) =?=
-        (V.associator[M, M, M].to >>> (V.K.identity[M] *** multiply) >>> multiply)
+      ((multiply *** monoidal.category.identity[M]) >>> multiply) =?=
+        (monoidal.associator[M, M, M].to >>> (monoidal.category.identity[M] *** multiply) >>> multiply)
     }
   }
 }

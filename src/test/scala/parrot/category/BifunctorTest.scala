@@ -7,20 +7,22 @@ import Category.Type
 
 /** The laws of [[Bifunctor]], for bifunctors **K** × **K** → **K** on a category whose objects are all types. */
 abstract class BifunctorSpec(
-  tracked val K: Category { type Obj = Type },
-  tracked val B: Bifunctor { val C1: K.type; val C2: K.type; val D: K.type },
+  tracked val category: Category { type Obj = Type },
+  tracked val bifunctor: Bifunctor {
+    val source1: category.type; val source2: category.type; val target: category.type
+  },
   structure: String = "Bifunctor",
 )(using
-  category: CategoryFixture.On[K.type],
-  typename: TypeName[B.Self],
+  fixture: CategoryFixture.On[category.type],
+  typename: TypeName[bifunctor.Self],
   types: SampleTypes,
-  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[B.F[X, Y]],
-) extends LawSuite(structure, s"${typename.name} on ${category.name}") {
+  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[bifunctor.F[X, Y]],
+) extends LawSuite(structure, s"${typename.name} on ${fixture.name}") {
   import types.{T1, T2, T3, T4, given}
-  import category.*
-  import K.-->
-  import B.F
-  import B.BifunctorLaws.*
+  import fixture.*
+  import category.-->
+  import bifunctor.F
+  import bifunctor.BifunctorLaws.*
 
   private given BSample: [X: Sample, Y: Sample] => Sample[F[X, Y]] = sample[X, Y]
 

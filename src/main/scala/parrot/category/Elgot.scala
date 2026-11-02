@@ -12,12 +12,14 @@ package category
   * the laws for the steps that always make progress. Elgot operators are equivalent to traces for coproducts
   * ([[Traced.OfElgot]], [[Elgot.OfTraced]]).
   */
-abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Cocartesian }) extends caps.Pure {
-  import S.M.+
-  import S.P.{P, >>>}
-  import S.P.K.{Obj, -->}
+abstract class Elgot(tracked val strong: Strong.Bistrong { val profunctor: Promonad; val monoidal: Cocartesian })
+    extends caps.Pure {
+  import strong.{monoidal, profunctor}
+  import monoidal.+
+  import profunctor.{P, >>>}
+  import profunctor.category.{Obj, -->}
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = S.M.T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*). */
   def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A]
@@ -30,21 +32,22 @@ abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Co
     /** *p*† = *p* ⨾ [*id*,*p*†]
       */
     def fixedPoint[A: Obj, X: Obj](p: P[X, A + X])(using P[X, A] is Observable): Boolean = {
-      iterate(p) =?= (p >>> S.left[X, A, A](iterate(p)) >>> S.P.unit(S.M.codiagonal[A]))
+      iterate(p) =?= (p >>> strong.left[X, A, A](iterate(p)) >>> profunctor.unit(monoidal.codiagonal[A]))
     }
 
     /** (*p* ⨾ (*h* + *id*))† = *p*† ⨾ *h* for pure *h* */
     def parameterNaturality[A: Obj, B: Obj, X: Obj](p: P[X, A + X], h: A --> B)(
       using P[X, B] is Observable
     ): Boolean = {
-      iterate(p >>> S.right[A, B, X](S.P.unit(h))) =?= (iterate(p) >>> S.P.unit(h))
+      iterate(p >>> strong.right[A, B, X](profunctor.unit(h))) =?= (iterate(p) >>> profunctor.unit(h))
     }
 
     /** (*g* ⨾ *p*)† = *g* ⨾ (*p* ⨾ (*id* + *g*))† for pure *g* */
     def composition[A: Obj, X: Obj, Y: Obj](p: P[Y, A + X], g: X --> Y)(
       using P[X, A] is Observable
     ): Boolean = {
-      iterate[A, X](S.P.unit(g) >>> p) =?= (S.P.unit(g) >>> iterate[A, Y](p >>> S.left[X, Y, A](S.P.unit(g))))
+      iterate[A, X](profunctor.unit(g) >>> p) =?=
+        (profunctor.unit(g) >>> iterate[A, Y](p >>> strong.left[X, Y, A](profunctor.unit(g))))
     }
 
     /** (*f* ⨾ [*ι*₁,*g*])† = *f* ⨾ [*id*,(*g* ⨾ [*ι*₁,*f*])†] for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*: a loop
@@ -56,9 +59,11 @@ abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Co
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[X, A + Y], g: P[Y, A + X])(
       using P[X, A] is Observable
     ): Boolean = {
-      val fg = f >>> S.left[Y, A + X, A](g) >>> S.P.unit(S.M.copair(S.M.inl[A, X], S.P.K.identity[A + X]))
-      val gf = g >>> S.left[X, A + Y, A](f) >>> S.P.unit(S.M.copair(S.M.inl[A, Y], S.P.K.identity[A + Y]))
-      iterate[A, X](fg) =?= (f >>> S.left[Y, A, A](iterate[A, Y](gf)) >>> S.P.unit(S.M.codiagonal[A]))
+      val fg = f >>> strong.left[Y, A + X, A](g) >>>
+        profunctor.unit(monoidal.copair(monoidal.inl[A, X], profunctor.category.identity[A + X]))
+      val gf = g >>> strong.left[X, A + Y, A](f) >>>
+        profunctor.unit(monoidal.copair(monoidal.inl[A, Y], profunctor.category.identity[A + Y]))
+      iterate[A, X](fg) =?= (f >>> strong.left[Y, A, A](iterate[A, Y](gf)) >>> profunctor.unit(monoidal.codiagonal[A]))
     }
 
     /** (*p*†)† = (*p* ⨾ [*id*,*ι*₂])† */
@@ -66,7 +71,7 @@ abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Co
       using P[X, A] is Observable
     ): Boolean = {
       iterate[A, X](iterate[A + X, X](p)) =?=
-        iterate[A, X](p >>> S.P.unit(S.M.copair(S.P.K.identity[A + X], S.M.inr[A, X])))
+        iterate[A, X](p >>> profunctor.unit(monoidal.copair(profunctor.category.identity[A + X], monoidal.inr[A, X])))
     }
 
     /** If *f* ⨾ (*id* + *h*) = *h* ⨾ *g* for pure *h*, then *f*† = *h* ⨾ *g*†.
@@ -78,7 +83,7 @@ abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Co
       g: P[Y, A + Y],
       h: X --> Y,
     )(using P[X, A] is Observable): Boolean = {
-      iterate(f) =?= (S.P.unit(h) >>> iterate(g))
+      iterate(f) =?= (profunctor.unit(h) >>> iterate(g))
     }
 
     /** If *p* = *p*′, then *p*† = *p*′†.
@@ -96,27 +101,31 @@ abstract class Elgot(tracked val S: Strong.Bistrong { val P: Promonad; val M: Co
 object Elgot {
 
   /** Fixed points read backwards: a Conway operator on *P* is an Elgot operator on *P*ᵒᵖ. */
-  open class OfConway(tracked val C: Conway) extends Elgot(Strong.Bistrong.Op(C.S, C.S.M.op)) {
-    import S.M.+
-    import S.P.P
-    import S.P.K.Obj
+  open class OfConway(tracked val conway: Conway)
+      extends Elgot(Strong.Bistrong.Op(conway.strong, conway.strong.monoidal.op)) {
+    import strong.{monoidal, profunctor}
+    import monoidal.+
+    import profunctor.P
+    import profunctor.category.Obj
 
     def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A] = {
-      C.fix[A, X](p)
+      conway.fix[A, X](p)
     }
   }
 
   /** The iteration of a trace on coproducts: *p*† = *tr*(∇ ⨾ *p*). */
-  open class OfTraced(tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad; val M: Cocartesian } })
-      extends Elgot(T.S) {
-    import S.M.+
-    import S.P.{P, >>>}
-    import S.P.K.Obj
+  open class OfTraced(
+    tracked val traced: Traced { val strong: Strong.Bistrong { val profunctor: Promonad; val monoidal: Cocartesian } },
+  ) extends Elgot(traced.strong) {
+    import strong.{monoidal, profunctor}
+    import monoidal.+
+    import profunctor.{P, >>>}
+    import profunctor.category.Obj
 
-    private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = S.M.T.objects[A, B]
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
 
     def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A] = {
-      T.trace[X, A, X](S.P.unit(S.M.codiagonal[X]) >>> p)
+      traced.trace[X, A, X](profunctor.unit(monoidal.codiagonal[X]) >>> p)
     }
   }
 }

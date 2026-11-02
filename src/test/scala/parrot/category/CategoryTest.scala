@@ -4,15 +4,15 @@ package category
 import Category.Type
 
 /** The laws of [[Category]], for a category whose objects are all types. */
-abstract class CategorySpec(tracked val K: Category { type Obj = Type })(
+abstract class CategorySpec(tracked val category: Category { type Obj = Type })(
   using
-  category: CategoryFixture.On[K.type],
+  fixture: CategoryFixture.On[category.type],
   types: SampleTypes,
-) extends LawSuite("Category", category.name) {
+) extends LawSuite("Category", fixture.name) {
   import types.{T1, T2, T3, T4, given}
-  import category.*
-  import K.-->
-  import K.CategoryLaws.*
+  import fixture.*
+  import category.-->
+  import category.CategoryLaws.*
 
   law("leftIdentity") {
     val observations = observe[T1, T2]
@@ -61,4 +61,4 @@ abstract class CategorySpec(tracked val K: Category { type Obj = Type })(
 class TotalIsCategoryTest         extends CategorySpec(Total)
 class ScalaOpIsCategoryTest       extends CategorySpec(Total.op)
 class PartialIsCategoryTest       extends CategorySpec(Partial)
-class OptionKleisliIsCategoryTest extends CategorySpec(Kleisli.OptionKleisli.category)
+class OptionKleisliIsCategoryTest extends CategorySpec(Kleisli.OptionKleisli.arrows)

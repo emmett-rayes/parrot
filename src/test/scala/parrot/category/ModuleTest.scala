@@ -5,35 +5,35 @@ import Category.Type
 
 /** The laws of [[Module]], for left actions on a category whose objects are all types. */
 abstract class ModuleSpec(
-  tracked val A: Module {
-    val K: Category { type Obj = Type }
-    val M: Monoidal { val K: Category { type Obj = Type } }
+  tracked val module: Module {
+    val category: Category { type Obj = Type }
+    val monoidal: Monoidal { val category: Category { type Obj = Type } }
   },
 )(using
-  kCategory: CategoryFixture.On[A.K.type],
-  mCategory: CategoryFixture.On[A.M.K.type],
-  typename: TypeName[A.type],
+  kCategory: CategoryFixture.On[module.category.type],
+  mCategory: CategoryFixture.On[module.monoidal.category.type],
+  typename: TypeName[module.type],
   types: SampleTypes,
-  action: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[A.Action[X, Y]],
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[A.M.Tensor[X, Y]],
-  unit: Sample[A.M.I],
+  action: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[module.Action[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[module.monoidal.Tensor[X, Y]],
+  unit: Sample[module.monoidal.I],
 ) extends LawSuite("Module", s"${typename.name} on ${kCategory.name}") {
   import types.{T1, T2, T3, T4, given}
   import kCategory.*
-  import A.{Action as Act, ~}
-  import A.K.-->
-  import A.M.K.--> as ==>
-  import A.M.`*`
-  import A.ModuleLaws.*
+  import module.{Action as Act, ~}
+  import module.category.-->
+  import module.monoidal.category.--> as ==>
+  import module.monoidal.`*`
+  import module.ModuleLaws.*
 
-  private given ActionSample: [X: Sample, Y: Sample] => Sample[A.Action[X, Y]]   = action[X, Y]
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[A.M.Tensor[X, Y]] = tensor[X, Y]
+  private given ActionSample: [X: Sample, Y: Sample] => Sample[module.Action[X, Y]]          = action[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[module.monoidal.Tensor[X, Y]] = tensor[X, Y]
 
   law("leftUnitorLeftInverse") {
-    val observations = observe[A.M.I ~ T1, A.M.I ~ T1]
+    val observations = observe[module.monoidal.I ~ T1, module.monoidal.I ~ T1]
 
     forAll(observations) { observe =>
-      given (((A.M.I ~ T1) --> (A.M.I ~ T1)) is Observable) = observe
+      given (((module.monoidal.I ~ T1) --> (module.monoidal.I ~ T1)) is Observable) = observe
       leftUnitorLeftInverse[T1]
     }
   }
@@ -66,11 +66,11 @@ abstract class ModuleSpec(
   }
 
   law("leftUnitorNaturality") {
-    val observations = observe[A.M.I ~ T1, T2]
+    val observations = observe[module.monoidal.I ~ T1, T2]
     val fs           = arrow[T1, T2]
 
     forAll(observations, fs) { (observe, f) =>
-      given (((A.M.I ~ T1) --> T2) is Observable) = observe
+      given (((module.monoidal.I ~ T1) --> T2) is Observable) = observe
       leftUnitorNaturality(f)
     }
   }
@@ -88,10 +88,10 @@ abstract class ModuleSpec(
   }
 
   law("triangle") {
-    val observations = observe[(T1 * A.M.I) ~ T2, T1 ~ T2]
+    val observations = observe[(T1 * module.monoidal.I) ~ T2, T1 ~ T2]
 
     forAll(observations) { observe =>
-      given ((((T1 * A.M.I) ~ T2) --> (T1 ~ T2)) is Observable) = observe
+      given ((((T1 * module.monoidal.I) ~ T2) --> (T1 ~ T2)) is Observable) = observe
       triangle[T1, T2]
     }
   }

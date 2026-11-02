@@ -6,17 +6,18 @@ package category
   * Represents a terminal object *I*, where
   *   - !: *A* → *I* is the unique morphism from an object *A*
   */
-abstract class Terminal(tracked override val C: Category, tracked override val U: C.Obj) extends Category.Object(C, U) {
-  import C.{Obj, -->}
+abstract class Terminal(tracked override val category: Category, tracked override val evidence: category.Obj)
+    extends Category.Object(category, evidence) {
+  import category.{Obj, -->}
 
   /** The terminal object *I*. */
-  final type I = U.Self
+  final type I = evidence.Self
 
   /** The unique morphism !: *A* → *I*. */
   def discard[A: Obj]: A --> I
 
   /** The terminal object as a limit of the empty diagram, with ! as the factorization. */
-  final lazy val limit: Terminal.AsLimit { val T: Terminal.this.type } = Terminal.AsLimit(this)
+  final lazy val limit: Terminal.AsLimit { val terminal: Terminal.this.type } = Terminal.AsLimit(this)
 
   /** Laws that any `Terminal` must satisfy. */
   object TerminalLaws {
@@ -33,11 +34,11 @@ object Terminal {
   import Category.Empty
 
   /** The terminal objects of **K**. */
-  type Of[K <: Category] = Terminal { val C: K }
+  type Of[K <: Category] = Terminal { val category: K }
 
   /** The terminal object of a category with a limit of the empty diagram: that limit. */
-  def apply(L: Limit.OfDiagram[EmptyDiagram.Of]): Of[L.C.type] = {
-    FromLimit(L.limit(EmptyDiagram(L.C)))
+  def apply(limits: Limit.OfDiagram[EmptyDiagram.Of]): Of[limits.category.type] = {
+    FromLimit(limits.limit(EmptyDiagram(limits.category)))
   }
 
   /** The terminal object of a limit *L* of the empty diagram.
@@ -45,11 +46,12 @@ object Terminal {
     * The terminal object is the apex of *L*, and ! is the factorization through *L* of the cone with apex *A*, which
     * has no legs.
     */
-  open class FromLimit(tracked val L: Limit.Of[EmptyDiagram]) extends Terminal(L.D.K, L.X.U) {
-    import C.{Obj, -->}
+  open class FromLimit(tracked val cone: Limit.Of[EmptyDiagram])
+      extends Terminal(cone.diagram.category, cone.apex.evidence) {
+    import category.{Obj, -->}
 
     def discard[A: Obj]: A --> I = {
-      L.factor(EmptyCone(L.D, C.Object[A]))
+      cone.factor(EmptyCone(cone.diagram, category.Object[A]))
     }
   }
 
@@ -58,15 +60,15 @@ object Terminal {
     * The apex of the limit is *I*, its cones have no legs, and the factorization of the cone with apex *A* is !: *A* →
     * *I*.
     */
-  final class AsLimit(tracked val T: Terminal) extends Limit(EmptyDiagram(T.C), T) {
-    import T.C.-->
+  final class AsLimit(tracked val terminal: Terminal) extends Limit(EmptyDiagram(terminal.category), terminal) {
+    import terminal.category.-->
 
-    def leg[A: Empty.Absurd]: T.I --> Nothing = {
+    def leg[A: Empty.Absurd]: terminal.I --> Nothing = {
       A.absurd
     }
 
-    def factor(K: Cone.Of[D.type]): K.Apex --> T.I = {
-      T.discard[K.Apex](using K.X.U)
+    def factor(cone: Cone.Of[diagram.type]): cone.X --> terminal.I = {
+      terminal.discard[cone.X](using cone.apex.evidence)
     }
   }
 
@@ -74,24 +76,26 @@ object Terminal {
     *
     * The empty cone has no legs.
     */
-  final class EmptyCone(tracked override val D: Functor { val C: Empty.type }, tracked override val X: D.D.Object)
-      extends Cone(D, X) {
-    import D.D.-->
+  final class EmptyCone(
+    tracked override val diagram: Functor { val source: Empty.type },
+    tracked override val apex: diagram.target.Object,
+  ) extends Cone(diagram, apex) {
+    import diagram.target.-->
 
-    def leg[A: Empty.Absurd]: Apex --> D.F[A] = {
+    def leg[A: Empty.Absurd]: X --> diagram.F[A] = {
       A.absurd
     }
   }
 
   /** The empty diagram **0** → **K**, the unique functor out of the empty category.
     */
-  final class EmptyDiagram(tracked val K: Category) extends Functor(Empty, K) {
-    import K.--> as ==>
+  final class EmptyDiagram(tracked val category: Category) extends Functor(Empty, category) {
+    import category.--> as ==>
     import Empty.{Absurd, -->}
 
     type Self[A] = Nothing
 
-    def objects[A: Absurd]: Nothing is K.Obj = {
+    def objects[A: Absurd]: Nothing is category.Obj = {
       A.absurd
     }
 
@@ -103,6 +107,6 @@ object Terminal {
   object EmptyDiagram {
 
     /** Refines `EmptyDiagram` to a specific category **K**. */
-    type Of[K <: Category] = EmptyDiagram { val K: K }
+    type Of[K <: Category] = EmptyDiagram { val category: K }
   }
 }

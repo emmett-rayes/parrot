@@ -4,20 +4,22 @@ package category
 import Category.Type
 
 /** The laws of [[Cocartesian]]: the unitors, the associator and the braiding are those of the coproducts. */
-abstract class CocartesianSpec(tracked override val M: Cocartesian { val K: Category { type Obj = Type } })(using
-  category: CategoryFixture.On[M.K.type],
-  typename: TypeName[M.type],
+abstract class CocartesianSpec(
+  tracked override val monoidal: Cocartesian { val category: Category { type Obj = Type } },
+)(using
+  category: CategoryFixture.On[monoidal.category.type],
+  typename: TypeName[monoidal.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[M.Tensor[X, Y]],
-  unit: Sample[M.I],
-) extends SymmetricSpec(M, "Cocartesian") {
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[monoidal.Tensor[X, Y]],
+  unit: Sample[monoidal.I],
+) extends SymmetricSpec(monoidal, "Cocartesian") {
   import types.{T1, T2, T3, given}
   import category.*
-  import M.K.-->
-  import M.{I, +}
-  import M.CocartesianLaws.*
+  import monoidal.category.-->
+  import monoidal.{I, +}
+  import monoidal.CocartesianLaws.*
 
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[M.Tensor[X, Y]] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[monoidal.Tensor[X, Y]] = tensor[X, Y]
 
   law("braidIsCopairing") {
     val observations = observe[T1 + T2, T2 + T1]

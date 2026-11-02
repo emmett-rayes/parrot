@@ -9,25 +9,25 @@ package category
   *
   * The induced preorder *a* ⊑ *b* ⇔ *a* ⊔ *b* = *b* has ⊔ as join and the unit ⊥ as least element.
   */
-abstract class Semilattice(tracked override val V: Cartesian) extends Monoid(V) {
-  import V.`*`
-  import V.K.{Obj, -->, >>>}
+abstract class Semilattice(tracked override val monoidal: Cartesian) extends Monoid(monoidal) {
+  import monoidal.`*`
+  import monoidal.category.{Obj, -->, >>>}
 
   private given MIsObj: (M is Obj) = carrier
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = V.T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** Laws that any `Semilattice` must satisfy. */
   object SemilatticeLaws {
 
     /** ⊔ ∘ *β* = ⊔ */
     def commutativity(using ((M * M) --> M) is Observable): Boolean = {
-      (V.braid[M, M] >>> multiply) =?= multiply
+      (monoidal.braid[M, M] >>> multiply) =?= multiply
     }
 
     /** ⊔ ∘ Δ = *id* */
     def idempotence(using (M --> M) is Observable): Boolean = {
-      (V.diagonal[M] >>> multiply) =?= V.K.identity[M]
+      (monoidal.diagonal[M] >>> multiply) =?= monoidal.category.identity[M]
     }
   }
 }

@@ -8,9 +8,9 @@ package category
   *   - *ev*: (*A* ⇒ *B*) ⊗ *A* → *B* is evaluation
   *   - Λ(*f*): *C* → (*A* ⇒ *B*) is the curried form of *f*: *C* ⊗ *A* → *B*
   */
-abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
-  import M.{`*`, ***}
-  import M.K.{Obj, -->, >>>}
+abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
+  import monoidal.{`*`, ***}
+  import monoidal.category.{Obj, -->, >>>}
 
   /** The internal hom *A* ⇒ *B*. */
   type Exp[A, B]
@@ -23,7 +23,7 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
 
   private given ExpIsObj: [A: Obj, B: Obj] => ((B `^` A) is Obj) = objects[A, B]
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = M.T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** Evaluation *ev*: (*A* ⇒ *B*) ⊗ *A* → *B*. */
   def eval[A: Obj, B: Obj]: ((B `^` A) * A) --> B
@@ -36,11 +36,11 @@ abstract class Closed(tracked val M: Monoidal) extends caps.Pure {
 
   /** Uncurrying: *g* ↦ *ev* ∘ (*g* ⊗ *id*). */
   final def uncurry[A: Obj, B: Obj, C: Obj](g: C --> (B `^` A)): (C * A) --> B = {
-    (g *** M.K.identity[A]) >>> eval[A, B]
+    (g *** monoidal.category.identity[A]) >>> eval[A, B]
   }
 
   /** The internal hom as a profunctor ⇒: **K**ᵒᵖ × **K** → **K**. */
-  final lazy val internalHom: Closed.InternalHom { val C: Closed.this.type } = Closed.InternalHom(this)
+  final lazy val internalHom: Closed.InternalHom { val closed: Closed.this.type } = Closed.InternalHom(this)
 
   /** Laws that any `Closed` structure must satisfy: currying and uncurrying are inverse. */
   object ClosedLaws {
@@ -83,22 +83,23 @@ object Closed {
     * @note The morphism part is determined by evaluation and currying, so the laws of the profunctor follow from the
     *   laws `beta` and `eta` of [[Closed]].
     */
-  final class InternalHom(tracked val C: Closed) extends Endoprofunctor(C.M.K, C.M.K) {
-    import C.M.{`*`, ***}
-    import C.M.K.{Obj, -->, >>>}
+  final class InternalHom(tracked val closed: Closed)
+      extends Endoprofunctor(closed.monoidal.category, closed.monoidal.category) {
+    import closed.monoidal.{`*`, ***}
+    import closed.monoidal.category.{Obj, -->, >>>}
 
-    type Self = C.Exp
+    type Self = closed.Exp
 
-    private given PIsObj: [A: Obj, B: Obj] => (P[A, B] is Obj) = C.objects[A, B]
+    private given PIsObj: [A: Obj, B: Obj] => (P[A, B] is Obj) = closed.objects[A, B]
 
-    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = C.M.T.objects[A, B]
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = closed.monoidal.tensor.objects[A, B]
 
     def objects[A: Obj, B: Obj]: P[A, B] is Obj = {
-      C.objects[A, B]
+      closed.objects[A, B]
     }
 
     def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: B1 --> A1, g: A2 --> B2): P[A1, A2] --> P[B1, B2] = {
-      C.curry((C.M.K.identity[P[A1, A2]] *** f) >>> C.eval[A1, A2] >>> g)
+      closed.curry((closed.monoidal.category.identity[P[A1, A2]] *** f) >>> closed.eval[A1, A2] >>> g)
     }
   }
 }

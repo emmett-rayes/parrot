@@ -9,15 +9,15 @@ import Category.Type
 /** The laws of [[Promonad]] beyond those of its category: the unit is a functor, and the derived profunctor action
   * satisfies the [[Bifunctor]] laws.
   */
-abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj = Type } })(
+abstract class PromonadSpec(tracked val promonad: Promonad { val category: Category { type Obj = Type } })(
   using
-  promonad: PromonadFixture.On[P.type],
+  fixture: PromonadFixture.On[promonad.type],
   types: SampleTypes,
-) extends LawSuite("Promonad", promonad.name) {
+) extends LawSuite("Promonad", fixture.name) {
   import types.{T1, T2, T3, T4, given}
-  import promonad.*
-  import P.P
-  import P.PromonadLaws.*
+  import fixture.*
+  import promonad.P
+  import promonad.PromonadLaws.*
 
   /** Observes functions between arrow types at sample arrows. */
   private def onArrows[X1: Sample, Y1: Sample, X2: Sample, Y2: Sample]
@@ -32,8 +32,8 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
 
   law("unitComposition") {
     val observations = observe[T1, T4]
-    val fs           = base.arrow[T1, T2]
-    val gs           = base.arrow[T2, T4]
+    val fs           = category.arrow[T1, T2]
+    val gs           = category.arrow[T2, T4]
 
     forAll(observations, fs, gs) { (observe, f, g) =>
       given (P[T1, T4] is Observable) = observe
@@ -43,16 +43,16 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
 
   law("unitCongruence") {
     val observations = observe[T1, T2]
-    val fs           = base.arrow[T1, T2]
+    val fs           = category.arrow[T1, T2]
 
     forAll(observations, fs) { (observe, f) =>
       given (P[T1, T2] is Observable) = observe
-      unitCongruence(f, base.variant(f))
+      unitCongruence(f, category.variant(f))
     }
   }
 
   also("Profunctor") {
-    import P.BifunctorLaws.*
+    import promonad.BifunctorLaws.*
 
     law("identity") {
       forAll(onArrows[T1, T2, T1, T2]) { observe =>
@@ -64,8 +64,8 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
     law("composition") {
       forAll(
         onArrows[T1, T2, T4, T3],
-        Gen.zip(base.arrow[T3, T1], base.arrow[T2, T1]),
-        Gen.zip(base.arrow[T4, T3], base.arrow[T1, T3]),
+        Gen.zip(category.arrow[T3, T1], category.arrow[T2, T1]),
+        Gen.zip(category.arrow[T4, T3], category.arrow[T1, T3]),
       ) { case (observe, (f1, g1), (f2, g2)) =>
         given ((P[T1, T2] -> P[T4, T3]) is Observable) = observe
         composition[T1, T2, T3, T1, T4, T3](f1, g1, f2, g2)
@@ -73,12 +73,12 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
     }
 
     law("congruence") {
-      val fs = base.arrow[T4, T1]
-      val gs = base.arrow[T2, T3]
+      val fs = category.arrow[T4, T1]
+      val gs = category.arrow[T2, T3]
 
       forAll(onArrows[T1, T2, T4, T3], fs, gs) { (observe, f, g) =>
         given ((P[T1, T2] -> P[T4, T3]) is Observable) = observe
-        congruence[T1, T2, T4, T3](f, base.variant(f), g, base.variant(g))
+        congruence[T1, T2, T4, T3](f, category.variant(f), g, category.variant(g))
       }
     }
   }
@@ -86,7 +86,7 @@ abstract class PromonadSpec(tracked val P: Promonad { val K: Category { type Obj
 
 /** 𝒮 as a promonad over itself. */
 object ScalaFunctionsFixture extends PromonadFixture("Total", Total.Functions) {
-  val base: TotalFixture.type = TotalFixture
+  val category: TotalFixture.type = TotalFixture
 
   def arrow[X: Sample, Y: Sample]: Gen[X -> Y] = TotalFixture.arrow[X, Y]
 
@@ -100,7 +100,7 @@ object StringWriterKleisli extends Kleisli(StringWriter)
 
 /** `Kleisli[Writer[String]]`: arrows that log. */
 object StringWriterKleisliFixture extends PromonadFixture("Kleisli[Writer[String]]", StringWriterKleisli) {
-  val base: TotalFixture.type = TotalFixture
+  val category: TotalFixture.type = TotalFixture
 
   def arrow[X: Sample, Y: Sample]: Gen[X -> (String, Y)] = {
     val logs = Gen.oneOf("", "a", "b", "ab")
@@ -119,4 +119,4 @@ object StringWriterKleisliFixture extends PromonadFixture("Kleisli[Writer[String
 class OptionKleisliIsPromonadTest       extends PromonadSpec(Kleisli.OptionKleisli)
 class ScalaFunctionsIsPromonadTest      extends PromonadSpec(Total.Functions)
 class StringWriterKleisliIsPromonadTest extends PromonadSpec(StringWriterKleisli)
-class StringWriterKleisliIsCategoryTest extends CategorySpec(StringWriterKleisli.category)
+class StringWriterKleisliIsCategoryTest extends CategorySpec(StringWriterKleisli.arrows)

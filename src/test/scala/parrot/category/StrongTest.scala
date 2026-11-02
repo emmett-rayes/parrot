@@ -6,29 +6,28 @@ import Category.Type
 /** The laws of [[Strong]], for bistrong promonads over 𝒮: every strength in the library is bistrong. */
 abstract class StrongSpec(
   name: String,
-  tracked val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } },
+  tracked val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } },
   structure: String = "Strong",
 )(using
-  promonad: PromonadFixture.On[S.P.type],
+  promonad: PromonadFixture.On[strong.profunctor.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite(structure, name) {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
-  import S.P
-  import P.P
-  import S.StrongLaws.*
+  import strong.profunctor.P
+  import strong.StrongLaws.*
 
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[S.M.Tensor[X, Y]] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[strong.monoidal.Tensor[X, Y]] = tensor[X, Y]
 
-  private type T[X, Y] = S.M.Tensor[X, Y]
+  private type T[X, Y] = strong.monoidal.Tensor[X, Y]
 
   also("Strong") {
     law("naturality") {
       val observations = observe[T[T3, T4], T[T3, T3]]
       val ps           = arrow[T1, T2]
-      val fs           = base.arrow[T4, T1]
-      val gs           = base.arrow[T2, T3]
+      val fs           = category.arrow[T4, T1]
+      val gs           = category.arrow[T2, T3]
 
       forAll(observations, ps, fs, gs) { (observe, p, f, g) =>
         given (P[T[T3, T4], T[T3, T3]] is Observable) = observe
@@ -39,7 +38,7 @@ abstract class StrongSpec(
     law("dinaturality") {
       val observations = observe[T[T4, T1], T[T3, T2]]
       val ps           = arrow[T1, T2]
-      val hs           = base.arrow[T4, T3]
+      val hs           = category.arrow[T4, T3]
 
       forAll(observations, ps, hs) { (observe, p, h) =>
         given (P[T[T4, T1], T[T3, T2]] is Observable) = observe
@@ -82,17 +81,19 @@ abstract class StrongSpec(
 /** The laws of [[Strong.Bistrong]], for bistrong promonads over 𝒮. */
 abstract class BistrongSpec(
   name: String,
-  tracked override val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } },
+  tracked override val strong: Strong.Bistrong {
+    val profunctor: Promonad { val category: Category { type Obj = Type } }
+  },
 )(using
-  promonad: PromonadFixture.On[S.P.type],
+  promonad: PromonadFixture.On[strong.profunctor.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[S.M.Tensor[X, Y]],
-) extends StrongSpec(name, S, "Bistrong") {
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[strong.monoidal.Tensor[X, Y]],
+) extends StrongSpec(name, strong, "Bistrong") {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
-  import S.P.P
-  import S.M.`*`
-  import S.BistrongLaws.*
+  import strong.profunctor.P
+  import strong.monoidal.`*`
+  import strong.BistrongLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 

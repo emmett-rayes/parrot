@@ -87,7 +87,7 @@ object PartialFixedPoints extends Conway.OfElgot(Partial.Loops)
 object PartialProductFeedback extends Traced.OfConway(PartialFixedPoints)
 
 /** The morphisms of 𝒫ᵒᵖ: total programs, reversed. */
-object PartialOpBase extends CategoryFixture("Partialᵒᵖ", PartialFixedPoints.S.P.K) {
+object PartialOpBase extends CategoryFixture("Partialᵒᵖ", PartialFixedPoints.strong.profunctor.category) {
 
   def arrow[X: Sample, Y: Sample]: Gen[Y ~> X] = PartialFixture.arrow[Y, X]
 
@@ -97,8 +97,8 @@ object PartialOpBase extends CategoryFixture("Partialᵒᵖ", PartialFixedPoints
 }
 
 /** 𝒫ᵒᵖ as a promonad over itself, at its total programs. */
-object PartialOpFixture extends PromonadFixture("Partialᵒᵖ", PartialFixedPoints.S.P) {
-  val base: PartialOpBase.type = PartialOpBase
+object PartialOpFixture extends PromonadFixture("Partialᵒᵖ", PartialFixedPoints.strong.profunctor) {
+  val category: PartialOpBase.type = PartialOpBase
 
   def arrow[X: Sample, Y: Sample]: Gen[Y ~> X] = PartialFixture.arrow[Y, X]
 

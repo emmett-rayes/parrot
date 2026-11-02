@@ -13,7 +13,7 @@ Pants uses fine-grained, file-level dependency inference for Scala powered by Sc
 3. **Ignores Scala 3 `given` definitions:** Vanilla Pants only handles Scala 2 `val`, `var`, and `def`, completely omitting `Defn.GivenAlias` and `Defn.Given`.
 4. **Fails on relative sibling imports:** In files with chained package clauses (`package parrot; package parser`), relative imports like `import category.*` are not qualified against parent package scopes.
 5. **Rejects pure context functions in polymorphic function types:** Scalameta (4.17.0 in Pants, and 4.17.4, the latest) fails on `[X] => Sample[X] ?-> Sample[F[X]]` with "polymorphic function types must have a value parameter". Since Scala 3.10, capture checking requires the pure arrow there.
-6. **Rejects pure polymorphic function types:** Scalameta fails on `[A] -> (A is J.Obj) ?-> D.F[A]` with "expected =>> or =>": it knows only the arrow `[A] =>`.
+6. **Rejects pure polymorphic function types:** Scalameta fails on `[A] -> (A is diagram.source.Obj) ?-> diagram.F[A]` with "expected =>> or =>": it knows only the arrow `[A] =>`.
 
 The `scala_override` plugin provides an in-repo override of `ScalaParser.scala` fixing all six issues.
 

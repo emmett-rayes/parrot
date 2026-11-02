@@ -11,13 +11,13 @@ import Category.Type
   *   - *η*: **K**(*A*,*B*) → *P*(*A*,*B*), the unit
   *   - *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*), the multiplication
   */
-abstract class Promonad(tracked override val K: Category) extends Endoprofunctor(K, Total) {
-  import K.{Obj, -->}
-  import K.op.--> as ~~>
+abstract class Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total) {
+  import category.{Obj, -->}
+  import category.op.--> as ~~>
 
   /** The unit *η*: **K**(*A*,*B*) → *P*(*A*,*B*).
     *
-    * This is the identity-on-objects functor from **K** to the category induced by *P*. See [[category]].
+    * This is the identity-on-objects functor from **K** to the category induced by *P*. See [[arrows]].
     */
   def unit[A: Obj, B: Obj](f: A --> B): P[A, B]
 
@@ -37,7 +37,7 @@ abstract class Promonad(tracked override val K: Category) extends Endoprofunctor
 
   /** The identity arrow *η*(*id*). */
   final def identity[A: Obj]: P[A, A] = {
-    unit(K.identity[A])
+    unit(category.identity[A])
   }
 
   /** Composes *P*(*B*,*C*) and *P*(*A*,*B*) to *P*(*A*,*C*). */
@@ -53,7 +53,7 @@ abstract class Promonad(tracked override val K: Category) extends Endoprofunctor
   /** Every profunctor induces a category of arrows, where the objects are the objects of **K**, the morphisms are
     * *P*(*A*,*B*), the identity is given by *η*, and composition is given by *μ*.
     */
-  final lazy val category: Promonad.Arrows { val P: Promonad.this.type } = Promonad.Arrows(this)
+  final lazy val arrows: Promonad.Arrows { val promonad: Promonad.this.type } = Promonad.Arrows(this)
 
   extension [B: Obj, C: Obj](q: P[B, C])
     /** Infix extension for [[compose]]. */
@@ -91,31 +91,31 @@ abstract class Promonad(tracked override val K: Category) extends Endoprofunctor
 object Promonad {
 
   /** The category of arrows of a promonad *P*. */
-  open class Arrows(tracked val P: Promonad) extends Category {
-    type Self = P.P
-    type Obj  = P.K.Obj
+  open class Arrows(tracked val promonad: Promonad) extends Category {
+    type Self = promonad.P
+    type Obj  = promonad.category.Obj
 
     def identity[A: Obj]: A --> A = {
-      P.identity[A]
+      promonad.identity[A]
     }
 
     def compose[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C = {
-      P.multiply(g, f)
+      promonad.multiply(g, f)
     }
   }
 
   /** The opposite *P*ᵒᵖ of a promonad *P* over **K**: a promonad over **K**ᵒᵖ, with every arrow reversed. */
-  final class Op(tracked val Q: Promonad) extends Promonad(Q.K.op) {
-    import Q.K.Obj
+  final class Op(tracked val promonad: Promonad) extends Promonad(promonad.category.op) {
+    import promonad.category.Obj
 
-    type Self[A, B] = Q.P[B, A]
+    type Self[A, B] = promonad.P[B, A]
 
-    def unit[A: Obj, B: Obj](f: Q.K.-->[B, A]): Q.P[B, A] = {
-      Q.unit(f)
+    def unit[A: Obj, B: Obj](f: promonad.category.-->[B, A]): promonad.P[B, A] = {
+      promonad.unit(f)
     }
 
-    def multiply[A: Obj, B: Obj, C: Obj](g: Q.P[C, B], f: Q.P[B, A]): Q.P[C, A] = {
-      Q.multiply(f, g)
+    def multiply[A: Obj, B: Obj, C: Obj](g: promonad.P[C, B], f: promonad.P[B, A]): promonad.P[C, A] = {
+      promonad.multiply(f, g)
     }
   }
 
@@ -123,17 +123,17 @@ object Promonad {
     *
     * The hom promonad's arrows are the morphisms of **K** itself.
     */
-  open class Hom(tracked override val K: Category) extends Promonad(K) {
-    import K.{Obj, -->}
+  open class Hom(tracked override val category: Category) extends Promonad(category) {
+    import category.{Obj, -->}
 
-    type Self = K.Hom
+    type Self = category.Hom
 
     def unit[A: Obj, B: Obj](f: A --> B): A --> B = {
       f
     }
 
     def multiply[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C = {
-      K.compose(g, f)
+      category.compose(g, f)
     }
   }
 }

@@ -249,9 +249,9 @@ object ParserGen {
   }
 }
 
-object ReferenceFixture extends PromonadFixture("ReferenceParser", Interpreters.reference.Arrows) {
-  import P.P
-  val base: TotalFixture.type = TotalFixture
+object ReferenceFixture extends PromonadFixture("ReferenceParser", Interpreters.reference.parsers) {
+  import promonad.P
+  val category: TotalFixture.type = TotalFixture
 
   def arrow[X: Sample, Y: Sample]: Gen[P[X, Y]] = ParserGen.arrow[X, Y](Interpreters.reference)
 
@@ -261,9 +261,9 @@ object ReferenceFixture extends PromonadFixture("ReferenceParser", Interpreters.
   def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable] = ParserGen.observe[X, Y](Interpreters.reference)
 }
 
-object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict.Arrows) {
-  import P.P
-  val base: FnsFixture.type = FnsFixture
+object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict.parsers) {
+  import promonad.P
+  val category: FnsFixture.type = FnsFixture
 
   def arrow[X: Sample, Y: Sample]: Gen[P[X, Y]] = ParserGen.arrow[X, Y](Interpreters.strict)
 
@@ -274,8 +274,8 @@ object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict
 
 /** [[ReferenceFixture]], observed with diagnostics and varied by an identity that reports nothing. */
 object ReferenceDiagnosticsFixture
-    extends CategoryFixture("ReferenceParser (with diagnostics)", ReferenceFixture.P.category) {
-  import K.-->
+    extends CategoryFixture("ReferenceParser (with diagnostics)", ReferenceFixture.promonad.arrows) {
+  import category.-->
 
   def arrow[X: Sample, Y: Sample]: Gen[X --> Y] = ReferenceFixture.arrow[X, Y]
 
@@ -285,8 +285,9 @@ object ReferenceDiagnosticsFixture
 }
 
 /** [[StrictFixture]], observed with diagnostics and varied by an identity that reports nothing. */
-object StrictDiagnosticsFixture extends CategoryFixture("StrictParser (with diagnostics)", StrictFixture.P.category) {
-  import K.-->
+object StrictDiagnosticsFixture
+    extends CategoryFixture("StrictParser (with diagnostics)", StrictFixture.promonad.arrows) {
+  import category.-->
 
   def arrow[X: Sample, Y: Sample]: Gen[X --> Y] = StrictFixture.arrow[X, Y]
 
@@ -303,16 +304,16 @@ object StrictDiagnosticsFixture extends CategoryFixture("StrictParser (with diag
 object ParserFixtures {
 
   /** [[ReferenceFixture]], for the promonad of `ReferenceParser`. */
-  given ReferenceIsFixture: PromonadFixture.On[Interpreters.reference.Arrows.type] = ReferenceFixture
+  given ReferenceIsFixture: PromonadFixture.On[Interpreters.reference.parsers.type] = ReferenceFixture
 
   /** [[ReferenceFixture]], for the category of `ReferenceParser`. */
-  given ReferenceCategoryIsFixture: CategoryFixture.On[Interpreters.reference.Arrows.category.type] = {
-    ReferenceFixture.category
+  given ReferenceCategoryIsFixture: CategoryFixture.On[Interpreters.reference.parsers.arrows.type] = {
+    ReferenceFixture.arrows
   }
 
   /** [[StrictFixture]], for the promonad of `StrictParser`. */
-  given StrictIsFixture: PromonadFixture.On[Interpreters.strict.Arrows.type] = StrictFixture
+  given StrictIsFixture: PromonadFixture.On[Interpreters.strict.parsers.type] = StrictFixture
 
   /** [[StrictFixture]], for the category of `StrictParser`. */
-  given StrictCategoryIsFixture: CategoryFixture.On[Interpreters.strict.Arrows.category.type] = StrictFixture.category
+  given StrictCategoryIsFixture: CategoryFixture.On[Interpreters.strict.parsers.arrows.type] = StrictFixture.arrows
 }

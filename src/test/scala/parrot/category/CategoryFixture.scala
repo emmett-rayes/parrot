@@ -6,8 +6,8 @@ import org.scalacheck.Gen
 import Category.Type
 
 /** Generators, variants and observations for the morphisms of a category whose objects are all types. */
-abstract class CategoryFixture(val name: String, tracked val K: Category { type Obj = Type }) extends caps.Pure {
-  import K.-->
+abstract class CategoryFixture(val name: String, tracked val category: Category { type Obj = Type }) extends caps.Pure {
+  import category.-->
 
   /** Generates morphisms *X* → *Y*, including the cases that matter for the category (failure, effects). */
   def arrow[X: Sample, Y: Sample]: Gen[X --> Y]
@@ -26,7 +26,7 @@ abstract class CategoryFixture(val name: String, tracked val K: Category { type 
 object CategoryFixture {
 
   /** A fixture for the category *C*. */
-  type On[C <: Category] = CategoryFixture { val K: C }
+  type On[C <: Category] = CategoryFixture { val category: C }
 
   /** 𝒮: generated pure functions. */
   given TotalIsFixture: On[Total.type] = TotalFixture
@@ -38,11 +38,11 @@ object CategoryFixture {
   given TotalOpIsFixture: On[Total.op.type] = OpFixture(TotalFixture)
 
   /** The category of arrows of `Kleisli[Option]`. */
-  given OptionKleisliCategoryIsFixture: On[Kleisli.OptionKleisli.category.type] = OptionKleisliFixture.category
+  given OptionKleisliCategoryIsFixture: On[Kleisli.OptionKleisli.arrows.type] = OptionKleisliFixture.arrows
 
   /** The category of arrows of `Kleisli[Writer[String]]`. */
-  given StringWriterKleisliCategoryIsFixture: On[StringWriterKleisli.category.type] = {
-    StringWriterKleisliFixture.category
+  given StringWriterKleisliCategoryIsFixture: On[StringWriterKleisli.arrows.type] = {
+    StringWriterKleisliFixture.arrows
   }
 }
 
@@ -50,19 +50,20 @@ object CategoryFixture {
   *
   * Morphisms *X* → *Y* in the opposite fixture correspond to morphisms *Y* → *X* in the original fixture.
   */
-final class OpFixture(tracked val F: CategoryFixture) extends CategoryFixture(s"${F.name}ᵒᵖ", F.K.op) {
-  import F.K.-->
+final class OpFixture(tracked val fixture: CategoryFixture)
+    extends CategoryFixture(s"${fixture.name}ᵒᵖ", fixture.category.op) {
+  import fixture.category.-->
 
   def arrow[X: Sample, Y: Sample]: Gen[Y --> X] = {
-    F.arrow
+    fixture.arrow
   }
 
   def variant[X: Sample, Y: Sample](f: Y --> X): Y --> X = {
-    F.variant(f)
+    fixture.variant(f)
   }
 
   def observe[X: Sample, Y: Sample]: Gen[(Y --> X) is Observable] = {
-    F.observe
+    fixture.observe
   }
 }
 

@@ -7,28 +7,28 @@ package category
   *   - *X* is the apex, an object of **C**
   *   - *ψ*_*A*: *X* → *D*[*A*] is the leg at an object *A* of **J**
   */
-abstract class Cone(tracked val D: Functor, tracked val X: D.D.Object) extends caps.Pure {
-  import D.{F as D, map}
-  import D.C as J
-  import D.D as C
+abstract class Cone(tracked val diagram: Functor, tracked val apex: diagram.target.Object) extends caps.Pure {
+  import diagram.{F as D, map}
+  import diagram.source as J
+  import diagram.target as C
   import J.-->
   import C.--> as ==>
 
   /** The apex *X*. */
-  final type Apex = X.A
+  final type X = apex.A
 
-  private given ApexIsObj: Apex is C.Obj              = X.U
-  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = D.objects[A]
+  private given XIsObj: X is C.Obj                    = apex.evidence
+  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
 
   /** *ψ*_*A*: *X* → *D*[*A*]
     *
     * The legs form a natural transformation from the constant functor at *X* to *D*.
     */
-  def leg[A: J.Obj]: Apex ==> D[A]
+  def leg[A: J.Obj]: X ==> D[A]
 
   /** The cone (*Y*, *ψ* ∘ *h*) induced by a morphism *h*: *Y* → *X*. */
-  final def induced[Y: C.Obj](h: Y ==> Apex): Cone.Of[D.type] { val X: C.ObjectOf[Y] } = {
-    new Cone(D, C.Object[Y]) {
+  final def induced[Y: C.Obj](h: Y ==> X): Cone.Of[diagram.type] { val apex: C.ObjectOf[Y] } = {
+    new Cone(diagram, C.Object[Y]) {
       def leg[A: J.Obj]: Y ==> D[A] = {
         h >>> Cone.this.leg[A]
       }
@@ -40,7 +40,7 @@ abstract class Cone(tracked val D: Functor, tracked val X: D.D.Object) extends c
 
     /** *D*(*f*) ∘ *ψ*_*A* = *ψ*_*B*
       */
-    def commutes[A: J.Obj, B: J.Obj](f: A --> B)(using (Apex ==> D[B]) is Observable): Boolean = {
+    def commutes[A: J.Obj, B: J.Obj](f: A --> B)(using (X ==> D[B]) is Observable): Boolean = {
       (leg[A] >>> map(f)) =?= leg[B]
     }
   }
@@ -49,5 +49,5 @@ abstract class Cone(tracked val D: Functor, tracked val X: D.D.Object) extends c
 object Cone {
 
   /** Refines `Cone` to a specific functor **F**. */
-  type Of[F <: Functor] = Cone { val D: F }
+  type Of[F <: Functor] = Cone { val diagram: F }
 }

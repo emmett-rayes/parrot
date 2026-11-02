@@ -27,10 +27,10 @@ abstract class Category extends caps.Pure {
   final type --> = Hom
 
   /** Evidence that a type is an object of the category. */
-  final type Object = Category.Object { val C: Category.this.type }
+  final type Object = Category.Object { val category: Category.this.type }
 
   /** Refines `Object` to a specific type *X*. */
-  final type ObjectOf[X] = Object { val U: X is Obj }
+  final type ObjectOf[X] = Object { val evidence: X is Obj }
 
   /** The object *X* of the category, specified by its evidence. */
   final def Object[X: Obj]: ObjectOf[X] = {
@@ -58,7 +58,7 @@ abstract class Category extends caps.Pure {
   final type <-> = Iso
 
   /** The corresponding opposite category **C**ᵒᵖ. */
-  final lazy val op: Category.Op { val K: Category.this.type } = Category.Op(this)
+  final lazy val op: Category.Op { val category: Category.this.type } = Category.Op(this)
 
   extension [B: Obj, C: Obj](g: B --> C)
     /** Infix extension for [[compose]]. */
@@ -153,26 +153,26 @@ object Category {
     * This allows structures on an object of the category to be refined in substructures. See [[Monoidal]],
     * [[Cartesian]] and [[Terminal]] for an example.
     */
-  open class Object(tracked val C: Category, tracked val U: C.Obj) extends caps.Pure {
+  open class Object(tracked val category: Category, tracked val evidence: category.Obj) extends caps.Pure {
 
     /** The object *A*. */
-    final type A = U.Self
+    final type A = evidence.Self
   }
 
   /** The opposite **K**ᵒᵖ of a category **K**.
     *
     * The opposite category has the same objects and identities, with every morphism reversed.
     */
-  final class Op(tracked val K: Category) extends Category {
-    type Self[A, B] = K.Hom[B, A]
-    type Obj        = K.Obj
+  final class Op(tracked val category: Category) extends Category {
+    type Self[A, B] = category.Hom[B, A]
+    type Obj        = category.Obj
 
     def identity[A: Obj]: A --> A = {
-      K.identity[A]
+      category.identity[A]
     }
 
     def compose[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C = {
-      K.compose(f, g)
+      category.compose(f, g)
     }
   }
 
@@ -190,34 +190,34 @@ object Category {
     *   components themselves, so generic code never needs a match type to reduce; on a pair type (*A*₁,*A*₂) they
     *   reduce to *A*₁ and *A*₂.
     */
-  final class Product(tracked val C1: Category, tracked val C2: Category) extends Category {
+  final class Product(tracked val factor1: Category, tracked val factor2: Category) extends Category {
     import Product.{Fst, Snd}
 
-    type Self[X, Y] = (C1.Hom[Fst[X], Fst[Y]], C2.Hom[Snd[X], Snd[Y]])
+    type Self[X, Y] = (factor1.Hom[Fst[X], Fst[Y]], factor2.Hom[Snd[X], Snd[Y]])
     type Obj        = Pair
 
     /** Evidence that a pair type is an object: its components are objects of **C₁** and **C₂**. */
     trait Pair extends Type {
 
       /** The first component is an object of **C₁**. */
-      def fst: Fst[Pair.this.Self] is C1.Obj
+      def fst: Fst[Pair.this.Self] is factor1.Obj
 
       /** The second component is an object of **C₂**. */
-      def snd: Snd[Pair.this.Self] is C2.Obj
+      def snd: Snd[Pair.this.Self] is factor2.Obj
     }
 
     /** Pairs of objects are objects. */
-    given PairIsObj: [A1: C1.Obj as first, A2: C2.Obj as second] => ((A1, A2) is Pair) {
-      def fst: A1 is C1.Obj = first
-      def snd: A2 is C2.Obj = second
+    given PairIsObj: [A1: factor1.Obj as first, A2: factor2.Obj as second] => ((A1, A2) is Pair) {
+      def fst: A1 is factor1.Obj = first
+      def snd: A2 is factor2.Obj = second
     }
 
     def identity[X: Pair]: X --> X = {
-      (C1.identity[Fst[X]](using X.fst), C2.identity[Snd[X]](using X.snd))
+      (factor1.identity[Fst[X]](using X.fst), factor2.identity[Snd[X]](using X.snd))
     }
 
     def compose[X: Pair, Y: Pair, Z: Pair](g: Y --> Z, f: X --> Y): X --> Z = {
-      (C1.compose(g._1, f._1)(using X.fst, Y.fst, Z.fst), C2.compose(g._2, f._2)(using X.snd, Y.snd, Z.snd))
+      (factor1.compose(g._1, f._1)(using X.fst, Y.fst, Z.fst), factor2.compose(g._2, f._2)(using X.snd, Y.snd, Z.snd))
     }
   }
 

@@ -35,40 +35,43 @@ Rejected:
 
 ## 3. The encoding
 
-- **Bases are `tracked` term parameters** (`Strong(P, L1, L2)`, `Promonad(K)`, `Monad(F)`). A term parameter is a stable
-  path, so its type members can be named and imported, and `tracked` keeps its singleton type in the instance's type,
-  so `Kleisli.OptionKleisli.K` is known to be `Total` without casts.
-- **What a structure is on is a parameter; what it adds is a member.** `Monoidal(K, U, T)` is on a category, a unit
-  object and a tensor, an `Endobifunctor`, and names their types `I = U.A` and `Tensor = T.F`, which `tracked` makes
-  known to clients (`Total.Products.I` is `Unit`). The unitors, the associator and the braiding are members, because
-  refinements derive them (`Cartesian`); so is the internal hom, which is what `Closed` adds: ⊗ determines it up to
-  isomorphism, and evaluation and currying determine its action on morphisms (`Closed.InternalHom`).
+- **Bases are `tracked` term parameters** (`Strong(profunctor, module1, module2)`, `Promonad(category)`,
+  `Monad(functor)`). A term parameter is a stable path, so its type members can be named and imported, and `tracked`
+  keeps its singleton type in the instance's type, so `Kleisli.OptionKleisli.category` is known to be `Total` without
+  casts.
+- **What a structure is on is a parameter; what it adds is a member.** `Monoidal(category, unit, tensor)` is on a
+  category, a unit object and a tensor, an `Endobifunctor`, and names their types `I = unit.A` and `Tensor = tensor.F`,
+  which `tracked` makes known to clients (`Total.Products.I` is `Unit`). The unitors, the associator and the braiding
+  are members, because refinements derive them (`Cartesian`); so is the internal hom, which is what `Closed` adds: ⊗
+  determines it up to isomorphism, and evaluation and currying determine its action on morphisms (`Closed.InternalHom`).
 - **Evidence that chooses an object is a value parameter** (the object of `Terminal`, the factors and product of
   `Product`, the apex of `Cone`). 𝒮 has two units and two tensors, so implicit search cannot choose them (for a `using`
   parameter it chose `Type.TIsType[Any]`), and `deferred` givens exist only in traits; that makes it a value. It is a
   parameter because a structure is on the objects it is about: a cone is a natural transformation from the constant
   functor at its apex to its diagram, so it is on both, and a limit passes the apex it chooses to its parent.
 - **Structures offer evidence as values, and every given is private** to the class that uses it: a bifunctor has
-  `objects`, an object its evidence `U`, a cone its apex `X`, and a class that needs a given declares one from them
-  (`private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]`), refinements included. The
+  `objects`, an object its `evidence`, a cone its `apex`, and a class that needs a given declares one from them
+  (`private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]`), refinements included. The
   only public givens are instances of type classes, next to their type class (`Type.TIsType`, `Eq`, `Observable`).
-- **Every object a structure chooses or is on is a structure,** `Category.Object(C, U)`, written `K.Object`: one
-  encoding for all of them, which a refinement can ask more of: `Monoidal(K, U, T)` is on an `Object`, and `Cartesian`
-  refines it to a `Terminal`, an `Object` with `discard`, as it refines the endobifunctor `T` to `Products`. Only
-  `Object` and the objects that extend it (`Terminal`, `Initial`) take bare evidence, which is what they wrap.
-  `K.Object[A]` builds one from a context bound, and `K.ObjectOf[A]` refines one to a type, since in
-  `K.Object { val U: A is Obj }` the name `A` is the member of `Object`.
-- **Structures are abstract classes,** because a refinement passes arguments to its parent (`Promonad(K)` extends
-  `Endoprofunctor(K, Total)`), which a trait cannot. Type classes without parameters that are not structures
+- **Every object a structure chooses or is on is a structure,** `Category.Object(category, evidence)`, written
+  `category.Object`: one encoding for all of them, which a refinement can ask more of:
+  `Monoidal(category, unit, tensor)` is on an `Object`, and `Cartesian` refines it to a `Terminal`, an `Object` with
+  `discard`, as it refines the endobifunctor `tensor` to `Products`. Only `Object` and the objects that extend it
+  (`Terminal`, `Initial`) take bare evidence, which is what they wrap. `category.Object[A]` builds one from a context
+  bound, and `category.ObjectOf[A]` refines one to a type, since in `category.Object { val evidence: A is Obj }` the
+  name `A` is the member of `Object`.
+- **Structures are abstract classes,** because a refinement passes arguments to its parent (`Promonad(category)` extends
+  `Endoprofunctor(category, Total)`), which a trait cannot. Type classes without parameters that are not structures
   (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
 - **`Self` only when the structure has its own carrier** (a category's morphisms, a functor's object map, a monoid's
   object). Structures *on* something (`Monoidal`, `Module`, `Strong`, `Restriction`, the trace grid, `Monad`) are
   named, not found by carrier: 𝒮 carries both products and coproducts, and nothing about the carrier tells them apart.
 - **Combinations are bundles, not inheritance.** A class extending a product and a coproduct structure would inherit two
   `Tensor`s, two `I`s and two `braid`s, so `ParserAlgebra(…)` takes its structures as parameters. A structure that is
-  another with more operations extends it: `Freyd(P, S)` extends the category of arrows `Promonad.Arrows(P)`.
+  another with more operations extends it: `Freyd(promonad, strong)` extends the category of arrows
+  `Promonad.Arrows(promonad)`.
 - **A special case with an operation of its own is a structure with a view** to the general one and a construction
-  back (`Terminal.limit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.category`): an instance can override
+  back (`Terminal.limit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
   `Limit.Of`) only names a refinement.
 - **Objects are types with evidence.** A category declares `type Obj <: Type`, where `Type` is `Category.Type`, object
@@ -77,22 +80,26 @@ Rejected:
   so evidence search is sound but not canonical. Type classes of data (`Eq`, `Observable`, `Preorder`) do not extend
   `Type`, since importing their givens would change what answers `A is Type`; a category of the types with an
   equality takes an evidence class that carries an `Eq`.
-- **Products of categories use match types.** The objects of `Category.Product(C1, C2)` are pair types, and a morphism
-  type computed from two object types can take them apart only with a match type (`Fst[(A1, A2)] = A1`): evidence is a
-  value and cannot index a type, and projecting a type member of an abstract type is unsound. The object evidence
-  speaks about `Fst[X]` and `Snd[X]` directly, so generic code never needs a match type to reduce. A bifunctor keeps
-  its own two-parameter carrier and is a functor out of the product through the view `Bifunctor.functor`, whose
+- **Products of categories use match types.** The objects of `Category.Product(factor1, factor2)` are pair types, and a
+  morphism type computed from two object types can take them apart only with a match type (`Fst[(A1, A2)] = A1`):
+  evidence is a value and cannot index a type, and projecting a type member of an abstract type is unsound. The object
+  evidence speaks about `Fst[X]` and `Snd[X]` directly, so generic code never needs a match type to reduce. A bifunctor
+  keeps its own two-parameter carrier and is a functor out of the product through the view `Bifunctor.functor`, whose
   functor laws are its laws.
-- **A monad is structure on an endofunctor,** `Monad(F)`, with `unit` and `flatten` primitive: the monoid presentation,
-  so that `Monad` and `Monoid` have the same shape, with `bind` derived. Monads are refined through their functor
-  (`Monad.On[Total.type]`), since only that keeps the chain of singleton types that path-dependent code needs. The
-  structures on a monad whose laws are those of the Kleisli structures they induce (`Monad.Restriction`,
+- **A monad is structure on an endofunctor,** `Monad(functor)`, with `unit` and `flatten` primitive: the monoid
+  presentation, so that `Monad` and `Monoid` have the same shape, with `bind` derived. Monads are refined through their
+  functor (`Monad.On[Total.type]`), since only that keeps the chain of singleton types that path-dependent code needs.
+  The structures on a monad whose laws are those of the Kleisli structures they induce (`Monad.Restriction`,
   `Monad.Classical`, `Monad.Elgot`) live in its companion. Plain monads are transformers over the identity
   (`Monad.OptionIsMonad` is `OptionT(Monad.Identity)`), so that each effect is defined once.
 - **Names follow the mathematics:** short carrier aliases (`Hom`/`-->`, `F`, `P`, `M`, `C`), role names for the arrows
   of other categories (`->>`, `==>`, `~~>`) beside the concrete `->` of 𝒮 and `~>` of 𝒫, and infix objects (`*`, `+`,
   `` `^` ``, `<->`). No operator reuses a name that a type already has: the preorder is `?<`, since `Int`'s own `<=`
   would shadow `<=`.
+- **Parameters are named by their role,** in one lowercase word (`source` and `target`, `category`, `unit` and `tensor`,
+  `diagram` and `apex`, `strong`), indexed when a structure has two of a kind (`source1`, `source2`); the scaladoc
+  keeps the mathematical letters (**C**, *F*). Clients reach a structure through paths of parameters, and a path of
+  role names says what each link is: `strong.profunctor.category` is the category of the strong profunctor.
 - **One operator per operation, and operators are syntax.** The same operator of two structures is an overload that
   Scala resolves by the type of the arrow, so a category and a promonad both compose with `>>>`; where one value is an
   arrow of both (a Kleisli arrow `A -> M[B]` on 𝒮), Scala reports an ambiguity or rejects the argument, never a wrong
@@ -101,14 +108,18 @@ Rejected:
 
 Rejected:
 - bases as type parameters, which cannot be imported from and need `ValueOf` and casts to recover the base values;
-- the unit of a monoidal structure as bare evidence (`U: K.Obj`): `Obj` is an abstract type, which no class can
-  extend, so no refinement could ask for a terminal object;
+- parameters named by single letters, after the mathematics (`K`, `P`, `M`): a letter names different things in
+  different structures (`C` is a category, a Conway operator or a closed structure) and collides with the carrier
+  aliases (`M.M`, `P.P`). Role names collide in refinements instead (`Product { val category: category.type }`), which
+  the aliases that refine a structure avoid (`Product.Of[category.type]`);
+- the unit of a monoidal structure as bare evidence (`unit: category.Obj`): `Obj` is an abstract type, which no class
+  can extend, so no refinement could ask for a terminal object;
 - bare evidence for the objects that no refinement asks more of, such as the factors of a product or the apex of a
   cone: shorter, but a second encoding of one concept;
-- refining an object by its type (`K.Object { type A = X }`): values conform to it, but its evidence keeps an
+- refining an object by its type (`category.Object { type A = X }`): values conform to it, but its evidence keeps an
   abstract `Self`, so `X is Obj` cannot be read back from it;
-- `Object` as a class nested in `Category`: a structure that extends it through a parameter (`C.Object`) is not an
-  object of the argument (`Total.Object`), so a terminal object could not be passed as a unit;
+- `Object` as a class nested in `Category`: a structure that extends it through a parameter (`category.Object`) is not
+  an object of the argument (`Total.Object`), so a terminal object could not be passed as a unit;
 - object evidence as a type constructor (`type Obj[_]`, evidence `Obj[A]`), which would make the evidence of **2** a
   plain GADT but has no `Self`: every parameter that chooses an object would need a wrapper pairing a type with its
   evidence;
@@ -131,19 +142,19 @@ Each structure sits at the lowest level where its laws can be stated.
 | trace | `Traced` (×) | `Traced` (+) | a bistrong promonad: superposing needs composition and strength |
 | fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a bistrong promonad |
 
-- **Strength over left modules.** `Strong(P, L1, L2)` is a profunctor *P*: **K₁**ᵒᵖ × **K₂** → 𝒮 with left actions
-  (`Module`) of one monoidal **M** on **K₁** and **K₂**; its primitive is the left strength *τ*: *P*(*A*,*B*) →
-  *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*), `left`, as in the literature (Pastro and Street's Tambara modules; Moggi's strength is a
-  left strength). The general definition costs nothing, since every instance is the self-action. `Bistrong(P, M)`, for
-  a symmetric **M** acting on itself, is the only case with a right action too: it adds the right strength *τ*′,
-  `right`, and the law that the two commute (`compatibility`). *τ*′ defaults to *P*(*β*,*β*) ∘ *τ* and may be
-  overridden, as `StrictParser` does to build `Zip(p, Success())` directly. `Strong` and `Traced` are defined once,
-  parameterized by the monoidal structure.
-- **A Freyd category is a category:** `Freyd(P, S)` extends `Promonad.Arrows(P)`, the category of arrows of the
-  promonad, with `first`, `second`, `parallel` and the laws that connect them to the strength. It names the strengths
-  after the component an arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of Freyd categories and the
-  grid read as usual. It takes the promonad as well as the strength, so that its signature names the promonad whose
-  arrows it has.
+- **Strength over left modules.** `Strong(profunctor, module1, module2)` is a profunctor *P*: **K₁**ᵒᵖ × **K₂** → 𝒮 with
+  left actions (`Module`) of one monoidal **M** on **K₁** and **K₂**; its primitive is the left strength *τ*:
+  *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*), `left`, as in the literature (Pastro and Street's Tambara modules; Moggi's
+  strength is a left strength). The general definition costs nothing, since every instance is the self-action.
+  `Bistrong(profunctor, monoidal)`, for a symmetric **M** acting on itself, is the only case with a right action too: it
+  adds the right strength *τ*′, `right`, and the law that the two commute (`compatibility`). *τ*′ defaults to
+  *P*(*β*,*β*) ∘ *τ* and may be overridden, as `StrictParser` does to build `Zip(p, Success())` directly. `Strong` and
+  `Traced` are defined once, parameterized by the monoidal structure.
+- **A Freyd category is a category:** `Freyd(promonad, strong)` extends `Promonad.Arrows(promonad)`, the category of
+  arrows of the promonad, with `first`, `second`, `parallel` and the laws that connect them to the strength. It names
+  the strengths after the component an arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of Freyd
+  categories and the grid read as usual. It takes the promonad as well as the strength, so that its signature names the
+  promonad whose arrows it has.
 - **Traces and fixed points.** The trace laws restrict sliding and superposing to pure arrows, which are central
   (traced *premonoidal* categories). The product row has no useful total instance in a strict language: computing
   ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first. Its instances exist by duality, on 𝒫ᵒᵖ, and the bridges (`OfElgot`,
@@ -159,46 +170,48 @@ Each structure sits at the lowest level where its laws can be stated.
   not distribute over ⊳; precomposition does.
 - **Comonoids** are the dual of monoids. Every object of a cartesian category is a comonoid in exactly one way; pairs in
   𝒫 have comonoids that programs do not preserve, which by Fox's theorem is why they are not products.
-- **Limits.** `Limit(D, X)` is a cone over a diagram *D* with apex *X* (`Cone`) through which every cone factors, and
-  `Limit.OfDiagram[D](C)` gives one for every diagram of type *D*[**C**]: *D* is a type of diagrams indexed by their
-  target, so that the structure is on its category **C**, and contravariant, so that the limits of more diagrams serve
-  for fewer. 𝒮 has all of them by one construction, `Total.LimitOf`, which `Total.Limits` gives for every diagram: the
-  product of the components is a polymorphic function type, since the objects are types, and the equalizer of the
-  natural families is made by abstraction. Points are private to the construction, a class indexed by the diagram
+- **Limits.** `Limit(diagram, apex)` is a cone over a diagram *D* with apex *X* (`Cone`) through which every cone
+  factors, and `Limit.OfDiagram[D](category)` gives one for every diagram of type *D*[**C**]: *D* is a type of diagrams
+  indexed by their target, so that the structure is on its category **C**, and contravariant, so that the limits of more
+  diagrams serve for fewer. 𝒮 has all of them by one construction, `Total.LimitOf`, which `Total.Limits` gives for every
+  diagram: the product of the components is a polymorphic function type, since the objects are types, and the equalizer
+  of the natural families is made by abstraction. Points are private to the construction, a class indexed by the diagram
   (`LimitOf.Point`), and only the factorization builds them, from the legs of a cone, so they are natural as long as the
   cones are lawful; to clients, who see points only through the legs, the abstract type is the limit.
-- **Limits of a discrete shape have a type of apexes.** `Limit.OfDiscreteDiagram[D](C)` refines `OfDiagram` for the
-  diagrams of a shape whose only morphisms are identities, stated as a bound on their source (`Self[A, B] <: A =:= B`,
-  which **2** and **0** satisfy), and gives the apex of each limit as a type function `Lim[F]` of the diagram's object
-  map. A functor preserves identities, so a diagram of a discrete shape is determined by its objects, and the apex can
-  be too; for any other shape it cannot, since the limit depends on the morphisms. In 𝒮 (`Total.DiscreteLimitsOf(J)`, a
-  method, since its type of diagrams depends on **J**) every family of points is natural, so the apex is the type of all
-  families, without abstraction.
+- **Limits of a discrete shape have a type of apexes.** `Limit.OfDiscreteDiagram[D](category)` refines `OfDiagram` for
+  the diagrams of a shape whose only morphisms are identities, stated as a bound on their source
+  (`Self[A, B] <: A =:= B`, which **2** and **0** satisfy), and gives the apex of each limit as a type function `Lim[F]`
+  of the diagram's object map. A functor preserves identities, so a diagram of a discrete shape is determined by its
+  objects, and the apex can be too; for any other shape it cannot, since the limit depends on the morphisms. In 𝒮
+  (`Total.DiscreteLimitsOf(index)`, a method, since its type of diagrams depends on **J**) every family of points is
+  natural, so the apex is the type of all families, without abstraction.
 - **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**:
-  `Cocone(D, X)`, `Colimit(D, X)` with `factor` out of its apex, `Colimit.OfDiagram` and `Colimit.OfDiscreteDiagram`
-  with the apex `Colim[F]`. 𝒮 has all of them by the dual construction, `Total.ColimitOf` (`Total.Colimits`): the sum of
-  the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object
-  *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are
-  private to the construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a cocone,
-  so glued points are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the colimit.
-  In a discrete diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimitsOf`), and the
-  factorization applies the leg at the object of a point.
-- **Terminal objects and products are structures with views** (§3). `Terminal(C, U)` is an object with `discard` (!);
-  `Product(C, U1, U2, U)` has `fst`, `snd` and `pair`. Each is a limit through its view `limit`, of the empty diagram
-  and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from a limit. `Products(C)`, the
-  binary products of **C**, is a bifunctor with a `Product` on every image, `product[A, B]` on *F*[*A*,*B*], whose
-  laws are its laws, and `bimap` defaults to ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩. `Products(L)` (`Products.FromLimits`) builds
-  them from discrete limits of shape **2**, with the apexes Lim[(*A*,*B*)] as tensor, as `Terminal(L)` builds a
-  terminal object; an instance with a tensor of its own implements one `Product` per pair of objects
-  (`Total.Tuple2IsProduct[A, B]`). Dually, `Initial(C, U)` has `absurd` (¡) and `Coproduct(C, U1, U2, U)` has `inl`,
-  `inr` and `copair`, each a colimit through its view `colimit` and built from one by `FromColimit`, and
-  `Coproducts(C)` has a `Coproduct` on every image, `coproduct[A, B]`, with `Coproducts(L)` from discrete colimits.
-- **A cartesian structure is a terminal object and products,** `Cartesian(K, U, T)` with a `Terminal` *U* and
-  `Products` *T*: the universal properties are stated once, in its parameters, and `Cartesian` derives the unitors,
-  the associator and the braiding from them, with laws that check an instance overriding them against the projections.
-  Its `fst`, `snd` and `pair` are those of `T.product`, named once for the code that works in a cartesian category.
-  Dually, `Cocartesian(K, U, T)` takes an `Initial` *U* and `Coproducts` *T*, names `inl`, `inr` and `copair`, and
-  checks the unitors, the associator and the braiding against the injections.
+  `Cocone(diagram, apex)`, `Colimit(diagram, apex)` with `factor` out of its apex, `Colimit.OfDiagram` and
+  `Colimit.OfDiscreteDiagram` with the apex `Colim[F]`. 𝒮 has all of them by the dual construction, `Total.ColimitOf`
+  (`Total.Colimits`): the sum of the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with
+  the evidence for its object *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by
+  abstraction. Points are private to the construction (`ColimitOf.Point`) and only the factorization reads them, through
+  the legs of a cocone, so glued points are indistinguishable as long as the cocones are lawful; to clients, the
+  abstract type is the colimit. In a discrete diagram no two points are glued, so the colimit is the sum itself
+  (`Total.DiscreteColimitsOf`), and the factorization applies the leg at the object of a point.
+- **Terminal objects and products are structures with views** (§3). `Terminal(category, evidence)` is an object with
+  `discard` (!); `Product(category, factor1, factor2, apex)` has `fst`, `snd` and `pair`. Each is a limit through its
+  view `limit`, of the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each
+  from a limit. `Products(category)`, the binary products of **C**, is a bifunctor with a `Product` on every image,
+  `product[A, B]` on *F*[*A*,*B*], whose laws are its laws, and `bimap` defaults to ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩.
+  `Products(limits)` (`Products.FromLimits`) builds them from discrete limits of shape **2**, with the apexes
+  Lim[(*A*,*B*)] as tensor, as `Terminal(limits)` builds a terminal object; an instance with a tensor of its own
+  implements one `Product` per pair of objects (`Total.Tuple2IsProduct[A, B]`). Dually, `Initial(category, evidence)`
+  has `absurd` (¡) and `Coproduct(category, summand1, summand2, apex)` has `inl`, `inr` and `copair`, each a colimit
+  through its view `colimit` and built from one by `FromColimit`, and `Coproducts(category)` has a `Coproduct` on every
+  image, `coproduct[A, B]`, with `Coproducts(colimits)` from discrete colimits.
+- **A cartesian structure is a terminal object and products,** `Cartesian(category, unit, tensor)`, whose unit is a
+  `Terminal` and whose tensor is `Products`: the universal properties are stated once, in its parameters, and
+  `Cartesian` derives the unitors, the associator and the braiding from them, with laws that check an instance
+  overriding them against the projections. Its `fst`, `snd` and `pair` are those of `tensor.product`, named once for the
+  code that works in a cartesian category. Dually, `Cocartesian(category, unit, tensor)` takes an `Initial` unit and
+  `Coproducts`, names `inl`, `inr` and `copair`, and checks the unitors, the associator and the braiding against the
+  injections.
 - **2 tells its objects apart by a GADT carried by the evidence:** `Disc2.index` is an `Index[A]`, and matching on its
   cases `Zero` and `One` refines `A`. A match on the evidence itself would not, because Scala derives GADT constraints
   from type parameters, not from the `Self` of `A is Disc2`; nor can the evidence be the GADT, because a context bound
@@ -213,9 +226,11 @@ Rejected:
 - naming the primitive strength `first`: with a left action it runs an arrow on the *second* component;
 - `Bistrong` over two arbitrary left modules: a left module has no right action, so it would need right modules or
   bimodules, which have no client;
-- `Bistrong` constraining the profunctor towards the monoidal structure (`P { val K1: M.K.type; val K2: M.K.type }`):
-  for a promonad, nothing makes its own **K** equal to **M**.**K**, so the constraint refines **M** instead;
-- separate duals over products and coproducts, where one `Bistrong.Op(S, S.M.op)` serves both, its braiding unchecked;
+- `Bistrong` constraining the profunctor towards the monoidal structure
+  (`Profunctor { val domain: monoidal.category.type; … }`): for a promonad, nothing makes its own **K** equal to
+  **M**.**K**, so the constraint refines **M** instead;
+- separate duals over products and coproducts, where one `Bistrong.Op(strong, strong.monoidal.op)` serves both, its
+  braiding unchecked;
 - solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number
   of arrows and cannot share a guard between separately tied knots;
 - a terminal object as an alias of a limit of the empty diagram, which leaves it no operation to override;
@@ -229,8 +244,8 @@ Rejected:
 - the apex of a cone as a type member with evidence, which an implementation defines in its body: it lets a limit of 𝒮
   nest its type of points in itself, but every other cone restates a parameter as two members, and the apex of a cone is
   what it is on, like the object of a terminal object;
-- limits of a shape, `Limits(J, C)` with a limit of every diagram **J** → **C**: clients need the limits of one kind of
-  diagram, the empty one or the pairs of objects, and 𝒮 has the limits of every diagram, of any shape;
+- limits of a shape, `Limits(shape, category)` with a limit of every diagram **J** → **C**: clients need the limits of
+  one kind of diagram, the empty one or the pairs of objects, and 𝒮 has the limits of every diagram, of any shape;
 - a first-order type of diagrams, `OfDiagram[D]` without its category: the type parameters of a class cannot mention its
   parameters, so it could not say that the diagrams land in **C**, and clients that build a diagram would need the
   category separately;
@@ -262,14 +277,14 @@ Rejected:
   tests, which must find a witness: they document the intended semantics as much as the laws do.
 - **A specification takes the instance it checks,** with what its laws need of it in the parameter type, and finds the
   instance's fixture as a given, one per category or promonad, so that the constraint on the category's objects stays
-  in the signature. Fixtures of derived categories (`Total.op`, `P.category`) are givens of their own, because
+  in the signature. Fixtures of derived categories (`Total.op`, `promonad.arrows`) are givens of their own, because
   implicit search cannot get from `Total.op` back to `Total`.
 - **Every test run regenerates `docs/law-status.md`,** the table of laws, instances and statuses; the tests write it
   themselves, independently of the build tool.
 
 ## 6. The parser
 
-- **The algebra is a bundle:** `ParserAlgebra(Arrows, Products, Coproducts, Zipping, Branching, Choice, Loops, Knots)`,
+- **The algebra is a bundle:** `ParserAlgebra(parsers, products, coproducts, zipping, branching, choice, loops, knots)`,
   every combinator an operation of one of them. An interpreter chooses the structures and implements five primitives:
   `lift`, `literal`, `regex`, `rule` and `diagnose`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`,
   `Nothing`, `Vector`): every interpreter made the same choice, and fixing them removes a layer of type members.

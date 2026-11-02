@@ -7,13 +7,13 @@ package category
   *   - *β*: *A* ⊗ *B* ≅ *B* ⊗ *A* is the braiding
   */
 abstract class Symmetric(
-  tracked override val K: Category,
-  tracked override val U: K.Object,
-  tracked override val T: Endobifunctor.On[K.type],
-) extends Monoidal(K, U, T) {
-  import K.{Iso, Obj, -->, <->, >>>}
+  tracked override val category: Category,
+  tracked override val unit: category.Object,
+  tracked override val tensor: Endobifunctor.On[category.type],
+) extends Monoidal(category, unit, tensor) {
+  import category.{Iso, Obj, -->, <->, >>>}
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
   /** The braiding *β*: *A* ⊗ *B* → *B* ⊗ *A*.
     *
@@ -39,14 +39,15 @@ abstract class Symmetric(
     /** *β* ∘ *β* = *id*
       */
     def symmetry[A: Obj, B: Obj](using ((A * B) --> (A * B)) is Observable): Boolean = {
-      (braid[A, B] >>> braid[B, A]) =?= K.identity[A * B]
+      (braid[A, B] >>> braid[B, A]) =?= category.identity[A * B]
     }
 
     /** *α* ∘ *β* ∘ *α* = (*id* ⊗ *β*) ∘ *α* ∘ (*β* ⊗ *id*)
       */
     def hexagon[A: Obj, B: Obj, C: Obj](using (((A * B) * C) --> (B * (C * A))) is Observable): Boolean = {
       val lhs = associator[A, B, C].to >>> braid[A, B * C] >>> associator[B, C, A].to
-      val rhs = (braid[A, B] *** K.identity[C]) >>> associator[B, A, C].to >>> (K.identity[B] *** braid[A, C])
+      val rhs = (braid[A, B] *** category.identity[C]) >>> associator[B, A, C].to >>>
+        (category.identity[B] *** braid[A, C])
       lhs =?= rhs
     }
   }

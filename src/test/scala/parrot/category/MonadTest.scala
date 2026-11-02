@@ -4,13 +4,13 @@ package category
 import Sample.given
 
 /** The laws of [[Monad]], for monads on 𝒮. */
-abstract class MonadSpec(name: String, tracked val M: Monad.On[Total.type])(using
+abstract class MonadSpec(name: String, tracked val monad: Monad.On[Total.type])(using
   types: SampleTypes,
-  sample: [X] => Sample[X] ?-> Sample[M.M[X]],
+  sample: [X] => Sample[X] ?-> Sample[monad.M[X]],
 ) extends LawSuite("Monad", name) {
   import types.{T1, T2, given}
-  import M.M
-  import M.MonadLaws.*
+  import monad.M
+  import monad.MonadLaws.*
 
   private given MSample: [X: Sample] => Sample[M[X]] = sample[X]
 

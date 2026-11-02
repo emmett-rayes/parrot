@@ -5,19 +5,19 @@ import Category.Type
 
 /** The laws of [[Coproducts]], for binary coproducts on a category whose objects are all types. */
 abstract class CoproductsSpec(
-  tracked override val K: Category { type Obj = Type },
-  tracked override val B: Coproducts.Of[K.type],
+  tracked override val category: Category { type Obj = Type },
+  tracked override val bifunctor: Coproducts.Of[category.type],
 )(using
-  category: CategoryFixture.On[K.type],
-  typename: TypeName[B.Self],
+  fixture: CategoryFixture.On[category.type],
+  typename: TypeName[bifunctor.Self],
   types: SampleTypes,
-  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[B.F[X, Y]],
-) extends BifunctorSpec(K, B, "Coproducts") {
+  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[bifunctor.F[X, Y]],
+) extends BifunctorSpec(category, bifunctor, "Coproducts") {
   import types.{T1, T2, T3, T4, given}
-  import category.*
-  import K.-->
-  import B.F
-  import B.CoproductsLaws.*
+  import fixture.*
+  import category.-->
+  import bifunctor.F
+  import bifunctor.CoproductsLaws.*
 
   private given BSample: [X: Sample, Y: Sample] => Sample[F[X, Y]] = sample[X, Y]
 

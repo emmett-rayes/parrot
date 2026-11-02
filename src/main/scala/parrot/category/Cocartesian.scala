@@ -15,43 +15,43 @@ import scala.annotation.targetName
   * associator and the braiding are derived from the injections and copairing.
   */
 abstract class Cocartesian(
-  tracked override val K: Category,
-  tracked override val U: Initial.Of[K.type],
-  tracked override val T: Coproducts.Of[K.type],
-) extends Symmetric(K, U, T) {
-  import K.{Iso, Obj, -->, <->, >>>}
+  tracked override val category: Category,
+  tracked override val unit: Initial.Of[category.type],
+  tracked override val tensor: Coproducts.Of[category.type],
+) extends Symmetric(category, unit, tensor) {
+  import category.{Iso, Obj, -->, <->, >>>}
 
-  export U.absurd
+  export unit.absurd
 
   /** Infix alias for [[Tensor]]: the coproduct *A* + *B*. */
   final type + = Tensor
 
-  private given IIsObj: (I is Obj) = U.U
+  private given IIsObj: (I is Obj) = unit.evidence
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = tensor.objects[A, B]
 
   /** The first injection *ι*₁: *A* → *A* + *B* of the coproduct of *A* and *B*. */
   final def inl[A: Obj, B: Obj]: A --> (A + B) = {
-    T.coproduct[A, B].inl
+    tensor.coproduct[A, B].inl
   }
 
   /** The second injection *ι*₂: *B* → *A* + *B* of the coproduct of *A* and *B*. */
   final def inr[A: Obj, B: Obj]: B --> (A + B) = {
-    T.coproduct[A, B].inr
+    tensor.coproduct[A, B].inr
   }
 
   /** The copairing [*f*,*g*]: *A* + *B* → *X* of *f*: *A* → *X* and *g*: *B* → *X* in the coproduct of *A* and *B*. */
   final def copair[A: Obj, B: Obj, X: Obj](f: A --> X, g: B --> X): (A + B) --> X = {
-    T.coproduct[A, B].copair(f, g)
+    tensor.coproduct[A, B].copair(f, g)
   }
 
   /** The codiagonal ∇ = [*id*,*id*]: *A* + *A* → *A*. */
   final def codiagonal[A: Obj]: (A + A) --> A = {
-    copair(K.identity[A], K.identity[A])
+    copair(category.identity[A], category.identity[A])
   }
 
   /** The corresponding cartesian opposite **K**ᵒᵖ. */
-  final lazy val op: Cocartesian.Op { val C: Cocartesian.this.type } = Cocartesian.Op(this)
+  final lazy val op: Cocartesian.Op { val cocartesian: Cocartesian.this.type } = Cocartesian.Op(this)
 
   extension [A: Obj, X: Obj](f: A --> X)
     /** Infix extension for [[copair]]. */
@@ -61,9 +61,9 @@ abstract class Cocartesian(
     }
 
   extension [A: Obj, B: Obj](f: A --> B)
-    /** Infix extension for [[tensor]] on coproducts. */
+    /** Infix extension for [[parallel]] on coproducts. */
     final def +++[C: Obj, D: Obj](g: C --> D): (A + C) --> (B + D) = {
-      tensor(f, g)
+      parallel(f, g)
     }
 
   /** *β* = [*ι*₂,*ι*₁]
@@ -75,13 +75,13 @@ abstract class Cocartesian(
   /** *λ* = [¡,*id*], with inverse *ι*₂
     */
   def leftUnitor[A: Obj]: (I + A) <-> A = {
-    Iso(copair(absurd[A], K.identity[A]), inr[I, A])
+    Iso(copair(absurd[A], category.identity[A]), inr[I, A])
   }
 
   /** *ρ* = [*id*,¡], with inverse *ι*₁
     */
   def rightUnitor[A: Obj]: (A + I) <-> A = {
-    Iso(copair(K.identity[A], absurd[A]), inl[A, I])
+    Iso(copair(category.identity[A], absurd[A]), inl[A, I])
   }
 
   /** *α* = [[*ι*₁,*ι*₂ ∘ *ι*₁],*ι*₂ ∘ *ι*₂], with the symmetric inverse
@@ -130,14 +130,16 @@ object Cocartesian {
     *
     * The coproducts, injections and copairing in **K** become products, projections and pairing in **K**ᵒᵖ.
     */
-  final class Op(tracked val C: Cocartesian) extends Cartesian(C.K.op, OpTerminal(C), OpProducts(C))
+  final class Op(tracked val cocartesian: Cocartesian)
+      extends Cartesian(cocartesian.category.op, OpTerminal(cocartesian), OpProducts(cocartesian))
 
   /** The initial object of a cocartesian category **K**, as the terminal object of **K**ᵒᵖ: ! is ¡. */
-  final class OpTerminal(tracked val M: Cocartesian) extends Terminal(M.K.op, M.U.U) {
-    import C.{Obj, -->}
+  final class OpTerminal(tracked val cocartesian: Cocartesian)
+      extends Terminal(cocartesian.category.op, cocartesian.unit.evidence) {
+    import category.{Obj, -->}
 
     def discard[A: Obj]: A --> I = {
-      M.absurd[A]
+      cocartesian.absurd[A]
     }
   }
 
@@ -145,22 +147,24 @@ object Cocartesian {
     *
     * The product of two objects is their coproduct, and the product of morphisms is the coproduct of their opposites.
     */
-  final class OpProducts(tracked val M: Cocartesian) extends Products(M.K.op) {
-    import K.{Obj, -->}
+  final class OpProducts(tracked val cocartesian: Cocartesian) extends Products(cocartesian.category.op) {
+    import category.{Obj, ObjectOf, -->}
 
-    type Self = M.Tensor
+    type Self = cocartesian.Tensor
 
     def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
-      M.T.objects[A, B]
+      cocartesian.tensor.objects[A, B]
     }
 
     def product[A: Obj, B: Obj]
-      : OpProduct { val M: OpProducts.this.M.type; val U1: K.ObjectOf[A]; val U2: K.ObjectOf[B] } = {
-      OpProduct(M, K.Object[A], K.Object[B])
+      : OpProduct {
+        val cocartesian: OpProducts.this.cocartesian.type; val factor1: ObjectOf[A]; val factor2: ObjectOf[B]
+      } = {
+      OpProduct(cocartesian, category.Object[A], category.Object[B])
     }
 
     override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
-      M.tensor(f, g)
+      cocartesian.parallel(f, g)
     }
   }
 
@@ -169,26 +173,33 @@ object Cocartesian {
     * The projections are the injections, and the pairing is the copairing.
     */
   final class OpProduct(
-    tracked val M: Cocartesian,
-    tracked override val U1: M.K.op.Object,
-    tracked override val U2: M.K.op.Object,
-  ) extends Product(M.K.op, U1, U2, M.K.op.Object(using M.T.objects[U1.A, U2.A](using U1.U, U2.U))) {
-    import C.{Obj, -->}
+    tracked val cocartesian: Cocartesian,
+    tracked override val factor1: cocartesian.category.op.Object,
+    tracked override val factor2: cocartesian.category.op.Object,
+  ) extends Product(
+      cocartesian.category.op,
+      factor1,
+      factor2,
+      cocartesian.category.op.Object(
+        using cocartesian.tensor.objects[factor1.A, factor2.A](using factor1.evidence, factor2.evidence),
+      ),
+    ) {
+    import category.{Obj, -->}
 
-    private given A1IsObj: (A1 is Obj) = U1.U
+    private given A1IsObj: (A1 is Obj) = factor1.evidence
 
-    private given A2IsObj: (A2 is Obj) = U2.U
+    private given A2IsObj: (A2 is Obj) = factor2.evidence
 
     def fst: P --> A1 = {
-      M.inl[A1, A2]
+      cocartesian.inl[A1, A2]
     }
 
     def snd: P --> A2 = {
-      M.inr[A1, A2]
+      cocartesian.inr[A1, A2]
     }
 
     def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P = {
-      M.copair(f, g)
+      cocartesian.copair(f, g)
     }
   }
 }

@@ -7,22 +7,22 @@ import org.scalacheck.Gen
 import Sample.given
 
 /** The equations of parsing expression grammars, on random grammars, for an interpreter. */
-abstract class ParserLawSpec(name: String, tracked val alg: ParserAlgebra) extends LawSuite("PEG", name) {
-  import alg.*
-  import alg.ParserLaws.*
+abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) extends LawSuite("PEG", name) {
+  import algebra.*
+  import algebra.ParserLaws.*
 
-  private lazy val parsers: Gen[P[Int, Int]]                = Grammars.terms.map(Grammars.interpret(alg))
-  private lazy val observe: Gen[P[Int, Int] is Observable]  = ParserGen.exact[Int, Int](alg)
-  private lazy val semantic: Gen[P[Int, Int] is Observable] = ParserGen.observe[Int, Int](alg)
-  private lazy val order: Gen[P[Int, Int] is Preorder]      = ParserGen.order[Int, Int](alg)
+  private lazy val parsers: Gen[P[Int, Int]]                = Grammars.terms.map(Grammars.interpret(algebra))
+  private lazy val observe: Gen[P[Int, Int] is Observable]  = ParserGen.exact[Int, Int](algebra)
+  private lazy val semantic: Gen[P[Int, Int] is Observable] = ParserGen.observe[Int, Int](algebra)
+  private lazy val order: Gen[P[Int, Int] is Preorder]      = ParserGen.order[Int, Int](algebra)
 
   /** A parser and one that reports at least as much: where *p* fails, it also runs *q* and fails. */
   private lazy val refined: Gen[(P[Int, Int], P[Int, Int])] = {
     Gen.zip(parsers, parsers).map((p, q) => (p, p |> (q >> failure[Int, Int])))
   }
-  private lazy val steps: Gen[P[Int, Either[Int, Int]]]   = Grammars.terms.map(Grammars.step(alg))
-  private lazy val rules: Gen[P[Int, Int] -> P[Int, Int]] = Grammars.terms.map(Grammars.nest(alg))
-  private lazy val consuming: Gen[P[Int, Int]]            = parsers.map(p => Grammars.consume(alg)("a") >> p)
+  private lazy val steps: Gen[P[Int, Either[Int, Int]]]   = Grammars.terms.map(Grammars.step(algebra))
+  private lazy val rules: Gen[P[Int, Int] -> P[Int, Int]] = Grammars.terms.map(Grammars.nest(algebra))
+  private lazy val consuming: Gen[P[Int, Int]]            = parsers.map(p => Grammars.consume(algebra)("a") >> p)
 
   law("leftIdentity") {
     forAll(observe, parsers) { (o, p) =>
@@ -46,7 +46,7 @@ abstract class ParserLawSpec(name: String, tracked val alg: ParserAlgebra) exten
   }
 
   law("zipIdentity") {
-    forAll(ParserGen.exact[(Int, Int), (Int, Int)](alg)) { o =>
+    forAll(ParserGen.exact[(Int, Int), (Int, Int)](algebra)) { o =>
       given (P[(Int, Int), (Int, Int)] is Observable) = o
       zipIdentity[Int, Int]
     }
@@ -158,7 +158,7 @@ abstract class ParserLawSpec(name: String, tracked val alg: ParserAlgebra) exten
   }
 
   law("repeatedUnfolding", "parsers that consume") {
-    forAll(ParserGen.exact[Int, Vector[Int]](alg), consuming) { (o, p) =>
+    forAll(ParserGen.exact[Int, Vector[Int]](algebra), consuming) { (o, p) =>
       given (P[Int, Vector[Int]] is Observable) = o
       repeatedUnfolding(p)
     }
@@ -186,7 +186,7 @@ abstract class ParserLawSpec(name: String, tracked val alg: ParserAlgebra) exten
   }
 
   law("zipMonotone") {
-    forAll(ParserGen.order[(Int, Int), (Int, Int)](alg), refined, refined) { case (o, (p, p2), (q, q2)) =>
+    forAll(ParserGen.order[(Int, Int), (Int, Int)](algebra), refined, refined) { case (o, (p, p2), (q, q2)) =>
       given (P[(Int, Int), (Int, Int)] is Preorder) = o
       zipMonotone(p, p2, q, q2)
     }

@@ -8,23 +8,23 @@ import Category.Type
 /** The laws of [[Freyd]] and of its [[Category]], for Freyd categories on promonads over 𝒮. */
 abstract class FreydSpec(
   name: String,
-  tracked val F: Freyd { val P: Promonad { val K: Category { type Obj = Type } } },
+  tracked val freyd: Freyd { val promonad: Promonad { val category: Category { type Obj = Type } } },
 )(using
-  promonad: PromonadFixture.On[F.P.type],
+  promonad: PromonadFixture.On[freyd.promonad.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[F.S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[freyd.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Freyd", name) {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
-  import F.{-->, >>>}
-  import F.S.M.`*`
-  import F.FreydLaws.*
+  import freyd.{-->, >>>}
+  import freyd.strong.monoidal.`*`
+  import freyd.FreydLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 
   law("unit") {
     val observations = observe[T1 * T4, T2 * T4]
-    val fs           = base.arrow[T1, T2]
+    val fs           = category.arrow[T1, T2]
 
     forAll(observations, fs) { (observe, f) =>
       given (((T1 * T4) --> (T2 * T4)) is Observable) = observe
@@ -45,7 +45,7 @@ abstract class FreydSpec(
 
   law("centrality") {
     val observations = observe[T1 * T4, T2 * T3]
-    val fs           = base.arrow[T1, T2]
+    val fs           = category.arrow[T1, T2]
     val qs           = arrow[T4, T3]
 
     forAll(observations, fs, qs) { (observe, f, q) =>
@@ -55,7 +55,7 @@ abstract class FreydSpec(
   }
 
   also("Category") {
-    import F.CategoryLaws.*
+    import freyd.CategoryLaws.*
 
     law("leftIdentity") {
       val observations = observe[T1, T2]
@@ -111,7 +111,8 @@ abstract class FreydSpec(
       q       <- arrow[T4, T3]
     } yield {
       given (((T1 * T4) --> (T2 * T3)) is Observable) = observe
-      (F.first[T1, T2, T4](p) >>> F.second[T4, T3, T2](q)) =?= (F.second[T4, T3, T1](q) >>> F.first[T1, T2, T3](p))
+      (freyd.first[T1, T2, T4](p) >>> freyd.second[T4, T3, T2](q)) =?=
+        (freyd.second[T4, T3, T1](q) >>> freyd.first[T1, T2, T3](p))
     }
   }
 }

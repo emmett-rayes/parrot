@@ -14,13 +14,13 @@ import category.Category.Type
   * A parser *P*(*A*,*B*) consumes a prefix of the input while turning a semantic input *A* into a semantic result *B*.
   * No combinator is primitive except those that read the input. Each of the others is an operation of one of the
   * structures the algebra is built from, where
-  *   - [[Arrows]]: parsers form a promonad over the category of pure functions (*unit*, ⨾)
-  *   - [[Products]] and [[Coproducts]]: pairs and tagged unions of semantic values, in the category of pure functions
-  *   - [[Zipping]]: a strength over products, which makes parsers a Freyd category, [[Zipped]] (⋉, ⟨-,-⟩)
-  *   - [[Branching]]: a strength over coproducts, which makes parsers a Freyd category, [[Branched]] (+, [-,-])
-  *   - [[Choice]]: a classical restriction structure (0, *p̄*, *p̄*ᶜ, *attempt*, ⊳)
-  *   - [[Loops]]: guarded iteration (†, and the repetition combinators derived from it)
-  *   - [[Knots]]: guarded recursion at the types of parsers (*fix*)
+  *   - [[parsers]]: parsers form a promonad over the category of pure functions (*unit*, ⨾)
+  *   - [[products]] and [[coproducts]]: pairs and tagged unions of semantic values, in the category of pure functions
+  *   - [[zipping]]: a strength over products, which makes parsers a Freyd category, [[zipped]] (⋉, ⟨-,-⟩)
+  *   - [[branching]]: a strength over coproducts, which makes parsers a Freyd category, [[branched]] (+, [-,-])
+  *   - [[choice]]: a classical restriction structure (0, *p̄*, *p̄*ᶜ, *attempt*, ⊳)
+  *   - [[loops]]: guarded iteration (†, and the repetition combinators derived from it)
+  *   - [[knots]]: guarded recursion at the types of parsers (*fix*)
   *
   * Iteration and recursion are guarded by the input: a loop step that continues, or a recursive call, must come after
   * input has been consumed; otherwise that step or call fails. So every parser terminates.
@@ -32,26 +32,28 @@ import category.Category.Type
   * `diagnose`. It may override a derived combinator with a faster implementation of the same equation.
   */
 abstract class ParserAlgebra(
-  tracked val Arrows: Promonad { val K: Category { type Obj = Type } },
-  tracked val Products: Cartesian {
-    val K: Arrows.K.type; val U: Arrows.K.ObjectOf[Unit]; val T: Bifunctor { type Self = Tuple2 }
+  tracked val parsers: Promonad { val category: Category { type Obj = Type } },
+  tracked val products: Cartesian {
+    val category: parsers.category.type; val unit: parsers.category.ObjectOf[Unit]
+    val tensor: Bifunctor { type Self = Tuple2 }
   },
-  tracked val Coproducts: Cocartesian {
-    val K: Arrows.K.type; val U: Arrows.K.ObjectOf[Nothing]; val T: Bifunctor { type Self = Either }
+  tracked val coproducts: Cocartesian {
+    val category: parsers.category.type; val unit: parsers.category.ObjectOf[Nothing]
+    val tensor: Bifunctor { type Self = Either }
   },
-  tracked val Zipping: Strong.Bistrong { val P: Arrows.type; val M: Products.type },
-  tracked val Branching: Strong.Bistrong { val P: Arrows.type; val M: Coproducts.type },
-  tracked val Choice: Classical { val P: Arrows.type; val C: Coproducts.type },
-  tracked val Loops: Elgot { val S: Branching.type },
-  tracked val Knots: Recursion { val P: Arrows.type },
+  tracked val zipping: Strong.Bistrong { val profunctor: parsers.type; val monoidal: products.type },
+  tracked val branching: Strong.Bistrong { val profunctor: parsers.type; val monoidal: coproducts.type },
+  tracked val choice: Classical { val promonad: parsers.type; val cocartesian: coproducts.type },
+  tracked val loops: Elgot { val strong: branching.type },
+  tracked val knots: Recursion { val promonad: parsers.type },
 ) extends caps.Pure {
-  import Arrows.K.>>>
+  import parsers.category.>>>
 
   /** Parsers *P*(*A*,*B*) from semantic input *A* to semantic result *B*. */
-  final type P = Arrows.P
+  final type P = parsers.P
 
   /** Pure functions on semantic values. */
-  final type --> = Arrows.K.-->
+  final type --> = parsers.category.-->
 
   // ==== Primitives ====
 
@@ -107,17 +109,17 @@ abstract class ParserAlgebra(
 
   /** Succeeds without consuming anything, returning its semantic input: the identity arrow *id*. */
   final def success[A]: P[A, A] = {
-    Arrows.identity[A]
+    parsers.identity[A]
   }
 
   /** Applies *f* to the semantic input without consuming anything: *unit*(*f*). */
   final def pure[A, B](f: A --> B): P[A, B] = {
-    Arrows.unit(f)
+    parsers.unit(f)
   }
 
   /** Runs *p*, then *q* on the remaining input with the result of *p* as its semantic input: *p* ⨾ *q*. */
   def andThen[A, B, C](p: P[A, B], q: P[B, C]): P[A, C] = {
-    Arrows.multiply(q, p)
+    parsers.multiply(q, p)
   }
 
   /** Applies *g* to the result of *p*: *p* ⨾ *unit*(*g*). */
@@ -132,56 +134,56 @@ abstract class ParserAlgebra(
 
   // ==== Zipping and branching: the strengths ====
 
-  /** Parsers as a Freyd category over products, with the strength [[Zipping]]. */
-  final lazy val Zipped: Freyd { val P: Arrows.type; val S: Zipping.type } = Freyd(Arrows, Zipping)
+  /** Parsers as a Freyd category over products, with the strength [[zipping]]. */
+  final lazy val zipped: Freyd { val promonad: parsers.type; val strong: zipping.type } = Freyd(parsers, zipping)
 
-  /** Parsers as a Freyd category over coproducts, with the strength [[Branching]]. */
-  final lazy val Branched: Freyd { val P: Arrows.type; val S: Branching.type } = Freyd(Arrows, Branching)
+  /** Parsers as a Freyd category over coproducts, with the strength [[branching]]. */
+  final lazy val branched: Freyd { val promonad: parsers.type; val strong: branching.type } = Freyd(parsers, branching)
 
-  /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* in [[Zipped]]. */
+  /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* in [[zipped]]. */
   final def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
-    Zipped.parallel(p, q)
+    zipped.parallel(p, q)
   }
 
-  /** Runs *p* on a left semantic input or *q* on a right one, tagging the result: *p* + *q* in [[Branched]]. */
+  /** Runs *p* on a left semantic input or *q* on a right one, tagging the result: *p* + *q* in [[branched]]. */
   final def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
-    Branched.parallel(p, q)
+    branched.parallel(p, q)
   }
 
   /** Runs *p* on a left semantic input or *q* on a right one, into a common result: [*p*,*q*]. */
   def merge[A, B, C](p: P[A, C], q: P[B, C]): P[Either[A, B], C] = {
-    map(branch(p, q), Coproducts.codiagonal[C])
+    map(branch(p, q), coproducts.codiagonal[C])
   }
 
   // ==== Choice: the classical restriction structure ====
 
-  export Choice.{attempt, orElse}
+  export choice.{attempt, orElse}
 
   /** Fails without consuming anything: the restriction zero 0. */
   final def failure[A, B]: P[A, B] = {
-    Choice.zero[A, B]
+    choice.zero[A, B]
   }
 
   /** Succeeds if and only if *p* succeeds, consuming nothing and returning the semantic input: the restriction *p̄*. */
   final def lookahead[A, B](p: P[A, B]): P[A, A] = {
-    Choice.restrict(p)
+    choice.restrict(p)
   }
 
   /** Succeeds if and only if *p* fails, consuming nothing and returning the semantic input: the complement *p̄*ᶜ. */
   final def not[A, B](p: P[A, B]): P[A, A] = {
-    Choice.complement(p)
+    choice.complement(p)
   }
 
   /** Never fails: the result of *p* on the left, or the untouched semantic input on the right where *p* fails:
     * *attempt*(*p*).
     */
   final def optional[A, B](p: P[A, B]): P[A, Either[B, A]] = {
-    Choice.attempt(p)
+    choice.attempt(p)
   }
 
   /** Ordered choice that tags the alternative that succeeded: (*p* ⨾ *ι*₁) ⊳ (*q* ⨾ *ι*₂). */
   def or[A, B, C](p: P[A, B], q: P[A, C]): P[A, Either[B, C]] = {
-    orElse(map(p, Coproducts.inl[B, C]), map(q, Coproducts.inr[B, C]))
+    orElse(map(p, coproducts.inl[B, C]), map(q, coproducts.inr[B, C]))
   }
 
   // ==== Iteration and recursion ====
@@ -190,23 +192,23 @@ abstract class ParserAlgebra(
     * *p*†. A step that yields a right result without consuming input fails the whole loop.
     */
   def iterate[A, B](p: P[A, Either[B, A]]): P[A, B] = {
-    Loops.iterate[B, A](p)
+    loops.iterate[B, A](p)
   }
 
   /** The parser *fix*(*f*) defined recursively by *f*, which receives the parser being defined. A recursive call that
     * is not preceded by consumed input fails.
     */
   def recursive[A, B](f: P[A, B] -> P[A, B]): P[A, B] = {
-    Knots.fix(f)
+    knots.fix(f)
   }
 
   /** A tuple of mutually recursive parsers: *f* receives the tuple being defined and returns its definition. Each
-    * component is a knot of [[Knots]]' family fixed point, so a call that is not preceded by consumed input fails, and
+    * component is a knot of [[knots]]' family fixed point, so a call that is not preceded by consumed input fails, and
     * *f* is applied once per application of the family. The tuple may contain only parsers.
     */
   inline def recursive[T <: Tuple](f: T -> T)(using Parsers[T]): T = {
     val n      = compiletime.constValue[Tuple.Size[T]]
-    val family = Knots.fixFamily[Any, Any](n) { knots =>
+    val family = knots.fixFamily[Any, Any](n) { knots =>
       lazy val solved: T =
         f(Tuple.fromArray(Array.tabulate[Object](n)(i => knots(i).asInstanceOf[Object])).asInstanceOf[T])
       i => solved.productElement(i).asInstanceOf[P[Any, Any]]
@@ -230,17 +232,17 @@ abstract class ParserAlgebra(
 
   /** Runs *p*, then *q*, on the same semantic input, pairing their results: ⟨*p*,*q*⟩ = Δ ⨾ (*p* ⋉ *q*). */
   def pair[A, B, C](p: P[A, B], q: P[A, C]): P[A, (B, C)] = {
-    mapInput(zip(p, q), Products.diagonal[A])
+    mapInput(zip(p, q), products.diagonal[A])
   }
 
   /** Runs *p*, then *q*, keeping only the result of *q*: ⟨*p*,*q*⟩ ⨾ *π*₂. */
   def skipThen[A, B, C](p: P[A, B], q: P[A, C]): P[A, C] = {
-    map(pair(p, q), Products.snd[B, C])
+    map(pair(p, q), products.snd[B, C])
   }
 
   /** Runs *p*, then *q*, keeping only the result of *p*: ⟨*p*,*q*⟩ ⨾ *π*₁. */
   def thenSkip[A, B, C](p: P[A, B], q: P[A, C]): P[A, B] = {
-    map(pair(p, q), Products.fst[B, C])
+    map(pair(p, q), products.fst[B, C])
   }
 
   /** Runs *open*, *p*, then *close*, keeping the result of *p*. */
@@ -252,21 +254,21 @@ abstract class ParserAlgebra(
 
   /** Pairs the semantic input with the empty collection. */
   private def start[A, B]: P[A, (A, Vector[B])] = {
-    pure(Products.pair(Arrows.K.identity[A], lift[A, Vector[B]](_ => Vector.empty)))
+    pure(products.pair(parsers.category.identity[A], lift[A, Vector[B]](_ => Vector.empty)))
   }
 
   /** Runs *item* once on the semantic input, appending its result to the collection. */
   private def step[A, B](item: P[A, B]): P[(A, Vector[B]), (A, Vector[B])] = {
     val reshape =
-      Products.pair(Products.fst[A, Vector[B]], Products.pair(Products.snd[A, Vector[B]], Products.fst[A, Vector[B]]))
-    val finish = Products.tensor(Arrows.K.identity[A], lift[(Vector[B], B), Vector[B]]((bs, b) => bs :+ b))
+      products.pair(products.fst[A, Vector[B]], products.pair(products.snd[A, Vector[B]], products.fst[A, Vector[B]]))
+    val finish = products.parallel(parsers.category.identity[A], lift[(Vector[B], B), Vector[B]]((bs, b) => bs :+ b))
     map(mapInput(zip(success[A], zip(success[Vector[B]], item)), reshape), finish)
   }
 
   /** Runs *seed*, then *item* until it fails, collecting the results. */
   private def repeat[A, B](seed: P[A, (A, Vector[B])], item: P[A, B]): P[A, Vector[B]] = {
-    val next = map(step(item), Coproducts.inr[Vector[B], (A, Vector[B])])
-    val done = pure(Products.snd[A, Vector[B]] >>> Coproducts.inl[Vector[B], (A, Vector[B])])
+    val next = map(step(item), coproducts.inr[Vector[B], (A, Vector[B])])
+    val done = pure(products.snd[A, Vector[B]] >>> coproducts.inl[Vector[B], (A, Vector[B])])
     andThen(seed, iterate(orElse(next, done)))
   }
 
@@ -285,7 +287,7 @@ abstract class ParserAlgebra(
 
   /** Runs *p* exactly *n* times, collecting the results. */
   def times[A, B](p: P[A, B], n: Int): P[A, Vector[B]] = {
-    map(unrolled(p, n), Products.snd[A, Vector[B]])
+    map(unrolled(p, n), products.snd[A, Vector[B]])
   }
 
   /** Runs *p* at least *n* times, until it fails, collecting the results. */

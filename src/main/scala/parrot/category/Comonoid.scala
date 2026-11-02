@@ -8,9 +8,9 @@ package category
   *   - *ε*: *C* → *I* is the counit
   *   - *δ*: *C* → *C* ⊗ *C* is the comultiplication
   */
-abstract class Comonoid(tracked val V: Monoidal) extends caps.Pure {
-  import V.{I, `*`, ***}
-  import V.K.{Obj, -->, >>>}
+abstract class Comonoid(tracked val monoidal: Monoidal) extends caps.Pure {
+  import monoidal.{I, `*`, ***}
+  import monoidal.category.{Obj, -->, >>>}
 
   type Self
 
@@ -23,9 +23,9 @@ abstract class Comonoid(tracked val V: Monoidal) extends caps.Pure {
 
   private given CIsObj: (C is Obj) = carrier
 
-  private given IIsObj: (I is Obj) = V.U.U
+  private given IIsObj: (I is Obj) = monoidal.unit.evidence
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = V.T.objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** The counit *ε*: *C* → *I*. */
   def counit: C --> I
@@ -39,20 +39,20 @@ abstract class Comonoid(tracked val V: Monoidal) extends caps.Pure {
     /** (*ε* ⊗ *id*) ∘ *δ* = *λ*⁻¹
       */
     def leftCounit(using (C --> (I * C)) is Observable): Boolean = {
-      (comultiply >>> (counit *** V.K.identity[C])) =?= V.leftUnitor[C].from
+      (comultiply >>> (counit *** monoidal.category.identity[C])) =?= monoidal.leftUnitor[C].from
     }
 
     /** (*id* ⊗ *ε*) ∘ *δ* = *ρ*⁻¹
       */
     def rightCounit(using (C --> (C * I)) is Observable): Boolean = {
-      (comultiply >>> (V.K.identity[C] *** counit)) =?= V.rightUnitor[C].from
+      (comultiply >>> (monoidal.category.identity[C] *** counit)) =?= monoidal.rightUnitor[C].from
     }
 
     /** *α* ∘ (*δ* ⊗ *id*) ∘ *δ* = (*id* ⊗ *δ*) ∘ *δ*
       */
     def coassociativity(using (C --> (C * (C * C))) is Observable): Boolean = {
-      (comultiply >>> (comultiply *** V.K.identity[C]) >>> V.associator[C, C, C].to) =?=
-        (comultiply >>> (V.K.identity[C] *** comultiply))
+      (comultiply >>> (comultiply *** monoidal.category.identity[C]) >>> monoidal.associator[C, C, C].to) =?=
+        (comultiply >>> (monoidal.category.identity[C] *** comultiply))
     }
   }
 }

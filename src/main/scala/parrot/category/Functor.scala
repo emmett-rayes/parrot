@@ -7,9 +7,9 @@ package category
   *   - *F*[*A*] is the object part
   *   - *F*(*f*): *F*[*A*] → *F*[*B*] is the morphism part
   */
-abstract class Functor(tracked val C: Category, tracked val D: Category) extends caps.Pure {
-  import C.-->
-  import D.--> as ==>
+abstract class Functor(tracked val source: Category, tracked val target: Category) extends caps.Pure {
+  import source.-->
+  import target.--> as ==>
 
   type Self[_]
 
@@ -18,25 +18,25 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
 
   /** *F* maps an object of **C** to an object of **D**.
     */
-  def objects[A: C.Obj]: F[A] is D.Obj
+  def objects[A: source.Obj]: F[A] is target.Obj
 
   /** *F* maps a morphism *f* of **C** to a morphism *F*(*f*) of **D**.
     */
-  def map[A: C.Obj, B: C.Obj](f: A --> B): F[A] ==> F[B]
+  def map[A: source.Obj, B: source.Obj](f: A --> B): F[A] ==> F[B]
 
   /** Laws that any `Functor` must satisfy. */
   object FunctorLaws {
-    private given FIsObj: [A: C.Obj] => (F[A] is D.Obj) = objects[A]
+    private given FIsObj: [A: source.Obj] => (F[A] is target.Obj) = objects[A]
 
     /** *F*(*id*) = *id*
       */
-    def identity[A: C.Obj](using (F[A] ==> F[A]) is Observable): Boolean = {
-      map(C.identity[A]) =?= D.identity[F[A]]
+    def identity[A: source.Obj](using (F[A] ==> F[A]) is Observable): Boolean = {
+      map(source.identity[A]) =?= target.identity[F[A]]
     }
 
     /** *F*(*g* ∘ *f*) = *F*(*g*) ∘ *F*(*f*)
       */
-    def composition[A: C.Obj, B: C.Obj, E: C.Obj](f: A --> B, g: B --> E)(
+    def composition[A: source.Obj, B: source.Obj, E: source.Obj](f: A --> B, g: B --> E)(
       using (F[A] ==> F[E]) is Observable
     ): Boolean = {
       map(f >>> g) =?= map(f) >>> map(g)
@@ -46,7 +46,9 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
       *
       * @note The premise is not checked: *f*′ must be equal to *f* by construction.
       */
-    def congruence[A: C.Obj, B: C.Obj](f: A --> B, f2: A --> B)(using (F[A] ==> F[B]) is Observable): Boolean = {
+    def congruence[A: source.Obj, B: source.Obj](f: A --> B, f2: A --> B)(
+      using (F[A] ==> F[B]) is Observable
+    ): Boolean = {
       map(f) =?= map(f2)
     }
   }
@@ -56,10 +58,10 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
   *
   * Represents a functor *F*: **K** → **K**.
   */
-abstract class Endofunctor(tracked val K: Category) extends Functor(K, K)
+abstract class Endofunctor(tracked val category: Category) extends Functor(category, category)
 
 object Endofunctor {
 
   /** Refines `Endofunctor` to a specific category **K**. */
-  type On[K <: Category] = Endofunctor { val K: K }
+  type On[K <: Category] = Endofunctor { val category: K }
 }

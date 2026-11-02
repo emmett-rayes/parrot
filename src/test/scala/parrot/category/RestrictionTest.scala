@@ -9,17 +9,16 @@ import Category.Type
 /** The laws of [[Restriction]]. */
 abstract class RestrictionSpec(
   name: String,
-  tracked val R: Restriction { val P: Promonad { val K: Category { type Obj = Type } } },
+  tracked val restriction: Restriction { val promonad: Promonad { val category: Category { type Obj = Type } } },
   structure: String = "Restriction",
 )(using
-  promonad: PromonadFixture.On[R.P.type],
+  promonad: PromonadFixture.On[restriction.promonad.type],
   types: SampleTypes,
 ) extends LawSuite(structure, name) {
   import types.{T1, T2, T3, given}
   import promonad.*
-  import R.P
-  import P.P
-  import R.RestrictionLaws.*
+  import restriction.promonad.P
+  import restriction.RestrictionLaws.*
 
   also("Restriction") {
     law("r1") {
@@ -67,7 +66,7 @@ abstract class RestrictionSpec(
 
     law("pureTotal") {
       val observations = observe[T1, T1]
-      val fs           = base.arrow[T1, T2]
+      val fs           = category.arrow[T1, T2]
 
       forAll(observations, fs) { (observe, f) =>
         given (P[T1, T1] is Observable) = observe
@@ -90,19 +89,18 @@ abstract class RestrictionSpec(
 /** The laws of [[Classical]], for classical structures over the coproducts of 𝒮. */
 abstract class ClassicalSpec(
   name: String,
-  tracked override val R: Classical {
-    val P: Promonad { val K: Category { type Obj = Type } }
-    val C: Cocartesian { val T: Bifunctor { type Self = Either } }
+  tracked override val restriction: Classical {
+    val promonad: Promonad { val category: Category { type Obj = Type } }
+    val cocartesian: Cocartesian { val tensor: Bifunctor { type Self = Either } }
   },
 )(using
-  promonad: PromonadFixture.On[R.P.type],
+  promonad: PromonadFixture.On[restriction.promonad.type],
   types: SampleTypes,
-) extends RestrictionSpec(name, R, "Classical") {
+) extends RestrictionSpec(name, restriction, "Classical") {
   import types.{T1, T2, T3, given}
   import promonad.*
-  import R.P
-  import P.{P, >>>}
-  import R.ClassicalLaws.*
+  import restriction.promonad.{P, >>>}
+  import restriction.ClassicalLaws.*
 
   law("zeroRestriction") {
     val observations = observe[T1, T1]
@@ -270,14 +268,14 @@ abstract class ClassicalSpec(
 
     forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
       given (P[T1, T3] is Observable) = observe
-      (R.orElse(p, q) >>> h) =?= R.orElse(p >>> h, q >>> h)
+      (restriction.orElse(p, q) >>> h) =?= restriction.orElse(p >>> h, q >>> h)
     }
   }
 }
 
 /** 𝒫 at its total programs, as a promonad over itself. */
 object PartialProgramsFixture extends PromonadFixture("Partial", Partial.Programs) {
-  val base: PartialFixture.type = PartialFixture
+  val category: PartialFixture.type = PartialFixture
 
   def arrow[X: Sample, Y: Sample]: Gen[X ~> Y] = PartialFixture.arrow[X, Y]
 
@@ -312,7 +310,7 @@ object MaxOutcomeClassical extends OptionT.ClassicalOf(MaxOutcome)
 object MaxOutcomeDomains extends Kleisli.ClassicalOf(MaxOutcomeKleisli, MaxOutcomeClassical)
 
 object MaxOutcomeFixture extends PromonadFixture("Kleisli[OptionT[Writer[max]]]", MaxOutcomeKleisli) {
-  val base: TotalFixture.type = TotalFixture
+  val category: TotalFixture.type = TotalFixture
 
   /** Arrows that output a small number, and fail or succeed. */
   def arrow[X: Sample, Y: Sample]: Gen[X -> (Int, Option[Y])] = {

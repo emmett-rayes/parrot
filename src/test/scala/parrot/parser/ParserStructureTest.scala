@@ -9,35 +9,35 @@ import ParserFixtures.given
 
 // ==== ReferenceParser ====
 
-class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.Arrows.category)
+class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.parsers.arrows)
 
-class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.Arrows)
+class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.parsers)
 
-class ReferenceIsClassicalTest extends ClassicalSpec("ReferenceParser", Interpreters.reference.Choice)
+class ReferenceIsClassicalTest extends ClassicalSpec("ReferenceParser", Interpreters.reference.choice)
 
 class ReferenceZippingIsBistrongTest
-    extends BistrongSpec("ReferenceParser (zipping)", Interpreters.reference.Zipping)
+    extends BistrongSpec("ReferenceParser (zipping)", Interpreters.reference.zipping)
 
 class ReferenceZippingIsFreydTest
-    extends FreydSpec("ReferenceParser (zipping)", Interpreters.reference.Zipped) {
+    extends FreydSpec("ReferenceParser (zipping)", Interpreters.reference.zipped) {
   counterexample("interchange", "consuming input is not commutative") {
     forAll(interchange)(holds => holds)
   }
 }
 
 class ReferenceBranchingIsBistrongTest
-    extends BistrongSpec("ReferenceParser (branching)", Interpreters.reference.Branching)
+    extends BistrongSpec("ReferenceParser (branching)", Interpreters.reference.branching)
 
 class ReferenceBranchingIsFreydTest
-    extends FreydSpec("ReferenceParser (branching)", Interpreters.reference.Branched) {
+    extends FreydSpec("ReferenceParser (branching)", Interpreters.reference.branched) {
   law("interchange", "holds: only one side runs") {
     forAll(interchange)(holds => holds)
   }
 }
 
 class ReferenceLoopsIsElgotTest
-    extends ElgotSpec("ReferenceParser (guarded)", Interpreters.reference.Loops) {
-  import promonad.P.P
+    extends ElgotSpec("ReferenceParser (guarded)", Interpreters.reference.loops) {
+  import promonad.promonad.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.reference)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.reference)
   def shrink: Int -> Int                                         = _ / 2
@@ -45,8 +45,8 @@ class ReferenceLoopsIsElgotTest
 }
 
 class ReferenceKnotsIsRecursionTest
-    extends RecursionSpec("ReferenceParser (guarded)", Interpreters.reference.Knots) {
-  import promonad.P.P
+    extends RecursionSpec("ReferenceParser (guarded)", Interpreters.reference.knots) {
+  import promonad.promonad.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.reference)
 
   counterexample("fixedPoint", "for left-recursive rules: the call fails") {
@@ -54,12 +54,12 @@ class ReferenceKnotsIsRecursionTest
 
     forAll(observations, Grammars.terms) { (o, term) =>
       given (P[Int, Int] is Observable) = o
-      R.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.reference)(term))
+      recursion.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.reference)(term))
     }
   }
 }
 
-class ReferenceIsObservableTest extends ObservableSpec(ReferenceFixture.category)
+class ReferenceIsObservableTest extends ObservableSpec(ReferenceFixture.arrows)
 
 class ReferenceDiagnosticsIsObservableTest extends ObservableSpec(ReferenceDiagnosticsFixture)
 
@@ -74,34 +74,34 @@ class ReferenceIsPreorderTest
 
 // ==== StrictParser ====
 
-class StrictIsCategoryTest extends CategorySpec(Interpreters.strict.Arrows.category)
+class StrictIsCategoryTest extends CategorySpec(Interpreters.strict.parsers.arrows)
 
-class StrictIsPromonadTest extends PromonadSpec(Interpreters.strict.Arrows)
+class StrictIsPromonadTest extends PromonadSpec(Interpreters.strict.parsers)
 
-class StrictIsClassicalTest extends ClassicalSpec("StrictParser", Interpreters.strict.Choice)
+class StrictIsClassicalTest extends ClassicalSpec("StrictParser", Interpreters.strict.choice)
 
 class StrictZippingIsBistrongTest
-    extends BistrongSpec("StrictParser (zipping)", Interpreters.strict.Zipping)
+    extends BistrongSpec("StrictParser (zipping)", Interpreters.strict.zipping)
 
 class StrictZippingIsFreydTest
-    extends FreydSpec("StrictParser (zipping)", Interpreters.strict.Zipped) {
+    extends FreydSpec("StrictParser (zipping)", Interpreters.strict.zipped) {
   counterexample("interchange", "consuming input is not commutative") {
     forAll(interchange)(holds => holds)
   }
 }
 
 class StrictBranchingIsBistrongTest
-    extends BistrongSpec("StrictParser (branching)", Interpreters.strict.Branching)
+    extends BistrongSpec("StrictParser (branching)", Interpreters.strict.branching)
 
 class StrictBranchingIsFreydTest
-    extends FreydSpec("StrictParser (branching)", Interpreters.strict.Branched) {
+    extends FreydSpec("StrictParser (branching)", Interpreters.strict.branched) {
   law("interchange", "holds: only one side runs") {
     forAll(interchange)(holds => holds)
   }
 }
 
-class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpreters.strict.Loops) {
-  import promonad.P.P
+class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpreters.strict.loops) {
+  import promonad.promonad.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.strict)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.strict)
   def shrink: Fn[Int, Int]                                       = Fn.lift(_ / 2)
@@ -109,8 +109,8 @@ class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpr
 }
 
 class StrictKnotsIsRecursionTest
-    extends RecursionSpec("StrictParser (guarded)", Interpreters.strict.Knots) {
-  import promonad.P.P
+    extends RecursionSpec("StrictParser (guarded)", Interpreters.strict.knots) {
+  import promonad.promonad.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.strict)
 
   counterexample("fixedPoint", "for left-recursive rules: seed growing") {
@@ -118,12 +118,12 @@ class StrictKnotsIsRecursionTest
 
     forAll(observations, Grammars.terms) { (o, term) =>
       given (P[Int, Int] is Observable) = o
-      R.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.strict)(term))
+      recursion.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.strict)(term))
     }
   }
 }
 
-class StrictIsObservableTest extends ObservableSpec(StrictFixture.category)
+class StrictIsObservableTest extends ObservableSpec(StrictFixture.arrows)
 
 class StrictDiagnosticsIsObservableTest extends ObservableSpec(StrictDiagnosticsFixture)
 

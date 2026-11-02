@@ -9,20 +9,22 @@ import Category.Type
 /** The laws of [[Traced]], with feedback that stops. */
 abstract class TracedSpec(
   name: String,
-  tracked val T: Traced { val S: Strong.Bistrong { val P: Promonad { val K: Category { type Obj = Type } } } },
+  tracked val traced: Traced {
+    val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } }
+  },
 )(using
-  promonad: PromonadFixture.On[T.S.P.type],
+  promonad: PromonadFixture.On[traced.strong.profunctor.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[T.S.M.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[traced.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Traced", name) {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
-  import T.S.P
-  import P.P
-  import T.TracedLaws.*
-  import P.K.-->
+  import traced.strong.profunctor
+  import profunctor.P
+  import traced.TracedLaws.*
+  import profunctor.category.-->
 
-  private type +[X, Y] = T.S.M.Tensor[X, Y]
+  private type +[X, Y] = traced.strong.monoidal.Tensor[X, Y]
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X + Y] = tensor[X, Y]
 
@@ -33,7 +35,7 @@ abstract class TracedSpec(
   def loop2[A: Sample, B: Sample]: Gen[P[A + (Int + Int), B + (Int + Int)]]
 
   /** Arrows on *A* ⊗ *I*, which cannot loop. */
-  def straight[A: Sample, B: Sample]: Gen[P[A + T.S.M.I, B + T.S.M.I]]
+  def straight[A: Sample, B: Sample]: Gen[P[A + traced.strong.monoidal.I, B + traced.strong.monoidal.I]]
 
   /** A pure map that keeps loops stopping. */
   def shrink: Int --> Int
@@ -94,7 +96,7 @@ abstract class TracedSpec(
 
   law("superposing") {
     val observations = observe[T3 + T1, T4 + T2]
-    val gs           = base.arrow[T3, T4]
+    val gs           = category.arrow[T3, T4]
     val ps           = loop[T1, T2]
 
     forAll(observations, gs, ps) { (observe, g, p) =>

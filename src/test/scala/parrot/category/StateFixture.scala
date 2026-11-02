@@ -35,7 +35,7 @@ object StringStateLoops extends Kleisli.ElgotOf(StringStateChoice, StringStateIt
 object StringStateRecursion extends StateT.GuardedRecursion(StringStateKleisli, Monad.Classical.OptionIsClassical)
 
 object StringStateFixture extends PromonadFixture("Kleisli[State[String, Option]]", StringStateKleisli) {
-  val base: TotalFixture.type = TotalFixture
+  val category: TotalFixture.type = TotalFixture
 
   /** Short inputs over a small alphabet. */
   val states: Gen[String] = Gen.choose(0, 5).flatMap(n => Gen.listOfN(n, Gen.oneOf('a', 'b')).map(_.mkString))

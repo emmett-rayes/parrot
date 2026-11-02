@@ -22,13 +22,13 @@ object StringConcat extends Monoid(Total.Products) {
 /** The laws of [[Monoid]] for monoids in 𝒮 with pairs. */
 abstract class MonoidSpec(
   name: String,
-  tracked val W: Monoid { val V: Total.Products.type },
+  tracked val monoid: Monoid { val monoidal: Total.Products.type },
   structure: String = "Monoid",
-)(using S: Sample[W.M])
+)(using S: Sample[monoid.M])
     extends LawSuite(structure, name) {
-  import W.M
-  import W.V.{I, `*`}
-  import W.MonoidLaws.*
+  import monoid.M
+  import monoid.monoidal.{I, `*`}
+  import monoid.MonoidLaws.*
 
   also("Monoid") {
     law("leftUnit") {

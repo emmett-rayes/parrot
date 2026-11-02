@@ -5,12 +5,14 @@ import Sample.given
 import Category.Type
 
 /** The laws of [[Semilattice]] for semilattices in 𝒮. */
-abstract class SemilatticeSpec(name: String, tracked override val W: Semilattice { val V: Total.Products.type })(
-  using S: Sample[W.M]
-) extends MonoidSpec(name, W, "Semilattice") {
-  import W.M
-  import W.V.`*`
-  import W.SemilatticeLaws.*
+abstract class SemilatticeSpec(
+  name: String,
+  tracked override val monoid: Semilattice { val monoidal: Total.Products.type },
+)(using S: Sample[monoid.M])
+    extends MonoidSpec(name, monoid, "Semilattice") {
+  import monoid.M
+  import monoid.monoidal.`*`
+  import monoid.SemilatticeLaws.*
 
   law("commutativity") {
     val observations = TotalFixture.observe[M * M, M]
