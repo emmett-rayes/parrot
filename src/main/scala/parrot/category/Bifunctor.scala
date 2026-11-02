@@ -26,7 +26,7 @@ abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tra
     */
   def bimap[A1: C1.Obj, A2: C2.Obj, B1: C1.Obj, B2: C2.Obj](f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]
 
-  /** The bifunctor as a functor out of the product category **C₁** × **C₂**: *F*(*X*) = *F*(*X*₁,*X*₂). */
+  /** The bifunctor as a functor out of the product category **C₁** × **C₂**. */
   final lazy val functor: Bifunctor.FromProduct { val B: Bifunctor.this.type } = Bifunctor.FromProduct(this)
 
   /** The corresponding opposite bifunctor *F*ᵒᵖ: **C₁**ᵒᵖ × **C₂**ᵒᵖ → **D**ᵒᵖ. */
@@ -35,11 +35,12 @@ abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tra
   /** Laws that any `Bifunctor` must satisfy. */
   object BifunctorLaws {
     import functor.C.given
+    import functor.FunctorLaws
 
     /** *F*(*id*,*id*) = *id*
       */
     def identity[A: C1.Obj, B: C2.Obj](using (F[A, B] ==> F[A, B]) is Observable): Boolean = {
-      functor.FunctorLaws.identity[(A, B)]
+      FunctorLaws.identity[(A, B)]
     }
 
     /** *F*(*f*₂ ∘ *f*₁,*g*₂ ∘ *g*₁) = *F*(*f*₂,*g*₂) ∘ *F*(*f*₁,*g*₁)
@@ -50,7 +51,7 @@ abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tra
       f2: B1 --> E1,
       g2: B2 ->> E2,
     )(using (F[A1, A2] ==> F[E1, E2]) is Observable): Boolean = {
-      functor.FunctorLaws.composition[(A1, A2), (B1, B2), (E1, E2)]((f1, g1), (f2, g2))
+      FunctorLaws.composition[(A1, A2), (B1, B2), (E1, E2)]((f1, g1), (f2, g2))
     }
 
     /** If *f* = *f*′ and *g* = *g*′, then *F*(*f*,*g*) = *F*(*f*′,*g*′).
@@ -63,7 +64,7 @@ abstract class Bifunctor(tracked val C1: Category, tracked val C2: Category, tra
       g: A2 ->> B2,
       g2: A2 ->> B2,
     )(using (F[A1, A2] ==> F[B1, B2]) is Observable): Boolean = {
-      functor.FunctorLaws.congruence[(A1, A2), (B1, B2)]((f, g), (f2, g2))
+      FunctorLaws.congruence[(A1, A2), (B1, B2)]((f, g), (f2, g2))
     }
   }
 }
@@ -113,7 +114,7 @@ object Bifunctor {
   }
 }
 
-/** An endobifunctor on **K**.
+/** An endobifunctor on a category **K**.
   *
   * Represents a bifunctor *F*: **K** × **K** → **K**.
   */
@@ -121,6 +122,6 @@ abstract class Endobifunctor(tracked val K: Category) extends Bifunctor(K, K, K)
 
 object Endobifunctor {
 
-  /** The endobifunctors on **K**. */
+  /** Refines `Endobifunctor` to a specific category **K**. */
   type On[K <: Category] = Endobifunctor { val K: K }
 }

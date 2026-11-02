@@ -39,7 +39,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
     def composition[A: C.Obj, B: C.Obj, E: C.Obj](f: A --> B, g: B --> E)(
       using (F[A] ==> F[E]) is Observable
     ): Boolean = {
-      map(C.compose(g, f)) =?= D.compose(map(g), map(f))
+      map(f >>> g) =?= map(f) >>> map(g)
     }
 
     /** If *f* = *f*′, then *F*(*f*) = *F*(*f*′).
@@ -52,7 +52,7 @@ abstract class Functor(tracked val C: Category, tracked val D: Category) extends
   }
 }
 
-/** An endofunctor on **K**.
+/** An endofunctor on a category **K**.
   *
   * Represents a functor *F*: **K** → **K**.
   */
@@ -60,6 +60,6 @@ abstract class Endofunctor(tracked val K: Category) extends Functor(K, K)
 
 object Endofunctor {
 
-  /** The endofunctors on **K**. */
+  /** Refines `Endofunctor` to a specific category **K**. */
   type On[K <: Category] = Endofunctor { val K: K }
 }
