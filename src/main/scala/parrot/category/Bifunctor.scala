@@ -123,25 +123,4 @@ object Endobifunctor {
 
   /** The endobifunctors on **K**. */
   type On[K <: Category] = Endobifunctor { val K: K }
-
-  /** The opposite *F*ᵒᵖ: **K**ᵒᵖ × **K**ᵒᵖ → **K**ᵒᵖ of an endobifunctor *F* on **K**.
-    *
-    * The opposite endobifunctor has the same object part, with every morphism reversed.
-    *
-    * @note [[Bifunctor.op]] is the same bifunctor, but as a bifunctor between three categories: it is not known to be
-    *   an endobifunctor.
-    */
-  final class Op(tracked val B: Endobifunctor) extends Endobifunctor(B.K.op) {
-    import B.K.-->
-
-    type Self = B.F
-
-    def objects[X: K.Obj, Y: K.Obj]: F[X, Y] is K.Obj = {
-      B.objects[X, Y]
-    }
-
-    def bimap[A1: K.Obj, A2: K.Obj, B1: K.Obj, B2: K.Obj](f: B1 --> A1, g: B2 --> A2): F[B1, B2] --> F[A1, A2] = {
-      B.bimap(f, g)
-    }
-  }
 }
