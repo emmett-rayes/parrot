@@ -5,7 +5,7 @@ import Category.Type
 
 /** The laws of [[Cocartesian]]: the unitors, the associator and the braiding are those of the coproducts. */
 abstract class CocartesianSpec(
-  tracked override val monoidal: Cocartesian { val category: Category { type Obj = Type } },
+  tracked override val monoidal: Cocartesian.On[Category { type Obj = Type }],
 )(using
   category: CategoryFixture.For[monoidal.category.type],
   typename: TypeName[monoidal.type],

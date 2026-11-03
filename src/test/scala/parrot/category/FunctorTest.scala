@@ -9,7 +9,7 @@ import Category.Type
   */
 abstract class FunctorSpec(
   name: String,
-  tracked val functor: Functor { val source: Category { type Obj = Type }; val target: Category { type Obj = Type } },
+  tracked val functor: Functor.Into[Category { type Obj = Type }] { val source: Category { type Obj = Type } },
 )(using
   source: CategoryFixture.For[functor.source.type],
   target: CategoryFixture.For[functor.target.type],

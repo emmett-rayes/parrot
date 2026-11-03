@@ -194,7 +194,7 @@ colimits in `Colimit`'s.
   registers its laws in `also("<Name>")`, so a child reports them under its own name. Where the parent's spec needs
   other fixtures, the child copies its laws into an `also` block instead (`FreydSpec`, `PromonadSpec`). `IsoLaws` has
   no spec: `MonoidalLaws` and `ModuleLaws` check it.
-- **Specs take their subject, not a fixture:** `tracked val monoidal: Symmetric { … }`, named after its structure, with
+- **Specs take their subject, not a fixture:** `tracked val monoidal: Symmetric.On[…]`, named after its structure, with
   the fixture found as a given, `using category: CategoryFixture.For[monoidal.category.type]`; where the subject takes
   the fixture's name (`CategorySpec`, `BifunctorSpec`, `PromonadSpec`), the fixture is `fixture`. There is one given
   fixture per category or promonad, in the `CategoryFixture` and `PromonadFixture` companions (the parser's in

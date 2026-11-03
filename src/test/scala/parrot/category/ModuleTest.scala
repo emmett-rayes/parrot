@@ -5,9 +5,8 @@ import Category.Type
 
 /** The laws of [[Module]], for left actions on a category whose objects are all types. */
 abstract class ModuleSpec(
-  tracked val module: Module {
+  tracked val module: Module.Over[Monoidal.On[Category { type Obj = Type }]] {
     val category: Category { type Obj = Type }
-    val monoidal: Monoidal { val category: Category { type Obj = Type } }
   },
 )(using
   kCategory: CategoryFixture.For[module.category.type],

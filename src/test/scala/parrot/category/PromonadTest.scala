@@ -9,7 +9,7 @@ import Category.Type
 /** The laws of [[Promonad]] beyond those of its category: the unit is a functor, and the derived profunctor action
   * satisfies the [[Bifunctor]] laws.
   */
-abstract class PromonadSpec(tracked val promonad: Promonad { val category: Category { type Obj = Type } })(
+abstract class PromonadSpec(tracked val promonad: Promonad.On[Category { type Obj = Type }])(
   using
   fixture: PromonadFixture.For[promonad.type],
   types: SampleTypes,

@@ -8,7 +8,7 @@ import Category.Type
 /** Generators, variants and observations for the arrows of a promonad over a category whose objects are all types. */
 abstract class PromonadFixture(
   val name: String,
-  tracked val promonad: Promonad { val category: Category { type Obj = Type } },
+  tracked val promonad: Promonad.On[Category { type Obj = Type }],
 ) extends caps.Pure {
   import promonad.P
 

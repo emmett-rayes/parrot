@@ -77,6 +77,12 @@ abstract class Restriction(tracked val promonad: Promonad) extends caps.Pure {
   }
 }
 
+object Restriction {
+
+  /** The restriction structures on a promonad *P*. */
+  type On[P <: Promonad] = Restriction { val promonad: P }
+}
+
 /** A classical restriction structure on a promonad *P* whose base has coproducts: definedness is decidable.
   *
   * Represents a classical restriction category (Cockett–Manes) with its override operator, where

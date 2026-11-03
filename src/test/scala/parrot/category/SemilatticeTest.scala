@@ -7,7 +7,7 @@ import Category.Type
 /** The laws of [[Semilattice]] for semilattices in 𝒮. */
 abstract class SemilatticeSpec(
   name: String,
-  tracked override val monoid: Semilattice { val monoidal: Total.Products.type },
+  tracked override val monoid: Semilattice.In[Total.Products.type],
 )(using S: Sample[monoid.M])
     extends MonoidSpec(name, monoid, "Semilattice") {
   import monoid.M

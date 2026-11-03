@@ -5,7 +5,7 @@ import Category.Type
 import LimitTerminal.IName
 
 /** The laws of [[Terminal]], for terminal objects of a category whose objects are all types. */
-abstract class TerminalSpec(tracked val terminal: Terminal { val category: Category { type Obj = Type } })(using
+abstract class TerminalSpec(tracked val terminal: Terminal.Of[Category { type Obj = Type }])(using
   category: CategoryFixture.For[terminal.category.type],
   typename: TypeName[terminal.I],
   types: SampleTypes,

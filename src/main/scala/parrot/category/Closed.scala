@@ -74,6 +74,9 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
 
 object Closed {
 
+  /** The closed structures on a monoidal category **M**. */
+  type On[M <: Monoidal] = Closed { val monoidal: M }
+
   /** The internal hom ⇒: **K**ᵒᵖ × **K** → **K** of a closed structure, as an endoprofunctor.
     *
     * Represents a profunctor, where

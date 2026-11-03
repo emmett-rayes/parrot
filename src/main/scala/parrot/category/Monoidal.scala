@@ -134,3 +134,9 @@ abstract class Monoidal(
     }
   }
 }
+
+object Monoidal {
+
+  /** The monoidal structures on a category **K**. */
+  type On[K <: Category] = Monoidal { val category: K }
+}

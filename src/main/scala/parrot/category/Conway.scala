@@ -101,6 +101,9 @@ abstract class Conway(tracked val strong: Strong.Bistrong.On[Promonad] { val mon
 
 object Conway {
 
+  /** The parameterized fixed-point operators on a Freyd category with the strength *S*. */
+  type On[S <: Strong.Bistrong] = Conway { val strong: S }
+
   /** Iteration read backwards: an Elgot operator on *P* is a Conway operator on *P*ᵒᵖ, whose products are the
     * coproducts of **K**. A step *P*(*X*,*A* + *X*) is an arrow *P*ᵒᵖ(*A* × *X*,*X*), and its iteration *P*(*X*,*A*) is
     * the fixed point *P*ᵒᵖ(*A*,*X*).

@@ -5,7 +5,7 @@ import Category.Type
 import ColimitInitial.IName
 
 /** The laws of [[Initial]], for initial objects of a category whose objects are all types. */
-abstract class InitialSpec(tracked val initial: Initial { val category: Category { type Obj = Type } })(using
+abstract class InitialSpec(tracked val initial: Initial.Of[Category { type Obj = Type }])(using
   category: CategoryFixture.For[initial.category.type],
   typename: TypeName[initial.I],
   types: SampleTypes,

@@ -5,7 +5,7 @@ import Category.Type
 
 /** The laws of [[Cartesian]]: the unitors, the associator and the braiding are those of the products. */
 abstract class CartesianSpec(
-  tracked override val monoidal: Cartesian { val category: Category { type Obj = Type } },
+  tracked override val monoidal: Cartesian.On[Category { type Obj = Type }],
 )(using
   category: CategoryFixture.For[monoidal.category.type],
   typename: TypeName[monoidal.type],

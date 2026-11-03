@@ -9,7 +9,7 @@ import Category.Type
 /** The laws of [[Recursion]], with functions that recurse on smaller arguments (𝒫) or after progress (guarded). */
 abstract class RecursionSpec(
   name: String,
-  tracked val recursion: Recursion { val promonad: Promonad { val category: Category { type Obj = Type } } },
+  tracked val recursion: Recursion.On[Promonad.On[Category { type Obj = Type }]],
 )(using
   val promonad: PromonadFixture.For[recursion.promonad.type],
   types: SampleTypes,

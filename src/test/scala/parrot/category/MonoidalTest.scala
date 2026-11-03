@@ -5,7 +5,7 @@ import Category.Type
 
 /** The laws of [[Monoidal]], for structures on a category whose objects are all types. */
 abstract class MonoidalSpec(
-  tracked val monoidal: Monoidal { val category: Category { type Obj = Type } },
+  tracked val monoidal: Monoidal.On[Category { type Obj = Type }],
   structure: String = "Monoidal",
 )(using
   category: CategoryFixture.For[monoidal.category.type],

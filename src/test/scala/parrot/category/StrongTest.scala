@@ -6,7 +6,7 @@ import Category.Type
 /** The laws of [[Strong]], for bistrong promonads over 𝒮: every strength in the library is bistrong. */
 abstract class StrongSpec(
   name: String,
-  tracked val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } },
+  tracked val strong: Strong.Bistrong.On[Promonad.On[Category { type Obj = Type }]],
   structure: String = "Strong",
 )(using
   promonad: PromonadFixture.For[strong.profunctor.type],
@@ -81,9 +81,7 @@ abstract class StrongSpec(
 /** The laws of [[Strong.Bistrong]], for bistrong promonads over 𝒮. */
 abstract class BistrongSpec(
   name: String,
-  tracked override val strong: Strong.Bistrong {
-    val profunctor: Promonad { val category: Category { type Obj = Type } }
-  },
+  tracked override val strong: Strong.Bistrong.On[Promonad.On[Category { type Obj = Type }]],
 )(using
   promonad: PromonadFixture.For[strong.profunctor.type],
   types: SampleTypes,

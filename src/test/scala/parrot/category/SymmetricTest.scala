@@ -5,7 +5,7 @@ import Category.Type
 
 /** The laws of [[Symmetric]], for structures on a category whose objects are all types. */
 abstract class SymmetricSpec(
-  tracked override val monoidal: Symmetric { val category: Category { type Obj = Type } },
+  tracked override val monoidal: Symmetric.On[Category { type Obj = Type }],
   structure: String = "Symmetric",
 )(using
   category: CategoryFixture.For[monoidal.category.type],

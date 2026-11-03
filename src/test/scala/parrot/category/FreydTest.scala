@@ -8,7 +8,7 @@ import Category.Type
 /** The laws of [[Freyd]] and of its [[Category]], for Freyd categories on promonads over 𝒮. */
 abstract class FreydSpec(
   name: String,
-  tracked val freyd: Freyd { val promonad: Promonad { val category: Category { type Obj = Type } } },
+  tracked val freyd: Freyd.On[Promonad.On[Category { type Obj = Type }]],
 )(using
   promonad: PromonadFixture.For[freyd.promonad.type],
   types: SampleTypes,

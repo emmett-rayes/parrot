@@ -9,7 +9,7 @@ import Category.Type
 /** The laws of [[Restriction]]. */
 abstract class RestrictionSpec(
   name: String,
-  tracked val restriction: Restriction { val promonad: Promonad { val category: Category { type Obj = Type } } },
+  tracked val restriction: Restriction.On[Promonad.On[Category { type Obj = Type }]],
   structure: String = "Restriction",
 )(using
   promonad: PromonadFixture.For[restriction.promonad.type],
@@ -89,8 +89,7 @@ abstract class RestrictionSpec(
 /** The laws of [[Classical]], for classical structures over the coproducts of 𝒮. */
 abstract class ClassicalSpec(
   name: String,
-  tracked override val restriction: Classical {
-    val promonad: Promonad { val category: Category { type Obj = Type } }
+  tracked override val restriction: Classical.On[Promonad.On[Category { type Obj = Type }]] {
     val cocartesian: Cocartesian { val tensor: Bifunctor { type Self = Either } }
   },
 )(using

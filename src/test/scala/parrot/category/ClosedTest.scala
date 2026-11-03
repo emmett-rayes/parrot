@@ -12,7 +12,7 @@ import Category.Type
   * homs at sample elements of the first, curried from generated arrows.
   */
 abstract class ClosedSpec(
-  tracked val closed: Closed { val monoidal: Monoidal { val category: Category { type Obj = Type } } },
+  tracked val closed: Closed.On[Monoidal.On[Category { type Obj = Type }]],
 )(using
   category: CategoryFixture.For[closed.monoidal.category.type],
   typename: TypeName[closed.type],

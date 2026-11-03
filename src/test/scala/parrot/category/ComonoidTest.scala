@@ -6,7 +6,7 @@ import Category.Type
 /** The laws of [[Comonoid]], for comonoids in a monoidal structure on a category whose objects are all types. */
 abstract class ComonoidSpec(
   name: String,
-  tracked val comonoid: Comonoid { val monoidal: Monoidal { val category: Category { type Obj = Type } } },
+  tracked val comonoid: Comonoid.In[Monoidal.On[Category { type Obj = Type }]],
 )(using
   category: CategoryFixture.For[comonoid.monoidal.category.type],
   S: Sample[comonoid.C],
