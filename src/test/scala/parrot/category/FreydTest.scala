@@ -43,17 +43,6 @@ abstract class FreydSpec(
     }
   }
 
-  law("centrality") {
-    val observations = observe[T1 * T4, T2 * T3]
-    val fs           = category.arrow[T1, T2]
-    val qs           = arrow[T4, T3]
-
-    forAll(observations, fs, qs) { (observe, f, q) =>
-      given (((T1 * T4) --> (T2 * T3)) is Observable) = observe
-      centrality(f, q)
-    }
-  }
-
   also("Category") {
     import freyd.CategoryLaws.*
 
@@ -111,8 +100,7 @@ abstract class FreydSpec(
       q       <- arrow[T4, T3]
     } yield {
       given (((T1 * T4) --> (T2 * T3)) is Observable) = observe
-      (freyd.first[T1, T2, T4](p) >>> freyd.second[T4, T3, T2](q))
-        =?= (freyd.second[T4, T3, T1](q) >>> freyd.first[T1, T2, T3](p))
+      freyd.leftToRight(p, q) =?= freyd.rightToLeft(p, q)
     }
   }
 }

@@ -140,12 +140,12 @@ abstract class ParserAlgebra(
 
   /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* in [[zipped]]. */
   final def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
-    zipped.parallel(p, q)
+    zipped.leftToRight(p, q)
   }
 
   /** Runs *p* on a left semantic input or *q* on a right one, tagging the result: *p* + *q* in [[branched]]. */
   final def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
-    branched.parallel(p, q)
+    branched.leftToRight(p, q)
   }
 
   /** Runs *p* on a left semantic input or *q* on a right one, into a common result: [*p*,*q*]. */

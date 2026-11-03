@@ -193,10 +193,11 @@ Each structure sits at the lowest level where its laws can be stated.
   *τ*′, as `StrictParser` does to build `Zip(p, Success())` directly, and the law checks the override. `Strong` and
   `Traced` are defined once, parameterized by the monoidal structure.
 - **A Freyd category is a category:** `Freyd(promonad, strong)` extends `Promonad.Arrows(promonad)`, the category of
-  arrows of the promonad, with `first`, `second`, `parallel` and the laws that connect them to the strength. It names
-  the strengths after the component an arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of Freyd
-  categories and the grid read as usual. It takes the promonad as well as the strength, so that its signature names the
-  promonad whose arrows it has.
+  arrows of the promonad, with `first`, `second`, `leftToRight` (⋉, `*>*`), `rightToLeft` (⋊, `*<*`) and the laws that
+  connect them to the strength. The operators look like a tensor without being one, since the category is premonoidal.
+  It names the strengths after the component an arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of
+  Freyd categories and the grid read as usual. It takes the promonad as well as the strength, so that its signature
+  names the promonad whose arrows it has.
 - **Traces and fixed points.** The trace laws restrict sliding and superposing to pure arrows, which are central
   (traced *premonoidal* categories). The product row has no useful total instance in a strict language: computing
   ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first. Its instances exist by duality, on 𝒫ᵒᵖ, and the bridges (`OfElgot`,

@@ -95,8 +95,8 @@ warning-free.
    `summon`: a class-level forwarding given would recurse.
 7. **Operators are syntax:** each symbolic extension is `final`, passes its arguments in order to a named method
    (`f >>> g` is `andThen(f, g)`) and is documented `Infix extension for [[andThen]].`; an infix type alias is
-   documented `Infix alias for [[Hom]].` One operator per operation: `>>>`/`<<<`, `***`, `&&&`/`|||`, `+++`, `**`,
-   `|>`, `=?=`, `?<`, `===`.
+   documented `Infix alias for [[Hom]].` One operator per operation: `>>>`/`<<<`, `***`, `&&&`/`|||`, `+++`,
+   `*>*`/`*<*`, `|>`, `=?=`, `?<`, `===`.
 8. **Arrows, not `.Self`:** write morphisms infix and bring them in with imports, never new type definitions
    (`import category.{Obj, -->, >>>}`, `import target.--> as ==>`). Roles: `-->` the category at hand, `->>` the second
    category of a pair (a bifunctor's or profunctor's second source, a strength's second category), `==>` a target
