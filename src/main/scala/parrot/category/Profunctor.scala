@@ -3,10 +3,9 @@ package category
 
 /** A profunctor *P*: **C₁**ᵒᵖ × **C₂** → **V**.
   *
-  * Represents a profunctor, where
+  * Represents a profunctor *P*, where
   *   - *P*[*A*,*B*] is the object part
-  *   - *P*(*f*,*g*): *P*[*A*₁,*A*₂] → *P*[*B*₁,*B*₂] is the morphism part, for *f*: *B*₁ → *A*₁ in **C₁** and *g*: *A*₂
-  *     → *B*₂ in **C₂**: precompose with *f*, postcompose with *g*
+  *   - *P*(*f*,*g*): *P*[*A*₁,*A*₂] → *P*[*B*₁,*B*₂] is the morphism part
   *
   * A profunctor *P*: **C₁**ᵒᵖ × **C₂** → **V** is a bifunctor **C₁**ᵒᵖ × **C₂** → **V** that is contravariant in its
   * first argument and covariant in its second argument. See [[Bifunctor]].
@@ -17,7 +16,7 @@ abstract class Profunctor(tracked val domain: Category, tracked val codomain: Ca
   import codomain.--> as ->>
   import base.--> as ==>
 
-  /** The object part *P*. */
+  /** The profunctor's object part *P*. */
   final type P = Self
 
   /** *P* maps a pair of morphisms *f*: *B*₁ → *A*₁ of **C₁** and *g*: *A*₂ → *B*₂ of **C₂** to a morphism *P*(*f*,*g*):
@@ -43,3 +42,9 @@ object Profunctor {
   */
 abstract class Endoprofunctor(tracked val category: Category, tracked override val base: Category)
     extends Profunctor(category, category, base)
+
+object Endoprofunctor {
+
+  /** The endoprofunctors on a category **C**. */
+  type On[C <: Category] = Endoprofunctor { val category: C }
+}

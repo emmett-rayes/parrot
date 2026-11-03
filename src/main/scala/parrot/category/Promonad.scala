@@ -5,7 +5,7 @@ import scala.annotation.targetName
 
 import Category.Type
 
-/** A promonad on **C** valued in 𝒮.
+/** A promonad *P*: **C**ᵒᵖ × **C** → 𝒮.
   *
   * Represents a promonad (*P*, *η*, *μ*), where
   *   - *η*: **C**(*A*,*B*) → *P*(*A*,*B*), the unit
@@ -18,11 +18,15 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
 
   /** The unit *η*: **C**(*A*,*B*) → *P*(*A*,*B*).
     *
-    * This is the identity-on-objects functor from **C** to the category induced by *P*. See [[arrows]].
+    * This is the morphism part of the identity-on-objects functor from **C** to the induced arrow category. See
+    * [[arrows]].
     */
   def unit[A: Obj, B: Obj](f: A --> B): A ~~> B
 
-  /** The multiplication *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*). */
+  /** The multiplication *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*).
+    *
+    * This is a map out of the coend of the product of the profunctor *P* with itself over the intermediate object *B*.
+    */
   def multiply[A: Obj, B: Obj, C: Obj](g: P[B, C], f: P[A, B]): P[A, C]
 
   /** Arrows are values of 𝒮, so every arrow type is an object of 𝒮. */
@@ -30,8 +34,6 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
     Type.TIsType
   }
 
-  /** *P*(*f*,*g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*)
-    */
   override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 <-- B1, g: A2 --> B2): P[A1, A2] -> P[B1, B2] = {
     p => multiply(unit(g), multiply(p, unit[B1, A1](f)))
   }
@@ -51,8 +53,8 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
     compose(q, p)
   }
 
-  /** Every profunctor induces a category of arrows, where the objects are the objects of **C**, the morphisms are
-    * *P*(*A*,*B*), the identity is given by *η*, and composition is given by *μ*.
+  /** Every promonad induces a category of arrows, where the objects are the objects of **C**, the morphisms are
+    * *P*(*A*,*B*), the identity is given by *η* and composition is given by *μ*.
     */
   final lazy val arrows: Promonad.Arrows.Of[this.type] = Promonad.Arrows(this)
 
@@ -131,7 +133,7 @@ object Promonad {
 
   /** The hom promonad of a category **C**.
     *
-    * The hom promonad's arrows are the morphisms of **C** itself.
+    * The hom promonad's morphisms are the morphisms of **C** itself.
     */
   open class Hom(tracked override val category: Category) extends Promonad(category) {
     import category.{Obj, -->}

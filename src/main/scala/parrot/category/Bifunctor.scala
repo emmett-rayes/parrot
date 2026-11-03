@@ -3,7 +3,7 @@ package category
 
 /** A bifunctor *F*: **C₁** × **C₂** → **D**.
   *
-  * Represents a bifunctor, where
+  * Represents a bifunctor *F*, where
   *   - *F*[*A*,*B*] is the object part
   *   - *F*(*f*,*g*): *F*[*A*₁,*A*₂] → *F*[*B*₁,*B*₂] is the morphism part
   */

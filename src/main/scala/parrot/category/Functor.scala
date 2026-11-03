@@ -3,7 +3,7 @@ package category
 
 /** A functor *F*: **C** → **D**.
   *
-  * Represents a functor, where
+  * Represents a functor *F*, where
   *   - *F*[*A*] is the object part
   *   - *F*(*f*): *F*[*A*] → *F*[*B*] is the morphism part
   */

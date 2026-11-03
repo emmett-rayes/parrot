@@ -3,7 +3,7 @@ package category
 
 /** A left module over a monoidal category **M** on a category **C** (also called a left actegory).
   *
-  * Represents a left module (**C**, ⊘), where
+  * Represents a left **M**-module (**C**, ⊘), where
   *   - ⊘: **M** × **C** → **C** is the action bifunctor
   *   - *λ*: *I* ⊘ *A* ≅ *A* is the action left unitor
   *   - *α*: (*X* ⊗ *Y*) ⊘ *A* ≅ *X* ⊘ (*Y* ⊘ *A*) is the action associator
@@ -14,9 +14,8 @@ abstract class Module(
   tracked val action: Bifunctor.Into[category.type] { val source1: monoidal.category.type; val source2: category.type },
 ) extends caps.Pure {
   import category.{Obj, -->, <->, >>>}
+  import monoidal.{I, `*`}
   import monoidal.category.{Obj as ObjM, --> as ~~>}
-  import monoidal.I
-  import monoidal.`*`
 
   /** The action of **M** on **C**: *X* ⊘ *A*. */
   final type Action = action.F
@@ -24,11 +23,9 @@ abstract class Module(
   /** Infix alias for [[Action]]. */
   final type ~ = Action
 
-  private given IIsObj: (I is ObjM) = monoidal.unit.evidence
-
+  private given IIsObj: (I is ObjM)                                  = monoidal.unit.evidence
   private given TensorIsObj: [X: ObjM, Y: ObjM] => ((X * Y) is ObjM) = monoidal.tensor.objects[X, Y]
-
-  private given ActionIsObj: [X: ObjM, A: Obj] => ((X ~ A) is Obj) = action.objects[X, A]
+  private given ActionIsObj: [X: ObjM, A: Obj] => ((X ~ A) is Obj)   = action.objects[X, A]
 
   /** *λ*: *I* ⊘ *A* ≅ *A*
     */
@@ -38,7 +35,9 @@ abstract class Module(
     */
   def associator[X: ObjM, Y: ObjM, A: Obj]: ((X * Y) ~ A) <-> (X ~ (Y ~ A))
 
-  /** The action on morphisms *g* ⊘ *f*. */
+  /** The action maps a pair of morphisms *g*: *X* → *Y* of **M** and *f*: *A* → *B* of **C** to a morphism *g* ⊘ *f*:
+    * *X* ⊘ *A* → *Y* ⊘ *B* of **C**.
+    */
   final def act[X: ObjM, Y: ObjM, A: Obj, B: Obj](g: X ~~> Y, f: A --> B): (X ~ A) --> (Y ~ B) = {
     action.bimap(g, f)
   }
@@ -53,17 +52,18 @@ abstract class Module(
 
   /** Laws that any `Module` must satisfy. */
   object ModuleLaws {
+    import category.IsoLaws
 
     /** *λ*⁻¹ ∘ *λ* = *id*
       */
     def leftUnitorLeftInverse[A: Obj](using ((I ~ A) --> (I ~ A)) is Observable): Boolean = {
-      category.IsoLaws.leftInverse(leftUnitor[A])
+      IsoLaws.leftInverse(leftUnitor[A])
     }
 
     /** *λ* ∘ *λ*⁻¹ = *id*
       */
     def leftUnitorRightInverse[A: Obj](using (A --> A) is Observable): Boolean = {
-      category.IsoLaws.rightInverse(leftUnitor[A])
+      IsoLaws.rightInverse(leftUnitor[A])
     }
 
     /** *α*⁻¹ ∘ *α* = *id*
@@ -71,7 +71,7 @@ abstract class Module(
     def associatorLeftInverse[X: ObjM, Y: ObjM, A: Obj](
       using (((X * Y) ~ A) --> ((X * Y) ~ A)) is Observable
     ): Boolean = {
-      category.IsoLaws.leftInverse(associator[X, Y, A])
+      IsoLaws.leftInverse(associator[X, Y, A])
     }
 
     /** *α* ∘ *α*⁻¹ = *id*
@@ -79,7 +79,7 @@ abstract class Module(
     def associatorRightInverse[X: ObjM, Y: ObjM, A: Obj](
       using ((X ~ (Y ~ A)) --> (X ~ (Y ~ A))) is Observable
     ): Boolean = {
-      category.IsoLaws.rightInverse(associator[X, Y, A])
+      IsoLaws.rightInverse(associator[X, Y, A])
     }
 
     /** *f* ∘ *λ* = *λ* ∘ (*id* ⊘ *f*)
