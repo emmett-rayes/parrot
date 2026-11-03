@@ -35,7 +35,7 @@ Rejected:
 
 ## 3. The encoding
 
-- **Bases are `tracked` term parameters** (`Strong(profunctor, module1, module2)`, `Promonad(category)`,
+- **Bases are `tracked` term parameters** (`Strong(profunctor, monoidal, module1, module2)`, `Promonad(category)`,
   `Monad(functor)`). A term parameter is a stable path, so its type members can be named and imported, and `tracked`
   keeps its singleton type in the instance's type, so `Kleisli.OptionKleisli.category` is known to be `Total` without
   casts.
@@ -169,10 +169,10 @@ Each structure sits at the lowest level where its laws can be stated.
 | trace | `Traced` (×) | `Traced` (+) | a bistrong promonad: superposing needs composition and strength |
 | fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a bistrong promonad |
 
-- **Strength over left modules.** `Strong(profunctor, module1, module2)` is a profunctor *P*: **K₁**ᵒᵖ × **K₂** → 𝒮 with
-  left actions (`Module`) of one monoidal **M** on **K₁** and **K₂**; its primitive is the left strength *τ*:
-  *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*), `left`, as in the literature (Pastro and Street's Tambara modules; Moggi's
-  strength is a left strength). The general definition costs nothing, since every instance is the self-action.
+- **Strength over left modules.** `Strong(profunctor, monoidal, module1, module2)` is a profunctor *P*: **K₁**ᵒᵖ ×
+  **K₂** → 𝒮 with left actions (`Module`) of one monoidal **M** on **K₁** and **K₂**; its primitive is the left strength
+  *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*), `left`, as in the literature (Pastro and Street's Tambara modules;
+  Moggi's strength is a left strength). The general definition costs nothing, since every instance is the self-action.
   `Bistrong(profunctor, monoidal)`, for a symmetric **M** acting on itself, is the only case with a right action too: it
   adds the right strength *τ*′, `right`, and the law that the two commute (`compatibility`). *τ*′ defaults to
   *P*(*β*,*β*) ∘ *τ* and may be overridden, as `StrictParser` does to build `Zip(p, Success())` directly. `Strong` and

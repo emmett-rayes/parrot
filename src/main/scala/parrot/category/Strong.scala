@@ -12,19 +12,17 @@ import scala.annotation.targetName
   */
 abstract class Strong(
   tracked val profunctor: Profunctor.Into[Total.type],
-  tracked val module1: Module { val category: profunctor.domain.type },
-  tracked val module2: Module.Over[module1.monoidal.type] { val category: profunctor.codomain.type },
+  tracked val monoidal: Monoidal,
+  tracked val module1: Module.Over[monoidal.type] { val category: profunctor.domain.type },
+  tracked val module2: Module.Over[monoidal.type] { val category: profunctor.codomain.type },
 ) extends caps.Pure {
   import profunctor.P
   import profunctor.domain.{Obj as Obj1, -->}
   import profunctor.codomain.{Obj as Obj2, --> as ->>}
-  import module1.monoidal.category.{Obj as ObjM, --> as ==>}
+  import monoidal.category.{Obj as ObjM, --> as ==>}
+  import monoidal.`*`
   import module1.`~` as `~1`
   import module2.`~` as `~2`
-
-  /** The monoidal category acting on **K₁** and **K₂**. */
-  val monoidal: module1.monoidal.type = module1.monoidal
-  import monoidal.`*`
 
   private given IIsObj: (monoidal.I is ObjM) = monoidal.unit.evidence
 
@@ -120,7 +118,7 @@ object Strong {
   abstract class Bistrong(
     tracked override val profunctor: Profunctor.Into[Total.type] { val codomain: domain.type },
     tracked override val monoidal: Symmetric.On[profunctor.domain.type],
-  ) extends Strong(profunctor, Module.OfMonoidal(monoidal), Module.OfMonoidal(monoidal)) {
+  ) extends Strong(profunctor, monoidal, Module.OfMonoidal(monoidal), Module.OfMonoidal(monoidal)) {
     import monoidal.`*`
     import profunctor.P
     import monoidal.category.Obj
