@@ -23,7 +23,7 @@ object StringStateClassical extends StateT.ClassicalOf(StringState, Monad.Classi
 object StringStateDomains extends Kleisli.ClassicalOf(StringStateKleisli, StringStateClassical)
 
 /** The arrows of [[StringStateKleisli]], run on one side of a tagged union. */
-object StringStateChoice extends Kleisli.CoproductStrength(StringStateKleisli)
+object StringStateChoice extends Kleisli.CoproductStrength(StringStateKleisli, Total.Coproducts)
 
 /** Guarded loops over [[StringState]]. */
 object StringStateIteration extends StateT.GuardedIteration(StringState, Monad.Classical.OptionIsClassical)

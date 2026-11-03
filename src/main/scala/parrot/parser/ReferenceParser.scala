@@ -132,7 +132,7 @@ object ReferenceParser {
   object Zipping extends Kleisli.ProductStrength(Arrows)
 
   /** Parsers run on one side of a tagged union. */
-  object Branching extends Kleisli.CoproductStrength(Arrows)
+  object Branching extends Kleisli.CoproductStrength(Arrows, Total.Coproducts)
 
   /** Loops over [[State]] guarded by consumed input; a step without progress fails silently. */
   object Iteration extends StateT.GuardedIteration(State, Silent)

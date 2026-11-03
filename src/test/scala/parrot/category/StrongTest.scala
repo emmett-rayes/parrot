@@ -101,7 +101,7 @@ class OptionKleisliCoproductIsBistrongTest
 object StringWriterProduct extends Kleisli.ProductStrength(StringWriterKleisli)
 
 /** The string writer's arrows, run on one side of a tagged union. */
-object StringWriterCoproduct extends Kleisli.CoproductStrength(StringWriterKleisli)
+object StringWriterCoproduct extends Kleisli.CoproductStrength(StringWriterKleisli, Total.Coproducts)
 
 class StringWriterKleisliProductIsBistrongTest
     extends BistrongSpec("Kleisli[Writer[String]] on Product", StringWriterProduct)

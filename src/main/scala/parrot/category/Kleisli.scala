@@ -45,20 +45,29 @@ object Kleisli {
     }
   }
 
-  /** Every Kleisli promonad of a monad on 𝒮 is strong for coproducts, where
+  /** Every Kleisli promonad of a monad on a category with coproducts is strong for coproducts, where
     *   - *τ*(*p*) = [*η* ∘ *ι*₁,*M*(*ι*₂) ∘ *p*]
     *
     * On the left the value passes through without effect; on the right the arrow runs.
     */
-  open class CoproductStrength(tracked override val profunctor: Kleisli.Of[Monad.On[Total.type]])
-      extends Strong.Bistrong(profunctor, Total.Coproducts) {
+  open class CoproductStrength(
+    tracked override val profunctor: Kleisli,
+    tracked override val monoidal: Cocartesian.On[profunctor.domain.type],
+  ) extends Strong.Bistrong(profunctor, monoidal) {
     import profunctor.monad.M
+    import profunctor.monad.category.{Obj, -->, >>>}
+    import monoidal.+
 
-    def left[A: Type, B: Type, C: Type]: (A -> M[B]) -> Either[C, A] -> M[Either[C, B]] = {
-      p => {
-        case Left(c)  => profunctor.monad.unit[Either[C, B]](Left(c))
-        case Right(a) => profunctor.monad.map[B, Either[C, B]](b => Right(b))(p(a))
-      }
+    private given SumIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
+
+    private given MIsObj: [A: Obj] => (M[A] is Obj) = profunctor.monad.objects[A]
+
+    def left[A: Obj, B: Obj, C: Obj]: (A --> M[B]) -> ((C + A) --> M[C + B]) = {
+      p =>
+        monoidal.copair(
+          monoidal.inl[C, B] >>> profunctor.monad.unit[C + B],
+          p >>> profunctor.monad.map(monoidal.inr[C, B]),
+        )
     }
   }
 
@@ -132,7 +141,7 @@ object Kleisli {
   object OptionProduct extends ProductStrength(OptionKleisli)
 
   /** Functions that may fail, run on one side of a tagged union. */
-  object OptionCoproduct extends CoproductStrength(OptionKleisli)
+  object OptionCoproduct extends CoproductStrength(OptionKleisli, Total.Coproducts)
 
   /** Functions that may fail: a classical restriction category, with failure as zero and ordered choice as override. */
   object OptionDomains extends ClassicalOf(OptionKleisli, Monad.Classical.OptionIsClassical)

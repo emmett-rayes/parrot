@@ -3172,7 +3172,7 @@ When ℳ is symmetric and acts on itself, the context can also be carried on the
 The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Strong.Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(β, β) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
 
 - **Over products**, τ′ runs an arrow on the left component of a pair and τ on the right one. For a Kleisli promonad on 𝒮, every monad has one: `left(p)((c, a))` runs `p(a)` and pairs `c` with its result (`Kleisli.ProductStrength`).
-- **Over coproducts**, τ′ runs an arrow on the left case of an `Either` and passes the right case through untouched, and τ the other way round (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**. Their `left` is τ′: it names the case of the sum that an arrow runs on, not the side of the action.
+- **Over coproducts**, τ′ runs an arrow on the left case of an `Either` and passes the right case through untouched, and τ the other way round. It carries no value into the effect, so every monad on any category with coproducts has one, τ(p) = [η ∘ ι₁, M(ι₂) ∘ p] (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**. Their `left` is τ′: it names the case of the sum that an arrow runs on, not the side of the action.
 
 The laws of both, for every Kleisli instance in the library, are **[Tested]**.
 
