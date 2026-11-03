@@ -58,8 +58,9 @@ warning-free.
 - **`-Yexplicit-nulls`:** Java APIs return `T | Null`; use `.nn`.
 - **`-Wnonunit-statement`:** non-final asserts in tests are `val _ = assert(...)`.
 - **Off on purpose:** `-Wsafe-init` (false positive when a *class* forwards a `tracked` parameter to a parameterized
-  parent; don't add `@nowarn`, and prefer `lazy val` for members computed from parameters) and `-Wunused:imports`
-  (false positive on renamed type imports such as `import target.--> as ==>`).
+  parent; don't add `@nowarn`, and prefer `lazy val` for members computed from parameters), `-Wunused:imports`
+  (false positive on renamed type imports such as `import target.--> as ==>`) and `-language:experimental.safe` (no
+  file can be exempted, and `StrictParser` needs casts; `docs/DESIGN.md` §8).
 
 ## The encoding of `parrot.category`
 

@@ -392,6 +392,14 @@ morphisms, mixed optics, general iterated enrichment, the delay monad.
 - **Pants parses with Scalameta,** which the in-repo `scala_override` plugin configures with `Scala3Future`, so that
   dependency inference understands `tracked` parameters.
 
+Rejected:
+- safe mode (`-language:experimental.safe`), which would also rule out what capture checking does not track: casts,
+  `caps.unsafe`, mutable arrays and captured variables, and references to code not compiled in safe mode (I/O, clocks,
+  mutable collections). It holds for a whole compilation or for each file that imports it, and no file can be exempted:
+  `StrictParser` needs casts and mutable tables, and the tuple `recursive` of `ParserAlgebra` casts the components of
+  its untyped family. Confining it to `category` takes an import in every file or a compilation of its own (an sbt
+  project and a Pants resolve). It would check neither totality nor naturality.
+
 ## 9. Open issues
 
 - A representing type for equalizers in 𝒮: the limit construction of §4 gives none.
