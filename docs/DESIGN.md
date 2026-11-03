@@ -88,7 +88,7 @@ Rejected:
   so evidence search is sound but not canonical. Type classes of data (`Eq`, `Observable`, `Preorder`) do not extend
   `Type`, since importing their givens would change what answers `A is Type`; a category of the types with an
   equality takes an evidence class that carries an `Eq`.
-- **Products of categories use match types.** The objects of `Category.Product(factor1, factor2)` are pair types, and a
+- **Products of categories use match types.** The objects of `Category.Product(first, second)` are pair types, and a
   morphism type computed from two object types can take them apart only with a match type (`Fst[(A1, A2)] = A1`):
   evidence is a value and cannot index a type, and projecting a type member of an abstract type is unsound. The object
   evidence speaks about `Fst[X]` and `Snd[X]` directly, so generic code never needs a match type to reduce. A bifunctor
