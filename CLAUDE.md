@@ -82,7 +82,7 @@ warning-free.
 5. **Objects are types with evidence:** `type Obj <: Type` (`import Category.Type`; `Type.TIsType` holds for every
    type), passed only through context bounds, except an object a structure chooses or is on, which is a `tracked`
    parameter of type `category.Object`: a `Category.Object(category)` has the object as its carrier (`Self`, *A*) and
-   its `evidence: A is category.Obj`. Such are the objects of `Product(category, factor1, factor2, apex)`, the apex of
+   its `evidence: A is category.Obj`. Such are the objects of `Product(category, first, second, apex)`, the apex of
    `Cone(diagram, apex)` and the unit of `Monoidal(category, unit, tensor)`, which `Cartesian` refines to a `Terminal`,
    an object with `discard`; instances of `Terminal(category)` and `Initial(category)` define `Self` and `evidence`.
    `category.Object[A]` builds one from a context bound, and `A is category.Object` is one of type *A*, so no structure

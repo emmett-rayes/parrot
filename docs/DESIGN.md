@@ -230,14 +230,14 @@ Each structure sits at the lowest level where its laws can be stated.
   colimit. In a discrete diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimits`),
   and the factorization applies the leg at the object of a point.
 - **Terminal objects and products are structures with views** (§3). `Terminal(category)` is an object with `discard`
-  (!); `Product(category, factor1, factor2, apex)` has `fst`, `snd` and `pair`. Each is a limit through its view
+  (!); `Product(category, first, second, apex)` has `fst`, `snd` and `pair`. Each is a limit through its view
   `asLimit`, of the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each
   from a limit. `Products(category)`, the binary products of **C**, is a bifunctor with a `Product` on every image,
   `product[A, B]` on *F*[*A*,*B*], whose laws are its laws, and `bimap` defaults to ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩.
   `Products(limits)` (`Products.FromLimits`) builds them from discrete limits of shape **2**, with the apexes
   Apex[**2**,(*A*,*B*)] as tensor, as `Terminal(limits)` builds a terminal object; an instance with a tensor of its own
   implements one `Product` per pair of objects (`Total.Tuple2IsProduct[A, B]`). Dually, `Initial(category)` has `absurd`
-  (¡) and `Coproduct(category, summand1, summand2, apex)` has `inl`, `inr` and `copair`, each a colimit through its view
+  (¡) and `Coproduct(category, left, right, apex)` has `inl`, `inr` and `copair`, each a colimit through its view
   `asColimit` and built from one by `FromColimit`, and `Coproducts(category)` has a `Coproduct` on every image,
   `coproduct[A, B]`, with `Coproducts(colimits)` from discrete colimits.
 - **A cartesian structure is a terminal object and products,** `Cartesian(category, unit, tensor)`, whose unit is a

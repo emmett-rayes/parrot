@@ -172,7 +172,7 @@ object Cocartesian {
     }
 
     def product[A: Obj, B: Obj]
-      : OpProduct.In[cocartesian.type] { val factor1: A is Object; val factor2: B is Object } = {
+      : OpProduct.In[cocartesian.type] { val first: A is Object; val second: B is Object } = {
       OpProduct(cocartesian, category.Object[A], category.Object[B])
     }
 
@@ -187,21 +187,21 @@ object Cocartesian {
     */
   final class OpProduct(
     tracked val cocartesian: Cocartesian,
-    tracked override val factor1: cocartesian.category.op.Object,
-    tracked override val factor2: cocartesian.category.op.Object,
+    tracked override val first: cocartesian.category.op.Object,
+    tracked override val second: cocartesian.category.op.Object,
   ) extends Product(
       cocartesian.category.op,
-      factor1,
-      factor2,
+      first,
+      second,
       cocartesian.category.op.Object(
-        using cocartesian.tensor.objects[factor1.A, factor2.A](using factor1.evidence, factor2.evidence),
+        using cocartesian.tensor.objects[first.A, second.A](using first.evidence, second.evidence),
       ),
     ) {
     import category.{Obj, -->}
 
-    private given A1IsObj: (A1 is Obj) = factor1.evidence
+    private given A1IsObj: (A1 is Obj) = first.evidence
 
-    private given A2IsObj: (A2 is Obj) = factor2.evidence
+    private given A2IsObj: (A2 is Obj) = second.evidence
 
     def fst: P --> A1 = {
       cocartesian.inl[A1, A2]

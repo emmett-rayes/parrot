@@ -176,7 +176,7 @@ object Cartesian {
     }
 
     def coproduct[A: Obj, B: Obj]
-      : OpCoproduct.In[cartesian.type] { val summand1: A is Object; val summand2: B is Object } = {
+      : OpCoproduct.In[cartesian.type] { val left: A is Object; val right: B is Object } = {
       OpCoproduct(cartesian, category.Object[A], category.Object[B])
     }
 
@@ -191,21 +191,21 @@ object Cartesian {
     */
   final class OpCoproduct(
     tracked val cartesian: Cartesian,
-    tracked override val summand1: cartesian.category.op.Object,
-    tracked override val summand2: cartesian.category.op.Object,
+    tracked override val left: cartesian.category.op.Object,
+    tracked override val right: cartesian.category.op.Object,
   ) extends Coproduct(
       cartesian.category.op,
-      summand1,
-      summand2,
+      left,
+      right,
       cartesian.category.op.Object(
-        using cartesian.tensor.objects[summand1.A, summand2.A](using summand1.evidence, summand2.evidence),
+        using cartesian.tensor.objects[left.A, right.A](using left.evidence, right.evidence),
       ),
     ) {
     import category.{Obj, -->}
 
-    private given A1IsObj: (A1 is Obj) = summand1.evidence
+    private given A1IsObj: (A1 is Obj) = left.evidence
 
-    private given A2IsObj: (A2 is Obj) = summand2.evidence
+    private given A2IsObj: (A2 is Obj) = right.evidence
 
     def inl: A1 --> S = {
       cartesian.fst[A1, A2]
