@@ -135,8 +135,14 @@ object Cocartesian {
 
   /** The initial object of a cocartesian category **K**, as the terminal object of **K**ᵒᵖ: ! is ¡. */
   final class OpTerminal(tracked val cocartesian: Cocartesian)
-      extends Terminal(cocartesian.category.op, cocartesian.unit.evidence) {
+      extends Terminal(cocartesian.category.op) {
     import category.{Obj, -->}
+
+    type Self = cocartesian.I
+
+    def evidence: Self is Obj = {
+      cocartesian.unit.evidence
+    }
 
     def discard[A: Obj]: A --> I = {
       cocartesian.absurd[A]
@@ -148,7 +154,7 @@ object Cocartesian {
     * The product of two objects is their coproduct, and the product of morphisms is the coproduct of their opposites.
     */
   final class OpProducts(tracked val cocartesian: Cocartesian) extends Products(cocartesian.category.op) {
-    import category.{Obj, ObjectOf, -->}
+    import category.{Obj, Object, -->}
 
     type Self = cocartesian.Tensor
 
@@ -158,7 +164,7 @@ object Cocartesian {
 
     def product[A: Obj, B: Obj]
       : OpProduct {
-        val cocartesian: OpProducts.this.cocartesian.type; val factor1: ObjectOf[A]; val factor2: ObjectOf[B]
+        val cocartesian: OpProducts.this.cocartesian.type; val factor1: A is Object; val factor2: B is Object
       } = {
       OpProduct(cocartesian, category.Object[A], category.Object[B])
     }

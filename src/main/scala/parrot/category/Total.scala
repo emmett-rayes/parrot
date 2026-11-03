@@ -48,7 +48,13 @@ object Total extends Category {
   object Functions extends Promonad.Hom(Total)
 
   /** The unit type 1 as the terminal object of 𝒮. */
-  object UnitIsTerminal extends Terminal(Total, Type.TIsType[Unit]) {
+  object UnitIsTerminal extends Terminal(Total) {
+    type Self = Unit
+
+    def evidence: Unit is Type = {
+      Type.TIsType
+    }
+
     def discard[A: Type]: A -> Unit = {
       _ => ()
     }
@@ -87,7 +93,13 @@ object Total extends Category {
   }
 
   /** The empty type 0 as the initial object of 𝒮. */
-  object NothingIsInitial extends Initial(Total, Type.TIsType[Nothing]) {
+  object NothingIsInitial extends Initial(Total) {
+    type Self = Nothing
+
+    def evidence: Nothing is Type = {
+      Type.TIsType
+    }
+
     def absurd[A: Type]: Nothing -> A = {
       n => n
     }
@@ -255,7 +267,7 @@ object Total extends Category {
       type Lim[F[_]] = [A] -> (A is index.Obj) ?-> F[A]
 
       def limit(functor: Functor { val source: index.type; val target: Total.type })
-        : Limit.Of[functor.type] { val apex: functor.target.ObjectOf[Lim[functor.F]] } = {
+        : Limit.Of[functor.type] { val apex: Lim[functor.F] is functor.target.Object } = {
         DiscreteLimitOf(functor)
       }
     }
@@ -393,7 +405,7 @@ object Total extends Category {
       type Colim[F[_]] = Sum[index.Obj, F]
 
       def colimit(functor: Functor { val source: index.type; val target: Total.type })
-        : Colimit.Of[functor.type] { val apex: functor.target.ObjectOf[Colim[functor.F]] } = {
+        : Colimit.Of[functor.type] { val apex: Colim[functor.F] is functor.target.Object } = {
         DiscreteColimitOf(functor)
       }
     }

@@ -198,13 +198,13 @@ object Product {
   * The structure at two objects *A* and *B* is a [[Product]] on *A* × *B*.
   */
 abstract class Products(tracked override val category: Category) extends Endobifunctor(category) {
-  import category.{Obj, ObjectOf, -->, >>>}
+  import category.{Obj, Object, -->, >>>}
 
   private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
   /** The product of *A* and *B*: a [[Product]] on *A* × *B*, with its projections and pairing. */
   def product[A: Obj, B: Obj]
-    : Product.Of[category.type] { val factor1: ObjectOf[A]; val factor2: ObjectOf[B]; val apex: ObjectOf[F[A, B]] }
+    : Product.Of[category.type] { val factor1: A is Object; val factor2: B is Object; val apex: F[A, B] is Object }
 
   /** *f* × *g* = ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩
     */
@@ -276,7 +276,7 @@ object Products {
     */
   open class FromLimits(tracked val limits: Limit.OfDiscreteDiagram[Discrete2Diagram.Of])
       extends Products(limits.category) {
-    import category.{Obj, ObjectOf}
+    import category.{Obj, Object}
 
     type Self[A, B] = limits.Lim[Components[A, B]]
 
@@ -286,7 +286,7 @@ object Products {
 
     def product[A: Obj, B: Obj]
       : Product.Of[category.type] {
-        val factor1: ObjectOf[A]; val factor2: ObjectOf[B]; val apex: ObjectOf[F[A, B]]
+        val factor1: A is Object; val factor2: B is Object; val apex: F[A, B] is Object
       } = {
       Product.FromLimit(limits.limit(Discrete2Diagram(category, category.Object[A], category.Object[B])))
     }

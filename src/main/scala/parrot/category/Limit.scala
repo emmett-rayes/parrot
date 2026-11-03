@@ -82,6 +82,6 @@ object Limit {
 
     /** The limit lim *G* of a diagram *G*, with apex Lim[*F*] for the object map *F* of *G*. */
     override def limit(functor: D[category.type])
-      : Limit.Of[functor.type] { val apex: functor.target.ObjectOf[Lim[functor.F]] }
+      : Limit.Of[functor.type] { val apex: Lim[functor.F] is functor.target.Object }
   }
 }

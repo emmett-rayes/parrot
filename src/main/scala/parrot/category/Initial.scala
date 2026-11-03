@@ -6,12 +6,11 @@ package category
   * Represents an initial object *I*, where
   *   - ¡: *I* → *A* is the unique morphism to an object *A*
   */
-abstract class Initial(tracked override val category: Category, tracked override val evidence: category.Obj)
-    extends Category.Object(category, evidence) {
+abstract class Initial(tracked override val category: Category) extends Category.Object(category) {
   import category.{Obj, -->}
 
   /** The initial object *I*. */
-  final type I = evidence.Self
+  final type I = Self
 
   /** The unique morphism ¡: *I* → *A*. */
   def absurd[A: Obj]: I --> A
@@ -48,8 +47,14 @@ object Initial {
     * has no legs.
     */
   open class FromColimit(tracked val cocone: Colimit.Of[EmptyDiagram])
-      extends Initial(cocone.diagram.category, cocone.apex.evidence) {
+      extends Initial(cocone.diagram.category) {
     import category.{Obj, -->}
+
+    type Self = cocone.X
+
+    def evidence: Self is Obj = {
+      cocone.apex.evidence
+    }
 
     def absurd[A: Obj]: I --> A = {
       cocone.factor(EmptyCocone(cocone.diagram, category.Object[A]))

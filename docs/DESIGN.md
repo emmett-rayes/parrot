@@ -44,7 +44,7 @@ Rejected:
   which `tracked` makes known to clients (`Total.Products.I` is `Unit`). The unitors, the associator and the braiding
   are members, because refinements derive them (`Cartesian`); so is the internal hom, which is what `Closed` adds: ⊗
   determines it up to isomorphism, and evaluation and currying determine its action on morphisms (`Closed.InternalHom`).
-- **Evidence that chooses an object is a value parameter** (the object of `Terminal`, the factors and product of
+- **Evidence that chooses an object is a value parameter** (the unit of `Monoidal`, the factors and product of
   `Product`, the apex of `Cone`). 𝒮 has two units and two tensors, so implicit search cannot choose them (for a `using`
   parameter it chose `Type.TIsType[Any]`), and `deferred` givens exist only in traits; that makes it a value. It is a
   parameter because a structure is on the objects it is about: a cone is a natural transformation from the constant
@@ -53,13 +53,13 @@ Rejected:
   `objects`, an object its `evidence`, a cone its `apex`, and a class that needs a given declares one from them
   (`private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]`), refinements included. The
   only public givens are instances of type classes, next to their type class (`Type.TIsType`, `Eq`, `Observable`).
-- **Every object a structure chooses or is on is a structure,** `Category.Object(category, evidence)`, written
-  `category.Object`: one encoding for all of them, which a refinement can ask more of:
-  `Monoidal(category, unit, tensor)` is on an `Object`, and `Cartesian` refines it to a `Terminal`, an `Object` with
-  `discard`, as it refines the endobifunctor `tensor` to `Products`. Only `Object` and the objects that extend it
-  (`Terminal`, `Initial`) take bare evidence, which is what they wrap. `category.Object[A]` builds one from a context
-  bound, and `category.ObjectOf[A]` refines one to a type, since in `category.Object { val evidence: A is Obj }` the
-  name `A` is the member of `Object`.
+- **Every object a structure chooses or is on is a structure,** `Category.Object(category)`, written `category.Object`:
+  one encoding for all of them, which a refinement can ask more of: `Monoidal(category, unit, tensor)` is on an
+  `Object`, and `Cartesian` refines it to a `Terminal`, an `Object` with `discard`, as it refines the endobifunctor
+  `tensor` to `Products`. An object has its own carrier, `Self`, and the `evidence` that it is an object,
+  `Self is category.Obj`, so `A is category.Object` is the object *A*, which `category.Object[A]` builds from a context
+  bound, and no structure takes bare evidence: a terminal object defines its carrier and evidence
+  (`Total.UnitIsTerminal` is a `Unit is Terminal`).
 - **Structures are abstract classes,** because a refinement passes arguments to its parent (`Promonad(category)` extends
   `Endoprofunctor(category, Total)`), which a trait cannot. Type classes without parameters that are not structures
   (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
@@ -120,12 +120,16 @@ Rejected:
   different structures (`C` is a category, a Conway operator or a closed structure) and collides with the carrier
   aliases (`M.M`, `P.P`). Role names collide in refinements instead (`Product { val category: category.type }`), which
   the aliases that refine a structure avoid (`Product.Of[category.type]`);
-- the unit of a monoidal structure as bare evidence (`unit: category.Obj`): `Obj` is an abstract type, which no class
-  can extend, so no refinement could ask for a terminal object;
+- bare evidence for every object (`unit: category.Obj`), with a terminal object as structure on its apex: `Obj` is an
+  abstract type, which no class can extend, so `Cartesian` would ask for a terminal unit through a parameter of another
+  name (`terminal`, passing its apex as the unit) while it refines its tensor in place, and a terminal object would not
+  be an object;
 - bare evidence for the objects that no refinement asks more of, such as the factors of a product or the apex of a
   cone: shorter, but a second encoding of one concept;
-- refining an object by its type (`category.Object { type A = X }`): values conform to it, but its evidence keeps an
-  abstract `Self`, so `X is Obj` cannot be read back from it;
+- an object that takes its evidence as a parameter and reads its type from it (`A = evidence.Self`): naming an object
+  by its type then refines its evidence (`{ val evidence: X is Obj }`), which needs an alias declared elsewhere, since
+  inside a refinement of `Object` the name `A` is its member; and an object with its type as a type parameter, which no
+  class can extend at a type that depends on its own parameters (the terminal object of a limit, at the limit's apex);
 - `Object` as a class nested in `Category`: a structure that extends it through a parameter (`category.Object`) is not
   an object of the argument (`Total.Object`), so a terminal object could not be passed as a unit;
 - object evidence as a type constructor (`type Obj[_]`, evidence `Obj[A]`), which would make the evidence of **2** a
@@ -202,17 +206,17 @@ Each structure sits at the lowest level where its laws can be stated.
   the legs of a cocone, so glued points are indistinguishable as long as the cocones are lawful; to clients, the
   abstract type is the colimit. In a discrete diagram no two points are glued, so the colimit is the sum itself
   (`Total.DiscreteColimitsOf`), and the factorization applies the leg at the object of a point.
-- **Terminal objects and products are structures with views** (§3). `Terminal(category, evidence)` is an object with
-  `discard` (!); `Product(category, factor1, factor2, apex)` has `fst`, `snd` and `pair`. Each is a limit through its
-  view `limit`, of the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each
-  from a limit. `Products(category)`, the binary products of **C**, is a bifunctor with a `Product` on every image,
+- **Terminal objects and products are structures with views** (§3). `Terminal(category)` is an object with `discard`
+  (!); `Product(category, factor1, factor2, apex)` has `fst`, `snd` and `pair`. Each is a limit through its view
+  `limit`, of the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from
+  a limit. `Products(category)`, the binary products of **C**, is a bifunctor with a `Product` on every image,
   `product[A, B]` on *F*[*A*,*B*], whose laws are its laws, and `bimap` defaults to ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩.
   `Products(limits)` (`Products.FromLimits`) builds them from discrete limits of shape **2**, with the apexes
   Lim[(*A*,*B*)] as tensor, as `Terminal(limits)` builds a terminal object; an instance with a tensor of its own
-  implements one `Product` per pair of objects (`Total.Tuple2IsProduct[A, B]`). Dually, `Initial(category, evidence)`
-  has `absurd` (¡) and `Coproduct(category, summand1, summand2, apex)` has `inl`, `inr` and `copair`, each a colimit
-  through its view `colimit` and built from one by `FromColimit`, and `Coproducts(category)` has a `Coproduct` on every
-  image, `coproduct[A, B]`, with `Coproducts(colimits)` from discrete colimits.
+  implements one `Product` per pair of objects (`Total.Tuple2IsProduct[A, B]`). Dually, `Initial(category)` has `absurd`
+  (¡) and `Coproduct(category, summand1, summand2, apex)` has `inl`, `inr` and `copair`, each a colimit through its view
+  `colimit` and built from one by `FromColimit`, and `Coproducts(category)` has a `Coproduct` on every image,
+  `coproduct[A, B]`, with `Coproducts(colimits)` from discrete colimits.
 - **A cartesian structure is a terminal object and products,** `Cartesian(category, unit, tensor)`, whose unit is a
   `Terminal` and whose tensor is `Products`: the universal properties are stated once, in its parameters, and
   `Cartesian` derives the unitors, the associator and the braiding from them, with laws that check an instance

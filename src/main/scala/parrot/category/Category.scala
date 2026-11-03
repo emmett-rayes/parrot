@@ -26,15 +26,16 @@ abstract class Category extends caps.Pure {
   /** Infix alias for [[Hom]]. */
   final type --> = Hom
 
-  /** Evidence that a type is an object of the category. */
+  /** An object of the category. */
   final type Object = Category.Object { val category: Category.this.type }
 
-  /** Refines `Object` to a specific type *X*. */
-  final type ObjectOf[X] = Object { val evidence: X is Obj }
-
   /** The object *X* of the category, specified by its evidence. */
-  final def Object[X: Obj]: ObjectOf[X] = {
-    Category.Object(this, summon)
+  final def Object[X: Obj]: X is Object = {
+    new Category.Object(this) {
+      type Self = X
+
+      def evidence: X is Obj = summon
+    }
   }
 
   /** The identity morphism *id*: *A* → *A*. */
@@ -148,15 +149,23 @@ object Category {
     given TIsType: [T] => T is Type {}
   }
 
-  /** An object *A* of a category **C**, as specified by its evidence *U*.
+  /** An object of a category **C**.
     *
-    * This allows structures on an object of the category to be refined in substructures. See [[Monoidal]],
-    * [[Cartesian]] and [[Terminal]] for an example.
+    * Represents an object *A* of **C**, where
+    *   - *A* is a type, the carrier
+    *   - the evidence shows that *A* is an object of **C**
+    *
+    * A structure on an object takes it as a parameter, which a refinement can ask more of: [[Monoidal]] is on an
+    * object, and [[Cartesian]] refines it to a [[Terminal]] object, an object with `discard`.
     */
-  open class Object(tracked val category: Category, tracked val evidence: category.Obj) extends caps.Pure {
+  abstract class Object(tracked val category: Category) extends caps.Pure {
+    type Self
 
     /** The object *A*. */
-    final type A = evidence.Self
+    final type A = Self
+
+    /** *A* is an object of **C**. */
+    def evidence: A is category.Obj
   }
 
   /** The opposite **K**ᵒᵖ of a category **K**.

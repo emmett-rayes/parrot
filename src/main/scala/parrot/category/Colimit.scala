@@ -82,6 +82,6 @@ object Colimit {
 
     /** The colimit colim *G* of a diagram *G*, with apex Colim[*F*] for the object map *F* of *G*. */
     override def colimit(functor: D[category.type])
-      : Colimit.Of[functor.type] { val apex: functor.target.ObjectOf[Colim[functor.F]] }
+      : Colimit.Of[functor.type] { val apex: Colim[functor.F] is functor.target.Object }
   }
 }

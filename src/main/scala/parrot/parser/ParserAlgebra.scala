@@ -34,11 +34,11 @@ import category.Category.Type
 abstract class ParserAlgebra(
   tracked val parsers: Promonad { val category: Category { type Obj = Type } },
   tracked val products: Cartesian {
-    val category: parsers.category.type; val unit: parsers.category.ObjectOf[Unit]
+    val category: parsers.category.type; val unit: Unit is parsers.category.Object
     val tensor: Bifunctor { type Self = Tuple2 }
   },
   tracked val coproducts: Cocartesian {
-    val category: parsers.category.type; val unit: parsers.category.ObjectOf[Nothing]
+    val category: parsers.category.type; val unit: Nothing is parsers.category.Object
     val tensor: Bifunctor { type Self = Either }
   },
   tracked val zipping: Strong.Bistrong { val profunctor: parsers.type; val monoidal: products.type },

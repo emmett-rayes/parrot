@@ -6,12 +6,11 @@ package category
   * Represents a terminal object *I*, where
   *   - !: *A* → *I* is the unique morphism from an object *A*
   */
-abstract class Terminal(tracked override val category: Category, tracked override val evidence: category.Obj)
-    extends Category.Object(category, evidence) {
+abstract class Terminal(tracked override val category: Category) extends Category.Object(category) {
   import category.{Obj, -->}
 
   /** The terminal object *I*. */
-  final type I = evidence.Self
+  final type I = Self
 
   /** The unique morphism !: *A* → *I*. */
   def discard[A: Obj]: A --> I
@@ -47,8 +46,14 @@ object Terminal {
     * has no legs.
     */
   open class FromLimit(tracked val cone: Limit.Of[EmptyDiagram])
-      extends Terminal(cone.diagram.category, cone.apex.evidence) {
+      extends Terminal(cone.diagram.category) {
     import category.{Obj, -->}
+
+    type Self = cone.X
+
+    def evidence: Self is Obj = {
+      cone.apex.evidence
+    }
 
     def discard[A: Obj]: A --> I = {
       cone.factor(EmptyCone(cone.diagram, category.Object[A]))

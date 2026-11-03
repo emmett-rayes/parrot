@@ -146,7 +146,13 @@ object Fns extends Category {
   }
 
   /** The unit type as the terminal object of [[Fns]], with ! as data. */
-  object UnitIsTerminal extends Terminal(Fns, Type.TIsType[Unit]) {
+  object UnitIsTerminal extends Terminal(Fns) {
+    type Self = Unit
+
+    def evidence: Unit is Type = {
+      Type.TIsType
+    }
+
     def discard[A: Type]: Fn[A, Unit] = {
       Fn.Bang()
     }
@@ -181,7 +187,13 @@ object Fns extends Category {
   }
 
   /** The empty type as the initial object of [[Fns]], with ¡ as data. */
-  object NothingIsInitial extends Initial(Fns, Type.TIsType[Nothing]) {
+  object NothingIsInitial extends Initial(Fns) {
+    type Self = Nothing
+
+    def evidence: Nothing is Type = {
+      Type.TIsType
+    }
+
     def absurd[A: Type]: Fn[Nothing, A] = {
       Fn.Absurd()
     }

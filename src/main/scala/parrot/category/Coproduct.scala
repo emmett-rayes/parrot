@@ -167,13 +167,13 @@ object Coproduct {
   * The structure at two objects *A* and *B* is a [[Coproduct]] on *A* + *B*.
   */
 abstract class Coproducts(tracked override val category: Category) extends Endobifunctor(category) {
-  import category.{Obj, ObjectOf, -->, >>>}
+  import category.{Obj, Object, -->, >>>}
 
   private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
   /** The coproduct of *A* and *B*: a [[Coproduct]] on *A* + *B*, with its injections and copairing. */
   def coproduct[A: Obj, B: Obj]
-    : Coproduct.Of[category.type] { val summand1: ObjectOf[A]; val summand2: ObjectOf[B]; val apex: ObjectOf[F[A, B]] }
+    : Coproduct.Of[category.type] { val summand1: A is Object; val summand2: B is Object; val apex: F[A, B] is Object }
 
   /** *f* + *g* = [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*]
     */
@@ -248,7 +248,7 @@ object Coproducts {
     */
   open class FromColimits(tracked val colimits: Colimit.OfDiscreteDiagram[Discrete2Diagram.Of])
       extends Coproducts(colimits.category) {
-    import category.{Obj, ObjectOf}
+    import category.{Obj, Object}
 
     type Self[A, B] = colimits.Colim[Components[A, B]]
 
@@ -258,7 +258,7 @@ object Coproducts {
 
     def coproduct[A: Obj, B: Obj]
       : Coproduct.Of[category.type] {
-        val summand1: ObjectOf[A]; val summand2: ObjectOf[B]; val apex: ObjectOf[F[A, B]]
+        val summand1: A is Object; val summand2: B is Object; val apex: F[A, B] is Object
       } = {
       Coproduct.FromColimit(colimits.colimit(Discrete2Diagram(category, category.Object[A], category.Object[B])))
     }

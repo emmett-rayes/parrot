@@ -97,7 +97,13 @@ object Partial extends Category {
   }
 
   /** The empty type 0 as the initial object of 𝒫. */
-  object NothingIsInitial extends Initial(Partial, Type.TIsType[Nothing]) {
+  object NothingIsInitial extends Initial(Partial) {
+    type Self = Nothing
+
+    def evidence: Nothing is Type = {
+      Type.TIsType
+    }
+
     def absurd[A: Type]: Nothing ~> A = {
       n => n
     }

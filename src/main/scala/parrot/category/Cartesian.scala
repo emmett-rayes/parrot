@@ -139,8 +139,14 @@ object Cartesian {
 
   /** The terminal object of a cartesian category **K**, as the initial object of **K**ᵒᵖ: ¡ is !. */
   final class OpInitial(tracked val cartesian: Cartesian)
-      extends Initial(cartesian.category.op, cartesian.unit.evidence) {
+      extends Initial(cartesian.category.op) {
     import category.{Obj, -->}
+
+    type Self = cartesian.I
+
+    def evidence: Self is Obj = {
+      cartesian.unit.evidence
+    }
 
     def absurd[A: Obj]: I --> A = {
       cartesian.discard[A]
@@ -152,7 +158,7 @@ object Cartesian {
     * The coproduct of two objects is their product, and the coproduct of morphisms is the product of their opposites.
     */
   final class OpCoproducts(tracked val cartesian: Cartesian) extends Coproducts(cartesian.category.op) {
-    import category.{Obj, ObjectOf, -->}
+    import category.{Obj, Object, -->}
 
     type Self = cartesian.Tensor
 
@@ -162,7 +168,7 @@ object Cartesian {
 
     def coproduct[A: Obj, B: Obj]
       : OpCoproduct {
-        val cartesian: OpCoproducts.this.cartesian.type; val summand1: ObjectOf[A]; val summand2: ObjectOf[B]
+        val cartesian: OpCoproducts.this.cartesian.type; val summand1: A is Object; val summand2: B is Object
       } = {
       OpCoproduct(cartesian, category.Object[A], category.Object[B])
     }
