@@ -13,13 +13,14 @@ import Category.Type
   */
 abstract class Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total) {
   import category.{Obj, -->}
-  import category.op.--> as ~~>
+  import category.op.--> as <--
+  import arrows.--> as ~~>
 
   /** The unit *η*: **C**(*A*,*B*) → *P*(*A*,*B*).
     *
     * This is the identity-on-objects functor from **C** to the category induced by *P*. See [[arrows]].
     */
-  def unit[A: Obj, B: Obj](f: A --> B): P[A, B]
+  def unit[A: Obj, B: Obj](f: A --> B): A ~~> B
 
   /** The multiplication *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*). */
   def multiply[A: Obj, B: Obj, C: Obj](g: P[B, C], f: P[A, B]): P[A, C]
@@ -31,7 +32,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
 
   /** *P*(*f*,*g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*)
     */
-  override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 ~~> B1, g: A2 --> B2): P[A1, A2] -> P[B1, B2] = {
+  override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 <-- B1, g: A2 --> B2): P[A1, A2] -> P[B1, B2] = {
     p => multiply(unit(g), multiply(p, unit[B1, A1](f)))
   }
 

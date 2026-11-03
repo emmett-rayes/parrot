@@ -14,7 +14,7 @@ abstract class Module(
   tracked val action: Bifunctor.Into[category.type] { val source1: monoidal.category.type; val source2: category.type },
 ) extends caps.Pure {
   import category.{Obj, -->, <->, >>>}
-  import monoidal.category.{Obj as ObjM, --> as ==>}
+  import monoidal.category.{Obj as ObjM, --> as ~~>}
   import monoidal.I
   import monoidal.`*`
 
@@ -39,11 +39,11 @@ abstract class Module(
   def associator[X: ObjM, Y: ObjM, A: Obj]: ((X * Y) ~ A) <-> (X ~ (Y ~ A))
 
   /** The action on morphisms *g* ⊘ *f*. */
-  final def act[X: ObjM, Y: ObjM, A: Obj, B: Obj](g: X ==> Y, f: A --> B): (X ~ A) --> (Y ~ B) = {
+  final def act[X: ObjM, Y: ObjM, A: Obj, B: Obj](g: X ~~> Y, f: A --> B): (X ~ A) --> (Y ~ B) = {
     action.bimap(g, f)
   }
 
-  extension [X: ObjM, Y: ObjM](g: X ==> Y) {
+  extension [X: ObjM, Y: ObjM](g: X ~~> Y) {
 
     /** Infix extension for [[act]]. */
     final def ~~[A: Obj, B: Obj](f: A --> B): (X ~ A) --> (Y ~ B) = {
@@ -91,8 +91,8 @@ abstract class Module(
     /** (*g* ⊘ (*h* ⊘ *f*)) ∘ *α* = *α* ∘ ((*g* ⊗ *h*) ⊘ *f*)
       */
     def associatorNaturality[X: ObjM, Y: ObjM, Z: ObjM, W: ObjM, A: Obj, B: Obj](
-      g: X ==> Y,
-      h: Z ==> W,
+      g: X ~~> Y,
+      h: Z ~~> W,
       f: A --> B,
     )(using (((X * Z) ~ A) --> (Y ~ (W ~ B))) is Observable): Boolean = {
       (associator[X, Z, A].to >>> (g ~~ (h ~~ f))) =?= ((monoidal.parallel(g, h) ~~ f) >>> associator[Y, W, B].to)

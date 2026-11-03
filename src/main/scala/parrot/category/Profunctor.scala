@@ -13,7 +13,7 @@ package category
   */
 abstract class Profunctor(tracked val domain: Category, tracked val codomain: Category, tracked val base: Category)
     extends Bifunctor(domain.op, codomain, base) {
-  import domain.-->
+  import domain.op.--> as <--
   import codomain.--> as ->>
   import base.--> as ==>
 
@@ -24,7 +24,7 @@ abstract class Profunctor(tracked val domain: Category, tracked val codomain: Ca
     * *P*[*A*₁,*A*₂] → *P*[*B*₁,*B*₂] of **V**.
     */
   final def dimap[A1: domain.Obj, A2: codomain.Obj, B1: domain.Obj, B2: codomain.Obj](
-    f: B1 --> A1,
+    f: A1 <-- B1,
     g: A2 ->> B2,
   ): P[A1, A2] ==> P[B1, B2] = {
     bimap[A1, A2, B1, B2](f, g)

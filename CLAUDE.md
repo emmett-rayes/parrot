@@ -100,7 +100,8 @@ warning-free.
 8. **Arrows, not `.Self`:** write morphisms infix and bring them in with imports, never new type definitions
    (`import category.{Obj, -->, >>>}`, `import target.--> as ==>`). Roles: `-->` the category at hand, `->>` the second
    category of a pair (a bifunctor's or profunctor's second source, a strength's second category), `==>` a target
-   category or a Freyd base, `~~>` an opposite. Concretely `A -> B` in `Total` (𝒮) and `A ~> B` in `Partial` (𝒫).
+   category or a Freyd base, `~~>` an acting category (a module's `monoidal`) or a promonad's `arrows`, `<--` an
+   opposite (`A <-- B` runs from `B` to `A`). Concretely `A -> B` in `Total` (𝒮) and `A ~> B` in `Partial` (𝒫).
    Objects: `*`, `+`, `` `^` `` (`` B `^` A `` is *A* ⇒ *B*), `<->`.
 9. **`final` on what is definitional:** aliases and members that only forward (`>>>`, `first`, `restricted`, the
    parser syntax); redefinitions are `override` without `final`. A member forwarded unchanged from a parameter is an
@@ -241,9 +242,9 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   path-dependent type's prefix (`category.Hom` finds `category.>>>` without an import). Where one value is an arrow of
   two structures (a Kleisli arrow on 𝒮, a promonad and its `arrows`), both `>>>` apply: import one and name the other
   (`monad.category.andThen(…)`). The failure is always a compile error, never a wrong composition.
-- **Infix precedence** goes by first character: `*` > `+`, `-->`, `->>` > `<->` > `==>` > `^` > `is`, with `~>` and
-  `~~>` tightest. Parenthesize mixed arrows and tensors (`(A + B) --> C`, `(A ~> B) is Observable`). `?<` binds tighter
-  than every other term operator; `<?` would start an XML literal.
+- **Infix precedence** goes by first character: `*` > `+`, `-->`, `->>` > `<->`, `<--` > `==>` > `^` > `is`, with
+  `~>` and `~~>` tightest. Parenthesize mixed arrows and tensors (`(A + B) --> C`, `(A ~> B) is Observable`). `?<` binds
+  tighter than every other term operator; `<?` would start an XML literal.
 - **Givens.** No given with `Self = Nothing`: it matches every `T is TC` (`Eq.NothingIsEq` is a `val`). A generic and a
   specific given in one object are ambiguous: put the fallback in a parent trait of the companion
   (`object Observable extends ComponentwiseObservable`). `CanEqual` is not an equality: build `Eq` with `Eq.structural`.
