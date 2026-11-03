@@ -18,6 +18,9 @@ abstract class Initial(tracked override val category: Category) extends Category
   /** The initial object as a colimit of the empty diagram, with ¡ as the factorization of a cocone with no legs. */
   final lazy val asColimit: Initial.AsColimit.Of[this.type] = Initial.AsColimit(this)
 
+  /** The initial object as a terminal object of **C**ᵒᵖ, with ¡ as !. */
+  final lazy val op: Initial.Op.Of[this.type] = Initial.Op(this)
+
   /** Laws that any `Initial` must satisfy. */
   object InitialLaws {
 
@@ -80,6 +83,27 @@ object Initial {
 
     /** The initial object *I* as a colimit of the empty diagram. */
     type Of[I <: Initial] = AsColimit { val initial: I }
+  }
+
+  /** An initial object *I* of a category **C**, as a terminal object of **C**ᵒᵖ: ! is ¡. */
+  final class Op(tracked val initial: Initial) extends Terminal(initial.category.op) {
+    import category.{Obj, -->}
+
+    type Self = initial.I
+
+    def evidence: Self is Obj = {
+      initial.evidence
+    }
+
+    def discard[A: Obj]: A --> I = {
+      initial.absurd[A]
+    }
+  }
+
+  object Op {
+
+    /** The initial object *T* as a terminal object of the opposite category. */
+    type Of[T <: Initial] = Op { val initial: T }
   }
 
   /** The cocone with apex *X* under a diagram of the empty shape.

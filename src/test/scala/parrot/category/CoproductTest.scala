@@ -82,3 +82,4 @@ abstract class CoproductsSpec(
 class ScalaEitherIsCoproductsTest   extends CoproductsSpec(Total, Total.EitherIsCoproducts)
 class PartialEitherIsCoproductsTest extends CoproductsSpec(Partial, Partial.EitherIsCoproducts)
 class TotalColimitIsCoproductsTest  extends CoproductsSpec(Total, ColimitCoproducts)
+class ScalaTuple2OpIsCoproductsTest extends CoproductsSpec(Total.op, Total.Tuple2IsProducts.op)

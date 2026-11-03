@@ -60,5 +60,5 @@ abstract class BifunctorSpec(
   }
 }
 
-class ScalaTuple2OpIsBifunctorTest extends BifunctorSpec(Total.op, Total.Tuple2IsProducts.op)
-class PartialTuple2IsBifunctorTest extends BifunctorSpec(Partial, Partial.Tuple2IsBifunctor)
+class PartialTuple2IsBifunctorTest   extends BifunctorSpec(Partial, Partial.Tuple2IsBifunctor)
+class PartialTuple2OpIsBifunctorTest extends BifunctorSpec(Partial.op, Partial.Tuple2IsBifunctor.op)

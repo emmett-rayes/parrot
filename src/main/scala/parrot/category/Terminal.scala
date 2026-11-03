@@ -18,6 +18,9 @@ abstract class Terminal(tracked override val category: Category) extends Categor
   /** The terminal object as a limit of the empty diagram, with ! as the factorization of a cone with no legs. */
   final lazy val asLimit: Terminal.AsLimit.Of[this.type] = Terminal.AsLimit(this)
 
+  /** The terminal object as an initial object of **C**ᵒᵖ, with ! as ¡. */
+  final lazy val op: Terminal.Op.Of[this.type] = Terminal.Op(this)
+
   /** Laws that any `Terminal` must satisfy. */
   object TerminalLaws {
 
@@ -79,6 +82,27 @@ object Terminal {
 
     /** The terminal object *I* as a limit of the empty diagram. */
     type Of[I <: Terminal] = AsLimit { val terminal: I }
+  }
+
+  /** A terminal object *I* of a category **C**, as an initial object of **C**ᵒᵖ: ¡ is !. */
+  final class Op(tracked val terminal: Terminal) extends Initial(terminal.category.op) {
+    import category.{Obj, -->}
+
+    type Self = terminal.I
+
+    def evidence: Self is Obj = {
+      terminal.evidence
+    }
+
+    def absurd[A: Obj]: I --> A = {
+      terminal.discard[A]
+    }
+  }
+
+  object Op {
+
+    /** The terminal object *T* as an initial object of the opposite category. */
+    type Of[T <: Terminal] = Op { val terminal: T }
   }
 
   /** The cone with apex *X* over a diagram of the empty shape.

@@ -143,90 +143,11 @@ object Cartesian {
     * The products, projections and pairing in **C** become coproducts, injections and copairing in **C**ᵒᵖ.
     */
   final class Op(tracked val cartesian: Cartesian)
-      extends Cocartesian(cartesian.category.op, OpInitial(cartesian), OpCoproducts(cartesian))
+      extends Cocartesian(cartesian.category.op, cartesian.unit.op, cartesian.tensor.op)
 
   object Op {
 
     /** The cocartesian opposite of a cartesian category **C**. */
     type Of[K <: Cartesian] = Op { val cartesian: K }
-  }
-
-  /** The terminal object of a cartesian category **C**, as the initial object of **C**ᵒᵖ: ¡ is !. */
-  final class OpInitial(tracked val cartesian: Cartesian)
-      extends Initial(cartesian.category.op) {
-    import category.{Obj, -->}
-
-    type Self = cartesian.I
-
-    def evidence: Self is Obj = {
-      cartesian.unit.evidence
-    }
-
-    def absurd[A: Obj]: I --> A = {
-      cartesian.discard[A]
-    }
-  }
-
-  /** The products of a cartesian category **C**, as the binary coproducts of **C**ᵒᵖ.
-    *
-    * The coproduct of two objects is their product, and the coproduct of morphisms is the product of their opposites.
-    */
-  final class OpCoproducts(tracked val cartesian: Cartesian) extends Coproducts(cartesian.category.op) {
-    import category.{Obj, Object, -->}
-
-    type Self = cartesian.Tensor
-
-    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
-      cartesian.tensor.objects[A, B]
-    }
-
-    def coproduct[X: Obj, Y: Obj]
-      : OpCoproduct.In[cartesian.type] { val left: X is Object; val right: Y is Object } = {
-      OpCoproduct(cartesian, category.Object[X], category.Object[Y])
-    }
-
-    override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
-      cartesian.parallel(f, g)
-    }
-  }
-
-  /** The product *A*₁ × *A*₂ in a cartesian category **C**, as a coproduct of **C**ᵒᵖ.
-    *
-    * The injections are the projections, and the copairing is the pairing.
-    */
-  final class OpCoproduct(
-    tracked val cartesian: Cartesian,
-    tracked override val left: cartesian.category.op.Object,
-    tracked override val right: cartesian.category.op.Object,
-  ) extends Coproduct(cartesian.category.op, left, right) {
-    import category.{Obj, -->}
-
-    type Self = cartesian.Tensor[A1, A2]
-
-    private given A1IsObj: (A1 is Obj) = left.evidence
-
-    private given A2IsObj: (A2 is Obj) = right.evidence
-
-    def evidence: Self is Obj = {
-      cartesian.tensor.objects[A1, A2]
-    }
-
-    def inl: A1 --> S = {
-      cartesian.fst[A1, A2]
-    }
-
-    def inr: A2 --> S = {
-      cartesian.snd[A1, A2]
-    }
-
-    def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X = {
-      cartesian.pair(f, g)
-    }
-  }
-
-  object OpCoproduct {
-
-    /** The products in a cartesian category **C**, as coproducts of **C**ᵒᵖ. */
-    type In[C <: Cartesian] = OpCoproduct { val cartesian: C }
   }
 }

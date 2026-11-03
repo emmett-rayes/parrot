@@ -134,90 +134,11 @@ object Cocartesian {
     * The coproducts, injections and copairing in **K** become products, projections and pairing in **K**ᵒᵖ.
     */
   final class Op(tracked val cocartesian: Cocartesian)
-      extends Cartesian(cocartesian.category.op, OpTerminal(cocartesian), OpProducts(cocartesian))
+      extends Cartesian(cocartesian.category.op, cocartesian.unit.op, cocartesian.tensor.op)
 
   object Op {
 
     /** The cartesian opposite of a cocartesian category **K**. */
     type Of[K <: Cocartesian] = Op { val cocartesian: K }
-  }
-
-  /** The initial object of a cocartesian category **K**, as the terminal object of **K**ᵒᵖ: ! is ¡. */
-  final class OpTerminal(tracked val cocartesian: Cocartesian)
-      extends Terminal(cocartesian.category.op) {
-    import category.{Obj, -->}
-
-    type Self = cocartesian.I
-
-    def evidence: Self is Obj = {
-      cocartesian.unit.evidence
-    }
-
-    def discard[A: Obj]: A --> I = {
-      cocartesian.absurd[A]
-    }
-  }
-
-  /** The coproducts of a cocartesian category **K**, as the binary products of **K**ᵒᵖ.
-    *
-    * The product of two objects is their coproduct, and the product of morphisms is the coproduct of their opposites.
-    */
-  final class OpProducts(tracked val cocartesian: Cocartesian) extends Products(cocartesian.category.op) {
-    import category.{Obj, Object, -->}
-
-    type Self = cocartesian.Tensor
-
-    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
-      cocartesian.tensor.objects[A, B]
-    }
-
-    def product[X: Obj, Y: Obj]
-      : OpProduct.In[cocartesian.type] { val first: X is Object; val second: Y is Object } = {
-      OpProduct(cocartesian, category.Object[X], category.Object[Y])
-    }
-
-    override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
-      cocartesian.parallel(f, g)
-    }
-  }
-
-  /** The coproduct *A*₁ + *A*₂ in a cocartesian category **K**, as a product of **K**ᵒᵖ.
-    *
-    * The projections are the injections, and the pairing is the copairing.
-    */
-  final class OpProduct(
-    tracked val cocartesian: Cocartesian,
-    tracked override val first: cocartesian.category.op.Object,
-    tracked override val second: cocartesian.category.op.Object,
-  ) extends Product(cocartesian.category.op, first, second) {
-    import category.{Obj, -->}
-
-    type Self = cocartesian.Tensor[A1, A2]
-
-    private given A1IsObj: (A1 is Obj) = first.evidence
-
-    private given A2IsObj: (A2 is Obj) = second.evidence
-
-    def evidence: Self is Obj = {
-      cocartesian.tensor.objects[A1, A2]
-    }
-
-    def fst: P --> A1 = {
-      cocartesian.inl[A1, A2]
-    }
-
-    def snd: P --> A2 = {
-      cocartesian.inr[A1, A2]
-    }
-
-    def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P = {
-      cocartesian.copair(f, g)
-    }
-  }
-
-  object OpProduct {
-
-    /** The coproducts in a cocartesian category **K**, as products of **K**ᵒᵖ. */
-    type In[K <: Cocartesian] = OpProduct { val cocartesian: K }
   }
 }

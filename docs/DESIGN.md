@@ -75,6 +75,12 @@ Rejected:
   back (`Terminal.asLimit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
   `Limit.Of`) only names a refinement.
+- **A dual is the view `op`** of the structure it is dual to, built by an `Op` class in the structure's companion: a
+  `Terminal` is an `Initial` of the opposite category, a `Product` a `Coproduct` and `Products` are `Coproducts`. A
+  construction on the opposite assembles the views of its parts (`Cartesian.Op` is the `Cocartesian` of `unit.op` and
+  `tensor.op`) instead of repeating them. Where the dual of a refinement has more operations than the dual of its
+  parent, it overrides the parent's view: `Products.op` is the opposite bifunctor `Bifunctor.op` with copairing, so
+  every bifunctor has an opposite, and the opposite of products keeps its coproduct structure.
 - **Refinements go through one alias per class, for its base:** the parameter that the first sentence of the class's
   doc relates it to, whose preposition names the alias (`Endofunctor.On`, `Limit.Of`, `Monoid.In`, `Cone.Over`,
   `Cocone.Under` and `Into` for the target of a class documented as an arrow, `Functor.Into`), with what the doc

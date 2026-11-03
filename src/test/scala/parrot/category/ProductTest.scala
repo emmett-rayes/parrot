@@ -136,5 +136,6 @@ abstract class ProductsSpec(
   }
 }
 
-class ScalaTuple2IsProductsTest extends ProductsSpec(Total, Total.Tuple2IsProducts)
-class TotalLimitIsProductsTest  extends ProductsSpec(Total, LimitProducts)
+class ScalaTuple2IsProductsTest   extends ProductsSpec(Total, Total.Tuple2IsProducts)
+class TotalLimitIsProductsTest    extends ProductsSpec(Total, LimitProducts)
+class ScalaEitherOpIsProductsTest extends ProductsSpec(Total.op, Total.EitherIsCoproducts.op)

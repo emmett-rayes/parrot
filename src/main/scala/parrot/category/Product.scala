@@ -44,6 +44,9 @@ abstract class Product(
     */
   final lazy val asLimit: Product.AsLimit.Of[this.type] = Product.AsLimit(this)
 
+  /** The product as a coproduct of **C**ᵒᵖ, with the projections as injections and the pairing as copairing. */
+  final lazy val op: Product.Op.Of[this.type] = Product.Op(this)
+
   /** Laws that any `Product` must satisfy. */
   object ProductLaws {
 
@@ -147,6 +150,43 @@ object Product {
     type Of[P <: Product] = AsLimit { val product: P }
   }
 
+  /** A product *A*₁ × *A*₂ in a category **C**, as a coproduct of **C**ᵒᵖ.
+    *
+    * The injections are the projections, and the copairing is the pairing.
+    */
+  final class Op(tracked val product: Product)
+      extends Coproduct(
+        product.category.op,
+        product.category.op.Object[product.A1](using product.first.evidence),
+        product.category.op.Object[product.A2](using product.second.evidence),
+      ) {
+    import category.{Obj, -->}
+
+    type Self = product.P
+
+    def evidence: Self is Obj = {
+      product.evidence
+    }
+
+    def inl: A1 --> S = {
+      product.fst
+    }
+
+    def inr: A2 --> S = {
+      product.snd
+    }
+
+    def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X = {
+      product.pair(f, g)
+    }
+  }
+
+  object Op {
+
+    /** The product *P* as a coproduct of the opposite category. */
+    type Of[P <: Product] = Op { val product: P }
+  }
+
   /** The cone with apex *X* over a diagram of shape **2**.
     *
     * The pair cone has legs *f* and *g*.
@@ -226,6 +266,9 @@ abstract class Products(tracked override val category: Category) extends Endobif
     product[B1, B2].pair(product[A1, A2].fst >>> f, product[A1, A2].snd >>> g)
   }
 
+  /** The opposite bifunctor ×ᵒᵖ, as the binary coproducts of **K**ᵒᵖ. */
+  override lazy val op: Products.Op.Of[this.type] = Products.Op(this)
+
   /** Laws that any `Products` structure must satisfy.
     *
     * The product of every two objects is a product (see [[Product.ProductLaws]]), and the product of morphisms is the
@@ -301,5 +344,34 @@ object Products {
       : F[X, Y] is Product.Of[category.type] { val first: X is Object; val second: Y is Object } = {
       Product.FromLimit(limits.limit(Discrete2Diagram(category, category.Object[X], category.Object[Y])))
     }
+  }
+
+  /** The binary products of a category **K**, as the binary coproducts of **K**ᵒᵖ.
+    *
+    * The coproduct of two objects is their product, and the coproduct of morphisms is the product of their opposites.
+    */
+  final class Op(tracked val products: Products) extends Coproducts(products.category.op) {
+    import category.{Obj, Object, -->}
+
+    type Self = products.F
+
+    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
+      products.objects[A, B]
+    }
+
+    def coproduct[X: Obj, Y: Obj]
+      : F[X, Y] is Coproduct.Of[category.type] { val left: X is Object; val right: Y is Object } = {
+      products.product[X, Y].op
+    }
+
+    override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
+      products.bimap(f, g)
+    }
+  }
+
+  object Op {
+
+    /** The binary products *P* of a category **K**, as the binary coproducts of **K**ᵒᵖ. */
+    type Of[P <: Products] = Op { val products: P }
   }
 }

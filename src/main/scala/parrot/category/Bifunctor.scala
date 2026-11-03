@@ -29,8 +29,15 @@ abstract class Bifunctor(tracked val source1: Category, tracked val source2: Cat
   /** The bifunctor as a functor out of the product category **C₁** × **C₂**. */
   final lazy val functor: Bifunctor.FromProduct.Of[this.type] = Bifunctor.FromProduct(this)
 
-  /** The corresponding opposite bifunctor *F*ᵒᵖ: **C₁**ᵒᵖ × **C₂**ᵒᵖ → **D**ᵒᵖ. */
-  final lazy val op: Bifunctor.Op.Of[this.type] = Bifunctor.Op(this)
+  /** The corresponding opposite bifunctor *F*ᵒᵖ: **C₁**ᵒᵖ × **C₂**ᵒᵖ → **D**ᵒᵖ.
+    *
+    * @note [[Products]] and [[Coproducts]] refine it to the coproducts and the products of the opposite category.
+    */
+  lazy val op: Bifunctor.Into[target.op.type] {
+    type Self = Bifunctor.this.F
+    val source1: Bifunctor.this.source1.op.type
+    val source2: Bifunctor.this.source2.op.type
+  } = Bifunctor.Op(this)
 
   /** Laws that any `Bifunctor` must satisfy. */
   object BifunctorLaws {

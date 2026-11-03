@@ -37,6 +37,9 @@ object CategoryFixture {
   /** 𝒮ᵒᵖ: the functions of 𝒮, reversed. */
   given TotalOpIsFixture: For[Total.op.type] = OpFixture(TotalFixture)
 
+  /** 𝒫ᵒᵖ: the total morphisms of 𝒫, reversed. */
+  given PartialOpIsFixture: For[Partial.op.type] = OpFixture(PartialFixture)
+
   /** The category of arrows of `Kleisli[Option]`. */
   given OptionKleisliCategoryIsFixture: For[Kleisli.OptionKleisli.arrows.type] = OptionKleisliFixture.arrows
 
