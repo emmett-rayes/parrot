@@ -46,67 +46,36 @@ object Colimit {
   type Of[D <: Functor] = Colimit { val diagram: D }
 }
 
-/** Colimits in a category.
-  *
-  * [[InCategory]] is the structure, a colimit of every diagram of a type *D*, and [[DiscreteInCategory]] refines it for
-  * diagrams of a discrete shape; [[Of]] and [[OfDiscrete]] refine them to the diagrams a client needs.
-  */
 object Colimits {
 
-  /** Colimits of the diagrams of type *D* in a category **C**.
-    *
-    * Represents a category **C** with a colimit of every diagram of type *D*, where
-    *   - *D* is a type of diagrams *G*: **J** → **C**
-    *   - colim *G* is a colimit of a diagram *G* of type *D*
-    *
-    * Colimits of the diagrams of type *D* are colimits of the diagrams of any subtype, so a client asks for the
-    * diagrams it needs as a lower bound ([[Of]]), and the colimits of every diagram in 𝒮 ([[Total.Colimits]]) are its
-    * colimits of the empty diagram.
-    */
+  /** Colimits of diagrams *D* in a category **C**. */
   abstract class InCategory(tracked val category: Category) extends caps.Pure {
 
     /** The type *D* of the diagrams with a colimit. */
     type D <: Functor.Into[category.type]
 
-    /** The colimit colim *G* of a diagram *G*. */
+    /** The colimit of a diagram *D*. */
     def colimit(diagram: D): Colimit.Of[diagram.type]
   }
 
-  /** The colimits of the diagrams of type *T*[**C**] in a category **C**, for a type *T*[*K*] of diagrams into a
-    * category *K*.
-    */
-  type Of[T[K <: Category] <: Functor.Into[K]] = InCategory { type D >: T[category.type] }
+  /** The colimits of the diagrams of type *T*[**C**] in a category **C**. */
+  type OfDiagram[T[K <: Category] <: Functor.Into[K]] = InCategory { type D >: T[category.type] }
 
-  /** Colimits of the diagrams of type *D* in a category **C**, of a discrete shape.
-    *
-    * Represents a category **C** with a colimit of every diagram of type *D*, of a shape whose only morphisms are
-    * identities, where
-    *   - Apex[*O*,*F*] is the apex of the colimit of every diagram with object map *F* on a shape with objects *O*
-    *   - colim *G* is a colimit of a diagram *G* of type *D*, with apex Apex[*O*,*F*] for the objects *O* of its shape
-    *     and its object map *F*
-    *
-    * A discrete shape is determined by its objects, and a diagram of it by its object map, since a functor maps
-    * identities to identities, so the apex of its colimit can be a type function of both. That makes the colimits of
-    * the diagrams of objects *A* and *B* one type constructor, which a tensor can be ([[Coproducts.FromColimits]]).
-    */
+  /** Colimits of the diagrams *D* of a discrete shape in a category **C**. */
   abstract class DiscreteInCategory(tracked override val category: Category) extends InCategory(category) {
 
-    /** The type *D* of the diagrams with a colimit, of a discrete shape. */
+    /** The type *D* of the diagrams of a discrete shape with a colimit. */
     override type D <: Functor.Into[category.type] { val source: Category { type Self <: =:= } }
 
-    /** The apex Apex[*O*,*F*] of the colimit of a diagram with object map *F* on a shape with objects *O*. */
+    /** The apex Apex[*O*,*D*] of the colimit of a diagram with *D* on a shape with objects *O*. */
     type Apex[O <: Category.Type, F[_]]
 
-    /** The colimit colim *G* of a diagram *G*, with apex Apex[*O*,*F*] for the objects *O* of its shape and its
-      * object map *F*.
-      */
+    /** The colimit of a diagram *D*, with apex Apex[*O*,*F*]. */
     override def colimit(functor: D)
       : Colimit.Of[functor.type] { val apex: Apex[functor.source.Obj, functor.F] is functor.target.Object }
   }
 
-  /** The colimits of the diagrams of type *T*[**C**] in a category **C**, of a discrete shape, for a type *T*[*K*]
-    * of diagrams into a category *K*.
-    */
+  /** The colimits of the diagrams of type *T*[**C**] of a discrete shape in a category **C**. */
   type OfDiscrete[T[K <: Category] <: Functor.Into[K] { val source: Category { type Self <: =:= } }] =
     DiscreteInCategory { type D >: T[category.type] }
 }

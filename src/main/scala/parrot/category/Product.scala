@@ -86,7 +86,7 @@ object Product {
 
   /** The product of *X* and *Y* in a category with limits of the diagrams of shape **2**. */
   def apply(
-    limits: Limits.Of[Discrete2Diagram.Into],
+    limits: Limits.OfDiagram[Discrete2Diagram.Into],
     first: limits.category.Object,
     second: limits.category.Object,
   ): Of[limits.category.type] { val factor1: first.type; val factor2: second.type } = {

@@ -87,7 +87,7 @@ object Coproduct {
 
   /** The coproduct of *X* and *Y* in a category with colimits of the diagrams of shape **2**. */
   def apply(
-    colimits: Colimits.Of[Discrete2Diagram.Into],
+    colimits: Colimits.OfDiagram[Discrete2Diagram.Into],
     first: colimits.category.Object,
     second: colimits.category.Object,
   ): Of[colimits.category.type] { val summand1: first.type; val summand2: second.type } = {

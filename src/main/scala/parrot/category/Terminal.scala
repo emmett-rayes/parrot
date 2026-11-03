@@ -36,7 +36,7 @@ object Terminal {
   type Of[C <: Category] = Terminal { val category: C }
 
   /** The terminal object of a category with a limit of the empty diagram: that limit. */
-  def apply(limits: Limits.Of[EmptyDiagram.Into]): Of[limits.category.type] = {
+  def apply(limits: Limits.OfDiagram[EmptyDiagram.Into]): Of[limits.category.type] = {
     FromLimit(limits.limit(EmptyDiagram(limits.category)))
   }
 

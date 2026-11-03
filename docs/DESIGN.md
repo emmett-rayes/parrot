@@ -81,7 +81,7 @@ Rejected:
   alias and every other member inline after it, so each parameter has one spelling whatever the names at the use, and
   a refinement of the base is never cyclic, as `Endobifunctor { val category: category.type }` is, where `category` is
   the refinement's own member. A class with type parameters of its own (`StateT[S]`) has no alias, which would take
-  them by position. A type member that clients bound has an alias beside the class (`Limits.Of[T]` is
+  them by position. A type member that clients bound has an alias beside the class (`Limits.OfDiagram[T]` is
   `InCategory { type D >: T[category.type] }`), whose argument is indexed by the category so that the bound can name
   the refined structure's own `category`.
 - **Objects are types with evidence.** A category declares `type Obj <: Type`, where `Type` is `Category.Type`, object
@@ -204,12 +204,13 @@ Each structure sits at the lowest level where its laws can be stated.
 - **Limits.** `Limit(diagram, apex)` is a cone over a diagram *D* with apex *X* (`Cone`) through which every cone
   factors, and `Limits.InCategory(category)` gives one for every diagram of its type member `D`, a type of diagrams into
   **C**. The limits of more diagrams serve for fewer, so a client asks for the diagrams it needs as a lower bound on
-  `D`, `Limits.Of[T]` for a type *T*[*K*] of diagrams into *K*: `Terminal(limits)` takes `Limits.Of[EmptyDiagram.Into]`.
-  𝒮 has all of them by one construction, `Total.LimitOf`, which `Total.Limits` gives for every diagram: the product of
-  the components is a polymorphic function type, since the objects are types, and the equalizer of the natural families
-  is made by abstraction. Points are private to the construction, a class indexed by the diagram (`LimitOf.Point`), and
-  only the factorization builds them, from the legs of a cone, so they are natural as long as the cones are lawful; to
-  clients, who see points only through the legs, the abstract type is the limit.
+  `D`, `Limits.OfDiagram[T]` for a type *T*[*K*] of diagrams into *K*: `Terminal(limits)` takes
+  `Limits.OfDiagram[EmptyDiagram.Into]`. 𝒮 has all of them by one construction, `Total.LimitOf`, which `Total.Limits`
+  gives for every diagram: the product of the components is a polymorphic function type, since the objects are types,
+  and the equalizer of the natural families is made by abstraction. Points are private to the construction, a class
+  indexed by the diagram (`LimitOf.Point`), and only the factorization builds them, from the legs of a cone, so they are
+  natural as long as the cones are lawful; to clients, who see points only through the legs, the abstract type is the
+  limit.
 - **Limits of a discrete shape have a type of apexes.** `Limits.DiscreteInCategory(category)` refines `InCategory`,
   narrowing `D` to the diagrams of a shape whose only morphisms are identities, stated as a bound on their source
   (`Self <: =:=`, which **2** and **0** satisfy), and gives the apex of each limit as a type function `Apex[O, F]` of
@@ -220,14 +221,14 @@ Each structure sits at the lowest level where its laws can be stated.
   abstraction.
 - **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**:
   `Cocone(diagram, apex)`, `Colimit(diagram, apex)` with `factor` out of its apex, `Colimits.InCategory` and
-  `Colimits.DiscreteInCategory` with the apex `Apex[O, F]`, asked for through `Colimits.Of` and `Colimits.OfDiscrete`.
-  𝒮 has all of them by the dual construction, `Total.ColimitOf`
-  (`Total.Colimits`): the sum of the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with
-  the evidence for its object *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by
-  abstraction. Points are private to the construction (`ColimitOf.Point`) and only the factorization reads them, through
-  the legs of a cocone, so glued points are indistinguishable as long as the cocones are lawful; to clients, the
-  abstract type is the colimit. In a discrete diagram no two points are glued, so the colimit is the sum itself
-  (`Total.DiscreteColimits`), and the factorization applies the leg at the object of a point.
+  `Colimits.DiscreteInCategory` with the apex `Apex[O, F]`, asked for through `Colimits.OfDiagram` and
+  `Colimits.OfDiscrete`. 𝒮 has all of them by the dual construction, `Total.ColimitOf` (`Total.Colimits`): the sum of
+  the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object
+  *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are
+  private to the construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a cocone,
+  so glued points are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the colimit.
+  In a discrete diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimits`), and the
+  factorization applies the leg at the object of a point.
 - **Terminal objects and products are structures with views** (§3). `Terminal(category)` is an object with `discard`
   (!); `Product(category, factor1, factor2, apex)` has `fst`, `snd` and `pair`. Each is a limit through its view
   `limit`, of the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from
@@ -272,8 +273,8 @@ Rejected:
   `Products`, and `Cocartesian` with injections, copairing and ¡ of its own;
 - colimits as limits in **C**ᵒᵖ, whose legs and factorizations are morphisms of **C**ᵒᵖ that every client would have
   to reverse;
-- products from any limits of shape **2** (`Limits.Of[Discrete2Diagram.Into]`): the apex of a limit is a type of each
-  limit, not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types;
+- products from any limits of shape **2** (`Limits.OfDiagram[Discrete2Diagram.Into]`): the apex of a limit is a type of
+  each limit, not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types;
   `DiscreteInCategory` gives the apex as a type function instead;
 - the apex of a cone as a type member with evidence, which an implementation defines in its body: it lets a limit of 𝒮
   nest its type of points in itself, but every other cone restates a parameter as two members, and the apex of a cone is

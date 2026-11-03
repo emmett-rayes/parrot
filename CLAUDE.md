@@ -126,13 +126,13 @@ warning-free.
     a diagram *D*.") unless the base determines it ("The opposite of a category **K**."), and the doc's letter as its
     parameter unless the class has a member of that name (`Bifunctor.Op.Of[B]`, since a bifunctor's carrier is `F`).
     A class with type parameters of its own (`StateT[S]`) has no alias. A type member that clients bound has an alias
-    beside the class, indexed by the category (`Limits.Of[T]` is `InCategory { type D >: T[category.type] }`).
+    beside the class, indexed by the category (`Limits.OfDiagram[T]` is `InCategory { type D >: T[category.type] }`).
 
 One file per structure in `src/main/scala/parrot/category/`; the instances on 𝒮 and 𝒫 are in `Total.scala` and
 `Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
 family of structures shares its member's file: `Products` is in `Product.scala` and `Coproducts` in `Coproduct.scala`,
 and the limits in a category are in the object `Limits` in `Limit.scala` (`InCategory`, `DiscreteInCategory` and their
-aliases `Of` and `OfDiscrete`), the colimits in `Colimits` in `Colimit.scala`.
+aliases `OfDiagram` and `OfDiscrete`), the colimits in `Colimits` in `Colimit.scala`.
 
 ## `parrot.parser`
 
@@ -227,7 +227,7 @@ aliases `Of` and `OfDiscrete`), the colimits in `Colimits` in `Colimit.scala`.
   inside it: `Product { val category: category.type }`, or `Limit.Of[diagram.type] { val apex: diagram.… }` for a
   parameter `diagram`. The base's alias avoids it for the base (rule 13); for another member, import what the
   refinement names (`import category.Object`), use a `this`-qualified path in methods, or give a method parameter
-  another name (`limit(functor)`). `Limits.Of` relies on it: in `InCategory { type D >: T[category.type] }`,
+  another name (`limit(functor)`). `Limits.OfDiagram` relies on it: in `InCategory { type D >: T[category.type] }`,
   `category` is the refined structure's own.
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
 - **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
