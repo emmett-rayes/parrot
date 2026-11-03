@@ -60,5 +60,6 @@ abstract class BifunctorSpec(
   }
 }
 
-class PartialTuple2IsBifunctorTest   extends BifunctorSpec(Partial, Partial.Tuple2IsBifunctor)
-class PartialTuple2OpIsBifunctorTest extends BifunctorSpec(Partial.op, Partial.Tuple2IsBifunctor.op)
+class PartialTuple2IsBifunctorTest            extends BifunctorSpec(Partial, Partial.Tuple2IsBifunctor)
+class PartialTuple2OpIsBifunctorTest          extends BifunctorSpec(Partial.op, Partial.Tuple2IsBifunctor.op)
+class PartialTuple2BifunctorOpIsBifunctorTest extends BifunctorSpec(Partial.op, Bifunctor.Op(Partial.Tuple2IsBifunctor))

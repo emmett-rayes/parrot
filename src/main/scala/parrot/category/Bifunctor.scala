@@ -145,10 +145,41 @@ object Bifunctor {
   *
   * Represents a bifunctor *F*: **C** × **C** → **C**.
   */
-abstract class Endobifunctor(tracked val category: Category) extends Bifunctor(category, category, category)
+abstract class Endobifunctor(tracked val category: Category) extends Bifunctor(category, category, category) {
+
+  /** The corresponding opposite endobifunctor *F*ᵒᵖ: **C**ᵒᵖ × **C**ᵒᵖ → **C**ᵒᵖ. */
+  override lazy val op: Endobifunctor.On[category.op.type] { type Self = Endobifunctor.this.F } = Endobifunctor.Op(this)
+}
 
 object Endobifunctor {
 
   /** The endobifunctors on a category **C**. */
   type On[C <: Category] = Endobifunctor { val category: C }
+
+  /** The opposite *F*ᵒᵖ: **C**ᵒᵖ × **C**ᵒᵖ → **C**ᵒᵖ of an endobifunctor *F*: **C** × **C** → **C**.
+    *
+    * The opposite endobifunctor has the same object part, with every morphism reversed.
+    */
+  final class Op(tracked val endobifunctor: Endobifunctor) extends Endobifunctor(endobifunctor.category.op) {
+    import endobifunctor.category.-->
+
+    type Self = endobifunctor.F
+
+    def objects[X: category.Obj, Y: category.Obj]: F[X, Y] is category.Obj = {
+      endobifunctor.objects[X, Y]
+    }
+
+    def bimap[A1: category.Obj, A2: category.Obj, B1: category.Obj, B2: category.Obj](
+      f: B1 --> A1,
+      g: B2 --> A2,
+    ): F[B1, B2] --> F[A1, A2] = {
+      endobifunctor.bimap(f, g)
+    }
+  }
+
+  object Op {
+
+    /** The opposite of an endobifunctor *B*. */
+    type Of[B <: Endobifunctor] = Op { val endobifunctor: B }
+  }
 }

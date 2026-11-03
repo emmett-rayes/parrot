@@ -54,4 +54,5 @@ abstract class SymmetricSpec(
   }
 }
 
-class PartialProductIsSymmetricTest extends SymmetricSpec(Partial.Product)
+class PartialProductIsSymmetricTest   extends SymmetricSpec(Partial.Product)
+class PartialProductOpIsSymmetricTest extends SymmetricSpec(Partial.Product.op)

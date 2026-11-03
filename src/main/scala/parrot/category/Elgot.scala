@@ -107,7 +107,7 @@ object Elgot {
 
   /** Fixed points read backwards: a Conway operator on *P* is an Elgot operator on *P*ᵒᵖ. */
   open class OfConway(tracked val conway: Conway)
-      extends Elgot(Bistrong.Op(conway.strong, conway.strong.monoidal.op)) {
+      extends Elgot(Bistrong.Op(conway.strong)) {
     import strong.{monoidal, profunctor}
     import monoidal.+
     import profunctor.P

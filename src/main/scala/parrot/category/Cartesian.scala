@@ -65,7 +65,7 @@ abstract class Cartesian(
   }
 
   /** The corresponding cocartesian opposite **C**ᵒᵖ. */
-  final lazy val op: Cartesian.Op.Of[this.type] = Cartesian.Op(this)
+  override lazy val op: Cartesian.Op.Of[this.type] = Cartesian.Op(this)
 
   extension [X: Obj, A: Obj](f: X --> A)
     /** Infix extension for [[pair]]. */

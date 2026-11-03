@@ -109,7 +109,7 @@ object Conway {
     * the fixed point *P*ᵒᵖ(*A*,*X*).
     */
   open class OfElgot(tracked val elgot: Elgot)
-      extends Conway(Bistrong.Op(elgot.strong, elgot.strong.monoidal.op)) {
+      extends Conway(Bistrong.Op(elgot.strong)) {
     import strong.{monoidal, profunctor}
     import monoidal.`*`
     import profunctor.P

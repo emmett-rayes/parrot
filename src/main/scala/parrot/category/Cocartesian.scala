@@ -68,7 +68,7 @@ abstract class Cocartesian(
   }
 
   /** The corresponding cartesian opposite **C**ᵒᵖ. */
-  final lazy val op: Cocartesian.Op.Of[this.type] = Cocartesian.Op(this)
+  override lazy val op: Cocartesian.Op.Of[this.type] = Cocartesian.Op(this)
 
   extension [A: Obj, X: Obj](f: A --> X)
     /** Infix extension for [[copair]]. */

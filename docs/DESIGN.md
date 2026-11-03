@@ -80,7 +80,9 @@ Rejected:
   construction on the opposite assembles the views of its parts (`Cartesian.Op` is the `Cocartesian` of `unit.op` and
   `tensor.op`) instead of repeating them. Where the dual of a refinement has more operations than the dual of its
   parent, it overrides the parent's view: `Products.op` is the opposite bifunctor `Bifunctor.op` with copairing, so
-  every bifunctor has an opposite, and the opposite of products keeps its coproduct structure.
+  every bifunctor has an opposite, and the opposite of products keeps its coproduct structure. Likewise
+  `Endobifunctor.op` is an endobifunctor, and `Cartesian.op` and `Cocartesian.op` refine `Symmetric.op`, the opposite
+  symmetric monoidal category, so that `Bistrong.Op` takes **M**ᵒᵖ from **M**.
 - **Refinements go through one alias per class, for its base:** the parameter that the first sentence of the class's
   doc relates it to, whose preposition names the alias (`Endofunctor.On`, `Limit.Of`, `Monoid.In`, `Cone.Over`,
   `Cocone.Under` and `Into` for the target of a class documented as an arrow, `Functor.Into`), with what the doc
@@ -275,8 +277,8 @@ Rejected:
 - `Bistrong` constraining the profunctor towards the monoidal structure
   (`Profunctor { val domain: monoidal.category.type; … }`): for a promonad, nothing makes its own **C** equal to
   **M**.**C**, so the constraint refines **M** instead;
-- separate duals over products and coproducts, where one `Bistrong.Op(strong, strong.monoidal.op)` serves both, its
-  braiding unchecked;
+- separate duals over products and coproducts, where one `Bistrong.Op(strong)` serves both, and **M**ᵒᵖ as a
+  parameter of it, of which only the category and the carrier of the tensor could be checked;
 - solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number
   of arrows and cannot share a guard between separately tied knots;
 - a terminal object as an alias of a limit of the empty diagram, which leaves it no operation to override;

@@ -49,15 +49,9 @@ object Bistrong {
     * symmetric **M**.
     *
     * The opposite bistrong promonad has the same left strength, with every morphism reversed.
-    *
-    * @note **M**ᵒᵖ is meant to be `strong.monoidal.op`; its braiding is not checked.
     */
-  final class Op(
-    tracked val strong: Bistrong.On[Promonad],
-    tracked override val monoidal: Symmetric.On[strong.profunctor.category.op.type] {
-      val tensor: Bifunctor { type Self = strong.monoidal.tensor.F }
-    },
-  ) extends Bistrong(Promonad.Op(strong.profunctor), monoidal) {
+  final class Op(tracked val strong: Bistrong.On[Promonad])
+      extends Bistrong(Promonad.Op(strong.profunctor), strong.monoidal.op) {
     import monoidal.`*`
     import profunctor.P
     import profunctor.category.Obj
