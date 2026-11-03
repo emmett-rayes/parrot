@@ -92,7 +92,7 @@ abstract class Cartesian(
     Iso(fst[A, I], identity[A] &&& discard[A])
   }
 
-  /** *α* = ⟨*π*₁ ∘ *π*₁,⟨*π*₂ ∘ *π*₁,*π*₂⟩⟩ and *α*⁻¹ = ⟨⟨*π*₁,*π*₁ ∘ *π*₂⟩, *π*₂ ∘ *π*₂⟩
+  /** *α* = ⟨*π*₁ ∘ *π*₁,⟨*π*₂ ∘ *π*₁,*π*₂⟩⟩ and *α*⁻¹ = ⟨⟨*π*₁,*π*₁ ∘ *π*₂⟩,*π*₂ ∘ *π*₂⟩
     */
   def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C)) = {
     Iso(

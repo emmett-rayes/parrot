@@ -19,41 +19,49 @@ object StringConcat extends Monoid(Total.Products) {
   }
 }
 
-/** The laws of [[Monoid]] for monoids in 𝒮 with pairs. */
+/** The laws of [[Monoid]], for monoids in a monoidal structure on a category whose objects are all types. */
 abstract class MonoidSpec(
   name: String,
-  tracked val monoid: Monoid.In[Total.Products.type],
+  tracked val monoid: Monoid.In[Monoidal.On[Category { type Obj = Type }]],
   structure: String = "Monoid",
-)(using S: Sample[monoid.M])
-    extends LawSuite(structure, name) {
+)(using
+  category: CategoryFixture.For[monoid.monoidal.category.type],
+  S: Sample[monoid.M],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[monoid.monoidal.*[X, Y]],
+  unit: Sample[monoid.monoidal.I],
+) extends LawSuite(structure, name) {
+  import category.*
   import monoid.M
   import monoid.monoidal.{I, `*`}
   import monoid.MonoidLaws.*
+  import monoid.monoidal.category.-->
+
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[monoid.monoidal.*[X, Y]] = tensor[X, Y]
 
   also("Monoid") {
     law("leftUnit") {
-      val observations = TotalFixture.observe[I * M, M]
+      val observations = observe[I * M, M]
 
       forAll(observations) { observe =>
-        given (((I * M) -> M) is Observable) = observe
+        given (((I * M) --> M) is Observable) = observe
         leftUnit
       }
     }
 
     law("rightUnit") {
-      val observations = TotalFixture.observe[M * I, M]
+      val observations = observe[M * I, M]
 
       forAll(observations) { observe =>
-        given (((M * I) -> M) is Observable) = observe
+        given (((M * I) --> M) is Observable) = observe
         rightUnit
       }
     }
 
     law("associativity") {
-      val observations = TotalFixture.observe[(M * M) * M, M]
+      val observations = observe[(M * M) * M, M]
 
       forAll(observations) { observe =>
-        given ((((M * M) * M) -> M) is Observable) = observe
+        given ((((M * M) * M) --> M) is Observable) = observe
         associativity
       }
     }
@@ -61,3 +69,4 @@ abstract class MonoidSpec(
 }
 
 class StringConcatIsMonoidTest extends MonoidSpec("String concatenation", StringConcat)
+class TotalCoproductMonoidTest extends MonoidSpec("Int, by ∇ and ¡ in 𝒮", Total.Coproducts.monoid[Int])

@@ -3,32 +3,36 @@ package category
 
 import scala.annotation.targetName
 
-/** A cocartesian monoidal structure on a category **K**.
+/** A cocartesian monoidal structure on a category **C**.
   *
-  * Represents a category with finite coproducts, the dual of [[Cartesian]], where
-  *   - *A* + *B* is the coproduct, with injections *ι*₁ and *ι*₂
-  *   - [*f*,*g*] is the unique morphism with [*f*,*g*] ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
-  *   - *I* is initial, with the unique morphism ¡: *I* → *A*
-  *   - ∇ = [*id*,*id*] merges
+  * Represents a category with finite coproducts, where
+  *   - *A* + *B* is the coproduct
+  *   - *ι*₁ and *ι*₂ are the injections
+  *   - [*f*,*g*] is the copairing of *f* and *g*
+  *   - *I* is the unit
+  *   - ¡ creates a given object from the unit
+  *   - ∇ merges the coproduct of an object with itself into the object
   *
-  * In a cocartesian category, the tensor is the coproduct and the unit is an initial object. The unitors, the
-  * associator and the braiding are derived from the injections and copairing.
+  * In a cocartesian category, the tensor is the categorical coproduct and the unit is an initial object. The unitors,
+  * the associator and the braiding are derived from the injections and copairing.
   */
 abstract class Cocartesian(
   tracked override val category: Category,
   tracked override val unit: Initial.Of[category.type],
   tracked override val tensor: Coproducts.On[category.type],
 ) extends Symmetric(category, unit, tensor) {
-  import category.{Iso, Obj, -->, <->, >>>}
+  import category.{Iso, Obj, identity, -->, <->, >>>}
 
-  export unit.absurd
-
-  /** Infix alias for [[Tensor]]: the coproduct *A* + *B*. */
+  /** Infix alias for [[Tensor]]. */
   final type + = Tensor
 
-  private given IIsObj: (I is Obj) = unit.evidence
-
+  private given IIsObj: (I is Obj)                                = unit.evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = tensor.objects[A, B]
+
+  /** The unique morphism ¡: *I* → *A* from the unit. */
+  final def absurd[A: Obj]: I --> A = {
+    unit.absurd[A]
+  }
 
   /** The first injection *ι*₁: *A* → *A* + *B* of the coproduct of *A* and *B*. */
   final def inl[A: Obj, B: Obj]: A --> (A + B) = {
@@ -45,12 +49,25 @@ abstract class Cocartesian(
     tensor.coproduct[A, B].copair(f, g)
   }
 
-  /** The codiagonal ∇ = [*id*,*id*]: *A* + *A* → *A*. */
+  /** The codiagonal ∇: *A* + *A* → *A*. */
   final def codiagonal[A: Obj]: (A + A) --> A = {
-    copair(category.identity[A], category.identity[A])
+    identity[A] ||| identity[A]
   }
 
-  /** The corresponding cartesian opposite **K**ᵒᵖ. */
+  /** Every object is a monoid in exactly one way: creating with ¡ and merging with ∇. */
+  final def monoid[A: Obj]: Monoid.In[this.type] { type Self = A } = {
+    new Monoid(this) {
+      type Self = A
+
+      def carrier: A is Obj = summon[A is Obj]
+
+      def unit: I --> A = absurd[A]
+
+      def multiply: (A + A) --> A = codiagonal[A]
+    }
+  }
+
+  /** The corresponding cartesian opposite **C**ᵒᵖ. */
   final lazy val op: Cocartesian.Op.Of[this.type] = Cocartesian.Op(this)
 
   extension [A: Obj, X: Obj](f: A --> X)
@@ -69,27 +86,28 @@ abstract class Cocartesian(
   /** *σ* = [*ι*₂,*ι*₁]
     */
   def braid[A: Obj, B: Obj]: (A + B) --> (B + A) = {
-    copair(inr[B, A], inl[B, A])
+    inr[B, A] ||| inl[B, A]
   }
 
-  /** *λ* = [¡,*id*], with inverse *ι*₂
+  /** *λ* = [¡,*id*] and *λ*⁻¹ = *ι*₂
     */
   def leftUnitor[A: Obj]: (I + A) <-> A = {
-    Iso(copair(absurd[A], category.identity[A]), inr[I, A])
+    Iso(absurd[A] ||| identity[A], inr[I, A])
   }
 
-  /** *ρ* = [*id*,¡], with inverse *ι*₁
+  /** *ρ* = [*id*,¡] and *ρ*⁻¹ = *ι*₁
     */
   def rightUnitor[A: Obj]: (A + I) <-> A = {
-    Iso(copair(category.identity[A], absurd[A]), inl[A, I])
+    Iso(identity[A] ||| absurd[A], inl[A, I])
   }
 
-  /** *α* = [[*ι*₁,*ι*₂ ∘ *ι*₁],*ι*₂ ∘ *ι*₂], with the symmetric inverse
+  /** *α* = [[*ι*₁,*ι*₂ ∘ *ι*₁],*ι*₂ ∘ *ι*₂] and *α*⁻¹ = [*ι*₁ ∘ *ι*₁,[*ι*₁ ∘ *ι*₂,*ι*₂]]
     */
   def associator[A: Obj, B: Obj, C: Obj]: ((A + B) + C) <-> (A + (B + C)) = {
-    val to   = (inl[A, B + C] ||| (inl[B, C] >>> inr[A, B + C])) ||| (inr[B, C] >>> inr[A, B + C])
-    val from = (inl[A, B] >>> inl[A + B, C]) ||| ((inr[A, B] >>> inl[A + B, C]) ||| inr[A + B, C])
-    Iso(to, from)
+    Iso(
+      (inl[A, B + C] ||| (inl[B, C] >>> inr[A, B + C])) ||| (inr[B, C] >>> inr[A, B + C]),
+      (inl[A, B] >>> inl[A + B, C]) ||| ((inr[A, B] >>> inl[A + B, C]) ||| inr[A + B, C]),
+    )
   }
 
   /** Laws that any `Cocartesian` structure must satisfy. */
@@ -126,19 +144,19 @@ abstract class Cocartesian(
 
 object Cocartesian {
 
-  /** The cocartesian monoidal structures on a category **K**. */
-  type On[K <: Category] = Cocartesian { val category: K }
+  /** The cocartesian monoidal structures on a category **C**. */
+  type On[C <: Category] = Cocartesian { val category: C }
 
-  /** The cartesian opposite **K**ᵒᵖ of a cocartesian category **K**.
+  /** The cartesian opposite **C**ᵒᵖ of a cocartesian category **C**.
     *
-    * The coproducts, injections and copairing in **K** become products, projections and pairing in **K**ᵒᵖ.
+    * The coproducts, injections and copairing in **C** become products, projections and pairing in **C**ᵒᵖ.
     */
   final class Op(tracked val cocartesian: Cocartesian)
       extends Cartesian(cocartesian.category.op, cocartesian.unit.op, cocartesian.tensor.op)
 
   object Op {
 
-    /** The cartesian opposite of a cocartesian category **K**. */
-    type Of[K <: Cocartesian] = Op { val cocartesian: K }
+    /** The cartesian opposite of a cocartesian category **C**. */
+    type Of[C <: Cocartesian] = Op { val cocartesian: C }
   }
 }
