@@ -51,8 +51,8 @@ abstract class Monoid(tracked val monoidal: Monoidal) extends caps.Pure {
     /** *μ* ∘ (*μ* ⊗ *id*) = *μ* ∘ (*id* ⊗ *μ*) ∘ *α*
       */
     def associativity(using (((M * M) * M) --> M) is Observable): Boolean = {
-      ((multiply *** monoidal.category.identity[M]) >>> multiply) =?=
-        (monoidal.associator[M, M, M].to >>> (monoidal.category.identity[M] *** multiply) >>> multiply)
+      ((multiply *** monoidal.category.identity[M]) >>> multiply)
+        =?= (monoidal.associator[M, M, M].to >>> (monoidal.category.identity[M] *** multiply) >>> multiply)
     }
   }
 }

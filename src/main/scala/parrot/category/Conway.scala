@@ -46,8 +46,8 @@ abstract class Conway(tracked val strong: Strong.Bistrong.On[Promonad] { val mon
     def composition[A: Obj, X: Obj, Y: Obj](f: P[A * X, Y], g: Y --> X)(
       using P[A, X] is Observable
     ): Boolean = {
-      fix[A, X](f >>> profunctor.unit(g)) =?=
-        (fix[A, Y](strong.left[Y, X, A](profunctor.unit(g)) >>> f) >>> profunctor.unit(g))
+      fix[A, X](f >>> profunctor.unit(g))
+        =?= (fix[A, Y](strong.left[Y, X, A](profunctor.unit(g)) >>> f) >>> profunctor.unit(g))
     }
 
     /** (⟨*π*₁,*g*⟩ ⨾ *f*)† = ⟨*id*,(⟨*π*₁,*f*⟩ ⨾ *g*)†⟩ ⨾ *f* for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*: a
@@ -63,16 +63,16 @@ abstract class Conway(tracked val strong: Strong.Bistrong.On[Promonad] { val mon
         strong.left[A * X, Y, A](g)
       val keepF = profunctor.unit(monoidal.pair(monoidal.fst[A, Y], profunctor.category.identity[A * Y])) >>>
         strong.left[A * Y, X, A](f)
-      fix[A, X](keepG >>> f) =?=
-        (profunctor.unit(monoidal.diagonal[A]) >>> strong.left[A, Y, A](fix[A, Y](keepF >>> g)) >>> f)
+      fix[A, X](keepG >>> f)
+        =?= (profunctor.unit(monoidal.diagonal[A]) >>> strong.left[A, Y, A](fix[A, Y](keepF >>> g)) >>> f)
     }
 
     /** (*p*†)† = (⟨*id*,*π*₂⟩ ⨾ *p*)† */
     def doubleDagger[A: Obj, X: Obj](p: P[(A * X) * X, X])(
       using P[A, X] is Observable
     ): Boolean = {
-      fix[A, X](fix[A * X, X](p)) =?=
-        fix[A, X](profunctor.unit(monoidal.pair(profunctor.category.identity[A * X], monoidal.snd[A, X])) >>> p)
+      fix[A, X](fix[A * X, X](p))
+        =?= fix[A, X](profunctor.unit(monoidal.pair(profunctor.category.identity[A * X], monoidal.snd[A, X])) >>> p)
     }
 
     /** If (*id* × *h*) ⨾ *g* = *f* ⨾ *h* for pure *h*, then *f*† ⨾ *h* = *g*†.

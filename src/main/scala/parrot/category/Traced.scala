@@ -42,8 +42,8 @@ abstract class Traced(tracked val strong: Strong.Bistrong.On[Promonad]) extends 
       p: P[A * V, B * U],
       h: U --> V,
     )(using P[A, B] is Observable): Boolean = {
-      trace[A, B, V](p >>> profunctor.unit(monoidal.parallel(profunctor.category.identity[B], h))) =?=
-        trace[A, B, U](profunctor.unit(monoidal.parallel(profunctor.category.identity[A], h)) >>> p)
+      trace[A, B, V](p >>> profunctor.unit(monoidal.parallel(profunctor.category.identity[B], h)))
+        =?= trace[A, B, U](profunctor.unit(monoidal.parallel(profunctor.category.identity[A], h)) >>> p)
     }
 
     /** *tr*ᴵ(*p*) = *ρ*⁻¹ ⨾ *p* ⨾ *ρ*

@@ -101,8 +101,8 @@ abstract class Module(
     /** (*id* ⊘ *λ*) ∘ *α* = *ρ* ⊘ *id*
       */
     def triangle[X: ObjM, A: Obj](using (((X * I) ~ A) --> (X ~ A)) is Observable): Boolean = {
-      (associator[X, I, A].to >>> (monoidal.category.identity[X] ~~ leftUnitor[A].to)) =?=
-        (monoidal.rightUnitor[X].to ~~ category.identity[A])
+      (associator[X, I, A].to >>> (monoidal.category.identity[X] ~~ leftUnitor[A].to))
+        =?= (monoidal.rightUnitor[X].to ~~ category.identity[A])
     }
 
     /** (*id* ⊘ *α*) ∘ *α* ∘ (*αᴹ* ⊘ *id*) = *α* ∘ *α*

@@ -119,8 +119,8 @@ abstract class Monoidal(
 
     /** (*id* ⊗ *λ*) ∘ *α* = *ρ* ⊗ *id* */
     def triangle[A: Obj, B: Obj](using (((A * I) * B) --> (A * B)) is Observable): Boolean = {
-      (associator[A, I, B].to >>> (category.identity[A] *** leftUnitor[B].to)) =?=
-        (rightUnitor[A].to *** category.identity[B])
+      (associator[A, I, B].to >>> (category.identity[A] *** leftUnitor[B].to))
+        =?= (rightUnitor[A].to *** category.identity[B])
     }
 
     /** (*id* ⊗ *α*) ∘ *α* ∘ (*α* ⊗ *id*) = *α* ∘ *α* */

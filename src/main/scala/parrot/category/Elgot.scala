@@ -46,8 +46,8 @@ abstract class Elgot(tracked val strong: Strong.Bistrong.On[Promonad] { val mono
     def composition[A: Obj, X: Obj, Y: Obj](p: P[Y, A + X], g: X --> Y)(
       using P[X, A] is Observable
     ): Boolean = {
-      iterate[A, X](profunctor.unit(g) >>> p) =?=
-        (profunctor.unit(g) >>> iterate[A, Y](p >>> strong.left[X, Y, A](profunctor.unit(g))))
+      iterate[A, X](profunctor.unit(g) >>> p)
+        =?= (profunctor.unit(g) >>> iterate[A, Y](p >>> strong.left[X, Y, A](profunctor.unit(g))))
     }
 
     /** (*f* ⨾ [*ι*₁,*g*])† = *f* ⨾ [*id*,(*g* ⨾ [*ι*₁,*f*])†] for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*: a loop
@@ -70,8 +70,10 @@ abstract class Elgot(tracked val strong: Strong.Bistrong.On[Promonad] { val mono
     def doubleDagger[A: Obj, X: Obj](p: P[X, (A + X) + X])(
       using P[X, A] is Observable
     ): Boolean = {
-      iterate[A, X](iterate[A + X, X](p)) =?=
-        iterate[A, X](p >>> profunctor.unit(monoidal.copair(profunctor.category.identity[A + X], monoidal.inr[A, X])))
+      iterate[A, X](iterate[A + X, X](p))
+        =?= iterate[A, X](
+          p >>> profunctor.unit(monoidal.copair(profunctor.category.identity[A + X], monoidal.inr[A, X])),
+        )
     }
 
     /** If *f* ⨾ (*id* + *h*) = *h* ⨾ *g* for pure *h*, then *f*† = *h* ⨾ *g*†.

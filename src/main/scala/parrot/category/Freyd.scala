@@ -67,8 +67,8 @@ final class Freyd(tracked override val promonad: Promonad, tracked val strong: S
     def centrality[A: Obj, B: Obj, C: Obj, D: Obj](f: A ==> B, q: C --> D)(
       using ((A * C) --> (B * D)) is Observable
     ): Boolean = {
-      (first[A, B, C](promonad.unit(f)) >>> second[C, D, B](q)) =?=
-        (second[C, D, A](q) >>> first[A, B, D](promonad.unit(f)))
+      (first[A, B, C](promonad.unit(f)) >>> second[C, D, B](q))
+        =?= (second[C, D, A](q) >>> first[A, B, D](promonad.unit(f)))
     }
   }
 }

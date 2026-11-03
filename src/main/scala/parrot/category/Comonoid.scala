@@ -51,8 +51,8 @@ abstract class Comonoid(tracked val monoidal: Monoidal) extends caps.Pure {
     /** *α* ∘ (*δ* ⊗ *id*) ∘ *δ* = (*id* ⊗ *δ*) ∘ *δ*
       */
     def coassociativity(using (C --> (C * (C * C))) is Observable): Boolean = {
-      (comultiply >>> (comultiply *** monoidal.category.identity[C]) >>> monoidal.associator[C, C, C].to) =?=
-        (comultiply >>> (monoidal.category.identity[C] *** comultiply))
+      (comultiply >>> (comultiply *** monoidal.category.identity[C]) >>> monoidal.associator[C, C, C].to)
+        =?= (comultiply >>> (monoidal.category.identity[C] *** comultiply))
     }
   }
 }

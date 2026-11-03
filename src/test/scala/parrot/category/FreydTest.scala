@@ -111,8 +111,8 @@ abstract class FreydSpec(
       q       <- arrow[T4, T3]
     } yield {
       given (((T1 * T4) --> (T2 * T3)) is Observable) = observe
-      (freyd.first[T1, T2, T4](p) >>> freyd.second[T4, T3, T2](q)) =?=
-        (freyd.second[T4, T3, T1](q) >>> freyd.first[T1, T2, T3](p))
+      (freyd.first[T1, T2, T4](p) >>> freyd.second[T4, T3, T2](q))
+        =?= (freyd.second[T4, T3, T1](q) >>> freyd.first[T1, T2, T3](p))
     }
   }
 }
