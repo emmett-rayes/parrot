@@ -6,8 +6,8 @@ lazy val root = rootProject
     semanticdbEnabled := true,
     semanticdbVersion := "4.17.4",
     scalacOptions ++= Seq(
-      // "-Wsafe-init",      // false positives on tracked parameters forwarded to a parent class (docs/DESIGN.md §10)
-      // "-Wunused:imports", // false positives on renamed type imports (docs/DESIGN.md §10)
+      // "-Wsafe-init",      // false positives on tracked parameters passed to a parent class (docs/compiler-issues.md)
+      // "-Wunused:imports", // false positives on renamed type imports (docs/compiler-issues.md)
       "-deprecation",
       "-explain-types",
       "-explain",
