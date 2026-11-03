@@ -108,6 +108,14 @@ Rejected:
 
 Rejected:
 - bases as type parameters, which cannot be imported from and need `ValueOf` and casts to recover the base values;
+- structures as traits whose bases are abstract `tracked val` members, which instances define in their bodies:
+  refinements would narrow their parent's members instead of restating and forwarding them. A trait's initializer runs
+  before the instance's body, so a refinement that stores a member computed from another (the source and target of
+  `Endofunctor`, the modules of `Bistrong`) stores `null`. Such a member must be an export alias, which the compiler
+  checks to be stable and evaluates on access, since a lazy val cannot implement an abstract val and an abstract lazy
+  val is not a path. Exports satisfy the initialization checkers, but an instance must then annotate each member whose
+  type depends on another with its singleton type (`val monoidal: Products.type = Products`): the inferred type fails
+  the override check, and any other annotation loses the refinement;
 - parameters named by single letters, after the mathematics (`K`, `P`, `M`): a letter names different things in
   different structures (`C` is a category, a Conway operator or a closed structure) and collides with the carrier
   aliases (`M.M`, `P.P`). Role names collide in refinements instead (`Product { val category: category.type }`), which
