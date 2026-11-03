@@ -187,8 +187,8 @@ Each structure sits at the lowest level where its laws can be stated.
   self-action. *τ* is an arrow of **V**, like the action *P*(*f*,*g*), not a function on arrows of *P*: a strength needs
   nothing of **V**, and like the action it has no congruence law.
   `Bistrong(profunctor, monoidal)`, for a symmetric **M** acting on itself, is the only case with a right action too: it
-  adds the right strength *τ*′, `right`, and the law that the two commute (`compatibility`). *τ*′ defaults to
-  *P*(*σ*,*σ*) ∘ *τ* and may be overridden, as `StrictParser` does to build `Zip(p, Success())` directly. `Strong` and
+  adds the right strength *τ*′, `right`, which is *P*(*σ*,*σ*) ∘ *τ* by its law `braiding`. An instance may override
+  *τ*′, as `StrictParser` does to build `Zip(p, Success())` directly, and the law checks the override. `Strong` and
   `Traced` are defined once, parameterized by the monoidal structure.
 - **A Freyd category is a category:** `Freyd(promonad, strong)` extends `Promonad.Arrows(promonad)`, the category of
   arrows of the promonad, with `first`, `second`, `parallel` and the laws that connect them to the strength. It names
@@ -270,6 +270,8 @@ Rejected:
 - naming the primitive strength `first`: with a left action it runs an arrow on the *second* component;
 - `Bistrong` over two arbitrary left modules: a left module has no right action, so it would need right modules or
   bimodules, which have no client;
+- the law that the two strengths commute as an axiom of `Bistrong`: it follows from `braiding`, the laws of `Strong`
+  and the coherence of **M**, and it does not determine an overridden *τ*′;
 - `Bistrong` constraining the profunctor towards the monoidal structure
   (`Profunctor { val domain: monoidal.category.type; … }`): for a promonad, nothing makes its own **C** equal to
   **M**.**C**, so the constraint refines **M** instead;

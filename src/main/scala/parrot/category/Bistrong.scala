@@ -31,13 +31,11 @@ abstract class Bistrong(
   /** Laws that any `Bistrong` profunctor must satisfy. */
   object BistrongLaws {
 
-    /** *τ*′ ∘ *τ* = *P*(*α*,*α*⁻¹) ∘ *τ* ∘ *τ*′
+    /** *τ*′ = *P*(*σ*,*σ*) ∘ *τ*
       */
-    def compatibility[A: Obj, B: Obj, C: Obj, D: Obj](
-      using (P[A, B] ==> P[(C * A) * D, (C * B) * D]) is Observable
-    ): Boolean = {
-      val associators = profunctor.dimap(monoidal.associator[C, A, D].to, monoidal.associator[C, B, D].from)
-      (left[A, B, C] >>> right[C * A, C * B, D]) =?= (right[A, B, D] >>> left[A * D, B * D, C] >>> associators)
+    def braiding[A: Obj, B: Obj, C: Obj](using (P[A, B] ==> P[A * C, B * C]) is Observable): Boolean = {
+      val braids = profunctor.dimap(monoidal.braid[A, C], monoidal.braid[C, B])
+      right[A, B, C] =?= (left[A, B, C] >>> braids)
     }
   }
 }

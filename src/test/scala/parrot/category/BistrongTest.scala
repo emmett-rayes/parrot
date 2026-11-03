@@ -12,7 +12,7 @@ abstract class BistrongSpec(
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[strong.monoidal.Tensor[X, Y]],
 ) extends StrongSpec(name, strong, "Bistrong") {
-  import types.{T1, T2, T3, T4, given}
+  import types.{T1, T2, T3, given}
   import promonad.*
   import strong.profunctor.P
   import strong.monoidal.`*`
@@ -20,12 +20,12 @@ abstract class BistrongSpec(
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 
-  law("compatibility") {
-    val observations = onArrows[T1, T2, (T4 * T1) * T3, (T4 * T2) * T3]
+  law("braiding") {
+    val observations = onArrows[T1, T2, T1 * T3, T2 * T3]
 
     forAll(observations) { observe =>
-      given ((P[T1, T2] -> P[(T4 * T1) * T3, (T4 * T2) * T3]) is Observable) = observe
-      compatibility[T1, T2, T4, T3]
+      given ((P[T1, T2] -> P[T1 * T3, T2 * T3]) is Observable) = observe
+      braiding[T1, T2, T3]
     }
   }
 }
