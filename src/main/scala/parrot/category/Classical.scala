@@ -3,172 +3,156 @@ package category
 
 import scala.annotation.targetName
 
-/** A classical restriction structure on a promonad *P* over a cocartesian category **C**.
+/** A classical restriction structure on a category **C**.
   *
   * Represents a classical restriction category (Cockett–Manes) with its override operator (Lemay–Nester), where
-  *   - 0: *A* → *B* is the restriction zero, the nowhere-defined arrow
-  *   - *p̄*ᶜ: *A* → *A* is the complement of *p̄*, defined exactly where *p* is not
-  *   - *p* ⊳ *q* = *p* ∨ *q* ∘ *p̄*ᶜ is the override, which runs *p* where it is defined and *q* elsewhere
-  *   - *attempt*(*p*): *A* → *B* + *A* never fails: it tags the result of *p*, or returns the input untouched
+  *   - 0: *A* → *B* is the restriction zero, the nowhere-defined morphism
+  *   - *f̄*ᶜ: *A* → *A* is the complement of *f̄*
+  *   - *f* ⊳ *g*: *A* → *B* is the override operator
   *
-  * Definedness is decidable. The override operator is unique (Lemay and Nester, Theorem 43), and on compatible arrows
-  * it is their join; for parsers, it is ordered choice. The Kleisli category of the option monad is classical; 𝒫 is
-  * not, because the complement of "this program terminates" is not computable.
-  *
-  * @note Precomposition distributes over ⊳; postcomposition does not, since *p* ⊳ *q* commits to *p* where *p* is
-  *   defined, whatever comes after.
+  * In a classical restriction category, definedness is decidable. The override operator is unique, and on compatible
+  * morphisms *f* and *g* it is their join *f* ∨ *g*.
   */
-abstract class Classical(
-  tracked override val promonad: Promonad,
-  tracked val cocartesian: Cocartesian.On[promonad.category.type],
-) extends Restriction(promonad) {
-  import promonad.{P, >>>}
-  import promonad.category.Obj
-  import cocartesian.+
-
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = cocartesian.tensor.objects[A, B]
+abstract class Classical(tracked override val category: Category) extends Restriction(category) {
+  import category.{Obj, -->, >>>}
 
   /** The restriction zero 0: *A* → *B*. */
-  def zero[A: Obj, B: Obj]: P[A, B]
+  def zero[A: Obj, B: Obj]: A --> B
 
-  /** The complement *p̄*ᶜ: *A* → *A* of *p*: *A* → *B*. */
-  def complement[A: Obj, B: Obj](p: P[A, B]): P[A, A]
+  /** The complement *f̄*ᶜ: *A* → *A* of *f*: *A* → *B*.
+    *
+    * *f̄*ᶜ is defined exactly where *f* is not.
+    */
+  def complement[A: Obj, B: Obj](f: A --> B): A --> A
 
-  /** The override *p* ⊳ *q*: *A* → *B* of *p*: *A* → *B* and *q*: *A* → *B*. */
-  def orElse[A: Obj, B: Obj](p: P[A, B], q: P[A, B]): P[A, B]
+  /** The override *f* ⊳ *g*: *A* → *B* of *f*: *A* → *B* and *g*: *A* → *B*.
+    *
+    * Runs *f* where it is defined and *g* elsewhere.
+    */
+  def orElse[A: Obj, B: Obj](f: A --> B, g: A --> B): A --> B
 
-  /** The attempt *attempt*(*p*): *A* → *B* + *A* of *p*: *A* → *B*. */
-  def attempt[A: Obj, B: Obj](p: P[A, B]): P[A, B + A] = {
-    orElse(p >>> promonad.unit(cocartesian.inl[B, A]), promonad.unit(cocartesian.inr[B, A]))
-  }
-
-  extension [A: Obj, B: Obj](p: P[A, B])
+  extension [A: Obj, B: Obj](f: A --> B)
     /** Infix extension for [[orElse]]. */
     @targetName("orElseExt")
-    final def |>(q: P[A, B]): P[A, B] = {
-      orElse(p, q)
+    final def |>(g: A --> B): A --> B = {
+      orElse(f, g)
     }
 
   /** Laws that any `Classical` restriction structure must satisfy. */
   object ClassicalLaws {
 
     /** 0‾ = 0 */
-    def zeroRestriction[A: Obj, B: Obj](using P[A, A] is Observable): Boolean = {
+    def zeroRestriction[A: Obj, B: Obj](using (A --> A) is Observable): Boolean = {
       restrict(zero[A, B]) =?= zero[A, A]
     }
 
-    /** 0 ∘ *p* = 0 */
-    def zeroLeft[A: Obj, B: Obj, C: Obj](p: P[A, B])(using P[A, C] is Observable): Boolean = {
-      (p >>> zero[B, C]) =?= zero[A, C]
+    /** 0 ∘ *f* = 0 */
+    def zeroLeft[A: Obj, B: Obj, C: Obj](f: A --> B)(using (A --> C) is Observable): Boolean = {
+      (f >>> zero[B, C]) =?= zero[A, C]
     }
 
-    /** *p* ∘ 0 = 0 */
-    def zeroRight[A: Obj, B: Obj, C: Obj](p: P[B, C])(using P[A, C] is Observable): Boolean = {
-      (zero[A, B] >>> p) =?= zero[A, C]
-    }
-
-    /** 0 ⊳ *p* = *p* = *p* ⊳ 0 */
-    def overrideZero[A: Obj, B: Obj](p: P[A, B])(using P[A, B] is Observable): Boolean = {
-      (orElse(zero[A, B], p) =?= p) && (orElse(p, zero[A, B]) =?= p)
-    }
-
-    /** (*p* ⊳ *q*) ⊳ *r* = *p* ⊳ (*q* ⊳ *r*) (**⊳.1**)
+    /** *f* ∘ 0 = 0
       */
-    def overrideAssociativity[A: Obj, B: Obj](p: P[A, B], q: P[A, B], r: P[A, B])(
-      using P[A, B] is Observable
-    ): Boolean = {
-      orElse(orElse(p, q), r) =?= orElse(p, orElse(q, r))
+    def zeroRight[A: Obj, B: Obj, C: Obj](f: B --> C)(using (A --> C) is Observable): Boolean = {
+      (zero[A, B] >>> f) =?= zero[A, C]
     }
 
-    /** *p* ⊳ (*q* ∘ *p̄*) = *p* (**⊳.2**)
+    /** 0 ⊳ *f* = *f* = *f* ⊳ 0 */
+    def overrideZero[A: Obj, B: Obj](f: A --> B)(using (A --> B) is Observable): Boolean = {
+      (orElse(zero[A, B], f) =?= f) && (orElse(f, zero[A, B]) =?= f)
+    }
+
+    /** (*f* ⊳ *g*) ⊳ *h* = *f* ⊳ (*g* ⊳ *h*) (**⊳.1**)
       */
-    def overrideRestricted[A: Obj, B: Obj](p: P[A, B], q: P[A, B])(
-      using P[A, B] is Observable
+    def overrideAssociativity[A: Obj, B: Obj](f: A --> B, g: A --> B, h: A --> B)(
+      using (A --> B) is Observable
     ): Boolean = {
-      orElse(p, restrict(p) >>> q) =?= p
+      orElse(orElse(f, g), h) =?= orElse(f, orElse(g, h))
     }
 
-    /** (*p* ∘ *q̄*) ⊳ *p* = *p* (**⊳.3**)
+    /** *f* ⊳ (*g* ∘ *f̄*) = *f* (**⊳.2**)
       */
-    def overrideRestricting[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[A, C])(
-      using P[A, B] is Observable
+    def overrideRestricted[A: Obj, B: Obj](f: A --> B, g: A --> B)(
+      using (A --> B) is Observable
     ): Boolean = {
-      orElse(restrict(q) >>> p, p) =?= p
+      orElse(f, restrict(f) >>> g) =?= f
     }
 
-    /** (*p* ⊳ *q*) ∘ *h* = (*p* ∘ *h*) ⊳ (*q* ∘ *h*) (**⊳.4**)
+    /** (*f* ∘ *ḡ*) ⊳ *f* = *f* (**⊳.3**)
+      */
+    def overrideRestricting[A: Obj, B: Obj, C: Obj](f: A --> B, g: A --> C)(
+      using (A --> B) is Observable
+    ): Boolean = {
+      orElse(restrict(g) >>> f, f) =?= f
+    }
+
+    /** (*f* ⊳ *g*) ∘ *h* = (*f* ∘ *h*) ⊳ (*g* ∘ *h*) (**⊳.4**)
       *
       * Precomposition distributes over ⊳.
       */
     def overridePrecomposition[A: Obj, B: Obj, C: Obj](
-      h: P[A, B],
-      p: P[B, C],
-      q: P[B, C],
-    )(using P[A, C] is Observable): Boolean = {
-      (h >>> orElse(p, q)) =?= orElse(h >>> p, h >>> q)
+      h: A --> B,
+      f: B --> C,
+      g: B --> C,
+    )(using (A --> C) is Observable): Boolean = {
+      (h >>> orElse(f, g)) =?= orElse(h >>> f, h >>> g)
     }
 
-    /** *h* ∘ (*p* ⊳ *q*)‾ = (*h* ∘ *p̄*) ⊳ (*h* ∘ *q̄*) (**⊳.5**)
+    /** *h* ∘ (*f* ⊳ *g*)‾ = (*h* ∘ *f̄*) ⊳ (*h* ∘ *ḡ*) (**⊳.5**)
       */
     def overrideRestriction[A: Obj, B: Obj, C: Obj](
-      p: P[A, B],
-      q: P[A, B],
-      h: P[A, C],
-    )(using P[A, C] is Observable): Boolean = {
-      (restrict(orElse(p, q)) >>> h) =?= orElse(restrict(p) >>> h, restrict(q) >>> h)
+      f: A --> B,
+      g: A --> B,
+      h: A --> C,
+    )(using (A --> C) is Observable): Boolean = {
+      (restrict(orElse(f, g)) >>> h) =?= orElse(restrict(f) >>> h, restrict(g) >>> h)
     }
 
-    /** *p̄*ᶜ ∘ *p̄* = 0
+    /** *f̄*ᶜ ∘ *f̄* = 0
       *
-      * An arrow cannot be both defined and undefined.
+      * A morphism cannot be both defined and undefined.
       */
-    def complementExclusion[A: Obj, B: Obj](p: P[A, B])(using P[A, A] is Observable): Boolean = {
-      (restrict(p) >>> complement(p)) =?= zero[A, A]
+    def complementExclusion[A: Obj, B: Obj](f: A --> B)(using (A --> A) is Observable): Boolean = {
+      (restrict(f) >>> complement(f)) =?= zero[A, A]
     }
 
-    /** *p̄* ⊳ *p̄*ᶜ = *id*
+    /** *f̄* ⊳ *f̄*ᶜ = *id*
       *
-      * Every input either is or is not in the domain of *p*.
+      * Every input either is or is not in the domain of *f*.
       */
-    def complementCover[A: Obj, B: Obj](p: P[A, B])(using P[A, A] is Observable): Boolean = {
-      orElse(restrict(p), complement(p)) =?= promonad.identity[A]
+    def complementCover[A: Obj, B: Obj](f: A --> B)(using (A --> A) is Observable): Boolean = {
+      orElse(restrict(f), complement(f)) =?= category.identity[A]
     }
 
-    /** (*p̄*ᶜ)‾ = *p̄*ᶜ
+    /** (*f̄*ᶜ)‾ = *f̄*ᶜ
       *
       * A complement is a restriction idempotent.
       */
-    def complementRestriction[A: Obj, B: Obj](p: P[A, B])(using P[A, A] is Observable): Boolean = {
-      restrict(complement(p)) =?= complement(p)
+    def complementRestriction[A: Obj, B: Obj](f: A --> B)(using (A --> A) is Observable): Boolean = {
+      restrict(complement(f)) =?= complement(f)
     }
 
-    /** (*p̄*ᶜ)ᶜ = *p̄* */
-    def doubleComplement[A: Obj, B: Obj](p: P[A, B])(using P[A, A] is Observable): Boolean = {
-      complement(complement(p)) =?= restrict(p)
+    /** (*f̄*ᶜ)ᶜ = *f̄* */
+    def doubleComplement[A: Obj, B: Obj](f: A --> B)(using (A --> A) is Observable): Boolean = {
+      complement(complement(f)) =?= restrict(f)
     }
 
-    /** *attempt*(*p*) = (*ι*₁ ∘ *p*) ⊳ *ι*₂
-      */
-    def attemptDefinition[A: Obj, B: Obj](p: P[A, B])(using P[A, B + A] is Observable): Boolean = {
-      attempt(p) =?= orElse(p >>> promonad.unit(cocartesian.inl[B, A]), promonad.unit(cocartesian.inr[B, A]))
-    }
-
-    /** If *p* = *p*′ and *q* = *q*′, then *p* ⊳ *q* = *p*′ ⊳ *q*′ and *p̄*ᶜ = *p*′‾ᶜ.
+    /** If *f* = *f*′ and *g* = *g*′, then *f* ⊳ *g* = *f*′ ⊳ *g*′ and *f̄*ᶜ = *f*′‾ᶜ.
       *
-      * @note The premise is not checked: *p*′ and *q*′ must be equal to *p* and *q* by construction.
+      * @note The premise is not checked: *f*′ and *g*′ must be equal to *f* and *g* by construction.
       */
-    def congruence[A: Obj, B: Obj](p: P[A, B], p2: P[A, B], q: P[A, B], q2: P[A, B])(
+    def congruence[A: Obj, B: Obj](f: A --> B, f2: A --> B, g: A --> B, g2: A --> B)(
       using
-      P[A, B] is Observable,
-      P[A, A] is Observable,
+      (A --> B) is Observable,
+      (A --> A) is Observable,
     ): Boolean = {
-      (orElse(p, q) =?= orElse(p2, q2)) && (complement(p) =?= complement(p2))
+      (orElse(f, g) =?= orElse(f2, g2)) && (complement(f) =?= complement(f2))
     }
   }
 }
 
 object Classical {
 
-  /** The classical restriction structures on a promonad *P*. */
-  type On[P <: Promonad] = Classical { val promonad: P }
+  /** The classical restriction structures on a category **C**. */
+  type On[C <: Category] = Classical { val category: C }
 }

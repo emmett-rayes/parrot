@@ -13,7 +13,8 @@ class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.parser
 
 class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.parsers)
 
-class ReferenceIsClassicalTest extends ClassicalSpec("ReferenceParser", Interpreters.reference.choice)
+class ReferenceIsClassicalTest
+    extends ClassicalSpec("ReferenceParser", Interpreters.reference.choice, Interpreters.reference.parsers.pure)
 
 class ReferenceZippingIsBistrongTest
     extends BistrongSpec("ReferenceParser (zipping)", Interpreters.reference.zipping)
@@ -78,7 +79,8 @@ class StrictIsCategoryTest extends CategorySpec(Interpreters.strict.parsers.arro
 
 class StrictIsPromonadTest extends PromonadSpec(Interpreters.strict.parsers)
 
-class StrictIsClassicalTest extends ClassicalSpec("StrictParser", Interpreters.strict.choice)
+class StrictIsClassicalTest
+    extends ClassicalSpec("StrictParser", Interpreters.strict.choice, Interpreters.strict.parsers.pure)
 
 class StrictZippingIsBistrongTest
     extends BistrongSpec("StrictParser (zipping)", Interpreters.strict.zipping)

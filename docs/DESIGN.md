@@ -208,9 +208,12 @@ Each structure sits at the lowest level where its laws can be stated.
 - **Guarded iteration and recursion** (`StateT.GuardedIteration`, `StateT.GuardedRecursion`) are total by construction
   and lawful on guarded arguments, after Goncharov and Schröder; yanking fails for the guarded trace, which is a
   counterexample test.
-- **Restriction.** `Restriction` has R1–R4; `Classical` adds the restriction zero, complements and override ⊳ with the
-  axioms of Lemay and Nester, which make PEG ordered choice a theorem rather than an invention. Postcomposition does
-  not distribute over ⊳; precomposition does.
+- **Restriction is on a category.** `Restriction(category)` has R1–R4; `Classical(category)` adds the restriction zero,
+  complements and override ⊳ with the axioms of Lemay and Nester, which make PEG ordered choice a theorem rather than
+  an invention. Postcomposition does not distribute over ⊳; precomposition does. Override is the primitive, and on
+  compatible morphisms it is their join. That pure morphisms are total is a law relative to a functor *J* into the
+  category, `pureTotal(functor)`: for a promonad, *J* is `pure`, *η* into its category of arrows; for 𝒫, the inclusion
+  of 𝒮.
 - **Comonoids** are the dual of monoids. Every object of a cartesian category is a comonoid in exactly one way; pairs in
   𝒫 have comonoids that programs do not preserve, which by Fox's theorem is why they are not products.
 - **Limits.** `Limit(diagram, apex)` is a cone over a diagram *D* with apex *X* (`Cone`) through which every cone
@@ -282,6 +285,12 @@ Rejected:
   parameter of it, of which only the category and the carrier of the tensor could be checked;
 - solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number
   of arrows and cannot share a guard between separately tied knots;
+- restriction on a promonad: R1–R4 need only composition, and the law that pure arrows are total states, for a hom
+  promonad such as 𝒫 over itself, that every arrow is total;
+- the join as the primitive of `Classical`, with *f* ⊳ *g* = *f* ∨ (*g* ∘ *f̄*ᶜ): a method must return something for
+  incompatible morphisms, which have no join, and computing a join tries one side first anyway, which is override;
+- `attempt` in `Classical`, which needs coproducts in the category: the parser has those of its pure functions, so
+  `attempt` is a combinator of the algebra;
 - a terminal object as an alias of a limit of the empty diagram, which leaves it no operation to override;
 - `Cartesian` with projections, pairing and ! of its own, which restates the operations and laws of `Terminal` and
   `Products`, and `Cocartesian` with injections, copairing and ¡ of its own;
@@ -341,7 +350,8 @@ Rejected:
   `lift`, `literal`, `regex`, `rule` and `diagnose`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`,
   `Nothing`, `Vector`): every interpreter made the same choice, and fixing them removes a layer of type members.
 - **Ordered choice is override,** derived from the classical structure. `attempt(p): P[A, B + A]`, which runs `p` once
-  and reports the outcome, is the form an optimizing interpreter can implement in one pass; `optional` is `attempt`.
+  and reports the outcome, is derived from override and the injections of the pure functions, and is the form an
+  optimizing interpreter can implement in one pass; `optional` is `attempt`.
   The second alternative is computed only where the first fails, also in the reference, whose classical monad takes
   it by name.
 - **Regular expressions are matched in context and by code point,** as `java.util.regex` matches them: `^`, `$`,

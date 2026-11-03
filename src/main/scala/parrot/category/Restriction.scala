@@ -3,88 +3,90 @@ package category
 
 import scala.annotation.targetName
 
-/** A restriction structure on a promonad *P*.
+/** A restriction structure on a category **C**.
   *
   * Represents a restriction category (Cockett–Lack), where
-  *   - *p̄*: *A* → *A* is the restriction of *p*: *A* → *B*
-  *   - *p* is total when *p̄* = *id*
-  *   - the pure arrows *η*(*f*) are total
-  *
-  * Every arrow knows where it is defined, as an arrow of *P* itself. In 𝒫, *p̄* runs *p* and returns its input; in the
-  * Kleisli category of the option monad, it succeeds where *p* succeeds. For parsers, *p̄* is positive lookahead.
+  *   - *f̄*: *A* → *A* is the restriction of *f*: *A* → *B*
+  *   - *f* is total when *f̄* = *id*
   */
-abstract class Restriction(tracked val promonad: Promonad) extends caps.Pure {
-  import promonad.{P, >>>}
-  import promonad.category.{Obj, -->}
+abstract class Restriction(tracked val category: Category) extends caps.Pure {
+  import category.{Obj, identity, -->, >>>}
 
-  /** The restriction *p̄*: *A* → *A* of *p*: *A* → *B*.
+  /** The restriction *f̄*: *A* → *A* of *f*: *A* → *B*.
     *
-    * This is the partial identity on the inputs where *p* is defined.
+    * This is the partial identity on the inputs where *f* is defined.
     */
-  def restrict[A: Obj, B: Obj](p: P[A, B]): P[A, A]
+  def restrict[A: Obj, B: Obj](f: A --> B): A --> A
 
-  extension [A: Obj, B: Obj](p: P[A, B])
+  extension [A: Obj, B: Obj](f: A --> B)
     /** Postfix form of [[restrict]]. */
     @targetName("restrictExt")
-    final def restricted: P[A, A] = {
-      restrict(p)
+    final def restricted: A --> A = {
+      restrict(f)
     }
 
   /** Laws that any `Restriction` must satisfy. */
   object RestrictionLaws {
 
-    /** *p* ∘ *p̄* = *p* (**R1**)
+    /** *f* ∘ *f̄* = *f*
       */
-    def r1[A: Obj, B: Obj](p: P[A, B])(using P[A, B] is Observable): Boolean = {
-      (restrict(p) >>> p) =?= p
+    def r1[A: Obj, B: Obj](f: A --> B)(using (A --> B) is Observable): Boolean = {
+      (restrict(f) >>> f) =?= f
     }
 
-    /** *q̄* ∘ *p̄* = *p̄* ∘ *q̄* (**R2**)
+    /** *ḡ* ∘ *f̄* = *f̄* ∘ *ḡ*
       */
-    def r2[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[A, C])(
-      using P[A, A] is Observable
+    def r2[A: Obj, B: Obj, C: Obj](f: A --> B, g: A --> C)(
+      using (A --> A) is Observable
     ): Boolean = {
-      (restrict(p) >>> restrict(q)) =?= (restrict(q) >>> restrict(p))
+      (restrict(f) >>> restrict(g)) =?= (restrict(g) >>> restrict(f))
     }
 
-    /** (*q* ∘ *p̄*)‾ = *q̄* ∘ *p̄* (**R3**)
+    /** (*g* ∘ *f̄*)‾ = *ḡ* ∘ *f̄*
       */
-    def r3[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[A, C])(
-      using P[A, A] is Observable
+    def r3[A: Obj, B: Obj, C: Obj](f: A --> B, g: A --> C)(
+      using (A --> A) is Observable
     ): Boolean = {
-      restrict(restrict(p) >>> q) =?= (restrict(p) >>> restrict(q))
+      restrict(restrict(f) >>> g) =?= (restrict(f) >>> restrict(g))
     }
 
-    /** *q̄* ∘ *p* = *p* ∘ (*q* ∘ *p*)‾ (**R4**)
+    /** *ḡ* ∘ *f* = *f* ∘ (*g* ∘ *f*)‾
       */
-    def r4[A: Obj, B: Obj, C: Obj](p: P[A, B], q: P[B, C])(
-      using P[A, B] is Observable
+    def r4[A: Obj, B: Obj, C: Obj](f: A --> B, g: B --> C)(
+      using (A --> B) is Observable
     ): Boolean = {
-      (p >>> restrict(q)) =?= (restrict(p >>> q) >>> p)
+      (f >>> restrict(g)) =?= (restrict(f >>> g) >>> f)
     }
 
-    /** *η*(*f*)‾ = *id*
+    /** *J*(*f*)‾ = *id*
       *
-      * Pure arrows are total.
+      * The functor *J*: **D** → **C** lands in the total morphisms.
+      *
+      * @note Not every functor into **C** does: the law is for the functors that pick out pure morphisms, such as
+      *   [[Promonad.pure]] and the inclusion of 𝒮 in 𝒫.
       */
-    def pureTotal[A: Obj, B: Obj](f: A --> B)(using P[A, A] is Observable): Boolean = {
-      restrict(promonad.unit(f)) =?= promonad.identity[A]
+    def pureTotal(functor: Functor.Into[category.type])[A: functor.source.Obj, B: functor.source.Obj](
+      f: functor.source.Hom[A, B]
+    )(using (functor.F[A] --> functor.F[A]) is Observable): Boolean = {
+      given FAIsObj: (functor.F[A] is Obj) = functor.objects[A]
+      given FBIsObj: (functor.F[B] is Obj) = functor.objects[B]
+      restrict(functor.map(f)) =?= identity[functor.F[A]]
     }
 
-    /** If *p* = *p*′, then *p̄* = *p*′‾.
+    /** If *f* = *f*′, then *f̄* = *f*′‾.
       *
-      * @note The premise is not checked: *p*′ must be equal to *p* by construction.
+      * @note The premise is not checked: *f*′ must be equal to *f* by construction.
       */
-    def congruence[A: Obj, B: Obj](p: P[A, B], p2: P[A, B])(
-      using P[A, A] is Observable
+    def congruence[A: Obj, B: Obj](f: A --> B, f2: A --> B)(
+      using (A --> A) is Observable
     ): Boolean = {
-      restrict(p) =?= restrict(p2)
+      restrict(f) =?= restrict(f2)
     }
   }
 }
 
 object Restriction {
 
-  /** The restriction structures on a promonad *P*. */
-  type On[P <: Promonad] = Restriction { val promonad: P }
+  /** The restriction structures on a category **C**. */
+  type On[C <: Category] = Restriction { val category: C }
 }

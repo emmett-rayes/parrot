@@ -19,7 +19,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
   /** The unit *η*: **C**(*A*,*B*) → *P*(*A*,*B*).
     *
     * This is the morphism part of the identity-on-objects functor from **C** to the induced arrow category. See
-    * [[arrows]].
+    * [[pure]].
     */
   def unit[A: Obj, B: Obj](f: A ==> B): A --> B
 
@@ -57,6 +57,11 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
     * *P*(*A*,*B*), the identity is given by *η* and composition is given by *μ*.
     */
   final lazy val arrows: Promonad.Arrows.Of[this.type] = Promonad.Arrows(this)
+
+  /** Every promonad induces an identity-on-objects functor from **C** to its category of arrows, which maps a
+    * morphism *f* to the pure arrow *η*(*f*).
+    */
+  final lazy val pure: Promonad.Pure.Of[this.type] = Promonad.Pure(this)
 
   extension [B: Obj, C: Obj](q: P[B, C])
     /** Infix extension for [[compose]]. */
@@ -114,6 +119,32 @@ object Promonad {
 
     /** The category of arrows of a promonad *P*. */
     type Of[P <: Promonad] = Arrows { val promonad: P }
+  }
+
+  /** The functor *J*: **C** → **K** of the pure arrows of a promonad *P* over **C**, where **K** is its category of
+    * arrows and
+    *   - *J*[*A*] = *A*: the objects stay the same
+    *   - *J*(*f*) = *η*(*f*)
+    */
+  open class Pure(tracked val promonad: Promonad) extends Functor(promonad.category, promonad.arrows) {
+    import promonad.category.{Obj, --> as ==>}
+    import promonad.P
+
+    type Self[A] = A
+
+    def objects[A: Obj as obj]: A is Obj = {
+      obj
+    }
+
+    def map[A: Obj, B: Obj](f: A ==> B): P[A, B] = {
+      promonad.unit(f)
+    }
+  }
+
+  object Pure {
+
+    /** The functor of the pure arrows of a promonad *P*. */
+    type Of[P <: Promonad] = Pure { val promonad: P }
   }
 
   /** The opposite *P*ᵒᵖ of a promonad *P* over **C**: a promonad over **C**ᵒᵖ, with every arrow reversed. */

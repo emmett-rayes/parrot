@@ -69,7 +69,7 @@ warning-free.
 2. **What a structure is on is a `tracked val` parameter** (a stable path you can import from), named by its role in
    one lowercase word (`source`, `target`, `category`, `monoidal`, `strong`), indexed when there are two (`source1`,
    `source2`); what it adds is a member. A constraint between parameters refines the *later* one towards the earlier:
-   `Classical(promonad: Promonad, cocartesian: Cocartesian.On[promonad.category.type])`. A refinement
+   `Freyd(promonad: Promonad, strong: Bistrong.On[promonad.type])`. A refinement
    forwards its parameter under the same name:
    `Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total)`.
 3. **`Self` iff the structure has its own carrier** (`Category`, `Functor`, `Promonad`, `Object`, `Monoid`, `Eq`, …),

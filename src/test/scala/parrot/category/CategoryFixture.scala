@@ -47,6 +47,9 @@ object CategoryFixture {
   given StringWriterKleisliCategoryIsFixture: For[StringWriterKleisli.arrows.type] = {
     StringWriterKleisliFixture.arrows
   }
+
+  /** The category of arrows of `Kleisli[State[String, Option]]`. */
+  given StringStateKleisliCategoryIsFixture: For[StringStateKleisli.arrows.type] = StringStateFixture.arrows
 }
 
 /** [[CategoryFixture]] for the opposite of a category with a fixture.

@@ -56,11 +56,12 @@ abstract class FunctorSpec(
   }
 }
 
-class IdentityIsFunctorTest  extends FunctorSpec("Identity", Total.Identity)
-class OptionIsFunctorTest    extends FunctorSpec("Option", Monad.OptionIsMonad.functor)
-class WriterIsFunctorTest    extends FunctorSpec("Writer[String]", StringWriter.functor)
-class OptionTIsFunctorTest   extends FunctorSpec("OptionT[Writer[String]]", FailingStringWriter.functor)
-class WriterTIsFunctorTest   extends FunctorSpec("WriterT[String, Option]", StringWriterOverOption.functor)
-class StateIsFunctorTest     extends FunctorSpec("State[Boolean]", BooleanState.functor)
-class StateTIsFunctorTest    extends FunctorSpec("State[Boolean, Option]", FailingBooleanState.functor)
-class InclusionIsFunctorTest extends FunctorSpec("Inclusion of Total in Partial", Partial.Inclusion)
+class IdentityIsFunctorTest          extends FunctorSpec("Identity", Total.Identity)
+class OptionIsFunctorTest            extends FunctorSpec("Option", Monad.OptionIsMonad.functor)
+class WriterIsFunctorTest            extends FunctorSpec("Writer[String]", StringWriter.functor)
+class OptionTIsFunctorTest           extends FunctorSpec("OptionT[Writer[String]]", FailingStringWriter.functor)
+class WriterTIsFunctorTest           extends FunctorSpec("WriterT[String, Option]", StringWriterOverOption.functor)
+class StateIsFunctorTest             extends FunctorSpec("State[Boolean]", BooleanState.functor)
+class StateTIsFunctorTest            extends FunctorSpec("State[Boolean, Option]", FailingBooleanState.functor)
+class InclusionIsFunctorTest         extends FunctorSpec("Inclusion of Total in Partial", Partial.Inclusion)
+class OptionKleisliPureIsFunctorTest extends FunctorSpec("Pure arrows of Kleisli[Option]", Kleisli.OptionKleisli.pure)

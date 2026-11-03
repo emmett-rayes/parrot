@@ -82,6 +82,17 @@ object PromonadFixture {
   }
 }
 
+/** 𝒫 at its total programs, as a promonad over itself. */
+object PartialProgramsFixture extends PromonadFixture("Partial", Partial.Programs) {
+  val category: PartialFixture.type = PartialFixture
+
+  def arrow[X: Sample, Y: Sample]: Gen[X ~> Y] = PartialFixture.arrow[X, Y]
+
+  def variant[X: Sample, Y: Sample](p: X ~> Y): X ~> Y = PartialFixture.variant(p)
+
+  def observe[X: Sample, Y: Sample]: Gen[(X ~> Y) is Observable] = PartialFixture.observe[X, Y]
+}
+
 /** `Kleisli[Option]`: functions that fail often enough for failure to matter. */
 object OptionKleisliFixture extends PromonadFixture("Kleisli[Option]", Kleisli.OptionKleisli) {
   val category: TotalFixture.type = TotalFixture

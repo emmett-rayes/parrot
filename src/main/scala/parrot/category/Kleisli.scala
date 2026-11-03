@@ -71,13 +71,13 @@ object Kleisli {
     }
   }
 
-  /** The restriction structure of a Kleisli promonad over a restriction monad, where
+  /** The restriction structure on the arrows of a Kleisli promonad over a restriction monad, where
     *   - *p̄*(*a*) = *M*(*x* ↦ *a*)(*p*(*a*)‾): run the test of *p*, then return the input
     */
   open class RestrictionOf(
-    tracked override val promonad: Kleisli.Of[Monad.On[Total.type]],
+    tracked val promonad: Kleisli.Of[Monad.On[Total.type]],
     tracked val restriction: Monad.Restriction.On[promonad.monad.type],
-  ) extends Restriction(promonad) {
+  ) extends Restriction(promonad.arrows) {
     import promonad.monad.M
 
     def restrict[A: Type, B: Type](p: A -> M[B]): A -> M[A] = {
@@ -85,14 +85,13 @@ object Kleisli {
     }
   }
 
-  /** The classical structure of a Kleisli promonad over a classical monad, where
+  /** The classical structure on the arrows of a Kleisli promonad over a classical monad, where
     *   - 0 = *a* ↦ 0′, *p̄*ᶜ(*a*) = *M*(*x* ↦ *a*)(*p*(*a*)‾ᶜ′) and (*p* ⊳ *q*)(*a*) = *p*(*a*) ⊳′ *q*(*a*)
-    *   - *attempt*(*p*)(*a*) tags the result of *p*(*a*), or returns *a* on the right where *p*(*a*) fails
     */
   open class ClassicalOf(
-    tracked override val promonad: Kleisli.Of[Monad.On[Total.type]],
+    tracked val promonad: Kleisli.Of[Monad.On[Total.type]],
     tracked val classical: Monad.Classical.On[promonad.monad.type],
-  ) extends Classical(promonad, Total.Coproducts) {
+  ) extends Classical(promonad.arrows) {
     import promonad.monad.M
 
     def restrict[A: Type, B: Type](p: A -> M[B]): A -> M[A] = {
@@ -109,14 +108,6 @@ object Kleisli {
 
     def orElse[A: Type, B: Type](p: A -> M[B], q: A -> M[B]): A -> M[B] = {
       a => classical.orElse(p(a), q(a))
-    }
-
-    override def attempt[A: Type, B: Type](p: A -> M[B]): A -> M[Either[B, A]] = {
-      a =>
-        promonad.monad.map[Option[B], Either[B, A]] {
-          case Some(b) => Left(b)
-          case None    => Right(a)
-        }(classical.attempt(p(a)))
     }
   }
 

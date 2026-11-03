@@ -99,6 +99,10 @@ class StrictParser
   override def separatedBy[A, B, C](p: Node[A, B], separator: Node[A, C]): Node[A, Vector[B]] = {
     Repeat(p, 1, Int.MaxValue, Some(discard(separator)))
   }
+
+  override def attempt[A, B](p: Node[A, B]): Node[A, Either[B, A]] = {
+    StrictParser.choice(List(sequence(p, Pure(Fn.Inl[B, A]())), Pure(Fn.Inr[B, A]())))
+  }
 }
 
 object StrictParser {
@@ -771,7 +775,7 @@ object StrictParser {
   }
 
   /** Failure, lookahead, negation, attempt and ordered choice: `Failure`, `Lookahead`, `Not` and `Choice`. */
-  object Backtracking extends Classical(Nodes, Fns.Coproduct) {
+  object Backtracking extends Classical(Nodes.arrows) {
 
     def restrict[A: Type, B: Type](p: Node[A, B]): Node[A, A] = {
       discard(p) match {
@@ -794,10 +798,6 @@ object StrictParser {
 
     def orElse[A: Type, B: Type](p: Node[A, B], q: Node[A, B]): Node[A, B] = {
       choice(List(p, q))
-    }
-
-    override def attempt[A: Type, B: Type](p: Node[A, B]): Node[A, Either[B, A]] = {
-      choice(List(sequence(p, Pure(Fn.Inl[B, A]())), Pure(Fn.Inr[B, A]())))
     }
   }
 

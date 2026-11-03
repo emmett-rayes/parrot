@@ -6,99 +6,91 @@ import org.scalacheck.Gen
 import Sample.given
 import Category.Type
 
-/** The laws of [[Restriction]]. */
+/** The laws of [[Restriction]], with a functor *J* that picks out pure morphisms. */
 abstract class RestrictionSpec(
   name: String,
-  tracked val restriction: Restriction.On[Promonad.On[Category { type Obj = Type }]],
+  tracked val restriction: Restriction.On[Category { type Obj = Type }],
+  tracked val functor: Functor.Into[restriction.category.type] {
+    val source: Category { type Obj = Type }; type Self[A] = A
+  },
   structure: String = "Restriction",
 )(using
-  promonad: PromonadFixture.For[restriction.promonad.type],
+  category: CategoryFixture.For[restriction.category.type],
+  source: CategoryFixture.For[functor.source.type],
   types: SampleTypes,
 ) extends LawSuite(structure, name) {
   import types.{T1, T2, T3, given}
-  import promonad.*
-  import restriction.promonad.P
+  import category.*
+  import restriction.category.-->
   import restriction.RestrictionLaws.*
 
   also("Restriction") {
     law("r1") {
       val observations = observe[T1, T2]
-      val ps           = arrow[T1, T2]
+      val fs           = arrow[T1, T2]
 
-      forAll(observations, ps) { (observe, p) =>
-        given (P[T1, T2] is Observable) = observe
-        r1(p)
+      forAll(observations, fs) { (observe, f) =>
+        given ((T1 --> T2) is Observable) = observe
+        r1(f)
       }
     }
 
     law("r2") {
       val observations = observe[T1, T1]
-      val ps           = arrow[T1, T2]
-      val qs           = arrow[T1, T3]
+      val fs           = arrow[T1, T2]
+      val gs           = arrow[T1, T3]
 
-      forAll(observations, ps, qs) { (observe, p, q) =>
-        given (P[T1, T1] is Observable) = observe
-        r2(p, q)
+      forAll(observations, fs, gs) { (observe, f, g) =>
+        given ((T1 --> T1) is Observable) = observe
+        r2(f, g)
       }
     }
 
     law("r3") {
       val observations = observe[T1, T1]
-      val ps           = arrow[T1, T2]
-      val qs           = arrow[T1, T3]
+      val fs           = arrow[T1, T2]
+      val gs           = arrow[T1, T3]
 
-      forAll(observations, ps, qs) { (observe, p, q) =>
-        given (P[T1, T1] is Observable) = observe
-        r3(p, q)
+      forAll(observations, fs, gs) { (observe, f, g) =>
+        given ((T1 --> T1) is Observable) = observe
+        r3(f, g)
       }
     }
 
     law("r4") {
       val observations = observe[T1, T2]
-      val ps           = arrow[T1, T2]
-      val qs           = arrow[T2, T3]
+      val fs           = arrow[T1, T2]
+      val gs           = arrow[T2, T3]
 
-      forAll(observations, ps, qs) { (observe, p, q) =>
-        given (P[T1, T2] is Observable) = observe
-        r4(p, q)
+      forAll(observations, fs, gs) { (observe, f, g) =>
+        given ((T1 --> T2) is Observable) = observe
+        r4(f, g)
       }
     }
 
     law("pureTotal") {
       val observations = observe[T1, T1]
-      val fs           = category.arrow[T1, T2]
+      val fs           = source.arrow[T1, T2]
 
       forAll(observations, fs) { (observe, f) =>
-        given (P[T1, T1] is Observable) = observe
-        pureTotal(f)
+        given ((T1 --> T1) is Observable) = observe
+        pureTotal(functor)(f)
       }
     }
 
     law("congruence") {
       val observations = observe[T1, T1]
-      val ps           = arrow[T1, T2]
+      val fs           = arrow[T1, T2]
 
-      forAll(observations, ps) { (observe, p) =>
-        given (P[T1, T1] is Observable) = observe
-        congruence(p, variant(p))
+      forAll(observations, fs) { (observe, f) =>
+        given ((T1 --> T1) is Observable) = observe
+        congruence(f, variant(f))
       }
     }
   }
 }
 
-/** 𝒫 at its total programs, as a promonad over itself. */
-object PartialProgramsFixture extends PromonadFixture("Partial", Partial.Programs) {
-  val category: PartialFixture.type = PartialFixture
-
-  def arrow[X: Sample, Y: Sample]: Gen[X ~> Y] = PartialFixture.arrow[X, Y]
-
-  def variant[X: Sample, Y: Sample](p: X ~> Y): X ~> Y = PartialFixture.variant(p)
-
-  def observe[X: Sample, Y: Sample]: Gen[(X ~> Y) is Observable] = PartialFixture.observe[X, Y]
-}
-
-class PartialIsRestrictionTest
-    extends RestrictionSpec("Partial (total programs)", Partial.Domains)
+class PartialIsRestrictionTest extends RestrictionSpec("Partial", Partial.Domains, Partial.Inclusion)
 
 // ==== Failure over a writer: restrictions that keep the output ====
 

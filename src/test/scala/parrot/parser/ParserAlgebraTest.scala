@@ -87,6 +87,13 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
     }
   }
 
+  law("attemptDefinition") {
+    forAll(ParserGen.exact[Int, Either[Int, Int]](algebra), parsers) { (o, p) =>
+      given (P[Int, Either[Int, Int]] is Observable) = o
+      attemptDefinition(p)
+    }
+  }
+
   law("choiceByAttempt") {
     forAll(observe, parsers, parsers) { (o, p, q) =>
       given (P[Int, Int] is Observable) = o

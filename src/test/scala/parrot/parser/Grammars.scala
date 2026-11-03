@@ -316,4 +316,7 @@ object ParserFixtures {
 
   /** [[StrictFixture]], for the category of `StrictParser`. */
   given StrictCategoryIsFixture: CategoryFixture.For[Interpreters.strict.parsers.arrows.type] = StrictFixture.arrows
+
+  /** [[FnsFixture]], for the pure functions of `StrictParser`. */
+  given FnsIsFixture: CategoryFixture.For[Fns.type] = FnsFixture
 }

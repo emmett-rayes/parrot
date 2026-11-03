@@ -18,7 +18,7 @@ import category.Category.Type
   *   - [[products]] and [[coproducts]]: pairs and tagged unions of semantic values, in the category of pure functions
   *   - [[zipping]]: a strength over products, which makes parsers a Freyd category, [[zipped]] (⋉, ⟨-,-⟩)
   *   - [[branching]]: a strength over coproducts, which makes parsers a Freyd category, [[branched]] (+, [-,-])
-  *   - [[choice]]: a classical restriction structure (0, *p̄*, *p̄*ᶜ, *attempt*, ⊳)
+  *   - [[choice]]: a classical restriction structure on parsers (0, *p̄*, *p̄*ᶜ, ⊳)
   *   - [[loops]]: guarded iteration (†, and the repetition combinators derived from it)
   *   - [[knots]]: guarded recursion at the types of parsers (*fix*)
   *
@@ -41,7 +41,7 @@ abstract class ParserAlgebra(
   },
   tracked val zipping: Bistrong.On[parsers.type] { val monoidal: products.type },
   tracked val branching: Bistrong.On[parsers.type] { val monoidal: coproducts.type },
-  tracked val choice: Classical.On[parsers.type] { val cocartesian: coproducts.type },
+  tracked val choice: Classical.On[parsers.arrows.type],
   tracked val loops: Elgot.On[branching.type],
   tracked val knots: Recursion.On[parsers.type],
 ) extends caps.Pure {
@@ -155,7 +155,7 @@ abstract class ParserAlgebra(
 
   // ==== Choice: the classical restriction structure ====
 
-  export choice.{attempt, orElse}
+  export choice.orElse
 
   /** Fails without consuming anything: the restriction zero 0. */
   final def failure[A, B]: P[A, B] = {
@@ -176,7 +176,14 @@ abstract class ParserAlgebra(
     * *attempt*(*p*).
     */
   final def optional[A, B](p: P[A, B]): P[A, Either[B, A]] = {
-    choice.attempt(p)
+    attempt(p)
+  }
+
+  /** Tags the result of *p* on the left, or returns the untouched semantic input on the right where *p* fails:
+    * *attempt*(*p*) = (*p* ⨾ *ι*₁) ⊳ *ι*₂.
+    */
+  def attempt[A, B](p: P[A, B]): P[A, Either[B, A]] = {
+    orElse(map(p, coproducts.inl[B, A]), pure(coproducts.inr[B, A]))
   }
 
   /** Ordered choice that tags the alternative that succeeded: (*p* ⨾ *ι*₁) ⊳ (*q* ⨾ *ι*₂). */
@@ -440,6 +447,12 @@ abstract class ParserAlgebra(
       */
     def choicePrecomposition[A, B, C](h: P[A, B], p: P[B, C], q: P[B, C])(using P[A, C] is Observable): Boolean = {
       (h >> (p |> q)) =?= ((h >> p) |> (h >> q))
+    }
+
+    /** *attempt*(*p*) = (*p* ⨾ *ι*₁) ⊳ *ι*₂
+      */
+    def attemptDefinition[A, B](p: P[A, B])(using P[A, Either[B, A]] is Observable): Boolean = {
+      attempt(p) =?= (map(p, coproducts.inl[B, A]) |> pure(coproducts.inr[B, A]))
     }
 
     /** *p* ⊳ *q* = *attempt*(*p*) ⨾ [*id*,*q*]: ordered choice is an attempt followed by a merge.

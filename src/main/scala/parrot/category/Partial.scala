@@ -203,7 +203,7 @@ object Partial extends Category {
     * Its total morphisms are exactly those of 𝒮. 𝒫 is not classical: the complement of *p̄* would decide whether *p*
     * terminates.
     */
-  object Domains extends Restriction(Programs) {
+  object Domains extends Restriction(Partial) {
 
     def restrict[A: Type, B: Type](p: A ~> B): A ~> A = {
       a =>
