@@ -17,7 +17,7 @@ import scala.annotation.targetName
 abstract class Cocartesian(
   tracked override val category: Category,
   tracked override val unit: Initial.Of[category.type],
-  tracked override val tensor: Coproducts.Of[category.type],
+  tracked override val tensor: Coproducts.On[category.type],
 ) extends Symmetric(category, unit, tensor) {
   import category.{Iso, Obj, -->, <->, >>>}
 

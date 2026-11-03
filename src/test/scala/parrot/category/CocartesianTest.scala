@@ -7,7 +7,7 @@ import Category.Type
 abstract class CocartesianSpec(
   tracked override val monoidal: Cocartesian { val category: Category { type Obj = Type } },
 )(using
-  category: CategoryFixture.On[monoidal.category.type],
+  category: CategoryFixture.For[monoidal.category.type],
   typename: TypeName[monoidal.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[monoidal.Tensor[X, Y]],

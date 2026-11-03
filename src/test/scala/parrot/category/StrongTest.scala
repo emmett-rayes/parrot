@@ -9,7 +9,7 @@ abstract class StrongSpec(
   tracked val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } },
   structure: String = "Strong",
 )(using
-  promonad: PromonadFixture.On[strong.profunctor.type],
+  promonad: PromonadFixture.For[strong.profunctor.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite(structure, name) {
@@ -85,7 +85,7 @@ abstract class BistrongSpec(
     val profunctor: Promonad { val category: Category { type Obj = Type } }
   },
 )(using
-  promonad: PromonadFixture.On[strong.profunctor.type],
+  promonad: PromonadFixture.For[strong.profunctor.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[strong.monoidal.Tensor[X, Y]],
 ) extends StrongSpec(name, strong, "Bistrong") {

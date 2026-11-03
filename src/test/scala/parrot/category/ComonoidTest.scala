@@ -8,7 +8,7 @@ abstract class ComonoidSpec(
   name: String,
   tracked val comonoid: Comonoid { val monoidal: Monoidal { val category: Category { type Obj = Type } } },
 )(using
-  category: CategoryFixture.On[comonoid.monoidal.category.type],
+  category: CategoryFixture.For[comonoid.monoidal.category.type],
   S: Sample[comonoid.C],
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[comonoid.monoidal.*[X, Y]],
   unit: Sample[comonoid.monoidal.I],

@@ -63,9 +63,9 @@ class ProductIsCategoryTest extends LawSuite("Category", "Total × Partial") {
 /** The laws of [[Products]], for binary products on a category whose objects are all types. */
 abstract class ProductsSpec(
   tracked override val category: Category { type Obj = Type },
-  tracked override val bifunctor: Products.Of[category.type],
+  tracked override val bifunctor: Products.On[category.type],
 )(using
-  fixture: CategoryFixture.On[category.type],
+  fixture: CategoryFixture.For[category.type],
   typename: TypeName[bifunctor.Self],
   types: SampleTypes,
   sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[bifunctor.F[X, Y]],

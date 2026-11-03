@@ -21,14 +21,14 @@ abstract class Colimit(tracked override val diagram: Functor, tracked override v
     *
     * This is the unique morphism with *φ* = [*φ*] ∘ *ψ*.
     */
-  def factor(cocone: Cocone.Of[diagram.type]): X ==> cocone.X
+  def factor(cocone: Cocone.Under[diagram.type]): X ==> cocone.X
 
   /** Laws that any `Colimit` must satisfy. */
   object ColimitLaws {
 
     /** [*φ*] ∘ *ψ*_*A* = *φ*_*A*
       */
-    def universal[A: J.Obj](cocone: Cocone.Of[diagram.type])(using (D[A] ==> cocone.X) is Observable): Boolean = {
+    def universal[A: J.Obj](cocone: Cocone.Under[diagram.type])(using (D[A] ==> cocone.X) is Observable): Boolean = {
       given (cocone.X is C.Obj) = cocone.apex.evidence
       (leg[A] >>> factor(cocone)) =?= cocone.leg[A]
     }
@@ -42,8 +42,8 @@ abstract class Colimit(tracked override val diagram: Functor, tracked override v
 
 object Colimit {
 
-  /** Refines `Colimit` to a specific functor **F**. */
-  type Of[F <: Functor] = Colimit { val diagram: F }
+  /** The colimits of a diagram *D*. */
+  type Of[D <: Functor] = Colimit { val diagram: D }
 
   /** Colimits of the diagrams of type *D* in a category **C**.
     *

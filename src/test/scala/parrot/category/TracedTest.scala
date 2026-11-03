@@ -13,7 +13,7 @@ abstract class TracedSpec(
     val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } }
   },
 )(using
-  promonad: PromonadFixture.On[traced.strong.profunctor.type],
+  promonad: PromonadFixture.For[traced.strong.profunctor.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[traced.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Traced", name) {

@@ -6,7 +6,7 @@ import Category.Type
 /** The laws of [[Category]], for a category whose objects are all types. */
 abstract class CategorySpec(tracked val category: Category { type Obj = Type })(
   using
-  fixture: CategoryFixture.On[category.type],
+  fixture: CategoryFixture.For[category.type],
   types: SampleTypes,
 ) extends LawSuite("Category", fixture.name) {
   import types.{T1, T2, T3, T4, given}

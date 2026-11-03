@@ -10,7 +10,7 @@ abstract class FreydSpec(
   name: String,
   tracked val freyd: Freyd { val promonad: Promonad { val category: Category { type Obj = Type } } },
 )(using
-  promonad: PromonadFixture.On[freyd.promonad.type],
+  promonad: PromonadFixture.For[freyd.promonad.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[freyd.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Freyd", name) {

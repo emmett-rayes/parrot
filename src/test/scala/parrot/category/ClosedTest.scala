@@ -14,7 +14,7 @@ import Category.Type
 abstract class ClosedSpec(
   tracked val closed: Closed { val monoidal: Monoidal { val category: Category { type Obj = Type } } },
 )(using
-  category: CategoryFixture.On[closed.monoidal.category.type],
+  category: CategoryFixture.For[closed.monoidal.category.type],
   typename: TypeName[closed.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[closed.monoidal.Tensor[X, Y]],

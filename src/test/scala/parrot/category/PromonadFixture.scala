@@ -13,7 +13,7 @@ abstract class PromonadFixture(
   import promonad.P
 
   /** The fixture of the base category, for pure arrows. */
-  val category: CategoryFixture.On[promonad.category.type]
+  val category: CategoryFixture.For[promonad.category.type]
 
   /** Generates arrows *X* → *Y*, including the cases that matter for the promonad (failure, effects). */
   def arrow[X: Sample, Y: Sample]: Gen[P[X, Y]]
@@ -25,7 +25,7 @@ abstract class PromonadFixture(
   def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable]
 
   /** The same generators, for the category of arrows. */
-  final lazy val arrows: CategoryFixture.On[promonad.arrows.type] = PromonadFixture.Category(this)
+  final lazy val arrows: CategoryFixture.For[promonad.arrows.type] = PromonadFixture.Category(this)
 }
 
 /** The fixtures of promonads.
@@ -34,26 +34,26 @@ abstract class PromonadFixture(
   */
 object PromonadFixture {
 
-  /** A fixture for the promonad *Q*. */
-  type On[Q <: Promonad] = PromonadFixture { val promonad: Q }
+  /** The fixtures for a promonad *P*. */
+  type For[P <: Promonad] = PromonadFixture { val promonad: P }
 
   /** `Kleisli[Option]`: functions that fail often enough for failure to matter. */
-  given OptionKleisliIsFixture: On[Kleisli.OptionKleisli.type] = OptionKleisliFixture
+  given OptionKleisliIsFixture: For[Kleisli.OptionKleisli.type] = OptionKleisliFixture
 
   /** 𝒮 as a promonad over itself. */
-  given ScalaFunctionsIsFixture: On[Total.Functions.type] = ScalaFunctionsFixture
+  given ScalaFunctionsIsFixture: For[Total.Functions.type] = ScalaFunctionsFixture
 
   /** `Kleisli[Writer[String]]`. */
-  given StringWriterKleisliIsFixture: On[StringWriterKleisli.type] = StringWriterKleisliFixture
+  given StringWriterKleisliIsFixture: For[StringWriterKleisli.type] = StringWriterKleisliFixture
 
   /** `Kleisli[State[String, Option]]`. */
-  given StringStateKleisliIsFixture: On[StringStateKleisli.type] = StringStateFixture
+  given StringStateKleisliIsFixture: For[StringStateKleisli.type] = StringStateFixture
 
   /** 𝒫 at its total programs, as a promonad over itself. */
-  given PartialProgramsIsFixture: On[Partial.Programs.type] = PartialProgramsFixture
+  given PartialProgramsIsFixture: For[Partial.Programs.type] = PartialProgramsFixture
 
   /** 𝒫ᵒᵖ as a promonad over itself, at its total programs. */
-  given PartialOpIsFixture: On[PartialFixedPoints.strong.profunctor.type] = PartialOpFixture
+  given PartialOpIsFixture: For[PartialFixedPoints.strong.profunctor.type] = PartialOpFixture
 
   /** The fixture of the category of arrows of a promonad. */
   final class Category(tracked val fixture: PromonadFixture)

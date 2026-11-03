@@ -11,8 +11,8 @@ abstract class FunctorSpec(
   name: String,
   tracked val functor: Functor { val source: Category { type Obj = Type }; val target: Category { type Obj = Type } },
 )(using
-  source: CategoryFixture.On[functor.source.type],
-  target: CategoryFixture.On[functor.target.type],
+  source: CategoryFixture.For[functor.source.type],
+  target: CategoryFixture.For[functor.target.type],
   types: SampleTypes,
   sample: [X] => Sample[X] ?-> Sample[functor.F[X]],
 ) extends LawSuite("Functor", name) {

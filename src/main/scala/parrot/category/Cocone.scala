@@ -27,7 +27,7 @@ abstract class Cocone(tracked val diagram: Functor, tracked val apex: diagram.ta
   def leg[A: J.Obj]: D[A] ==> X
 
   /** The cocone (*Y*, *h* ∘ *ψ*) induced by a morphism *h*: *X* → *Y*. */
-  final def induced[Y: C.Obj](h: X ==> Y): Cocone.Of[diagram.type] { val apex: Y is C.Object } = {
+  final def induced[Y: C.Obj](h: X ==> Y): Cocone.Under[diagram.type] { val apex: Y is C.Object } = {
     new Cocone(diagram, C.Object[Y]) {
       def leg[A: J.Obj]: D[A] ==> Y = {
         Cocone.this.leg[A] >>> h
@@ -48,6 +48,6 @@ abstract class Cocone(tracked val diagram: Functor, tracked val apex: diagram.ta
 
 object Cocone {
 
-  /** Refines `Cocone` to a specific functor **F**. */
-  type Of[F <: Functor] = Cocone { val diagram: F }
+  /** The cocones under a diagram *D*. */
+  type Under[D <: Functor] = Cocone { val diagram: D }
 }

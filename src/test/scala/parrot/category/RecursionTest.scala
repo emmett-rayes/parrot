@@ -11,7 +11,7 @@ abstract class RecursionSpec(
   name: String,
   tracked val recursion: Recursion { val promonad: Promonad { val category: Category { type Obj = Type } } },
 )(using
-  val promonad: PromonadFixture.On[recursion.promonad.type],
+  val promonad: PromonadFixture.For[recursion.promonad.type],
   types: SampleTypes,
 ) extends LawSuite("Recursion", name) {
   import types.{T2, given}

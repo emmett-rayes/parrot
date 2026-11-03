@@ -107,7 +107,8 @@ abstract class Strong(
 
 object Strong {
 
-  /** A bistrong profunctor *P*: **K**ᵒᵖ × **K** → 𝒮 over a symmetric monoidal category **M** acting on itself.
+  /** A bistrong structure on a profunctor *P*: **K**ᵒᵖ × **K** → 𝒮, over a symmetric monoidal category **M** acting on
+    * itself.
     *
     * Represents a bistrong profunctor over the self-action of **M**, where
     *   - ⊗: **K** × **K** → **K** is the tensor of **M**, which acts on **K** from both sides
@@ -164,10 +165,8 @@ object Strong {
 
   object Bistrong {
 
-    /** The bistrong structures on the profunctor *Q*: refines the profunctor, so that the profunctor of a strength *S*
-      * is known as *Q*.
-      */
-    type On[Q <: Profunctor] = Bistrong { val profunctor: Q }
+    /** The bistrong structures on a profunctor *P*. */
+    type On[P <: Profunctor] = Bistrong { val profunctor: P }
 
     /** The opposite *P*ᵒᵖ of a bistrong promonad *P*, over **M**ᵒᵖ.
       *

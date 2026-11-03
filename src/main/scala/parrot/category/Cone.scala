@@ -27,7 +27,7 @@ abstract class Cone(tracked val diagram: Functor, tracked val apex: diagram.targ
   def leg[A: J.Obj]: X ==> D[A]
 
   /** The cone (*Y*, *ψ* ∘ *h*) induced by a morphism *h*: *Y* → *X*. */
-  final def induced[Y: C.Obj](h: Y ==> X): Cone.Of[diagram.type] { val apex: Y is C.Object } = {
+  final def induced[Y: C.Obj](h: Y ==> X): Cone.Over[diagram.type] { val apex: Y is C.Object } = {
     new Cone(diagram, C.Object[Y]) {
       def leg[A: J.Obj]: Y ==> D[A] = {
         h >>> Cone.this.leg[A]
@@ -48,6 +48,6 @@ abstract class Cone(tracked val diagram: Functor, tracked val apex: diagram.targ
 
 object Cone {
 
-  /** Refines `Cone` to a specific functor **F**. */
-  type Of[F <: Functor] = Cone { val diagram: F }
+  /** The cones over a diagram *D*. */
+  type Over[D <: Functor] = Cone { val diagram: D }
 }

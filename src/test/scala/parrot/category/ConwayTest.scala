@@ -13,7 +13,7 @@ abstract class ConwaySpec(
     val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } }
   },
 )(using
-  promonad: PromonadFixture.On[conway.strong.profunctor.type],
+  promonad: PromonadFixture.For[conway.strong.profunctor.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[conway.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Conway", name) {

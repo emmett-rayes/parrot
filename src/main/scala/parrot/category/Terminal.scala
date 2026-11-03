@@ -32,11 +32,11 @@ abstract class Terminal(tracked override val category: Category) extends Categor
 object Terminal {
   import Category.Empty
 
-  /** The terminal objects of **K**. */
-  type Of[K <: Category] = Terminal { val category: K }
+  /** The terminal objects of a category **C**. */
+  type Of[C <: Category] = Terminal { val category: C }
 
   /** The terminal object of a category with a limit of the empty diagram: that limit. */
-  def apply(limits: Limit.OfDiagram[EmptyDiagram.Of]): Of[limits.category.type] = {
+  def apply(limits: Limit.OfDiagram[EmptyDiagram.Into]): Of[limits.category.type] = {
     FromLimit(limits.limit(EmptyDiagram(limits.category)))
   }
 
@@ -72,7 +72,7 @@ object Terminal {
       A.absurd
     }
 
-    def factor(cone: Cone.Of[diagram.type]): cone.X --> terminal.I = {
+    def factor(cone: Cone.Over[diagram.type]): cone.X --> terminal.I = {
       terminal.discard[cone.X](using cone.apex.evidence)
     }
   }
@@ -111,7 +111,7 @@ object Terminal {
 
   object EmptyDiagram {
 
-    /** Refines `EmptyDiagram` to a specific category **K**. */
-    type Of[K <: Category] = EmptyDiagram { val category: K }
+    /** The empty diagram into a category **K**. */
+    type Into[K <: Category] = EmptyDiagram { val category: K }
   }
 }

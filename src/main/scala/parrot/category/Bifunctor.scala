@@ -127,6 +127,6 @@ abstract class Endobifunctor(tracked val category: Category) extends Bifunctor(c
 
 object Endobifunctor {
 
-  /** Refines `Endobifunctor` to a specific category **K**. */
+  /** The endobifunctors on a category **K**. */
   type On[K <: Category] = Endobifunctor { val category: K }
 }

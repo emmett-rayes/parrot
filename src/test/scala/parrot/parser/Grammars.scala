@@ -304,16 +304,16 @@ object StrictDiagnosticsFixture
 object ParserFixtures {
 
   /** [[ReferenceFixture]], for the promonad of `ReferenceParser`. */
-  given ReferenceIsFixture: PromonadFixture.On[Interpreters.reference.parsers.type] = ReferenceFixture
+  given ReferenceIsFixture: PromonadFixture.For[Interpreters.reference.parsers.type] = ReferenceFixture
 
   /** [[ReferenceFixture]], for the category of `ReferenceParser`. */
-  given ReferenceCategoryIsFixture: CategoryFixture.On[Interpreters.reference.parsers.arrows.type] = {
+  given ReferenceCategoryIsFixture: CategoryFixture.For[Interpreters.reference.parsers.arrows.type] = {
     ReferenceFixture.arrows
   }
 
   /** [[StrictFixture]], for the promonad of `StrictParser`. */
-  given StrictIsFixture: PromonadFixture.On[Interpreters.strict.parsers.type] = StrictFixture
+  given StrictIsFixture: PromonadFixture.For[Interpreters.strict.parsers.type] = StrictFixture
 
   /** [[StrictFixture]], for the category of `StrictParser`. */
-  given StrictCategoryIsFixture: CategoryFixture.On[Interpreters.strict.parsers.arrows.type] = StrictFixture.arrows
+  given StrictCategoryIsFixture: CategoryFixture.For[Interpreters.strict.parsers.arrows.type] = StrictFixture.arrows
 }

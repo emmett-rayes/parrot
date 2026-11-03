@@ -13,7 +13,7 @@ abstract class BifunctorSpec(
   },
   structure: String = "Bifunctor",
 )(using
-  fixture: CategoryFixture.On[category.type],
+  fixture: CategoryFixture.For[category.type],
   typename: TypeName[bifunctor.Self],
   types: SampleTypes,
   sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[bifunctor.F[X, Y]],

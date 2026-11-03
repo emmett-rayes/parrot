@@ -33,11 +33,11 @@ object Initial {
   import Category.Empty
   import Terminal.EmptyDiagram
 
-  /** The initial objects of **K**. */
-  type Of[K <: Category] = Initial { val category: K }
+  /** The initial objects of a category **C**. */
+  type Of[C <: Category] = Initial { val category: C }
 
   /** The initial object of a category with a colimit of the empty diagram: that colimit. */
-  def apply(colimits: Colimit.OfDiagram[EmptyDiagram.Of]): Of[colimits.category.type] = {
+  def apply(colimits: Colimit.OfDiagram[EmptyDiagram.Into]): Of[colimits.category.type] = {
     FromColimit(colimits.colimit(EmptyDiagram(colimits.category)))
   }
 
@@ -73,7 +73,7 @@ object Initial {
       A.absurd
     }
 
-    def factor(cocone: Cocone.Of[diagram.type]): initial.I --> cocone.X = {
+    def factor(cocone: Cocone.Under[diagram.type]): initial.I --> cocone.X = {
       initial.absurd[cocone.X](using cocone.apex.evidence)
     }
   }

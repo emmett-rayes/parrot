@@ -114,6 +114,14 @@ warning-free.
 12. **Laws:** every structure has `object <Name>Laws` returning `Boolean` and comparing with an `Observable` (`=?=`),
     never `Eq` on functions; inequations use a `Preorder` (`?<`). Congruence laws take variants equal by construction
     (`f2`); conditional laws state their premise in a `@note`.
+13. **Refinements go through the base's alias.** A class has one base, the parameter that the first sentence of its
+    doc relates it to, usually the first, and one alias that refines it, named by that preposition: `Endofunctor.On[K]`,
+    `Limit.Of[D]`, `Cone.Over[D]`, `Cocone.Under[D]`, `In` for an object in a monoidal category, and `Into` for the
+    target of a class documented as an arrow (`EmptyDiagram.Into[K]`); a view takes `Of`. Its argument is what the doc
+    names: `Monad.On[K]` refines the category of the endofunctor. Refine the base only through the alias, also where
+    an inline refinement would compile, and every other member inline after it
+    (`Cone.Over[diagram.type] { val apex: Y is C.Object }`). Add the alias with the first refinement of the base, and
+    document it as the class's first sentence in the plural ("The cones over a diagram *D*.").
 
 One file per structure in `src/main/scala/parrot/category/`; the instances on 𝒮 and 𝒫 are in `Total.scala` and
 `Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
@@ -184,7 +192,7 @@ colimits in `Colimit`'s.
   other fixtures, the child copies its laws into an `also` block instead (`FreydSpec`, `PromonadSpec`). `IsoLaws` has
   no spec: `MonoidalLaws` and `ModuleLaws` check it.
 - **Specs take their subject, not a fixture:** `tracked val monoidal: Symmetric { … }`, named after its structure, with
-  the fixture found as a given, `using category: CategoryFixture.On[monoidal.category.type]`; where the subject takes
+  the fixture found as a given, `using category: CategoryFixture.For[monoidal.category.type]`; where the subject takes
   the fixture's name (`CategorySpec`, `BifunctorSpec`, `PromonadSpec`), the fixture is `fixture`. There is one given
   fixture per category or promonad, in the `CategoryFixture` and `PromonadFixture` companions (the parser's in
   `ParserFixtures`, in `Grammars.scala`); derived categories (`Total.op`) need their own. `FunctorSpec` takes two,

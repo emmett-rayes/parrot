@@ -62,6 +62,6 @@ abstract class Endofunctor(tracked val category: Category) extends Functor(categ
 
 object Endofunctor {
 
-  /** Refines `Endofunctor` to a specific category **K**. */
+  /** The endofunctors on a category **K**. */
   type On[K <: Category] = Endofunctor { val category: K }
 }

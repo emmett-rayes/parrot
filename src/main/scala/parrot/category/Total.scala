@@ -186,7 +186,7 @@ object Total extends Category {
       _.at[A]
     }
 
-    def factor(cone: Cone.Of[diagram.type]): cone.X -> X = {
+    def factor(cone: Cone.Over[diagram.type]): cone.X -> X = {
       y => Point(diagram)([A] => (a: A is J.Obj) ?=> cone.leg[A](using a)(y))
     }
   }
@@ -211,8 +211,8 @@ object Total extends Category {
 
     object Point {
 
-      /** Refines `Point` to a specific diagram *F*. */
-      type Of[F <: Functor] = Point { val diagram: F }
+      /** The points of the limit of a diagram *D*. */
+      type Of[D <: Functor] = Point { val diagram: D }
     }
   }
 
@@ -247,7 +247,7 @@ object Total extends Category {
       x => x[A]
     }
 
-    def factor(cone: Cone.Of[diagram.type]): cone.X -> X = {
+    def factor(cone: Cone.Over[diagram.type]): cone.X -> X = {
       y => [A] => (a: A is J.Obj) ?=> cone.leg[A](using a)(y)
     }
   }
@@ -325,7 +325,7 @@ object Total extends Category {
       x => Point(diagram)(Sum(obj, x))
     }
 
-    def factor(cocone: Cocone.Of[diagram.type]): X -> cocone.X = {
+    def factor(cocone: Cocone.Under[diagram.type]): X -> cocone.X = {
       p => cocone.leg[p.sum.A](using p.sum.obj)(p.sum.at)
     }
   }
@@ -350,8 +350,8 @@ object Total extends Category {
 
     object Point {
 
-      /** Refines `Point` to a specific diagram *F*. */
-      type Of[F <: Functor] = Point { val diagram: F }
+      /** The points of the colimit of a diagram *D*. */
+      type Of[D <: Functor] = Point { val diagram: D }
     }
   }
 
@@ -385,7 +385,7 @@ object Total extends Category {
       x => Sum(obj, x)
     }
 
-    def factor(cocone: Cocone.Of[diagram.type]): X -> cocone.X = {
+    def factor(cocone: Cocone.Under[diagram.type]): X -> cocone.X = {
       s => cocone.leg[s.A](using s.obj)(s.at)
     }
   }

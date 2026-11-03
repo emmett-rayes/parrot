@@ -17,7 +17,7 @@ import scala.annotation.targetName
 abstract class Cartesian(
   tracked override val category: Category,
   tracked override val unit: Terminal.Of[category.type],
-  tracked override val tensor: Products.Of[category.type],
+  tracked override val tensor: Products.On[category.type],
 ) extends Symmetric(category, unit, tensor) {
   import category.{Iso, Obj, -->, <->, >>>}
 

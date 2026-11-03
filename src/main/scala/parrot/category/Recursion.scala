@@ -1,7 +1,7 @@
 package parrot
 package category
 
-/** Recursion at the arrow types of a promonad: a fixed point for every function from arrows to arrows.
+/** Recursion on a promonad: a fixed point at its arrow types for every function from arrows to arrows.
   *
   * Represents a fixed-point operator on the objects *P*(*A*,*B*) of 𝒮, where
   *   - *fix*(*f*) = *f*(*fix*(*f*)) for *f*: *P*(*A*,*B*) → *P*(*A*,*B*)

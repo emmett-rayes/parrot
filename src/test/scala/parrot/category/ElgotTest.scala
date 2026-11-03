@@ -13,7 +13,7 @@ abstract class ElgotSpec(
     val strong: Strong.Bistrong { val profunctor: Promonad { val category: Category { type Obj = Type } } }
   },
 )(using
-  val promonad: PromonadFixture.On[elgot.strong.profunctor.type],
+  val promonad: PromonadFixture.For[elgot.strong.profunctor.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[elgot.strong.monoidal.Tensor[X, Y]],
 ) extends LawSuite("Elgot", name) {

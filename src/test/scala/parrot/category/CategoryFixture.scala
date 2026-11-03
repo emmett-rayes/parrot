@@ -25,23 +25,23 @@ abstract class CategoryFixture(val name: String, tracked val category: Category 
   */
 object CategoryFixture {
 
-  /** A fixture for the category *C*. */
-  type On[C <: Category] = CategoryFixture { val category: C }
+  /** The fixtures for a category **K**. */
+  type For[K <: Category] = CategoryFixture { val category: K }
 
   /** 𝒮: generated pure functions. */
-  given TotalIsFixture: On[Total.type] = TotalFixture
+  given TotalIsFixture: For[Total.type] = TotalFixture
 
   /** 𝒫, at its total morphisms. */
-  given PartialIsFixture: On[Partial.type] = PartialFixture
+  given PartialIsFixture: For[Partial.type] = PartialFixture
 
   /** 𝒮ᵒᵖ: the functions of 𝒮, reversed. */
-  given TotalOpIsFixture: On[Total.op.type] = OpFixture(TotalFixture)
+  given TotalOpIsFixture: For[Total.op.type] = OpFixture(TotalFixture)
 
   /** The category of arrows of `Kleisli[Option]`. */
-  given OptionKleisliCategoryIsFixture: On[Kleisli.OptionKleisli.arrows.type] = OptionKleisliFixture.arrows
+  given OptionKleisliCategoryIsFixture: For[Kleisli.OptionKleisli.arrows.type] = OptionKleisliFixture.arrows
 
   /** The category of arrows of `Kleisli[Writer[String]]`. */
-  given StringWriterKleisliCategoryIsFixture: On[StringWriterKleisli.arrows.type] = {
+  given StringWriterKleisliCategoryIsFixture: For[StringWriterKleisli.arrows.type] = {
     StringWriterKleisliFixture.arrows
   }
 }

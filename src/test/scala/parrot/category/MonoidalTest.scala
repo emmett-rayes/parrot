@@ -8,7 +8,7 @@ abstract class MonoidalSpec(
   tracked val monoidal: Monoidal { val category: Category { type Obj = Type } },
   structure: String = "Monoidal",
 )(using
-  category: CategoryFixture.On[monoidal.category.type],
+  category: CategoryFixture.For[monoidal.category.type],
   typename: TypeName[monoidal.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[monoidal.Tensor[X, Y]],

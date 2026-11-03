@@ -11,7 +11,7 @@ import Category.Type
   */
 abstract class PromonadSpec(tracked val promonad: Promonad { val category: Category { type Obj = Type } })(
   using
-  fixture: PromonadFixture.On[promonad.type],
+  fixture: PromonadFixture.For[promonad.type],
   types: SampleTypes,
 ) extends LawSuite("Promonad", fixture.name) {
   import types.{T1, T2, T3, T4, given}

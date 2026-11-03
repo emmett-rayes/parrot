@@ -10,8 +10,8 @@ abstract class ModuleSpec(
     val monoidal: Monoidal { val category: Category { type Obj = Type } }
   },
 )(using
-  kCategory: CategoryFixture.On[module.category.type],
-  mCategory: CategoryFixture.On[module.monoidal.category.type],
+  kCategory: CategoryFixture.For[module.category.type],
+  mCategory: CategoryFixture.For[module.monoidal.category.type],
   typename: TypeName[module.type],
   types: SampleTypes,
   action: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[module.Action[X, Y]],

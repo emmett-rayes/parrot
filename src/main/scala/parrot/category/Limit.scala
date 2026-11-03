@@ -21,14 +21,14 @@ abstract class Limit(tracked override val diagram: Functor, tracked override val
     *
     * This is the unique morphism with *φ* = *ψ* ∘ ⟨*φ*⟩.
     */
-  def factor(cone: Cone.Of[diagram.type]): cone.X ==> X
+  def factor(cone: Cone.Over[diagram.type]): cone.X ==> X
 
   /** Laws that any `Limit` must satisfy. */
   object LimitLaws {
 
     /** *ψ*_*A* ∘ ⟨*φ*⟩ = *φ*_*A*
       */
-    def universal[A: J.Obj](cone: Cone.Of[diagram.type])(using (cone.X ==> D[A]) is Observable): Boolean = {
+    def universal[A: J.Obj](cone: Cone.Over[diagram.type])(using (cone.X ==> D[A]) is Observable): Boolean = {
       given (cone.X is C.Obj) = cone.apex.evidence
       (factor(cone) >>> leg[A]) =?= cone.leg[A]
     }
@@ -42,8 +42,8 @@ abstract class Limit(tracked override val diagram: Functor, tracked override val
 
 object Limit {
 
-  /** Refines `Limit` to a specific functor **F**. */
-  type Of[F <: Functor] = Limit { val diagram: F }
+  /** The limits of a diagram *D*. */
+  type Of[D <: Functor] = Limit { val diagram: D }
 
   /** Limits of the diagrams of type *D* in a category **C**.
     *

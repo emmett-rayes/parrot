@@ -74,6 +74,13 @@ Rejected:
   back (`Terminal.limit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
   `Limit.Of`) only names a refinement.
+- **Refinements go through one alias per class, for its base:** the parameter that the first sentence of the class's
+  doc relates it to, whose preposition names the alias (`Endofunctor.On`, `Limit.Of`, `Cone.Over`, `Cocone.Under`, and
+  `Into` for the target of a class documented as an arrow, `EmptyDiagram.Into`), with what the doc names as its
+  argument (`Monad.On[K]` refines the category of the endofunctor). The base is refined only through its alias and
+  every other member inline after it, so each parameter has one spelling whatever the names at the use, and a
+  refinement of the base is never cyclic, as `Endobifunctor { val category: category.type }` is, where `category` is
+  the refinement's own member.
 - **Objects are types with evidence.** A category declares `type Obj <: Type`, where `Type` is `Category.Type`, object
   evidence and nothing else. Evidence travels only through context bounds, which come after the value parameters, so
   that infix code infers its types. Evidence classes such as `Pair`, the objects of `Category.Product`, extend `Type`,
@@ -120,6 +127,13 @@ Rejected:
   different structures (`C` is a category, a Conway operator or a closed structure) and collides with the carrier
   aliases (`M.M`, `P.P`). Role names collide in refinements instead (`Product { val category: category.type }`), which
   the aliases that refine a structure avoid (`Product.Of[category.type]`);
+- refinements written inline unless they are cyclic, with an alias only where a role name collides: the spelling of a
+  refinement then depends on the names at its use;
+- several aliases per class, chosen at each use: a parameter is then spelled by its alias alone and inline beside
+  another, since aliases combine only by intersection, which breaks singleton chains, or by taking the type they
+  refine as an argument;
+- an alias for every refinement, which is positional and drops the role names that say what each member is;
+- one name for every alias, which reads wrongly for objects, limits and cones (`Terminal.On`, `Cone.On`);
 - bare evidence for every object (`unit: category.Obj`), with a terminal object as structure on its apex: `Obj` is an
   abstract type, which no class can extend, so `Cartesian` would ask for a terminal unit through a parameter of another
   name (`terminal`, passing its apex as the unit) while it refines its tensor in place, and a terminal object would not
@@ -250,7 +264,7 @@ Rejected:
   `Products`, and `Cocartesian` with injections, copairing and ¡ of its own;
 - colimits as limits in **C**ᵒᵖ, whose legs and factorizations are morphisms of **C**ᵒᵖ that every client would have
   to reverse;
-- products from any limits of shape **2** (`Limit.OfDiagram[Discrete2Diagram.Of]`): the apex of a limit is a type of
+- products from any limits of shape **2** (`Limit.OfDiagram[Discrete2Diagram.Into]`): the apex of a limit is a type of
   each limit, not a type constructor, so it cannot be the tensor that monoidal signatures apply to two types;
   `OfDiscreteDiagram` gives the apex as a type function instead;
 - the apex of a cone as a type member with evidence, which an implementation defines in its body: it lets a limit of 𝒮

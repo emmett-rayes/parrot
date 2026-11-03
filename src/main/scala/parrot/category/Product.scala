@@ -81,12 +81,15 @@ object Product {
   import Category.Discrete2
   import Discrete2.Disc2
 
-  /** The products of the category **K**. */
-  type Of[K <: Category] = Product { val category: K }
+  /** The products of two objects of a category **C**. */
+  type Of[C <: Category] = Product { val category: C }
 
   /** The product of *X* and *Y* in a category with limits of the diagrams of shape **2**. */
-  def apply(limits: Limit.OfDiagram[Discrete2Diagram.Of], first: limits.category.Object, second: limits.category.Object)
-    : Of[limits.category.type] { val factor1: first.type; val factor2: second.type } = {
+  def apply(
+    limits: Limit.OfDiagram[Discrete2Diagram.Into],
+    first: limits.category.Object,
+    second: limits.category.Object,
+  ): Of[limits.category.type] { val factor1: first.type; val factor2: second.type } = {
     FromLimit(limits.limit(Discrete2Diagram(limits.category, first, second)))
   }
 
@@ -128,7 +131,7 @@ object Product {
       }
     }
 
-    def factor(cone: Cone.Of[diagram.type]): cone.X --> product.P = {
+    def factor(cone: Cone.Over[diagram.type]): cone.X --> product.P = {
       product.pair[cone.X](cone.leg[0], cone.leg[1])(using cone.apex.evidence)
     }
   }
@@ -182,8 +185,8 @@ object Product {
 
   object Discrete2Diagram {
 
-    /** Refines `Discrete2Diagram` to a specific category **K**. */
-    type Of[K <: Category] = Discrete2Diagram { val category: K }
+    /** The diagrams of shape **2** into a category **K**. */
+    type Into[K <: Category] = Discrete2Diagram { val category: K }
   }
 }
 
@@ -260,12 +263,12 @@ object Products {
   import Category.Discrete2
   import Product.{Components, Discrete2Diagram}
 
-  /** The binary products of **K**. */
-  type Of[K <: Category] = Products { val category: K }
+  /** The binary product structures on a category **K**. */
+  type On[K <: Category] = Products { val category: K }
 
   /** The binary products of a category with discrete limits of shape **2**: the limits of the diagrams (*A*,*B*). */
-  def apply(limits: Limit.OfDiscreteDiagram[Discrete2Diagram.Of])
-    : Of[limits.category.type] { type Self[A, B] = limits.Lim[Components[A, B]] } = {
+  def apply(limits: Limit.OfDiscreteDiagram[Discrete2Diagram.Into])
+    : On[limits.category.type] { type Self[A, B] = limits.Lim[Components[A, B]] } = {
     FromLimits(limits)
   }
 
@@ -274,7 +277,7 @@ object Products {
     * The product *A* × *B* is the apex Lim[(*A*,*B*)] of the limit of the diagram (*A*,*B*), a type constructor
     * because the shape is discrete, and its projections and pairing are those of the limit ([[Product.FromLimit]]).
     */
-  open class FromLimits(tracked val limits: Limit.OfDiscreteDiagram[Discrete2Diagram.Of])
+  open class FromLimits(tracked val limits: Limit.OfDiscreteDiagram[Discrete2Diagram.Into])
       extends Products(limits.category) {
     import category.{Obj, Object}
 
