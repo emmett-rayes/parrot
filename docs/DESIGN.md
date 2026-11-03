@@ -112,9 +112,9 @@ Rejected:
   `Monad.Classical`, `Monad.Elgot`) live in its companion. Plain monads are transformers over the identity
   (`Monad.OptionIsMonad` is `OptionT(Monad.Identity)`), so that each effect is defined once.
 - **Names follow the mathematics:** short carrier aliases (`Hom`/`-->`, `F`, `P`, `M`, `C`), role names for the arrows
-  of other categories (`->>`, `==>`, `~~>` and the opposite's `<--`, read from right to left) beside the concrete `->`
-  of 𝒮 and `~>` of 𝒫, and infix objects (`*`, `+`, `` `^` ``, `<->`). No operator reuses a name that a type already
-  has: the preorder is `?<`, since `Int`'s own `<=` would shadow `<=`.
+  of other categories (`->>`, `==>`, `~~>` and the opposites `<--` and `<==`, read from right to left) beside the
+  concrete `->` of 𝒮 and `~>` of 𝒫, and infix objects (`*`, `+`, `` `^` ``, `<->`). No operator reuses a name that a
+  type already has: the preorder is `?<`, since `Int`'s own `<=` would shadow `<=`.
 - **Parameters are named by their role,** in one lowercase word (`source` and `target`, `category`, `unit` and `tensor`,
   `diagram` and `apex`, `strong`), indexed when a structure has two of a kind (`source1`, `source2`); the scaladoc
   keeps the mathematical letters (**C**, *F*). Clients reach a structure through paths of parameters, and a path of

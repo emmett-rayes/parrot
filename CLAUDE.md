@@ -100,9 +100,9 @@ warning-free.
 8. **Arrows, not `.Self`:** write morphisms infix and bring them in with imports, never new type definitions
    (`import category.{Obj, -->, >>>}`, `import target.--> as ==>`). Roles: `-->` the category at hand, `->>` the second
    category of a pair (a bifunctor's or profunctor's second source, a strength's second category), `==>` a target
-   category or a Freyd base, `~~>` an acting category (a module's `monoidal`) or a promonad's `arrows`, `<--` an
-   opposite (`A <-- B` runs from `B` to `A`). Concretely `A -> B` in `Total` (𝒮) and `A ~> B` in `Partial` (𝒫).
-   Objects: `*`, `+`, `` `^` `` (`` B `^` A `` is *A* ⇒ *B*), `<->`.
+   category or the base of a promonad or a Freyd category, whose arrows are `-->`, `~~>` an acting category (a module's
+   `monoidal`), `<--` and `<==` the opposites of `-->` and `==>` (`A <-- B` runs from `B` to `A`). Concretely `A -> B`
+   in `Total` (𝒮) and `A ~> B` in `Partial` (𝒫). Objects: `*`, `+`, `` `^` `` (`` B `^` A `` is *A* ⇒ *B*), `<->`.
 9. **`final` on what is definitional:** aliases and members that only forward (`>>>`, `first`, `restricted`, the
    parser syntax); redefinitions are `override` without `final`. A member forwarded unchanged from a parameter is an
    `export` (no scaladoc); one that renames it or changes its meaning is a `final def` with its own doc

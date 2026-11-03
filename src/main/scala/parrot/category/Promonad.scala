@@ -12,16 +12,16 @@ import Category.Type
   *   - *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*), the multiplication
   */
 abstract class Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total) {
-  import category.{Obj, -->}
-  import category.op.--> as <--
-  import arrows.--> as ~~>
+  import category.{Obj, --> as ==>}
+  import category.op.--> as <==
+  import arrows.-->
 
   /** The unit *η*: **C**(*A*,*B*) → *P*(*A*,*B*).
     *
     * This is the morphism part of the identity-on-objects functor from **C** to the induced arrow category. See
     * [[arrows]].
     */
-  def unit[A: Obj, B: Obj](f: A --> B): A ~~> B
+  def unit[A: Obj, B: Obj](f: A ==> B): A --> B
 
   /** The multiplication *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*).
     *
@@ -34,7 +34,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
     Type.TIsType
   }
 
-  override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 <-- B1, g: A2 --> B2): P[A1, A2] -> P[B1, B2] = {
+  override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 <== B1, g: A2 ==> B2): P[A1, A2] -> P[B1, B2] = {
     p => multiply(unit(g), multiply(p, unit[B1, A1](f)))
   }
 
@@ -77,7 +77,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
 
     /** *η*(*g* ∘ *f*) = *η*(*g*) ∘ *η*(*f*)
       */
-    def unitComposition[A: Obj, B: Obj, C: Obj](f: A --> B, g: B --> C)(using P[A, C] is Observable): Boolean = {
+    def unitComposition[A: Obj, B: Obj, C: Obj](f: A ==> B, g: B ==> C)(using P[A, C] is Observable): Boolean = {
       unit(f >>> g) =?= (unit(f) >>> unit(g))
     }
 
@@ -85,7 +85,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
       *
       * @note The premise is not checked: *f*′ must be equal to *f* by construction.
       */
-    def unitCongruence[A: Obj, B: Obj](f: A --> B, f2: A --> B)(using P[A, B] is Observable): Boolean = {
+    def unitCongruence[A: Obj, B: Obj](f: A ==> B, f2: A ==> B)(using P[A, B] is Observable): Boolean = {
       unit(f) =?= unit(f2)
     }
   }
@@ -119,10 +119,11 @@ object Promonad {
   /** The opposite *P*ᵒᵖ of a promonad *P* over **C**: a promonad over **C**ᵒᵖ, with every arrow reversed. */
   final class Op(tracked val promonad: Promonad) extends Promonad(promonad.category.op) {
     import promonad.category.Obj
+    import promonad.category.op.--> as <==
 
     type Self[A, B] = promonad.P[B, A]
 
-    def unit[A: Obj, B: Obj](f: promonad.category.-->[B, A]): promonad.P[B, A] = {
+    def unit[A: Obj, B: Obj](f: A <== B): promonad.P[B, A] = {
       promonad.unit(f)
     }
 
@@ -136,15 +137,15 @@ object Promonad {
     * The hom promonad's morphisms are the morphisms of **C** itself.
     */
   open class Hom(tracked override val category: Category) extends Promonad(category) {
-    import category.{Obj, -->}
+    import category.{Obj, --> as ==>}
 
     type Self = category.Hom
 
-    def unit[A: Obj, B: Obj](f: A --> B): A --> B = {
+    def unit[A: Obj, B: Obj](f: A ==> B): A ==> B = {
       f
     }
 
-    def multiply[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C = {
+    def multiply[A: Obj, B: Obj, C: Obj](g: B ==> C, f: A ==> B): A ==> C = {
       category.compose(g, f)
     }
   }
