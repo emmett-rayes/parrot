@@ -24,55 +24,41 @@ abstract class StrongSpec(
 
   also("Strong") {
     law("naturality") {
-      val observations = observe[T[T3, T4], T[T3, T3]]
-      val ps           = arrow[T1, T2]
+      val observations = onArrows[T1, T2, T[T3, T4], T[T3, T3]]
       val fs           = category.arrow[T4, T1]
       val gs           = category.arrow[T2, T3]
 
-      forAll(observations, ps, fs, gs) { (observe, p, f, g) =>
-        given (P[T[T3, T4], T[T3, T3]] is Observable) = observe
-        naturality[T1, T2, T4, T3, T3](p, f, g)
+      forAll(observations, fs, gs) { (observe, f, g) =>
+        given ((P[T1, T2] -> P[T[T3, T4], T[T3, T3]]) is Observable) = observe
+        naturality[T1, T2, T4, T3, T3](f, g)
       }
     }
 
     law("dinaturality") {
-      val observations = observe[T[T4, T1], T[T3, T2]]
-      val ps           = arrow[T1, T2]
+      val observations = onArrows[T1, T2, T[T4, T1], T[T3, T2]]
       val hs           = category.arrow[T4, T3]
 
-      forAll(observations, ps, hs) { (observe, p, h) =>
-        given (P[T[T4, T1], T[T3, T2]] is Observable) = observe
-        dinaturality(p, h)
+      forAll(observations, hs) { (observe, h) =>
+        given ((P[T1, T2] -> P[T[T4, T1], T[T3, T2]]) is Observable) = observe
+        dinaturality[T1, T2, T4, T3](h)
       }
     }
 
     law("unitality") {
-      val observations = observe[T1, T2]
-      val ps           = arrow[T1, T2]
+      val observations = onArrows[T1, T2, T1, T2]
 
-      forAll(observations, ps) { (observe, p) =>
-        given (P[T1, T2] is Observable) = observe
-        unitality(p)
+      forAll(observations) { observe =>
+        given ((P[T1, T2] -> P[T1, T2]) is Observable) = observe
+        unitality[T1, T2]
       }
     }
 
     law("associativity") {
-      val observations = observe[T[T[T4, T3], T1], T[T[T4, T3], T2]]
-      val ps           = arrow[T1, T2]
+      val observations = onArrows[T1, T2, T[T[T4, T3], T1], T[T[T4, T3], T2]]
 
-      forAll(observations, ps) { (observe, p) =>
-        given (P[T[T[T4, T3], T1], T[T[T4, T3], T2]] is Observable) = observe
-        associativity[T1, T2, T4, T3](p)
-      }
-    }
-
-    law("leftCongruence") {
-      val observations = observe[T[T4, T1], T[T4, T2]]
-      val ps           = arrow[T1, T2]
-
-      forAll(observations, ps) { (observe, p) =>
-        given (P[T[T4, T1], T[T4, T2]] is Observable) = observe
-        leftCongruence[T1, T2, T4](p, variant(p))
+      forAll(observations) { observe =>
+        given ((P[T1, T2] -> P[T[T[T4, T3], T1], T[T[T4, T3], T2]]) is Observable) = observe
+        associativity[T1, T2, T4, T3]
       }
     }
   }
@@ -96,12 +82,11 @@ abstract class BistrongSpec(
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 
   law("compatibility") {
-    val observations = observe[(T4 * T1) * T3, (T4 * T2) * T3]
-    val ps           = arrow[T1, T2]
+    val observations = onArrows[T1, T2, (T4 * T1) * T3, (T4 * T2) * T3]
 
-    forAll(observations, ps) { (observe, p) =>
-      given (P[(T4 * T1) * T3, (T4 * T2) * T3] is Observable) = observe
-      compatibility[T1, T2, T4, T3](p)
+    forAll(observations) { observe =>
+      given ((P[T1, T2] -> P[(T4 * T1) * T3, (T4 * T2) * T3]) is Observable) = observe
+      compatibility[T1, T2, T4, T3]
     }
   }
 }

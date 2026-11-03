@@ -40,8 +40,8 @@ object Kleisli {
       extends Strong.Bistrong(profunctor, Total.Products) {
     import profunctor.monad.M
 
-    def left[A: Type, B: Type, C: Type](p: A -> M[B]): ((C, A)) -> M[(C, B)] = {
-      (c, a) => profunctor.monad.map[B, (C, B)](b => (c, b))(p(a))
+    def left[A: Type, B: Type, C: Type]: (A -> M[B]) -> ((C, A)) -> M[(C, B)] = {
+      p => (c, a) => profunctor.monad.map[B, (C, B)](b => (c, b))(p(a))
     }
   }
 
@@ -54,9 +54,11 @@ object Kleisli {
       extends Strong.Bistrong(profunctor, Total.Coproducts) {
     import profunctor.monad.M
 
-    def left[A: Type, B: Type, C: Type](p: A -> M[B]): Either[C, A] -> M[Either[C, B]] = {
-      case Left(c)  => profunctor.monad.unit[Either[C, B]](Left(c))
-      case Right(a) => profunctor.monad.map[B, Either[C, B]](b => Right(b))(p(a))
+    def left[A: Type, B: Type, C: Type]: (A -> M[B]) -> Either[C, A] -> M[Either[C, B]] = {
+      p => {
+        case Left(c)  => profunctor.monad.unit[Either[C, B]](Left(c))
+        case Right(a) => profunctor.monad.map[B, Either[C, B]](b => Right(b))(p(a))
+      }
     }
   }
 

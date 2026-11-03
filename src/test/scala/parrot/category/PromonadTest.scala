@@ -19,17 +19,6 @@ abstract class PromonadSpec(tracked val promonad: Promonad.On[Category { type Ob
   import promonad.P
   import promonad.PromonadLaws.*
 
-  /** Observes functions between arrow types at sample arrows. */
-  private def onArrows[X1: Sample, Y1: Sample, X2: Sample, Y2: Sample]
-    : Gen[(P[X1, Y1] -> P[X2, Y2]) is Observable] = {
-    for {
-      arrows  <- Gen.listOfN(4, arrow[X1, Y1])
-      observe <- observe[X2, Y2]
-    } yield Observable.through[P[X1, Y1] -> P[X2, Y2], P[X2, Y2]](arrows.map(p => h => h(p)))(
-      using observe
-    )
-  }
-
   law("unitComposition") {
     val observations = observe[T1, T4]
     val fs           = category.arrow[T1, T2]

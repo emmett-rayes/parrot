@@ -24,6 +24,14 @@ abstract class PromonadFixture(
   /** Observations of arrows *X* → *Y*, at sample points chosen afresh for every property. */
   def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable]
 
+  /** Observations of functions between arrow types, at sample arrows chosen afresh for every property. */
+  final def onArrows[X1: Sample, Y1: Sample, X2: Sample, Y2: Sample]: Gen[(P[X1, Y1] -> P[X2, Y2]) is Observable] = {
+    for {
+      arrows  <- Gen.listOfN(4, arrow[X1, Y1])
+      observe <- observe[X2, Y2]
+    } yield Observable.total[P[X1, Y1], P[X2, Y2]](arrows)(using observe)
+  }
+
   /** The same generators, for the category of arrows. */
   final lazy val arrows: CategoryFixture.For[promonad.arrows.type] = PromonadFixture.Category(this)
 }

@@ -3159,17 +3159,17 @@ Pure functions can be run side by side on pairs: given f : A → B and g : C →
 
 The missing ingredient is the ability to carry a value along unchanged while an arrow runs. The value need not be an object of 𝒦 itself: it is enough that a monoidal category acts on 𝒦, so that a context C and an object A combine into an object C ⊘ A. A **left module** over a monoidal category (ℳ, ⊗, I), also called a left **actegory**, is a category 𝒦 with a bifunctor ⊘ : ℳ × 𝒦 → 𝒦, the **action**, and natural isomorphisms λ : I ⊘ A ≅ A and α : (X ⊗ Y) ⊘ A ≅ X ⊘ (Y ⊘ A) that satisfy the triangle and the pentagon of section 14.5. Every monoidal category is a left module over itself, with ⊘ = ⊗. In the library, a left module is a `Module`, and the self-action is `Module.OfMonoidal`.
 
-**Definition 17.2 (strength).** A **strength** on a profunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒮, over left modules ⊘₁ on 𝒦₁ and ⊘₂ on 𝒦₂ of the same monoidal category ℳ, is an operation
+**Definition 17.2 (strength).** A **strength** on a profunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒱, over left modules ⊘₁ on 𝒦₁ and ⊘₂ on 𝒦₂ of the same monoidal category ℳ, is a family of arrows of 𝒱
 
 τ : P(A, B) → P(C ⊘₁ A, C ⊘₂ B),
 
-natural in A and B, dinatural in C, and compatible with the unitors and the associators of the actions.
+natural in A and B, dinatural in C, and compatible with the unitors and the associators of the actions. For a promonad, 𝒱 is 𝒮, so τ is a function from arrows to arrows.
 
 The laws say that τ commutes with pre- and post-composition (naturality), that it does not depend on how C is presented (dinaturality), that carrying the unit along does nothing (unitality), and that carrying C ⊗ D along is carrying D, then C (associativity). A profunctor with a strength is also called a **Tambara module** **[Standard: Pastro and Street, from memory]**. Because the context sits on the left, τ is a **left strength**, as is the strength X × M(A) → M(X × A) of a monad **[Standard: Moggi 1991, from memory]**.
 
-When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′(p) = P(β, β)(τ(p)), and the two strengths commute: τ′(τ(p)) = P(α, α⁻¹)(τ(τ′(p))). A profunctor with a left and a right strength that commute is **bistrong**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
+When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′ = P(β, β) ∘ τ, and the two strengths commute: τ′ ∘ τ = P(α, α⁻¹) ∘ τ ∘ τ′. A profunctor with a left and a right strength that commute is **bistrong**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
 
-The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ. `Strong.Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(β, β) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
+The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Strong.Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(β, β) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
 
 - **Over products**, τ′ runs an arrow on the left component of a pair and τ on the right one. For a Kleisli promonad on 𝒮, every monad has one: `left(p)((c, a))` runs `p(a)` and pairs `c` with its result (`Kleisli.ProductStrength`).
 - **Over coproducts**, τ′ runs an arrow on the left case of an `Either` and passes the right case through untouched, and τ the other way round (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**. Their `left` is τ′: it names the case of the sum that an arrow runs on, not the side of the action.
