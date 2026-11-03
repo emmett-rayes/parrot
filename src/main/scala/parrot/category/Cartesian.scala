@@ -3,13 +3,15 @@ package category
 
 import scala.annotation.targetName
 
-/** A cartesian monoidal structure on a category **K**.
+/** A cartesian monoidal structure on a category **C**.
   *
   * Represents a category with finite products, where
-  *   - *A* ⊗ *B* is the product, with projections *π*₁ and *π*₂
-  *   - ⟨*f*,*g*⟩ is the unique morphism with *π*₁ ∘ ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
-  *   - *I* is terminal, with the unique morphism !: *A* → *I*
-  *   - Δ = ⟨*id*,*id*⟩ copies and ! deletes
+  *   - *A* ⊗ *B* is the product
+  *   - *π*₁ and *π*₂ are the projections
+  *   - ⟨*f*,*g*⟩ is the pairing of *f* and *g*
+  *   - *I* is the unit
+  *   - ! deletes a given object to the unit
+  *   - Δ copies an object to its product with itself
   *
   * In a cartesian category, the tensor is the categorical product and the unit is a terminal object. The unitors, the
   * associator and the braiding are derived from the projections and pairing.
@@ -19,13 +21,15 @@ abstract class Cartesian(
   tracked override val unit: Terminal.Of[category.type],
   tracked override val tensor: Products.On[category.type],
 ) extends Symmetric(category, unit, tensor) {
-  import category.{Iso, Obj, -->, <->, >>>}
+  import category.{Iso, Obj, identity, -->, <->, >>>}
 
-  export unit.discard
-
-  private given IIsObj: (I is Obj) = unit.evidence
-
+  private given IIsObj: (I is Obj)                                = unit.evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
+
+  /** The unique morphism !: *A* → *I* to the unit. */
+  final def discard[A: Obj]: A --> I = {
+    unit.discard[A]
+  }
 
   /** The first projection *π*₁: *A* ⊗ *B* → *A* of the product of *A* and *B*. */
   final def fst[A: Obj, B: Obj]: (A * B) --> A = {
@@ -42,9 +46,9 @@ abstract class Cartesian(
     tensor.product[A, B].pair(f, g)
   }
 
-  /** The diagonal Δ = ⟨*id*,*id*⟩: *A* → *A* ⊗ *A*. */
+  /** The diagonal Δ: *A* → *A* ⊗ *A*. */
   final def diagonal[A: Obj]: A --> (A * A) = {
-    pair(category.identity[A], category.identity[A])
+    identity[A] &&& identity[A]
   }
 
   /** Every object is a comonoid in exactly one way: deleting with ! and copying with Δ. */
@@ -60,7 +64,7 @@ abstract class Cartesian(
     }
   }
 
-  /** The corresponding cocartesian opposite **K**ᵒᵖ. */
+  /** The corresponding cocartesian opposite **C**ᵒᵖ. */
   final lazy val op: Cartesian.Op.Of[this.type] = Cartesian.Op(this)
 
   extension [X: Obj, A: Obj](f: X --> A)
@@ -73,27 +77,28 @@ abstract class Cartesian(
   /** *β* = ⟨*π*₂,*π*₁⟩
     */
   def braid[A: Obj, B: Obj]: (A * B) --> (B * A) = {
-    pair(snd[A, B], fst[A, B])
+    snd[A, B] &&& fst[A, B]
   }
 
-  /** *λ* = *π*₂, with inverse ⟨!,*id*⟩
+  /** *λ* = *π*₂ and *λ*⁻¹ = ⟨!,*id*⟩
     */
   def leftUnitor[A: Obj]: (I * A) <-> A = {
-    Iso(snd[I, A], pair(discard[A], category.identity[A]))
+    Iso(snd[I, A], discard[A] &&& identity[A])
   }
 
-  /** *ρ* = *π*₁, with inverse ⟨*id*,!⟩
+  /** *ρ* = *π*₁ and *ρ*⁻¹ = ⟨*id*,!⟩
     */
   def rightUnitor[A: Obj]: (A * I) <-> A = {
-    Iso(fst[A, I], pair(category.identity[A], discard[A]))
+    Iso(fst[A, I], identity[A] &&& discard[A])
   }
 
-  /** *α* = ⟨*π*₁ ∘ *π*₁,⟨*π*₂ ∘ *π*₁,*π*₂⟩⟩, with the symmetric inverse
+  /** *α* = ⟨*π*₁ ∘ *π*₁,⟨*π*₂ ∘ *π*₁,*π*₂⟩⟩ and *α*⁻¹ = ⟨⟨*π*₁,*π*₁ ∘ *π*₂⟩, *π*₂ ∘ *π*₂⟩
     */
   def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C)) = {
-    val to   = (fst[A * B, C] >>> fst[A, B]) &&& ((fst[A * B, C] >>> snd[A, B]) &&& snd[A * B, C])
-    val from = (fst[A, B * C] &&& (snd[A, B * C] >>> fst[B, C])) &&& (snd[A, B * C] >>> snd[B, C])
-    Iso(to, from)
+    Iso(
+      (fst[A * B, C] >>> fst[A, B]) &&& ((fst[A * B, C] >>> snd[A, B]) &&& snd[A * B, C]),
+      (fst[A, B * C] &&& (snd[A, B * C] >>> fst[B, C])) &&& (snd[A, B * C] >>> snd[B, C]),
+    )
   }
 
   /** Laws that any `Cartesian` structure must satisfy. */
@@ -130,23 +135,23 @@ abstract class Cartesian(
 
 object Cartesian {
 
-  /** The cartesian monoidal structures on a category **K**. */
+  /** The cartesian monoidal structures on a category **C**. */
   type On[K <: Category] = Cartesian { val category: K }
 
-  /** The cocartesian opposite **K**ᵒᵖ of a cartesian category **K**.
+  /** The cocartesian opposite **C**ᵒᵖ of a cartesian category **C**.
     *
-    * The products, projections and pairing in **K** become coproducts, injections and copairing in **K**ᵒᵖ.
+    * The products, projections and pairing in **C** become coproducts, injections and copairing in **C**ᵒᵖ.
     */
   final class Op(tracked val cartesian: Cartesian)
       extends Cocartesian(cartesian.category.op, OpInitial(cartesian), OpCoproducts(cartesian))
 
   object Op {
 
-    /** The cocartesian opposite of a cartesian category **K**. */
+    /** The cocartesian opposite of a cartesian category **C**. */
     type Of[K <: Cartesian] = Op { val cartesian: K }
   }
 
-  /** The terminal object of a cartesian category **K**, as the initial object of **K**ᵒᵖ: ¡ is !. */
+  /** The terminal object of a cartesian category **C**, as the initial object of **C**ᵒᵖ: ¡ is !. */
   final class OpInitial(tracked val cartesian: Cartesian)
       extends Initial(cartesian.category.op) {
     import category.{Obj, -->}
@@ -162,7 +167,7 @@ object Cartesian {
     }
   }
 
-  /** The products of a cartesian category **K**, as the binary coproducts of **K**ᵒᵖ.
+  /** The products of a cartesian category **C**, as the binary coproducts of **C**ᵒᵖ.
     *
     * The coproduct of two objects is their product, and the coproduct of morphisms is the product of their opposites.
     */
@@ -185,7 +190,7 @@ object Cartesian {
     }
   }
 
-  /** The product *A*₁ × *A*₂ in a cartesian category **K**, as a coproduct of **K**ᵒᵖ.
+  /** The product *A*₁ × *A*₂ in a cartesian category **C**, as a coproduct of **C**ᵒᵖ.
     *
     * The injections are the projections, and the copairing is the pairing.
     */
@@ -221,7 +226,7 @@ object Cartesian {
 
   object OpCoproduct {
 
-    /** The products in a cartesian category **K**, as coproducts of **K**ᵒᵖ. */
-    type In[K <: Cartesian] = OpCoproduct { val cartesian: K }
+    /** The products in a cartesian category **C**, as coproducts of **C**ᵒᵖ. */
+    type In[C <: Cartesian] = OpCoproduct { val cartesian: C }
   }
 }

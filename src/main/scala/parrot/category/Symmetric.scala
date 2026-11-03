@@ -1,7 +1,7 @@
 package parrot
 package category
 
-/** A symmetric monoidal structure on a category **K**.
+/** A symmetric monoidal structure on a category **C**.
   *
   * Represents a symmetric monoidal category, where
   *   - *β*: *A* ⊗ *B* ≅ *B* ⊗ *A* is the braiding
@@ -55,6 +55,6 @@ abstract class Symmetric(
 
 object Symmetric {
 
-  /** The symmetric monoidal structures on a category **K**. */
-  type On[K <: Category] = Symmetric { val category: K }
+  /** The symmetric monoidal structures on a category **C**. */
+  type On[C <: Category] = Symmetric { val category: C }
 }

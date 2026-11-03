@@ -1,10 +1,10 @@
 package parrot
 package category
 
-/** A monoidal structure on a category **K**.
+/** A monoidal structure on a category **C**.
   *
-  * Represents a monoidal category (**K**, ⊗, *I*), where
-  *   - ⊗: **K** × **K** → **K** is the tensor bifunctor
+  * Represents a monoidal category (**C**, ⊗, *I*), where
+  *   - ⊗: **C** × **C** → **C** is the tensor bifunctor
   *   - *I* is the unit object
   *   - *λ*: *I* ⊗ *A* ≅ *A* is the left unitor
   *   - *ρ*: *A* ⊗ *I* ≅ *A* is the right unitor
@@ -17,7 +17,7 @@ abstract class Monoidal(
 ) extends caps.Pure {
   import category.{Obj, -->, <->, >>>}
 
-  /** The tensor of objects *A* ⊗ *B*. */
+  /** The tensor *A* ⊗ *B* of objects *A* and *B*. */
   final type Tensor = tensor.F
 
   /** Infix alias for [[Tensor]]. */
@@ -26,8 +26,7 @@ abstract class Monoidal(
   /** The unit object *I*. */
   final type I = unit.A
 
-  private given IIsObj: (I is Obj) = unit.evidence
-
+  private given IIsObj: (I is Obj)                                = unit.evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
   /** *λ*: *I* ⊗ *A* ≅ *A*
@@ -55,29 +54,30 @@ abstract class Monoidal(
 
   /** Laws that any `Monoidal` structure must satisfy. */
   object MonoidalLaws {
+    import category.IsoLaws
 
     /** *λ*⁻¹ ∘ *λ* = *id*
       */
     def leftUnitorLeftInverse[A: Obj](using ((I * A) --> (I * A)) is Observable): Boolean = {
-      category.IsoLaws.leftInverse(leftUnitor[A])
+      IsoLaws.leftInverse(leftUnitor[A])
     }
 
     /** *λ* ∘ *λ*⁻¹ = *id*
       */
     def leftUnitorRightInverse[A: Obj](using (A --> A) is Observable): Boolean = {
-      category.IsoLaws.rightInverse(leftUnitor[A])
+      IsoLaws.rightInverse(leftUnitor[A])
     }
 
     /** *ρ*⁻¹ ∘ *ρ* = *id*
       */
     def rightUnitorLeftInverse[A: Obj](using ((A * I) --> (A * I)) is Observable): Boolean = {
-      category.IsoLaws.leftInverse(rightUnitor[A])
+      IsoLaws.leftInverse(rightUnitor[A])
     }
 
     /** *ρ* ∘ *ρ*⁻¹ = *id*
       */
     def rightUnitorRightInverse[A: Obj](using (A --> A) is Observable): Boolean = {
-      category.IsoLaws.rightInverse(rightUnitor[A])
+      IsoLaws.rightInverse(rightUnitor[A])
     }
 
     /** *α*⁻¹ ∘ *α* = *id*
@@ -85,7 +85,7 @@ abstract class Monoidal(
     def associatorLeftInverse[A: Obj, B: Obj, C: Obj](
       using (((A * B) * C) --> ((A * B) * C)) is Observable
     ): Boolean = {
-      category.IsoLaws.leftInverse(associator[A, B, C])
+      IsoLaws.leftInverse(associator[A, B, C])
     }
 
     /** *α* ∘ *α*⁻¹ = *id*
@@ -93,7 +93,7 @@ abstract class Monoidal(
     def associatorRightInverse[A: Obj, B: Obj, C: Obj](
       using ((A * (B * C)) --> (A * (B * C))) is Observable
     ): Boolean = {
-      category.IsoLaws.rightInverse(associator[A, B, C])
+      IsoLaws.rightInverse(associator[A, B, C])
     }
 
     /** *f* ∘ *λ* = *λ* ∘ (*id* ⊗ *f*)
@@ -137,6 +137,6 @@ abstract class Monoidal(
 
 object Monoidal {
 
-  /** The monoidal structures on a category **K**. */
-  type On[K <: Category] = Monoidal { val category: K }
+  /** The monoidal structures on a category **C**. */
+  type On[C <: Category] = Monoidal { val category: C }
 }
