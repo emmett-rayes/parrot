@@ -37,7 +37,7 @@ object Initial {
   type Of[C <: Category] = Initial { val category: C }
 
   /** The initial object of a category with a colimit of the empty diagram: that colimit. */
-  def apply(colimits: Colimit.OfDiagram[EmptyDiagram.Into]): Of[colimits.category.type] = {
+  def apply(colimits: Colimits.Of[EmptyDiagram.Into]): Of[colimits.category.type] = {
     FromColimit(colimits.colimit(EmptyDiagram(colimits.category)))
   }
 

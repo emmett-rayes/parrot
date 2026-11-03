@@ -125,13 +125,14 @@ warning-free.
     with the first refinement of the base, with the class's first sentence as its doc, in the plural ("The cones over
     a diagram *D*.") unless the base determines it ("The opposite of a category **K**."), and the doc's letter as its
     parameter unless the class has a member of that name (`Bifunctor.Op.Of[B]`, since a bifunctor's carrier is `F`).
-    A class with type parameters of its own (`Limit.OfDiagram[D]`) has no alias.
+    A class with type parameters of its own (`StateT[S]`) has no alias. A type member that clients bound has an alias
+    beside the class, indexed by the category (`Limits.Of[T]` is `InCategory { type D >: T[category.type] }`).
 
 One file per structure in `src/main/scala/parrot/category/`; the instances on 𝒮 and 𝒫 are in `Total.scala` and
 `Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
 family of structures shares its member's file: `Products` is in `Product.scala` and `Coproducts` in `Coproduct.scala`,
-and the limits of a type of diagrams are in `Limit`'s companion (`Limit.OfDiagram`, `Limit.OfDiscreteDiagram`), the
-colimits in `Colimit`'s.
+and the limits in a category are in the object `Limits` in `Limit.scala` (`InCategory`, `DiscreteInCategory` and their
+aliases `Of` and `OfDiscrete`), the colimits in `Colimits` in `Colimit.scala`.
 
 ## `parrot.parser`
 
@@ -226,12 +227,13 @@ colimits in `Colimit`'s.
   inside it: `Product { val category: category.type }`, or `Limit.Of[diagram.type] { val apex: diagram.… }` for a
   parameter `diagram`. The base's alias avoids it for the base (rule 13); for another member, import what the
   refinement names (`import category.Object`), use a `this`-qualified path in methods, or give a method parameter
-  another name (`limit(functor)`).
+  another name (`limit(functor)`). `Limits.Of` relies on it: in `InCategory { type D >: T[category.type] }`,
+  `category` is the refined structure's own.
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
 - **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
   passes to its parent (the points of `Total.LimitOf`) goes into the companion, indexed by the parameter it depends on
-  (`LimitOf.Point.Of[diagram.type]`). Nor can its type arguments name the class's parameters: an instance whose type of
-  diagrams depends on a parameter is a method returning an anonymous instance (`Total.DiscreteLimitsOf(index)`).
+  (`LimitOf.Point.Of[diagram.type]`). Nor can a class's type parameters name its parameters: a type that depends on
+  one is a type member (`Limits.InCategory.D`, diagrams into its `category`).
 - **`export functor.category`** creates a stable alias: imports from it and singleton chains keep working.
 - **Same-named extensions from two imports overload** by the receiver's type, and extensions are also found through a
   path-dependent type's prefix (`category.Hom` finds `category.>>>` without an import). Where one value is an arrow of
@@ -249,7 +251,8 @@ colimits in `Colimit`'s.
 - **Imports.** `import monoidal.{*, ***}` is an error, since `*` is the wildcard; import a tensor alias `*` backticked:
   ``import monoidal.{I, `*`, given}``. Pants infers no dependency from a relative import at the top of a file
   (`import Category.Discrete2.Disc2` after the package clauses), and `pants check` can then fail with "Not found": put
-  the import inside the definition that uses it (`object Sample`).
+  the import inside the definition that uses it (`object Sample`). A member shadows a top-level object of the same
+  name: inside `Total`, `Limits` is `Total.Limits`, so its parent is `category.Limits.InCategory`.
 - **GADTs and evidence.** Matching refines type parameters, not type members, so a match on `A is Disc2` never refines
   `A`: carry a GADT on the evidence and match on it (`A.index match { case Index.Zero => … }`). A match type at the
   refined parameter still does not reduce where a value must conform to its case (`x: Components[X, Y][A]` is not an

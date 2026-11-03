@@ -9,8 +9,8 @@ concept index (Appendix E of [`TUTORIAL.md`](TUTORIAL.md)) says where each conce
 
 | Relation | In the code | Examples |
 | --- | --- | --- |
-| *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Module(K, M, T)` on a category and a monoidal category acting on it; `Strong(P, L1, L2)` on a profunctor and two modules; `Monad(F)` on an endofunctor; `Cone(D, X)` and `Cocone(D, X)` on a functor and an object, their diagram and apex; `Limit.OfDiagram[D](C)` and `Colimit.OfDiagram[D](C)` on a category, for a type of diagrams *D*; `Terminal(C, U)` and `Initial(C, U)` on a category and an object; `Product(C, U1, U2, U)` and `Coproduct(C, U1, U2, U)` on a category and three objects; `Restriction(P)` on a promonad |
-| *refines*: more operations and laws | `extends`, forwarding the parameters | `Symmetric` refines `Monoidal`; `Cartesian` and `Cocartesian` refine `Symmetric`; `Bistrong` refines `Strong` over a symmetric structure acting on itself; `Classical` refines `Restriction`; `Semilattice` refines `Monoid`; `Limit` refines `Cone` and `Colimit` refines `Cocone`; `Limit.OfDiscreteDiagram` and `Colimit.OfDiscreteDiagram` refine `Limit.OfDiagram` and `Colimit.OfDiagram` for the diagrams of a discrete shape; `Freyd` refines a category of arrows with a bistrong structure |
+| *on*: structure on something else | a `tracked` parameter | `Monoidal(K, U, T)` on a category, a unit object and a bifunctor; `Module(K, M, T)` on a category and a monoidal category acting on it; `Strong(P, L1, L2)` on a profunctor and two modules; `Monad(F)` on an endofunctor; `Cone(D, X)` and `Cocone(D, X)` on a functor and an object, their diagram and apex; `Limits.InCategory(C)` and `Colimits.InCategory(C)` on a category, for a type of diagrams *D*; `Terminal(C, U)` and `Initial(C, U)` on a category and an object; `Product(C, U1, U2, U)` and `Coproduct(C, U1, U2, U)` on a category and three objects; `Restriction(P)` on a promonad |
+| *refines*: more operations and laws | `extends`, forwarding the parameters | `Symmetric` refines `Monoidal`; `Cartesian` and `Cocartesian` refine `Symmetric`; `Bistrong` refines `Strong` over a symmetric structure acting on itself; `Classical` refines `Restriction`; `Semilattice` refines `Monoid`; `Limit` refines `Cone` and `Colimit` refines `Cocone`; `Limits.DiscreteInCategory` and `Colimits.DiscreteInCategory` refine `Limits.InCategory` and `Colimits.InCategory` for the diagrams of a discrete shape; `Freyd` refines a category of arrows with a bistrong structure |
 | *is a*: a special case of something more general | `extends` with fixed arguments, or a view | an `Endofunctor` is a `Functor` from **K** to **K**; a `Bifunctor` is a `Functor` out of a product (`FromProduct`); a `Profunctor` is a `Bifunctor` out of **K₁**ᵒᵖ × **K₂**; an `Endoprofunctor` is a `Profunctor` from **K** to **K**; `Option`'s monad is `OptionT` over `Monad.Identity`, `State[S]` is `StateT[S]` over it, and `Writer(W)` is `WriterT(W, Monad.Identity)` |
 | *dual*: the same structure on the opposite | an `Op` class | `Category.Op`; `Bifunctor.Op`; `Cartesian.Op` is `Cocartesian`, from a terminal object and products as an initial object and coproducts (`Cartesian.OpInitial`, `Cartesian.OpCoproducts`), and `Cocartesian.Op` is `Cartesian`; `Promonad.Op`; `Bistrong.Op`; `Conway.OfElgot` |
 | *induces*: a construction from one structure to another | an `open class` or a method | a category gives a promonad (`Promonad.Hom`); a promonad gives its category of arrows (`Promonad.Arrows`); a monoidal category acts on itself (`Module.OfMonoidal`); a symmetric monoidal category makes its hom bistrong (`Bistrong.Hom`); a monad gives a promonad (`Kleisli`); a monoid gives a monad (`Writer`); a semilattice gives a preorder (`Preorder.of`); a diagram into 𝒮 has a limit (`Total.LimitOf`) and a colimit (`Total.ColimitOf`), and one of a discrete shape a limit whose apex depends only on its objects (`Total.DiscreteLimitOf`) and a colimit, the sum of its points (`Total.DiscreteColimitOf`); discrete limits of shape **2** give products (`Products.FromLimits`), and discrete colimits coproducts (`Coproducts.FromColimits`) |
@@ -29,9 +29,9 @@ Category (Op, Product, Iso, Empty, Discrete2)                                  �
    │                                         ├─ transformers: OptionT, StateT, WriterT (+ Monoid)
    │                                         └─ Identity; over it, Option (OptionT), State (StateT), Writer (WriterT)
    ├─ on ─ Cone ─ refines ─ Limit ⇄ Terminal (of the empty diagram), Product (of a pair)
-   │                        └─ Limit.OfDiagram ─ refines ─ Limit.OfDiscreteDiagram ─ induces ─ Products (of shape 2)
+   │                        └─ Limits.InCategory ─ refines ─ Limits.DiscreteInCategory ─ induces ─ Products (of shape 2)
    ├─ on ─ Cocone ─ refines ─ Colimit ⇄ Initial (of the empty diagram), Coproduct (of a pair)    duals
-   │                          └─ Colimit.OfDiagram ─ refines ─ Colimit.OfDiscreteDiagram ─ induces ─ Coproducts
+   │                          └─ Colimits.InCategory ─ refines ─ Colimits.DiscreteInCategory ─ induces ─ Coproducts
    └─ Bifunctor (Op) ─ is a ─ Functor out of Category.Product
       ├─ on ─ Monoidal ─ refines ─ Symmetric ─ refines ─ Cartesian ⇄ Cocartesian (dual)
       │       ├─ on ─ Module (OfMonoidal)
@@ -57,8 +57,8 @@ Each item needs only those before it:
 1. `Type`, `Eq`
 2. `Observable`
 3. `Category` (with `Op`, `Product`, `Iso`, `Empty`, `Discrete2`), `Total`, `Partial`
-4. `Functor`, `Endofunctor`, then `Cone`, `Limit` (with `OfDiagram` and `OfDiscreteDiagram`), `Terminal`, `Product`,
-   and dually `Cocone`, `Colimit` (with its `OfDiagram` and `OfDiscreteDiagram`), `Initial`, `Coproduct`
+4. `Functor`, `Endofunctor`, then `Cone`, `Limit` (with `Limits`), `Terminal`, `Product`, and dually `Cocone`,
+   `Colimit` (with `Colimits`), `Initial`, `Coproduct`
 5. `Bifunctor`
 6. `Monoidal`, `Symmetric`, `Module`
 7. `Cartesian`, `Cocartesian`

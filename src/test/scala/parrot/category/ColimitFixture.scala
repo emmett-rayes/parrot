@@ -2,7 +2,11 @@ package parrot
 package category
 
 /** The binary coproducts of 𝒮 from its colimits of shape **2**: the points of two types, tagged by their object. */
-object ColimitCoproducts extends Coproducts.FromColimits(Total.DiscreteColimitsOf(Category.Discrete2))
+object ColimitCoproducts extends Coproducts.FromColimits(Total.DiscreteColimits) {
+
+  /** The name of the coproduct in law checks: the colimit Colim of the diagram (*A*,*B*). */
+  given FName: TypeName[F] = TypeName("Colim")
+}
 
 /** The initial object of 𝒮 from its colimit of the empty diagram: the sum with no points. */
 object ColimitInitial extends Initial.FromColimit(Total.DiscreteColimitOf(Terminal.EmptyDiagram(Total))) {

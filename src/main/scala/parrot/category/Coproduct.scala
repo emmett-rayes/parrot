@@ -87,7 +87,7 @@ object Coproduct {
 
   /** The coproduct of *X* and *Y* in a category with colimits of the diagrams of shape **2**. */
   def apply(
-    colimits: Colimit.OfDiagram[Discrete2Diagram.Into],
+    colimits: Colimits.Of[Discrete2Diagram.Into],
     first: colimits.category.Object,
     second: colimits.category.Object,
   ): Of[colimits.category.type] { val summand1: first.type; val summand2: second.type } = {
@@ -232,7 +232,7 @@ abstract class Coproducts(tracked override val category: Category) extends Endob
 }
 
 object Coproducts {
-  import Category.Discrete2
+  import Category.Discrete2.Disc2
   import Product.{Components, Discrete2Diagram}
 
   /** The binary coproduct structures on a category **K**. */
@@ -241,22 +241,22 @@ object Coproducts {
   /** The binary coproducts of a category with discrete colimits of shape **2**: the colimits of the diagrams
     * (*A*,*B*).
     */
-  def apply(colimits: Colimit.OfDiscreteDiagram[Discrete2Diagram.Into])
-    : On[colimits.category.type] { type Self[A, B] = colimits.Colim[Components[A, B]] } = {
+  def apply(colimits: Colimits.OfDiscrete[Discrete2Diagram.Into])
+    : On[colimits.category.type] { type Self[A, B] = colimits.Apex[Disc2, Components[A, B]] } = {
     FromColimits(colimits)
   }
 
   /** The binary coproducts of discrete colimits *L* of shape **2**.
     *
-    * The coproduct *A* + *B* is the apex Colim[(*A*,*B*)] of the colimit of the diagram (*A*,*B*), a type constructor
-    * because the shape is discrete, and its injections and copairing are those of the colimit
+    * The coproduct *A* + *B* is the apex Apex[**2**,(*A*,*B*)] of the colimit of the diagram (*A*,*B*), a type
+    * constructor because the shape is discrete, and its injections and copairing are those of the colimit
     * ([[Coproduct.FromColimit]]).
     */
-  open class FromColimits(tracked val colimits: Colimit.OfDiscreteDiagram[Discrete2Diagram.Into])
+  open class FromColimits(tracked val colimits: Colimits.OfDiscrete[Discrete2Diagram.Into])
       extends Coproducts(colimits.category) {
     import category.{Obj, Object}
 
-    type Self[A, B] = colimits.Colim[Components[A, B]]
+    type Self[A, B] = colimits.Apex[Disc2, Components[A, B]]
 
     def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
       colimits.colimit(Discrete2Diagram(category, category.Object[A], category.Object[B])).apex.evidence

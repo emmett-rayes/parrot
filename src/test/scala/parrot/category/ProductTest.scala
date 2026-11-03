@@ -2,6 +2,7 @@ package parrot
 package category
 
 import Category.Type
+import LimitProducts.FName
 import Sample.given
 
 /** The laws of [[Category.Product]], for the product 𝒮 × 𝒫 of the two categories of programs. */

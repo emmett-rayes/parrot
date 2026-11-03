@@ -86,7 +86,7 @@ object Product {
 
   /** The product of *X* and *Y* in a category with limits of the diagrams of shape **2**. */
   def apply(
-    limits: Limit.OfDiagram[Discrete2Diagram.Into],
+    limits: Limits.Of[Discrete2Diagram.Into],
     first: limits.category.Object,
     second: limits.category.Object,
   ): Of[limits.category.type] { val factor1: first.type; val factor2: second.type } = {
@@ -266,28 +266,29 @@ abstract class Products(tracked override val category: Category) extends Endobif
 }
 
 object Products {
-  import Category.Discrete2
+  import Category.Discrete2.Disc2
   import Product.{Components, Discrete2Diagram}
 
   /** The binary product structures on a category **K**. */
   type On[K <: Category] = Products { val category: K }
 
   /** The binary products of a category with discrete limits of shape **2**: the limits of the diagrams (*A*,*B*). */
-  def apply(limits: Limit.OfDiscreteDiagram[Discrete2Diagram.Into])
-    : On[limits.category.type] { type Self[A, B] = limits.Lim[Components[A, B]] } = {
+  def apply(limits: Limits.OfDiscrete[Discrete2Diagram.Into])
+    : On[limits.category.type] { type Self[A, B] = limits.Apex[Disc2, Components[A, B]] } = {
     FromLimits(limits)
   }
 
   /** The binary products of discrete limits *L* of shape **2**.
     *
-    * The product *A* × *B* is the apex Lim[(*A*,*B*)] of the limit of the diagram (*A*,*B*), a type constructor
-    * because the shape is discrete, and its projections and pairing are those of the limit ([[Product.FromLimit]]).
+    * The product *A* × *B* is the apex Apex[**2**,(*A*,*B*)] of the limit of the diagram (*A*,*B*), a type
+    * constructor because the shape is discrete, and its projections and pairing are those of the limit
+    * ([[Product.FromLimit]]).
     */
-  open class FromLimits(tracked val limits: Limit.OfDiscreteDiagram[Discrete2Diagram.Into])
+  open class FromLimits(tracked val limits: Limits.OfDiscrete[Discrete2Diagram.Into])
       extends Products(limits.category) {
     import category.{Obj, Object}
 
-    type Self[A, B] = limits.Lim[Components[A, B]]
+    type Self[A, B] = limits.Apex[Disc2, Components[A, B]]
 
     def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
       limits.limit(Discrete2Diagram(category, category.Object[A], category.Object[B])).apex.evidence

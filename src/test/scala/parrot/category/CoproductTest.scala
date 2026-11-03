@@ -2,6 +2,7 @@ package parrot
 package category
 
 import Category.Type
+import ColimitCoproducts.FName
 
 /** The laws of [[Coproducts]], for binary coproducts on a category whose objects are all types. */
 abstract class CoproductsSpec(
