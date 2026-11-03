@@ -72,3 +72,9 @@ final class Freyd(tracked override val promonad: Promonad, tracked val strong: S
     }
   }
 }
+
+object Freyd {
+
+  /** The Freyd categories on a promonad *P*. */
+  type On[P <: Promonad] = Freyd { val promonad: P }
+}

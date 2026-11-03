@@ -53,7 +53,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
   /** Every profunctor induces a category of arrows, where the objects are the objects of **K**, the morphisms are
     * *P*(*A*,*B*), the identity is given by *η*, and composition is given by *μ*.
     */
-  final lazy val arrows: Promonad.Arrows { val promonad: Promonad.this.type } = Promonad.Arrows(this)
+  final lazy val arrows: Promonad.Arrows.Of[this.type] = Promonad.Arrows(this)
 
   extension [B: Obj, C: Obj](q: P[B, C])
     /** Infix extension for [[compose]]. */
@@ -90,6 +90,9 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
 
 object Promonad {
 
+  /** The promonads on a category **K**. */
+  type On[K <: Category] = Promonad { val category: K }
+
   /** The category of arrows of a promonad *P*. */
   open class Arrows(tracked val promonad: Promonad) extends Category {
     type Self = promonad.P
@@ -102,6 +105,12 @@ object Promonad {
     def compose[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C = {
       promonad.multiply(g, f)
     }
+  }
+
+  object Arrows {
+
+    /** The category of arrows of a promonad *P*. */
+    type Of[P <: Promonad] = Arrows { val promonad: P }
   }
 
   /** The opposite *P*ᵒᵖ of a promonad *P* over **K**: a promonad over **K**ᵒᵖ, with every arrow reversed. */

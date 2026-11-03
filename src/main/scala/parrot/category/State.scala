@@ -60,7 +60,7 @@ object StateT {
     */
   open class ClassicalOf[S](
     tracked val transformer: StateT[S],
-    tracked val classical: Monad.Classical { val monad: transformer.monad.type },
+    tracked val classical: Monad.Classical.On[transformer.monad.type],
   ) extends Monad.Classical(transformer) {
     import transformer.monad.M
 
@@ -98,7 +98,7 @@ object StateT {
     */
   open class GuardedIteration[S](
     tracked val transformer: StateT[S],
-    tracked val classical: Monad.Classical { val monad: transformer.monad.type },
+    tracked val classical: Monad.Classical.On[transformer.monad.type],
   )(using size: S is Measure)
       extends Monad.Elgot(transformer) {
     import transformer.monad.M
@@ -125,8 +125,8 @@ object StateT {
     * of any of them must follow progress since the enclosing call of any other.
     */
   open class GuardedRecursion[S](
-    tracked override val promonad: Kleisli { val monad: StateT[S] },
-    tracked val classical: Monad.Classical { val monad: promonad.monad.monad.type },
+    tracked override val promonad: Kleisli.Of[StateT[S]],
+    tracked val classical: Monad.Classical.On[promonad.monad.monad.type],
   )(using size: S is Measure)
       extends Recursion(promonad) {
     import promonad.monad.monad.M

@@ -93,7 +93,7 @@ abstract class Restriction(tracked val promonad: Promonad) extends caps.Pure {
   */
 abstract class Classical(
   tracked override val promonad: Promonad,
-  tracked val cocartesian: Cocartesian { val category: promonad.category.type },
+  tracked val cocartesian: Cocartesian.On[promonad.category.type],
 ) extends Restriction(promonad) {
   import cocartesian.+
   import promonad.{P, >>>}
@@ -233,4 +233,10 @@ abstract class Classical(
       (orElse(p, q) =?= orElse(p2, q2)) && (complement(p) =?= complement(p2))
     }
   }
+}
+
+object Classical {
+
+  /** The classical restriction structures on a promonad *P*. */
+  type On[P <: Promonad] = Classical { val promonad: P }
 }

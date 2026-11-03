@@ -177,7 +177,7 @@ object Total extends Category {
     * no subset types; [[LimitOf.Point]] makes the subset by abstraction (tutorial, §6.5). Neither step looks at the
     * shape of **J**, so this one construction gives every limit of 𝒮.
     */
-  final class LimitOf(tracked override val diagram: Functor { val target: Total.type })
+  final class LimitOf(tracked override val diagram: Functor.Into[Total.type])
       extends Limit(diagram, diagram.target.Object[LimitOf.Point.Of[diagram.type]]) {
     import diagram.source as J
     import LimitOf.Point
@@ -205,7 +205,7 @@ object Total extends Category {
       * @note Naturality is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
       *   cones are lawful, and it is the cone law of the limit itself, *D*(*f*) ∘ *ψ*_*A* = *ψ*_*B*, at each point.
       */
-    final class Point private[LimitOf] (tracked val diagram: Functor { val target: Total.type })(
+    final class Point private[LimitOf] (tracked val diagram: Functor.Into[Total.type])(
       val at: [A] -> (A is diagram.source.Obj) ?-> diagram.F[A],
     ) extends caps.Pure
 
@@ -219,8 +219,8 @@ object Total extends Category {
   /** The limits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the limit
     * [[LimitOf]](*D*).
     */
-  object Limits extends Limit.OfDiagram[[K <: Category] =>> Functor { val target: K }](Total) {
-    def limit(functor: Functor { val target: Total.type }): Limit.Of[functor.type] = {
+  object Limits extends Limit.OfDiagram[Functor.Into](Total) {
+    def limit(functor: Functor.Into[Total.type]): Limit.Of[functor.type] = {
       LimitOf(functor)
     }
   }
@@ -237,9 +237,7 @@ object Total extends Category {
     * [[LimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
     */
   final class DiscreteLimitOf(
-    tracked override val diagram: Functor {
-      val source: Category { type Self[A, B] <: A =:= B }; val target: Total.type
-    },
+    tracked override val diagram: Functor.Into[Total.type] { val source: Category { type Self[A, B] <: A =:= B } },
   ) extends Limit(diagram, diagram.target.Object[[A] -> (A is diagram.source.Obj) ?-> diagram.F[A]]) {
     import diagram.source as J
 
@@ -259,14 +257,14 @@ object Total extends Category {
     *   its parameters.
     */
   def DiscreteLimitsOf(index: Category { type Self[A, B] <: A =:= B })
-    : Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }] {
+    : Limit.OfDiscreteDiagram[[K <: Category] =>> Functor.Into[K] { val source: index.type }] {
       val category: Total.type
       type Lim[F[_]] = [A] -> (A is index.Obj) ?-> F[A]
     } = {
-    new Limit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }](Total) {
+    new Limit.OfDiscreteDiagram[[K <: Category] =>> Functor.Into[K] { val source: index.type }](Total) {
       type Lim[F[_]] = [A] -> (A is index.Obj) ?-> F[A]
 
-      def limit(functor: Functor { val source: index.type; val target: Total.type })
+      def limit(functor: Functor.Into[Total.type] { val source: index.type })
         : Limit.Of[functor.type] { val apex: Lim[functor.F] is functor.target.Object } = {
         DiscreteLimitOf(functor)
       }
@@ -316,7 +314,7 @@ object Total extends Category {
     * and Scala has no quotient types; [[ColimitOf.Point]] makes the quotient by abstraction (tutorial, §7.6). Neither
     * step looks at the shape of **J**, so this one construction gives every colimit of 𝒮.
     */
-  final class ColimitOf(tracked override val diagram: Functor { val target: Total.type })
+  final class ColimitOf(tracked override val diagram: Functor.Into[Total.type])
       extends Colimit(diagram, diagram.target.Object[ColimitOf.Point.Of[diagram.type]]) {
     import diagram.source as J
     import ColimitOf.Point
@@ -344,7 +342,7 @@ object Total extends Category {
       *   cocones are lawful, and it is the cocone law of the colimit itself, *ψ*_*B* ∘ *D*(*f*) = *ψ*_*A*, at each
       *   point.
       */
-    final class Point private[ColimitOf] (tracked val diagram: Functor { val target: Total.type })(
+    final class Point private[ColimitOf] (tracked val diagram: Functor.Into[Total.type])(
       private[ColimitOf] val sum: Sum[diagram.source.Obj, diagram.F],
     ) extends caps.Pure
 
@@ -358,8 +356,8 @@ object Total extends Category {
   /** The colimits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the colimit
     * [[ColimitOf]](*D*).
     */
-  object Colimits extends Colimit.OfDiagram[[K <: Category] =>> Functor { val target: K }](Total) {
-    def colimit(functor: Functor { val target: Total.type }): Colimit.Of[functor.type] = {
+  object Colimits extends Colimit.OfDiagram[Functor.Into](Total) {
+    def colimit(functor: Functor.Into[Total.type]): Colimit.Of[functor.type] = {
       ColimitOf(functor)
     }
   }
@@ -375,9 +373,7 @@ object Total extends Category {
     * [[ColimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
     */
   final class DiscreteColimitOf(
-    tracked override val diagram: Functor {
-      val source: Category { type Self[A, B] <: A =:= B }; val target: Total.type
-    },
+    tracked override val diagram: Functor.Into[Total.type] { val source: Category { type Self[A, B] <: A =:= B } },
   ) extends Colimit(diagram, diagram.target.Object[Sum[diagram.source.Obj, diagram.F]]) {
     import diagram.source as J
 
@@ -397,14 +393,14 @@ object Total extends Category {
     *   its parameters.
     */
   def DiscreteColimitsOf(index: Category { type Self[A, B] <: A =:= B })
-    : Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }] {
+    : Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor.Into[K] { val source: index.type }] {
       val category: Total.type
       type Colim[F[_]] = Sum[index.Obj, F]
     } = {
-    new Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor { val source: index.type; val target: K }](Total) {
+    new Colimit.OfDiscreteDiagram[[K <: Category] =>> Functor.Into[K] { val source: index.type }](Total) {
       type Colim[F[_]] = Sum[index.Obj, F]
 
-      def colimit(functor: Functor { val source: index.type; val target: Total.type })
+      def colimit(functor: Functor.Into[Total.type] { val source: index.type })
         : Colimit.Of[functor.type] { val apex: Colim[functor.F] is functor.target.Object } = {
         DiscreteColimitOf(functor)
       }

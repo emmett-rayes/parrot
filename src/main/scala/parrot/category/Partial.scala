@@ -169,7 +169,7 @@ object Partial extends Category {
       * @note Unlike in a cartesian category, programs need not preserve it: one that does not terminate cannot be
       *   deleted, *p* ⨾ ! ≠ !. By Fox's theorem, this is exactly why the pairs of 𝒫 are not products.
       */
-    def comonoid[A: Type]: Comonoid { val monoidal: Product.type; type Self = A } = {
+    def comonoid[A: Type]: Comonoid.In[Product.type] { type Self = A } = {
       new Comonoid(Product) {
         type Self = A
 

@@ -16,7 +16,7 @@ abstract class Terminal(tracked override val category: Category) extends Categor
   def discard[A: Obj]: A --> I
 
   /** The terminal object as a limit of the empty diagram, with ! as the factorization. */
-  final lazy val limit: Terminal.AsLimit { val terminal: Terminal.this.type } = Terminal.AsLimit(this)
+  final lazy val limit: Terminal.AsLimit.Of[this.type] = Terminal.AsLimit(this)
 
   /** Laws that any `Terminal` must satisfy. */
   object TerminalLaws {
@@ -75,6 +75,12 @@ object Terminal {
     def factor(cone: Cone.Over[diagram.type]): cone.X --> terminal.I = {
       terminal.discard[cone.X](using cone.apex.evidence)
     }
+  }
+
+  object AsLimit {
+
+    /** The terminal object *T* as a limit of the empty diagram. */
+    type Of[T <: Terminal] = AsLimit { val terminal: T }
   }
 
   /** The cone with apex *X* over a diagram of the empty shape.

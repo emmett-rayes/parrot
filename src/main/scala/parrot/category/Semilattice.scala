@@ -31,3 +31,9 @@ abstract class Semilattice(tracked override val monoidal: Cartesian) extends Mon
     }
   }
 }
+
+object Semilattice {
+
+  /** The semilattices in a cartesian category **V**. */
+  type In[V <: Cartesian] = Semilattice { val monoidal: V }
+}

@@ -16,7 +16,7 @@ abstract class Initial(tracked override val category: Category) extends Category
   def absurd[A: Obj]: I --> A
 
   /** The initial object as a colimit of the empty diagram, with ¡ as the factorization. */
-  final lazy val colimit: Initial.AsColimit { val initial: Initial.this.type } = Initial.AsColimit(this)
+  final lazy val colimit: Initial.AsColimit.Of[this.type] = Initial.AsColimit(this)
 
   /** Laws that any `Initial` must satisfy. */
   object InitialLaws {
@@ -76,6 +76,12 @@ object Initial {
     def factor(cocone: Cocone.Under[diagram.type]): initial.I --> cocone.X = {
       initial.absurd[cocone.X](using cocone.apex.evidence)
     }
+  }
+
+  object AsColimit {
+
+    /** The initial object *I* as a colimit of the empty diagram. */
+    type Of[I <: Initial] = AsColimit { val initial: I }
   }
 
   /** The cocone with apex *X* under a diagram of the empty shape.

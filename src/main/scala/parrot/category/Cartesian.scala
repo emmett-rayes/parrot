@@ -48,7 +48,7 @@ abstract class Cartesian(
   }
 
   /** Every object is a comonoid in exactly one way: deleting with ! and copying with Δ. */
-  final def comonoid[A: Obj]: Comonoid { val monoidal: Cartesian.this.type; type Self = A } = {
+  final def comonoid[A: Obj]: Comonoid.In[this.type] { type Self = A } = {
     new Comonoid(this) {
       type Self = A
 
@@ -61,7 +61,7 @@ abstract class Cartesian(
   }
 
   /** The corresponding cocartesian opposite **K**ᵒᵖ. */
-  final lazy val op: Cartesian.Op { val cartesian: Cartesian.this.type } = Cartesian.Op(this)
+  final lazy val op: Cartesian.Op.Of[this.type] = Cartesian.Op(this)
 
   extension [X: Obj, A: Obj](f: X --> A)
     /** Infix extension for [[pair]]. */
@@ -130,12 +130,21 @@ abstract class Cartesian(
 
 object Cartesian {
 
+  /** The cartesian monoidal structures on a category **K**. */
+  type On[K <: Category] = Cartesian { val category: K }
+
   /** The cocartesian opposite **K**ᵒᵖ of a cartesian category **K**.
     *
     * The products, projections and pairing in **K** become coproducts, injections and copairing in **K**ᵒᵖ.
     */
   final class Op(tracked val cartesian: Cartesian)
       extends Cocartesian(cartesian.category.op, OpInitial(cartesian), OpCoproducts(cartesian))
+
+  object Op {
+
+    /** The cocartesian opposite of a cartesian category **K**. */
+    type Of[K <: Cartesian] = Op { val cartesian: K }
+  }
 
   /** The terminal object of a cartesian category **K**, as the initial object of **K**ᵒᵖ: ¡ is !. */
   final class OpInitial(tracked val cartesian: Cartesian)
@@ -167,9 +176,7 @@ object Cartesian {
     }
 
     def coproduct[A: Obj, B: Obj]
-      : OpCoproduct {
-        val cartesian: OpCoproducts.this.cartesian.type; val summand1: A is Object; val summand2: B is Object
-      } = {
+      : OpCoproduct.In[cartesian.type] { val summand1: A is Object; val summand2: B is Object } = {
       OpCoproduct(cartesian, category.Object[A], category.Object[B])
     }
 
@@ -211,5 +218,11 @@ object Cartesian {
     def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X = {
       cartesian.pair(f, g)
     }
+  }
+
+  object OpCoproduct {
+
+    /** The products in a cartesian category **K**, as coproducts of **K**ᵒᵖ. */
+    type In[K <: Cartesian] = OpCoproduct { val cartesian: K }
   }
 }

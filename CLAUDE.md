@@ -68,7 +68,7 @@ warning-free.
 2. **What a structure is on is a `tracked val` parameter** (a stable path you can import from), named by its role in
    one lowercase word (`source`, `target`, `category`, `monoidal`, `strong`), indexed when there are two (`source1`,
    `source2`); what it adds is a member. A constraint between parameters refines the *later* one towards the earlier:
-   `Classical(promonad: Promonad, cocartesian: Cocartesian { val category: promonad.category.type })`. A refinement
+   `Classical(promonad: Promonad, cocartesian: Cocartesian.On[promonad.category.type])`. A refinement
    forwards its parameter under the same name:
    `Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total)`.
 3. **`Self` iff the structure has its own carrier** (`Category`, `Functor`, `Promonad`, `Object`, `Monoid`, `Eq`, …),
@@ -115,13 +115,16 @@ warning-free.
     never `Eq` on functions; inequations use a `Preorder` (`?<`). Congruence laws take variants equal by construction
     (`f2`); conditional laws state their premise in a `@note`.
 13. **Refinements go through the base's alias.** A class has one base, the parameter that the first sentence of its
-    doc relates it to, usually the first, and one alias that refines it, named by that preposition: `Endofunctor.On[K]`,
-    `Limit.Of[D]`, `Cone.Over[D]`, `Cocone.Under[D]`, `In` for an object in a monoidal category, and `Into` for the
-    target of a class documented as an arrow (`EmptyDiagram.Into[K]`); a view takes `Of`. Its argument is what the doc
-    names: `Monad.On[K]` refines the category of the endofunctor. Refine the base only through the alias, also where
-    an inline refinement would compile, and every other member inline after it
-    (`Cone.Over[diagram.type] { val apex: Y is C.Object }`). Add the alias with the first refinement of the base, and
-    document it as the class's first sentence in the plural ("The cones over a diagram *D*.").
+    doc relates it to, usually the first (`Module` is over its `monoidal`), and one alias that refines it, named by that
+    preposition: `Endofunctor.On[K]`, `Limit.Of[D]`, `Monoid.In[V]`, `Cone.Over[D]`, `Cocone.Under[D]` and `Into`
+    for the target of a class documented as an arrow (`Functor.Into[K]`); a view takes `Of`
+    (`Category.Op.Of[this.type]`). Its argument is what the doc names: `Monad.On[K]` refines the category of the
+    endofunctor. Refine the base only through the alias, also where an inline refinement would compile, and every
+    other member inline after it (`Strong.Bistrong.On[parsers.type] { val monoidal: products.type }`). Add the alias
+    with the first refinement of the base, with the class's first sentence as its doc, in the plural ("The cones over
+    a diagram *D*.") unless the base determines it ("The opposite of a category **K**."), and the doc's letter as its
+    parameter unless the class has a member of that name (`Bifunctor.Op.Of[B]`, since a bifunctor's carrier is `F`).
+    A class with type parameters of its own (`Limit.OfDiagram[D]`) has no alias.
 
 One file per structure in `src/main/scala/parrot/category/`; the instances on 𝒮 and 𝒫 are in `Total.scala` and
 `Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
@@ -220,9 +223,9 @@ colimits in `Colimit`'s.
   `monad.functor.category` = `Total`); refine the parameter a member comes from (`Monad.On`), never intersect.
 - **A refinement sees the members of the type it refines,** so a name that is also one of them is cyclic or ambiguous
   inside it: `Product { val category: category.type }`, or `Limit.Of[diagram.type] { val apex: diagram.… }` for a
-  parameter `diagram`. Refine through an alias declared elsewhere (`Product.Of[category.type]`), import what the
-  refinement names (`import category.Object`), use a `this`-qualified path in methods
-  (`OpCoproducts.this.cartesian.type`), or give a method parameter another name (`limit(functor)`).
+  parameter `diagram`. The base's alias avoids it for the base (rule 13); for another member, import what the
+  refinement names (`import category.Object`), use a `this`-qualified path in methods, or give a method parameter
+  another name (`limit(functor)`).
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
 - **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
   passes to its parent (the points of `Total.LimitOf`) goes into the companion, indexed by the parameter it depends on

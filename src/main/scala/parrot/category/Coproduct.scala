@@ -43,7 +43,7 @@ abstract class Coproduct(
   /** The coproduct as a colimit of the diagram (*A*₁,*A*₂) of shape **2**: its legs are the injections, and the
     * factorization of a cocone is the copairing of its legs.
     */
-  final lazy val colimit: Coproduct.AsColimit { val coproduct: Coproduct.this.type } = Coproduct.AsColimit(this)
+  final lazy val colimit: Coproduct.AsColimit.Of[this.type] = Coproduct.AsColimit(this)
 
   /** Laws that any `Coproduct` must satisfy. */
   object CoproductLaws {
@@ -135,6 +135,12 @@ object Coproduct {
     def factor(cocone: Cocone.Under[diagram.type]): coproduct.S --> cocone.X = {
       coproduct.copair[cocone.X](cocone.leg[0], cocone.leg[1])(using cocone.apex.evidence)
     }
+  }
+
+  object AsColimit {
+
+    /** The coproduct *S* as a colimit of the diagram (*A*₁,*A*₂) of shape **2**. */
+    type Of[S <: Coproduct] = AsColimit { val coproduct: S }
   }
 
   /** The cocone with apex *X* under a diagram of shape **2** whose legs are *f* and *g*. */

@@ -52,3 +52,9 @@ abstract class Symmetric(
     }
   }
 }
+
+object Symmetric {
+
+  /** The symmetric monoidal structures on a category **K**. */
+  type On[K <: Category] = Symmetric { val category: K }
+}

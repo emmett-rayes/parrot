@@ -11,9 +11,9 @@ import scala.annotation.targetName
   *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*) is the left strength
   */
 abstract class Strong(
-  tracked val profunctor: Profunctor { val base: Total.type },
+  tracked val profunctor: Profunctor.Into[Total.type],
   tracked val module1: Module { val category: profunctor.domain.type },
-  tracked val module2: Module { val monoidal: module1.monoidal.type; val category: profunctor.codomain.type },
+  tracked val module2: Module.Over[module1.monoidal.type] { val category: profunctor.codomain.type },
 ) extends caps.Pure {
   import profunctor.P
   import profunctor.domain.{Obj as Obj1, -->}
@@ -118,8 +118,8 @@ object Strong {
     * Here, the action is ⊗ itself because a right strength needs a right action, which a left module does not have.
     */
   abstract class Bistrong(
-    tracked override val profunctor: Profunctor { val base: Total.type; val codomain: domain.type },
-    tracked override val monoidal: Symmetric { val category: profunctor.domain.type },
+    tracked override val profunctor: Profunctor.Into[Total.type] { val codomain: domain.type },
+    tracked override val monoidal: Symmetric.On[profunctor.domain.type],
   ) extends Strong(profunctor, Module.OfMonoidal(monoidal), Module.OfMonoidal(monoidal)) {
     import monoidal.`*`
     import profunctor.P
@@ -175,9 +175,9 @@ object Strong {
       * @note **M** is meant to be `strong.monoidal.op`; its braiding is not checked.
       */
     final class Op(
-      tracked val strong: Bistrong { val profunctor: Promonad },
-      tracked override val monoidal: Symmetric {
-        val category: strong.profunctor.category.op.type; val tensor: Bifunctor { type Self = strong.monoidal.tensor.F }
+      tracked val strong: Bistrong.On[Promonad],
+      tracked override val monoidal: Symmetric.On[strong.profunctor.category.op.type] {
+        val tensor: Bifunctor { type Self = strong.monoidal.tensor.F }
       },
     ) extends Bistrong(Promonad.Op(strong.profunctor), monoidal) {
       import monoidal.`*`
@@ -195,7 +195,7 @@ object Strong {
       */
     open class Hom(
       tracked override val profunctor: Promonad.Hom,
-      tracked override val monoidal: Symmetric { val category: profunctor.category.type },
+      tracked override val monoidal: Symmetric.On[profunctor.category.type],
     ) extends Bistrong(profunctor, monoidal) {
       import monoidal.`*`
       import profunctor.category.{Obj, -->}

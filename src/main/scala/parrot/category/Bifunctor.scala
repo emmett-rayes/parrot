@@ -27,10 +27,10 @@ abstract class Bifunctor(tracked val source1: Category, tracked val source2: Cat
   def bimap[A1: Obj1, A2: Obj2, B1: Obj1, B2: Obj2](f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]
 
   /** The bifunctor as a functor out of the product category **C₁** × **C₂**. */
-  final lazy val functor: Bifunctor.FromProduct { val bifunctor: Bifunctor.this.type } = Bifunctor.FromProduct(this)
+  final lazy val functor: Bifunctor.FromProduct.Of[this.type] = Bifunctor.FromProduct(this)
 
   /** The corresponding opposite bifunctor *F*ᵒᵖ: **C₁**ᵒᵖ × **C₂**ᵒᵖ → **D**ᵒᵖ. */
-  final lazy val op: Bifunctor.Op { val bifunctor: Bifunctor.this.type } = Bifunctor.Op(this)
+  final lazy val op: Bifunctor.Op.Of[this.type] = Bifunctor.Op(this)
 
   /** Laws that any `Bifunctor` must satisfy. */
   object BifunctorLaws {
@@ -71,6 +71,9 @@ abstract class Bifunctor(tracked val source1: Category, tracked val source2: Cat
 
 object Bifunctor {
 
+  /** The bifunctors into a category **D**. */
+  type Into[D <: Category] = Bifunctor { val target: D }
+
   /** A bifunctor *F*: **C₁** × **C₂** → **D**, read as a functor from the product category **C₁** × **C₂** to **D**.
     *
     * Represents a functor, where
@@ -92,6 +95,12 @@ object Bifunctor {
     def map[X: source.Obj, Y: source.Obj](f: X --> Y): F[X] ==> F[Y] = {
       bifunctor.bimap(f._1, f._2)(using X.fst, X.snd, Y.fst, Y.snd)
     }
+  }
+
+  object FromProduct {
+
+    /** The bifunctor *B*, read as a functor from the product category. */
+    type Of[B <: Bifunctor] = FromProduct { val bifunctor: B }
   }
 
   /** The opposite *F*ᵒᵖ: **C₁**ᵒᵖ × **C₂**ᵒᵖ → **D**ᵒᵖ of a bifunctor *F*: **C₁** × **C₂** → **D**.
@@ -116,6 +125,12 @@ object Bifunctor {
     ): F[B1, B2] ==> F[A1, A2] = {
       bifunctor.bimap(f, g)
     }
+  }
+
+  object Op {
+
+    /** The opposite of a bifunctor *B*. */
+    type Of[B <: Bifunctor] = Op { val bifunctor: B }
   }
 }
 

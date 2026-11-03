@@ -54,6 +54,12 @@ abstract class Functor(tracked val source: Category, tracked val target: Categor
   }
 }
 
+object Functor {
+
+  /** The functors into a category **D**. */
+  type Into[D <: Category] = Functor { val target: D }
+}
+
 /** An endofunctor on a category **K**.
   *
   * Represents a functor *F*: **K** → **K**.

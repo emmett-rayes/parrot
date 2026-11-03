@@ -14,7 +14,7 @@ import Category.Type
   * fails has no output, unlike in the failure transformer over a writer ([[OptionT]]).
   */
 open class WriterT(
-  tracked val monoid: Monoid { val monoidal: Total.Products.type },
+  tracked val monoid: Monoid.In[Total.Products.type],
   tracked val monad: Monad.On[Total.type],
 ) extends Monad(WriterT.FunctorOf(monoid, monad)) {
 
@@ -33,7 +33,7 @@ object WriterT {
 
   /** The endofunctor of the writer transformer: *M*[*W* × −], which maps the result and keeps the output. */
   final class FunctorOf(
-    tracked val monoid: Monoid { val monoidal: Total.Products.type },
+    tracked val monoid: Monoid.In[Total.Products.type],
     tracked val monad: Monad.On[Total.type],
   ) extends Endofunctor(Total) {
     type Self[A] = monad.M[(monoid.M, A)]
@@ -59,5 +59,5 @@ object WriterT {
   * If *W* is commutative, the order of effects does not matter, and the Kleisli arrows form a monoidal category; if *W*
   * is also idempotent (a [[Semilattice]]), running an arrow twice is the same as running it once.
   */
-open class Writer(tracked override val monoid: Monoid { val monoidal: Total.Products.type })
+open class Writer(tracked override val monoid: Monoid.In[Total.Products.type])
     extends WriterT(monoid, Monad.Identity)

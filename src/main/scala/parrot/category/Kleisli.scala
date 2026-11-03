@@ -28,12 +28,15 @@ open class Kleisli(tracked val monad: Monad) extends Promonad(monad.category) {
 
 object Kleisli {
 
+  /** The Kleisli promonad of a monad *M*. */
+  type Of[M <: Monad] = Kleisli { val monad: M }
+
   /** Every Kleisli promonad of a monad on 𝒮 is strong for products, where
     *   - *τ*(*p*) = (*c*,*a*) ↦ *M*(*b* ↦ (*c*,*b*))(*p*(*a*))
     *
     * The effect of *p* happens; *c* is passed along unchanged.
     */
-  open class ProductStrength(tracked override val profunctor: Kleisli { val monad: Monad.On[Total.type] })
+  open class ProductStrength(tracked override val profunctor: Kleisli.Of[Monad.On[Total.type]])
       extends Strong.Bistrong(profunctor, Total.Products) {
     import profunctor.monad.M
 
@@ -47,7 +50,7 @@ object Kleisli {
     *
     * On the left the value passes through without effect; on the right the arrow runs.
     */
-  open class CoproductStrength(tracked override val profunctor: Kleisli { val monad: Monad.On[Total.type] })
+  open class CoproductStrength(tracked override val profunctor: Kleisli.Of[Monad.On[Total.type]])
       extends Strong.Bistrong(profunctor, Total.Coproducts) {
     import profunctor.monad.M
 
@@ -61,8 +64,8 @@ object Kleisli {
     *   - *p̄*(*a*) = *M*(*x* ↦ *a*)(*p*(*a*)‾): run the test of *p*, then return the input
     */
   open class RestrictionOf(
-    tracked override val promonad: Kleisli { val monad: Monad.On[Total.type] },
-    tracked val restriction: Monad.Restriction { val monad: promonad.monad.type },
+    tracked override val promonad: Kleisli.Of[Monad.On[Total.type]],
+    tracked val restriction: Monad.Restriction.On[promonad.monad.type],
   ) extends Restriction(promonad) {
     import promonad.monad.M
 
@@ -76,8 +79,8 @@ object Kleisli {
     *   - *attempt*(*p*)(*a*) tags the result of *p*(*a*), or returns *a* on the right where *p*(*a*) fails
     */
   open class ClassicalOf(
-    tracked override val promonad: Kleisli { val monad: Monad.On[Total.type] },
-    tracked val classical: Monad.Classical { val monad: promonad.monad.type },
+    tracked override val promonad: Kleisli.Of[Monad.On[Total.type]],
+    tracked val classical: Monad.Classical.On[promonad.monad.type],
   ) extends Classical(promonad, Total.Coproducts) {
     import promonad.monad.M
 
@@ -108,10 +111,10 @@ object Kleisli {
 
   /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */
   open class ElgotOf(
-    tracked override val strong: Strong.Bistrong {
-      val profunctor: Kleisli { val monad: Monad.On[Total.type] }; val monoidal: Total.Coproducts.type
+    tracked override val strong: Strong.Bistrong.On[Kleisli.Of[Monad.On[Total.type]]] {
+      val monoidal: Total.Coproducts.type
     },
-    tracked val elgot: Monad.Elgot { val monad: strong.profunctor.monad.type },
+    tracked val elgot: Monad.Elgot.On[strong.profunctor.monad.type],
   ) extends Elgot(strong) {
     import strong.profunctor.monad.M
 

@@ -75,12 +75,13 @@ Rejected:
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
   `Limit.Of`) only names a refinement.
 - **Refinements go through one alias per class, for its base:** the parameter that the first sentence of the class's
-  doc relates it to, whose preposition names the alias (`Endofunctor.On`, `Limit.Of`, `Cone.Over`, `Cocone.Under`, and
-  `Into` for the target of a class documented as an arrow, `EmptyDiagram.Into`), with what the doc names as its
-  argument (`Monad.On[K]` refines the category of the endofunctor). The base is refined only through its alias and
-  every other member inline after it, so each parameter has one spelling whatever the names at the use, and a
-  refinement of the base is never cyclic, as `Endobifunctor { val category: category.type }` is, where `category` is
-  the refinement's own member.
+  doc relates it to, whose preposition names the alias (`Endofunctor.On`, `Limit.Of`, `Monoid.In`, `Cone.Over`,
+  `Cocone.Under` and `Into` for the target of a class documented as an arrow, `Functor.Into`), with what the doc
+  names as its argument (`Monad.On[K]` refines the category of the endofunctor). The base is refined only through its
+  alias and every other member inline after it, so each parameter has one spelling whatever the names at the use, and
+  a refinement of the base is never cyclic, as `Endobifunctor { val category: category.type }` is, where `category` is
+  the refinement's own member. A class with type parameters of its own (`Limit.OfDiagram[D]`) has no alias, which
+  would take them by position.
 - **Objects are types with evidence.** A category declares `type Obj <: Type`, where `Type` is `Category.Type`, object
   evidence and nothing else. Evidence travels only through context bounds, which come after the value parameters, so
   that infix code infers its types. Evidence classes such as `Pair`, the objects of `Category.Product`, extend `Type`,

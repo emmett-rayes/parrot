@@ -11,9 +11,7 @@ package category
 abstract class Module(
   tracked val category: Category,
   tracked val monoidal: Monoidal,
-  tracked val action: Bifunctor {
-    val source1: monoidal.category.type; val source2: category.type; val target: category.type
-  },
+  tracked val action: Bifunctor.Into[category.type] { val source1: monoidal.category.type; val source2: category.type },
 ) extends caps.Pure {
   import category.{Obj, -->, <->, >>>}
   import monoidal.category.{Obj as ObjM, --> as ==>}
@@ -121,6 +119,9 @@ abstract class Module(
 }
 
 object Module {
+
+  /** The left modules over a monoidal category **M**. */
+  type Over[M <: Monoidal] = Module { val monoidal: M }
 
   /** Every monoidal category is canonically a left module over itself by its tensor bifunctor. */
   open class OfMonoidal(tracked override val monoidal: Monoidal)

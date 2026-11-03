@@ -51,7 +51,7 @@ abstract class Cocartesian(
   }
 
   /** The corresponding cartesian opposite **K**ᵒᵖ. */
-  final lazy val op: Cocartesian.Op { val cocartesian: Cocartesian.this.type } = Cocartesian.Op(this)
+  final lazy val op: Cocartesian.Op.Of[this.type] = Cocartesian.Op(this)
 
   extension [A: Obj, X: Obj](f: A --> X)
     /** Infix extension for [[copair]]. */
@@ -126,12 +126,21 @@ abstract class Cocartesian(
 
 object Cocartesian {
 
+  /** The cocartesian monoidal structures on a category **K**. */
+  type On[K <: Category] = Cocartesian { val category: K }
+
   /** The cartesian opposite **K**ᵒᵖ of a cocartesian category **K**.
     *
     * The coproducts, injections and copairing in **K** become products, projections and pairing in **K**ᵒᵖ.
     */
   final class Op(tracked val cocartesian: Cocartesian)
       extends Cartesian(cocartesian.category.op, OpTerminal(cocartesian), OpProducts(cocartesian))
+
+  object Op {
+
+    /** The cartesian opposite of a cocartesian category **K**. */
+    type Of[K <: Cocartesian] = Op { val cocartesian: K }
+  }
 
   /** The initial object of a cocartesian category **K**, as the terminal object of **K**ᵒᵖ: ! is ¡. */
   final class OpTerminal(tracked val cocartesian: Cocartesian)
@@ -163,9 +172,7 @@ object Cocartesian {
     }
 
     def product[A: Obj, B: Obj]
-      : OpProduct {
-        val cocartesian: OpProducts.this.cocartesian.type; val factor1: A is Object; val factor2: B is Object
-      } = {
+      : OpProduct.In[cocartesian.type] { val factor1: A is Object; val factor2: B is Object } = {
       OpProduct(cocartesian, category.Object[A], category.Object[B])
     }
 
@@ -207,5 +214,11 @@ object Cocartesian {
     def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P = {
       cocartesian.copair(f, g)
     }
+  }
+
+  object OpProduct {
+
+    /** The coproducts in a cocartesian category **K**, as products of **K**ᵒᵖ. */
+    type In[K <: Cocartesian] = OpProduct { val cocartesian: K }
   }
 }

@@ -56,3 +56,9 @@ abstract class Monoid(tracked val monoidal: Monoidal) extends caps.Pure {
     }
   }
 }
+
+object Monoid {
+
+  /** The monoid objects in a monoidal category **V**. */
+  type In[V <: Monoidal] = Monoid { val monoidal: V }
+}

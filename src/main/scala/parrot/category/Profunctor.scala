@@ -31,6 +31,12 @@ abstract class Profunctor(tracked val domain: Category, tracked val codomain: Ca
   }
 }
 
+object Profunctor {
+
+  /** The profunctors into a category **V**. */
+  type Into[V <: Category] = Profunctor { val base: V }
+}
+
 /** An endoprofunctor on **K** valued in **V**.
   *
   * Represents a profunctor *P*: **K**ᵒᵖ × **K** → **V**.

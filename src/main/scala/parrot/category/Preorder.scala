@@ -68,7 +68,7 @@ object Preorder {
   def apply[A: Preorder]: A is Preorder = summon
 
   /** The order of a semilattice in 𝒮: *a* ⊑ *b* when *a* ⊔ *b* = *b*. */
-  def of(semilattice: Semilattice { val monoidal: Total.Products.type })(
+  def of(semilattice: Semilattice.In[Total.Products.type])(
     using semilattice.M is Eq
   ): semilattice.M is Preorder = {
     new Preorder {

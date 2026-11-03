@@ -109,6 +109,12 @@ object Monad {
     def restrict[A](m: monad.M[A]): monad.M[Unit]
   }
 
+  object Restriction {
+
+    /** The restriction structures on a monad *M* on 𝒮. */
+    type On[M <: Monad] = Restriction { val monad: M }
+  }
+
   /** A classical restriction structure on a monad on 𝒮: success is decidable.
     *
     * Represents a monad *M* with
@@ -139,6 +145,9 @@ object Monad {
 
   object Classical {
 
+    /** The classical restriction structures on a monad *M* on 𝒮. */
+    type On[M <: Monad] = Classical { val monad: M }
+
     /** `Option` is classical: `None` fails, and success can be tested. It is the classical structure of the failure
       * transformer over the identity.
       */
@@ -157,5 +166,11 @@ object Monad {
 
     /** The iteration *f*† of *f*. */
     def iterate[A, X](f: X -> monad.M[Either[A, X]]): X -> monad.M[A]
+  }
+
+  object Elgot {
+
+    /** The iteration operators on a monad *M* on 𝒮. */
+    type On[M <: Monad] = Elgot { val monad: M }
   }
 }

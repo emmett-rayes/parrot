@@ -43,7 +43,7 @@ abstract class Product(
   /** The product as a limit of the diagram (*A*₁,*A*₂) of shape **2**: its legs are the projections, and the
     * factorization of a cone is the pairing of its legs.
     */
-  final lazy val limit: Product.AsLimit { val product: Product.this.type } = Product.AsLimit(this)
+  final lazy val limit: Product.AsLimit.Of[this.type] = Product.AsLimit(this)
 
   /** Laws that any `Product` must satisfy. */
   object ProductLaws {
@@ -134,6 +134,12 @@ object Product {
     def factor(cone: Cone.Over[diagram.type]): cone.X --> product.P = {
       product.pair[cone.X](cone.leg[0], cone.leg[1])(using cone.apex.evidence)
     }
+  }
+
+  object AsLimit {
+
+    /** The product *P* as a limit of the diagram (*A*₁,*A*₂) of shape **2**. */
+    type Of[P <: Product] = AsLimit { val product: P }
   }
 
   /** The cone with apex *X* over a diagram of shape **2** whose legs are *f* and *g*. */

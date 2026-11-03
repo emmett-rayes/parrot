@@ -54,7 +54,7 @@ object Colimit {
     * are colimits of the diagrams of any subtype, so the colimits of every diagram in 𝒮 ([[Total.Colimits]]) are its
     * colimits of the empty diagram.
     */
-  abstract class OfDiagram[-D[K <: Category] <: Functor { val target: K }](tracked val category: Category)
+  abstract class OfDiagram[-D[K <: Category] <: Functor.Into[K]](tracked val category: Category)
       extends caps.Pure {
 
     /** The colimit colim *G* of a diagram *G*. */
@@ -73,7 +73,7 @@ object Colimit {
     * *A* and *B* one type constructor, which a tensor can be ([[Coproducts.FromColimits]]).
     */
   abstract class OfDiscreteDiagram[
-    -D[K <: Category] <: Functor { val source: Category { type Self[A, B] <: A =:= B }; val target: K },
+    -D[K <: Category] <: Functor.Into[K] { val source: Category { type Self[A, B] <: A =:= B } },
   ](tracked override val category: Category)
       extends OfDiagram[D](category) {
 

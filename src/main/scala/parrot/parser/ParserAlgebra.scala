@@ -32,20 +32,18 @@ import category.Category.Type
   * `diagnose`. It may override a derived combinator with a faster implementation of the same equation.
   */
 abstract class ParserAlgebra(
-  tracked val parsers: Promonad { val category: Category { type Obj = Type } },
-  tracked val products: Cartesian {
-    val category: parsers.category.type; val unit: Unit is parsers.category.Object
-    val tensor: Bifunctor { type Self = Tuple2 }
+  tracked val parsers: Promonad.On[Category { type Obj = Type }],
+  tracked val products: Cartesian.On[parsers.category.type] {
+    val unit: Unit is parsers.category.Object; val tensor: Bifunctor { type Self = Tuple2 }
   },
-  tracked val coproducts: Cocartesian {
-    val category: parsers.category.type; val unit: Nothing is parsers.category.Object
-    val tensor: Bifunctor { type Self = Either }
+  tracked val coproducts: Cocartesian.On[parsers.category.type] {
+    val unit: Nothing is parsers.category.Object; val tensor: Bifunctor { type Self = Either }
   },
-  tracked val zipping: Strong.Bistrong { val profunctor: parsers.type; val monoidal: products.type },
-  tracked val branching: Strong.Bistrong { val profunctor: parsers.type; val monoidal: coproducts.type },
-  tracked val choice: Classical { val promonad: parsers.type; val cocartesian: coproducts.type },
-  tracked val loops: Elgot { val strong: branching.type },
-  tracked val knots: Recursion { val promonad: parsers.type },
+  tracked val zipping: Strong.Bistrong.On[parsers.type] { val monoidal: products.type },
+  tracked val branching: Strong.Bistrong.On[parsers.type] { val monoidal: coproducts.type },
+  tracked val choice: Classical.On[parsers.type] { val cocartesian: coproducts.type },
+  tracked val loops: Elgot.On[branching.type],
+  tracked val knots: Recursion.On[parsers.type],
 ) extends caps.Pure {
   import parsers.category.>>>
 
@@ -135,10 +133,10 @@ abstract class ParserAlgebra(
   // ==== Zipping and branching: the strengths ====
 
   /** Parsers as a Freyd category over products, with the strength [[zipping]]. */
-  final lazy val zipped: Freyd { val promonad: parsers.type; val strong: zipping.type } = Freyd(parsers, zipping)
+  final lazy val zipped: Freyd.On[parsers.type] { val strong: zipping.type } = Freyd(parsers, zipping)
 
   /** Parsers as a Freyd category over coproducts, with the strength [[branching]]. */
-  final lazy val branched: Freyd { val promonad: parsers.type; val strong: branching.type } = Freyd(parsers, branching)
+  final lazy val branched: Freyd.On[parsers.type] { val strong: branching.type } = Freyd(parsers, branching)
 
   /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* in [[zipped]]. */
   final def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {

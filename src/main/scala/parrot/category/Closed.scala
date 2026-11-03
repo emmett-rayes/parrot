@@ -40,7 +40,7 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
   }
 
   /** The internal hom as a profunctor ⇒: **K**ᵒᵖ × **K** → **K**. */
-  final lazy val internalHom: Closed.InternalHom { val closed: Closed.this.type } = Closed.InternalHom(this)
+  final lazy val internalHom: Closed.InternalHom.Of[this.type] = Closed.InternalHom(this)
 
   /** Laws that any `Closed` structure must satisfy: currying and uncurrying are inverse. */
   object ClosedLaws {
@@ -101,5 +101,11 @@ object Closed {
     def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: B1 --> A1, g: A2 --> B2): P[A1, A2] --> P[B1, B2] = {
       closed.curry((closed.monoidal.category.identity[P[A1, A2]] *** f) >>> closed.eval[A1, A2] >>> g)
     }
+  }
+
+  object InternalHom {
+
+    /** The internal hom of a closed structure *C*. */
+    type Of[C <: Closed] = InternalHom { val closed: C }
   }
 }

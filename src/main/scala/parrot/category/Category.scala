@@ -59,7 +59,7 @@ abstract class Category extends caps.Pure {
   final type <-> = Iso
 
   /** The corresponding opposite category **C**ᵒᵖ. */
-  final lazy val op: Category.Op { val category: Category.this.type } = Category.Op(this)
+  final lazy val op: Category.Op.Of[this.type] = Category.Op(this)
 
   extension [B: Obj, C: Obj](g: B --> C)
     /** Infix extension for [[compose]]. */
@@ -183,6 +183,12 @@ object Category {
     def compose[A: Obj, B: Obj, C: Obj](g: B --> C, f: A --> B): A --> C = {
       category.compose(f, g)
     }
+  }
+
+  object Op {
+
+    /** The opposite of a category **K**. */
+    type Of[K <: Category] = Op { val category: K }
   }
 
   /** The product category **C₁** × **C₂** of two categories.

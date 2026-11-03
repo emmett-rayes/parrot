@@ -49,3 +49,9 @@ abstract class Recursion(tracked val promonad: Promonad) extends caps.Pure {
     }
   }
 }
+
+object Recursion {
+
+  /** Recursion on a promonad *P*. */
+  type On[P <: Promonad] = Recursion { val promonad: P }
+}
