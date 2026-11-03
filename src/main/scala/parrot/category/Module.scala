@@ -9,8 +9,8 @@ package category
   *   - *α*: (*X* ⊗ *Y*) ⊘ *A* ≅ *X* ⊘ (*Y* ⊘ *A*) is the action associator
   */
 abstract class Module(
-  tracked val category: Category,
   tracked val monoidal: Monoidal,
+  tracked val category: Category,
   tracked val action: Bifunctor.Into[category.type] { val source1: monoidal.category.type; val source2: category.type },
 ) extends caps.Pure {
   import category.{Obj, -->, <->, >>>}
@@ -125,7 +125,7 @@ object Module {
 
   /** Every monoidal category is canonically a left module over itself by its tensor bifunctor. */
   open class OfMonoidal(tracked override val monoidal: Monoidal)
-      extends Module(monoidal.category, monoidal, monoidal.tensor) {
+      extends Module(monoidal, monoidal.category, monoidal.tensor) {
     import category.{Obj, <->}
     import monoidal.`*`
     import monoidal.category.{Obj as ObjM}
