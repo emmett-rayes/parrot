@@ -9,7 +9,7 @@ import Category.Type
 /** The laws of [[Traced]], with feedback that stops. */
 abstract class TracedSpec(
   name: String,
-  tracked val traced: Traced.On[Strong.Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
+  tracked val traced: Traced.On[Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
 )(using
   promonad: PromonadFixture.For[traced.strong.profunctor.type],
   types: SampleTypes,

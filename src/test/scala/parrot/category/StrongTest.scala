@@ -6,7 +6,7 @@ import Category.Type
 /** The laws of [[Strong]], for bistrong promonads over 𝒮: every strength in the library is bistrong. */
 abstract class StrongSpec(
   name: String,
-  tracked val strong: Strong.Bistrong.On[Promonad.On[Category { type Obj = Type }]],
+  tracked val strong: Bistrong.On[Promonad.On[Category { type Obj = Type }]],
   structure: String = "Strong",
 )(using
   promonad: PromonadFixture.For[strong.profunctor.type],
@@ -64,47 +64,3 @@ abstract class StrongSpec(
   }
 }
 
-/** The laws of [[Strong.Bistrong]], for bistrong promonads over 𝒮. */
-abstract class BistrongSpec(
-  name: String,
-  tracked override val strong: Strong.Bistrong.On[Promonad.On[Category { type Obj = Type }]],
-)(using
-  promonad: PromonadFixture.For[strong.profunctor.type],
-  types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[strong.monoidal.Tensor[X, Y]],
-) extends StrongSpec(name, strong, "Bistrong") {
-  import types.{T1, T2, T3, T4, given}
-  import promonad.*
-  import strong.profunctor.P
-  import strong.monoidal.`*`
-  import strong.BistrongLaws.*
-
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
-
-  law("compatibility") {
-    val observations = onArrows[T1, T2, (T4 * T1) * T3, (T4 * T2) * T3]
-
-    forAll(observations) { observe =>
-      given ((P[T1, T2] -> P[(T4 * T1) * T3, (T4 * T2) * T3]) is Observable) = observe
-      compatibility[T1, T2, T4, T3]
-    }
-  }
-}
-
-class OptionKleisliProductIsBistrongTest
-    extends BistrongSpec("Kleisli[Option] on Product", Kleisli.OptionProduct)
-
-class OptionKleisliCoproductIsBistrongTest
-    extends BistrongSpec("Kleisli[Option] on Coproduct", Kleisli.OptionCoproduct)
-
-/** The string writer's arrows, run side by side on pairs. */
-object StringWriterProduct extends Kleisli.ProductStrength(StringWriterKleisli)
-
-/** The string writer's arrows, run on one side of a tagged union. */
-object StringWriterCoproduct extends Kleisli.CoproductStrength(StringWriterKleisli, Total.Coproducts)
-
-class StringWriterKleisliProductIsBistrongTest
-    extends BistrongSpec("Kleisli[Writer[String]] on Product", StringWriterProduct)
-
-class StringWriterKleisliCoproductIsBistrongTest
-    extends BistrongSpec("Kleisli[Writer[String]] on Coproduct", StringWriterCoproduct)

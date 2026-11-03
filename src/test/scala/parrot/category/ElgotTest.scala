@@ -9,7 +9,7 @@ import Category.Type
 /** The laws of [[Elgot]], with steps whose loops stop (in 𝒫) or that make progress (guarded instances). */
 abstract class ElgotSpec(
   name: String,
-  tracked val elgot: Elgot.On[Strong.Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
+  tracked val elgot: Elgot.On[Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
 )(using
   val promonad: PromonadFixture.For[elgot.strong.profunctor.type],
   types: SampleTypes,

@@ -14,7 +14,7 @@ import scala.annotation.targetName
   * ⋉ is not a bifunctor in general: running *q* first can give a different result when both have effects, so the
   * category is premonoidal, not monoidal. Pure arrows commute with every arrow ([[FreydLaws.centrality]]).
   */
-final class Freyd(tracked override val promonad: Promonad, tracked val strong: Strong.Bistrong.On[promonad.type])
+final class Freyd(tracked override val promonad: Promonad, tracked val strong: Bistrong.On[promonad.type])
     extends Promonad.Arrows(promonad) {
   import strong.monoidal.`*`
   import promonad.category.--> as ==>

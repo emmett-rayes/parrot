@@ -2399,7 +2399,7 @@ object OptionMap extends MyFunctor(Total, Total):
   def map[A: Type, B: Type](f: A -> B): Option[A] -> Option[B] = _.map(f)
 ```
 
-The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters, named by the role they play, so that a path says what each of its steps is: `strong.profunctor.category` is the category of a strong profunctor. A refinement passes its parameter on under the same name: `Promonad(tracked override val category: Category)` extends `Endoprofunctor(category, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Strong.Bistrong` takes a profunctor `Profunctor { val codomain: domain.type }` from a category to itself and a symmetric monoidal structure `Symmetric.On[profunctor.domain.type]` on that category, so a strength over the wrong category is a type error. `Symmetric.On[K]` is an alias of the refinement `Symmetric { val category: K }`: every class refines what it is on through one alias, named by the preposition that relates the two (`Endofunctor.On`, `Limit.Of`, `Cone.Over`, `Functor.Into`), so that the refinement does not depend on the names around it: inside `Symmetric { val category: category.type }`, `category` would be the refinement's own member.
+The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and every other structure on something else take what they are built on as `tracked` parameters, named by the role they play, so that a path says what each of its steps is: `strong.profunctor.category` is the category of a strong profunctor. A refinement passes its parameter on under the same name: `Promonad(tracked override val category: Category)` extends `Endoprofunctor(category, Total)`. That is why structures are abstract classes and not traits: a Scala trait cannot pass arguments to a parent trait. Type classes without parameters, such as `Type`, `Eq` and `Observable`, are traits. And a constraint between parameters is a refinement of a later parameter's type, checked when the instance is created: `Bistrong` takes a profunctor `Profunctor { val codomain: domain.type }` from a category to itself and a symmetric monoidal structure `Symmetric.On[profunctor.domain.type]` on that category, so a strength over the wrong category is a type error. `Symmetric.On[K]` is an alias of the refinement `Symmetric { val category: K }`: every class refines what it is on through one alias, named by the preposition that relates the two (`Endofunctor.On`, `Limit.Of`, `Cone.Over`, `Functor.Into`), so that the refinement does not depend on the names around it: inside `Symmetric { val category: category.type }`, `category` would be the refinement's own member.
 
 ### 11.3 A carrier, or a name
 
@@ -3169,7 +3169,7 @@ The laws say that τ commutes with pre- and post-composition (naturality), that 
 
 When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′ = P(σ, σ) ∘ τ, and the two strengths commute: τ′ ∘ τ = P(α, α⁻¹) ∘ τ ∘ τ′. A profunctor with a left and a right strength that commute is **bistrong**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
 
-The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Strong.Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(σ, σ) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
+The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(σ, σ) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
 
 - **Over products**, τ′ runs an arrow on the left component of a pair and τ on the right one. For a Kleisli promonad on 𝒮, every monad has one: `left(p)((c, a))` runs `p(a)` and pairs `c` with its result (`Kleisli.ProductStrength`).
 - **Over coproducts**, τ′ runs an arrow on the left case of an `Either` and passes the right case through untouched, and τ the other way round. It carries no value into the effect, so every monad on any category with coproducts has one, τ(p) = [η ∘ ι₁, M(ι₂) ∘ p] (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**. Their `left` is τ′: it names the case of the sum that an arrow runs on, not the side of the action.
@@ -3839,7 +3839,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Polymorphic types as ends, free theorems | no counterpart in the same form | yes | yes | polymorphic functions | [Assumed: A2] | 9 |
 | Categories of type constructors | yes | yes | yes, one class per kind | `Category1` | [Proved] | 10 |
 | Promonads | yes | yes | yes | `Promonad`, `Kleisli` | [Tested] | 17 |
-| Strength; Freyd categories | yes | yes | yes | `Strong`, `Strong.Bistrong`, `Freyd` | [Tested]; interchange [Tested: counterexample] | 17 |
+| Strength; Freyd categories | yes | yes | yes | `Strong`, `Bistrong`, `Freyd` | [Tested]; interchange [Tested: counterexample] | 17 |
 | Restriction categories | yes | yes | yes | `Restriction`; `Partial.Domains`, `Kleisli.OptionDomains` | [Tested] | 18 |
 | Classical restriction, override | yes | for observable failure only | yes | `Classical` | [Tested]; 𝒫 not classical [Proved] | 18 |
 | Restriction products | yes | in 𝒫 | not stated | `Partial.Product` underneath | [Standard] | 18 |
@@ -4047,7 +4047,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Bifunctor.** A functor of two arguments, such as `Tuple2` and `Either`. Definition 12.1.
 
-**Bistrong.** Having a left strength τ and a right strength τ′ that commute; over a symmetric monoidal category acting on itself, τ′ comes from τ by braiding. In the library, `Strong.Bistrong`. Section 17.3.
+**Bistrong.** Having a left strength τ and a right strength τ′ that commute; over a symmetric monoidal category acting on itself, τ′ comes from τ by braiding. In the library, `Bistrong`. Section 17.3.
 
 **Bundle.** A class that combines several structures by taking them as `tracked` parameters, rather than by inheritance, such as `ParserAlgebra`. Section 11.3.
 
@@ -4233,7 +4233,7 @@ An earlier version of the library had more structures than the current one. Some
 | --- | --- | --- |
 | Total fixed points and iteration on Scala functions | Each diverged on some input while claiming to be an arrow of the total category 𝒮. Proposition 14.3 shows that 𝒮 cannot have a fixed point for every arrow without collapsing. | Unguarded loops and recursion on 𝒫 (`Partial.Loops`, `Partial.Knots`); guarded ones in 𝒮 (chapters 16 and 19). |
 | Lazy pairs as a cartesian structure | Isomorphic to ordinary pairs in 𝒮, and not a product in 𝒫, where a program can tell a diverging pair from its components. They existed only to tie the knots above. | None needed. A lazy semantics would be a separate project. |
-| Strength defined as `p *** id` on a monoidal category | Every one of its laws followed from bifunctoriality, so it said nothing. Strength is structure on a profunctor over left modules (Definition 17.2). | `Strong(P, L1, L2)` and `Strong.Bistrong(P, M)`. |
+| Strength defined as `p *** id` on a monoidal category | Every one of its laws followed from bifunctoriality, so it said nothing. Strength is structure on a profunctor over left modules (Definition 17.2). | `Strong(P, L1, L2)` and `Bistrong(P, M)`. |
 | Restriction on Scala functions, `a => { p(a); a }` | In 𝒮 every arrow is total, so this is the identity. | `Partial.Domains`, on 𝒫, where it means something (chapter 18). |
 
 ### Removed because nothing used them

@@ -745,7 +745,7 @@ object StrictParser {
   }
 
   /** Nodes run side by side on pairs: `Zip`. */
-  object Zipping extends Strong.Bistrong(Nodes, Fns.Product) {
+  object Zipping extends Bistrong(Nodes, Fns.Product) {
 
     def left[A: Type, B: Type, C: Type]: Node[A, B] -> Node[(C, A), (C, B)] = {
       case _: Success[?] => Success()
@@ -759,7 +759,7 @@ object StrictParser {
   }
 
   /** Nodes run on one side of a tagged union: `Merge` with pure injections. */
-  object Branching extends Strong.Bistrong(Nodes, Fns.Coproduct) {
+  object Branching extends Bistrong(Nodes, Fns.Coproduct) {
 
     def left[A: Type, B: Type, C: Type]: Node[A, B] -> Node[Either[C, A], Either[C, B]] = {
       p => Merge(Pure(Fn.Inl[C, B]()), sequence(p, Pure(Fn.Inr[C, B]())))

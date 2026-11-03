@@ -9,7 +9,7 @@ import Category.Type
 /** The laws of [[Conway]], with arrows whose fixed points are defined. */
 abstract class ConwaySpec(
   name: String,
-  tracked val conway: Conway.On[Strong.Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
+  tracked val conway: Conway.On[Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
 )(using
   promonad: PromonadFixture.For[conway.strong.profunctor.type],
   types: SampleTypes,

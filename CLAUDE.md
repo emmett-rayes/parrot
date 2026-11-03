@@ -123,7 +123,7 @@ warning-free.
     for the target of a class documented as an arrow (`Functor.Into[D]`); a view takes `Of`
     (`Category.Op.Of[this.type]`). Its argument is what the doc names: `Monad.On[C]` refines the category of the
     endofunctor. Refine the base only through the alias, also where an inline refinement would compile, and every
-    other member inline after it (`Strong.Bistrong.On[parsers.type] { val monoidal: products.type }`). Add the alias
+    other member inline after it (`Bistrong.On[parsers.type] { val monoidal: products.type }`). Add the alias
     with the first refinement of the base, with the class's first sentence as its doc, in the plural ("The cones over
     a diagram *D*.") unless the base determines it ("The opposite of a category **C**."), and the doc's letter as its
     parameter unless the class has a member of that name (`Bifunctor.Op.Of[B]`, since a bifunctor's carrier is `F`).

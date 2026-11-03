@@ -37,7 +37,7 @@ object Kleisli {
     * The effect of *p* happens; *c* is passed along unchanged.
     */
   open class ProductStrength(tracked override val profunctor: Kleisli.Of[Monad.On[Total.type]])
-      extends Strong.Bistrong(profunctor, Total.Products) {
+      extends Bistrong(profunctor, Total.Products) {
     import profunctor.monad.M
 
     def left[A: Type, B: Type, C: Type]: (A -> M[B]) -> ((C, A)) -> M[(C, B)] = {
@@ -53,7 +53,7 @@ object Kleisli {
   open class CoproductStrength(
     tracked override val profunctor: Kleisli,
     tracked override val monoidal: Cocartesian.On[profunctor.domain.type],
-  ) extends Strong.Bistrong(profunctor, monoidal) {
+  ) extends Bistrong(profunctor, monoidal) {
     import profunctor.monad.M
     import profunctor.monad.category.{Obj, -->, >>>}
     import monoidal.+
@@ -122,7 +122,7 @@ object Kleisli {
 
   /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */
   open class ElgotOf(
-    tracked override val strong: Strong.Bistrong.On[Kleisli.Of[Monad.On[Total.type]]] {
+    tracked override val strong: Bistrong.On[Kleisli.Of[Monad.On[Total.type]]] {
       val monoidal: Total.Coproducts.type
     },
     tracked val elgot: Monad.Elgot.On[strong.profunctor.monad.type],

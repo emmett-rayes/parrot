@@ -10,7 +10,7 @@ package category
   * the equation *u* = *p*(*a*,*u*)₂: a recursive definition. The laws are those of traced monoidal categories, with
   * dinaturality (sliding) and superposing restricted to pure arrows, which are central.
   */
-abstract class Traced(tracked val strong: Strong.Bistrong.On[Promonad]) extends caps.Pure {
+abstract class Traced(tracked val strong: Bistrong.On[Promonad]) extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.{I, `*`}
   import profunctor.{P, >>>}
@@ -96,7 +96,7 @@ abstract class Traced(tracked val strong: Strong.Bistrong.On[Promonad]) extends 
 object Traced {
 
   /** The traces on a Freyd category with the strength *S*. */
-  type On[S <: Strong.Bistrong] = Traced { val strong: S }
+  type On[S <: Bistrong] = Traced { val strong: S }
 
   /** The trace of an iteration: *tr*(*p*) = *ι*₁ ⨾ (*p* ⨾ (*id* + *ι*₂))†, a loop that starts on the left. */
   open class OfElgot(tracked val elgot: Elgot) extends Traced(elgot.strong) {

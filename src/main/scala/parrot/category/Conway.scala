@@ -12,7 +12,7 @@ package category
   * Conway operators are equivalent to traces for products ([[Traced.OfConway]], [[Conway.OfTraced]]) and dual to
   * iteration: an Elgot operator is a Conway operator on the opposite category.
   */
-abstract class Conway(tracked val strong: Strong.Bistrong.On[Promonad] { val monoidal: Cartesian })
+abstract class Conway(tracked val strong: Bistrong.On[Promonad] { val monoidal: Cartesian })
     extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.`*`
@@ -102,14 +102,14 @@ abstract class Conway(tracked val strong: Strong.Bistrong.On[Promonad] { val mon
 object Conway {
 
   /** The parameterized fixed-point operators on a Freyd category with the strength *S*. */
-  type On[S <: Strong.Bistrong] = Conway { val strong: S }
+  type On[S <: Bistrong] = Conway { val strong: S }
 
   /** Iteration read backwards: an Elgot operator on *P* is a Conway operator on *P*ᵒᵖ, whose products are the
     * coproducts of **C**. A step *P*(*X*,*A* + *X*) is an arrow *P*ᵒᵖ(*A* × *X*,*X*), and its iteration *P*(*X*,*A*) is
     * the fixed point *P*ᵒᵖ(*A*,*X*).
     */
   open class OfElgot(tracked val elgot: Elgot)
-      extends Conway(Strong.Bistrong.Op(elgot.strong, elgot.strong.monoidal.op)) {
+      extends Conway(Bistrong.Op(elgot.strong, elgot.strong.monoidal.op)) {
     import strong.{monoidal, profunctor}
     import monoidal.`*`
     import profunctor.P
@@ -122,7 +122,7 @@ object Conway {
 
   /** The fixed point of a trace on products: *p*† = *tr*(*p* ⨾ Δ). */
   open class OfTraced(
-    tracked val traced: Traced.On[Strong.Bistrong.On[Promonad] { val monoidal: Cartesian }],
+    tracked val traced: Traced.On[Bistrong.On[Promonad] { val monoidal: Cartesian }],
   ) extends Conway(traced.strong) {
     import strong.{monoidal, profunctor}
     import monoidal.`*`

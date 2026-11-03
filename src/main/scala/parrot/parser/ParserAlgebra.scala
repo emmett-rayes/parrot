@@ -39,8 +39,8 @@ abstract class ParserAlgebra(
   tracked val coproducts: Cocartesian.On[parsers.category.type] {
     val unit: Nothing is parsers.category.Object; val tensor: Bifunctor { type Self = Either }
   },
-  tracked val zipping: Strong.Bistrong.On[parsers.type] { val monoidal: products.type },
-  tracked val branching: Strong.Bistrong.On[parsers.type] { val monoidal: coproducts.type },
+  tracked val zipping: Bistrong.On[parsers.type] { val monoidal: products.type },
+  tracked val branching: Bistrong.On[parsers.type] { val monoidal: coproducts.type },
   tracked val choice: Classical.On[parsers.type] { val cocartesian: coproducts.type },
   tracked val loops: Elgot.On[branching.type],
   tracked val knots: Recursion.On[parsers.type],

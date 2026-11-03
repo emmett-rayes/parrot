@@ -12,7 +12,7 @@ package category
   * the laws for the steps that always make progress. Elgot operators are equivalent to traces for coproducts
   * ([[Traced.OfElgot]], [[Elgot.OfTraced]]).
   */
-abstract class Elgot(tracked val strong: Strong.Bistrong.On[Promonad] { val monoidal: Cocartesian })
+abstract class Elgot(tracked val strong: Bistrong.On[Promonad] { val monoidal: Cocartesian })
     extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.+
@@ -103,11 +103,11 @@ abstract class Elgot(tracked val strong: Strong.Bistrong.On[Promonad] { val mono
 object Elgot {
 
   /** The iteration operators on a Freyd category with the strength *S*. */
-  type On[S <: Strong.Bistrong] = Elgot { val strong: S }
+  type On[S <: Bistrong] = Elgot { val strong: S }
 
   /** Fixed points read backwards: a Conway operator on *P* is an Elgot operator on *P*ᵒᵖ. */
   open class OfConway(tracked val conway: Conway)
-      extends Elgot(Strong.Bistrong.Op(conway.strong, conway.strong.monoidal.op)) {
+      extends Elgot(Bistrong.Op(conway.strong, conway.strong.monoidal.op)) {
     import strong.{monoidal, profunctor}
     import monoidal.+
     import profunctor.P
@@ -120,7 +120,7 @@ object Elgot {
 
   /** The iteration of a trace on coproducts: *p*† = *tr*(∇ ⨾ *p*). */
   open class OfTraced(
-    tracked val traced: Traced.On[Strong.Bistrong.On[Promonad] { val monoidal: Cocartesian }],
+    tracked val traced: Traced.On[Bistrong.On[Promonad] { val monoidal: Cocartesian }],
   ) extends Elgot(traced.strong) {
     import strong.{monoidal, profunctor}
     import monoidal.+
