@@ -16,7 +16,7 @@ abstract class Terminal(tracked override val category: Category) extends Categor
   def discard[A: Obj]: A --> I
 
   /** The terminal object as a limit of the empty diagram, with ! as the factorization. */
-  final lazy val limit: Terminal.AsLimit.Of[this.type] = Terminal.AsLimit(this)
+  final lazy val asLimit: Terminal.AsLimit.Of[this.type] = Terminal.AsLimit(this)
 
   /** Laws that any `Terminal` must satisfy. */
   object TerminalLaws {
@@ -40,30 +40,28 @@ object Terminal {
     FromLimit(limits.limit(EmptyDiagram(limits.category)))
   }
 
-  /** The terminal object of a limit *L* of the empty diagram.
+  /** The terminal object from a limit *L* of the empty diagram.
     *
-    * The terminal object is the apex of *L*, and ! is the factorization through *L* of the cone with apex *A*, which
-    * has no legs.
+    * The terminal object is the apex of *L*, and !: *A* → *I* is the factorization through *L* of the cone with apex
+    * *A* and no legs.
     */
-  open class FromLimit(tracked val cone: Limit.Of[EmptyDiagram])
-      extends Terminal(cone.diagram.category) {
+  open class FromLimit(tracked val limit: Limit.Of[EmptyDiagram]) extends Terminal(limit.diagram.category) {
     import category.{Obj, -->}
 
-    type Self = cone.X
+    type Self = limit.X
 
     def evidence: Self is Obj = {
-      cone.apex.evidence
+      limit.apex.evidence
     }
 
     def discard[A: Obj]: A --> I = {
-      cone.factor(EmptyCone(cone.diagram, category.Object[A]))
+      limit.factor(EmptyCone(limit.diagram, category.Object[A]))
     }
   }
 
-  /** A terminal object *T* as a limit of the empty diagram.
+  /** A terminal object *I* as a limit of the empty diagram.
     *
-    * The apex of the limit is *I*, its cones have no legs, and the factorization of the cone with apex *A* is !: *A* →
-    * *I*.
+    * The apex of the limit is *I*, it has no legs, and the factorization of the cone with apex *A* is !: *A* → *I*.
     */
   final class AsLimit(tracked val terminal: Terminal) extends Limit(EmptyDiagram(terminal.category), terminal) {
     import terminal.category.-->
@@ -79,8 +77,8 @@ object Terminal {
 
   object AsLimit {
 
-    /** The terminal object *T* as a limit of the empty diagram. */
-    type Of[T <: Terminal] = AsLimit { val terminal: T }
+    /** The terminal object *I* as a limit of the empty diagram. */
+    type Of[I <: Terminal] = AsLimit { val terminal: I }
   }
 
   /** The cone with apex *X* over a diagram of the empty shape.

@@ -16,7 +16,7 @@ abstract class Initial(tracked override val category: Category) extends Category
   def absurd[A: Obj]: I --> A
 
   /** The initial object as a colimit of the empty diagram, with ¡ as the factorization. */
-  final lazy val colimit: Initial.AsColimit.Of[this.type] = Initial.AsColimit(this)
+  final lazy val asColimit: Initial.AsColimit.Of[this.type] = Initial.AsColimit(this)
 
   /** Laws that any `Initial` must satisfy. */
   object InitialLaws {
@@ -41,30 +41,28 @@ object Initial {
     FromColimit(colimits.colimit(EmptyDiagram(colimits.category)))
   }
 
-  /** The initial object of a colimit *L* of the empty diagram.
+  /** The initial object from a colimit *L* of the empty diagram.
     *
-    * The initial object is the apex of *L*, and ¡ is the factorization through *L* of the cocone with apex *A*, which
-    * has no legs.
+    * The initial object is the apex of *L*, and ¡: *I* → *A* is the factorization through *L* of the cocone with apex
+    * *A* and no legs.
     */
-  open class FromColimit(tracked val cocone: Colimit.Of[EmptyDiagram])
-      extends Initial(cocone.diagram.category) {
+  open class FromColimit(tracked val colimit: Colimit.Of[EmptyDiagram]) extends Initial(colimit.diagram.category) {
     import category.{Obj, -->}
 
-    type Self = cocone.X
+    type Self = colimit.X
 
     def evidence: Self is Obj = {
-      cocone.apex.evidence
+      colimit.apex.evidence
     }
 
     def absurd[A: Obj]: I --> A = {
-      cocone.factor(EmptyCocone(cocone.diagram, category.Object[A]))
+      colimit.factor(EmptyCocone(colimit.diagram, category.Object[A]))
     }
   }
 
   /** An initial object *I* as a colimit of the empty diagram.
     *
-    * The apex of the colimit is *I*, its cocones have no legs, and the factorization of the cocone with apex *A* is ¡:
-    * *I* → *A*.
+    * The apex of the colimit is *I*, it has no legs, and the factorization of the cocone with apex *A* is ¡: *I* → *A*.
     */
   final class AsColimit(tracked val initial: Initial) extends Colimit(EmptyDiagram(initial.category), initial) {
     import initial.category.-->

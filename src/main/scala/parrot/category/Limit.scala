@@ -67,14 +67,14 @@ object Limits {
     override type D <: Functor.Into[category.type] { val source: Category { type Self <: =:= } }
 
     /** The apex Apex[*O*,*D*] of the limit of a diagram with *D* on a shape with objects *O*. */
-    type Apex[O <: Category.Type, F[_]]
+    type Apex[O <: Category.Type, D[_]]
 
-    /** The limit of a diagram *D*, with apex Apex[*O*,*F*]. */
+    /** The limit of a diagram *D*, with apex Apex[*O*,*D*]. */
     override def limit(functor: D)
       : Limit.Of[functor.type] { val apex: Apex[functor.source.Obj, functor.F] is functor.target.Object }
   }
 
   /** The limits of the diagrams of type *T*[**C**] of a discrete shape in a category **C**. */
-  type OfDiscrete[T[K <: Category] <: Functor.Into[K] { val source: Category { type Self <: =:= } }] =
+  type OfDiscreteDiagram[T[K <: Category] <: Functor.Into[K] { val source: Category { type Self <: =:= } }] =
     DiscreteInCategory { type D >: T[category.type] }
 }

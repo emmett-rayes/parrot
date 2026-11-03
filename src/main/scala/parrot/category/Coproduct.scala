@@ -43,7 +43,7 @@ abstract class Coproduct(
   /** The coproduct as a colimit of the diagram (*A*₁,*A*₂) of shape **2**: its legs are the injections, and the
     * factorization of a cocone is the copairing of its legs.
     */
-  final lazy val colimit: Coproduct.AsColimit.Of[this.type] = Coproduct.AsColimit(this)
+  final lazy val asColimit: Coproduct.AsColimit.Of[this.type] = Coproduct.AsColimit(this)
 
   /** Laws that any `Coproduct` must satisfy. */
   object CoproductLaws {
@@ -94,25 +94,25 @@ object Coproduct {
     FromColimit(colimits.colimit(Discrete2Diagram(colimits.category, first, second)))
   }
 
-  /** The coproduct from a colimit *L* of a diagram (*X*,*Y*) of shape **2**.
+  /** The coproduct from a colimit *L* of a diagram (*A*₁,*A*₂) of shape **2**.
     *
     * The coproduct is the apex of *L*, its injections are the legs of *L*, and [*f*,*g*] is the factorization through
     * *L* of the cocone with legs *f* and *g*.
     */
-  open class FromColimit(tracked val cocone: Colimit.Of[Discrete2Diagram])
-      extends Coproduct(cocone.diagram.category, cocone.diagram.first, cocone.diagram.second, cocone.apex) {
+  open class FromColimit(tracked val colimit: Colimit.Of[Discrete2Diagram])
+      extends Coproduct(colimit.diagram.category, colimit.diagram.first, colimit.diagram.second, colimit.apex) {
     import category.{Obj, -->}
 
     def inl: A1 --> S = {
-      cocone.leg[0]
+      colimit.leg[0]
     }
 
     def inr: A2 --> S = {
-      cocone.leg[1]
+      colimit.leg[1]
     }
 
     def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X = {
-      cocone.factor(CopairCocone(cocone.diagram, category.Object[X])(f, g))
+      colimit.factor(CopairCocone(colimit.diagram, category.Object[X])(f, g))
     }
   }
 
@@ -241,7 +241,7 @@ object Coproducts {
   /** The binary coproducts of a category with discrete colimits of shape **2**: the colimits of the diagrams
     * (*A*,*B*).
     */
-  def apply(colimits: Colimits.OfDiscrete[Discrete2Diagram.Into])
+  def apply(colimits: Colimits.OfDiscreteDiagram[Discrete2Diagram.Into])
     : On[colimits.category.type] { type Self[A, B] = colimits.Apex[Disc2, Components[A, B]] } = {
     FromColimits(colimits)
   }
@@ -252,7 +252,7 @@ object Coproducts {
     * constructor because the shape is discrete, and its injections and copairing are those of the colimit
     * ([[Coproduct.FromColimit]]).
     */
-  open class FromColimits(tracked val colimits: Colimits.OfDiscrete[Discrete2Diagram.Into])
+  open class FromColimits(tracked val colimits: Colimits.OfDiscreteDiagram[Discrete2Diagram.Into])
       extends Coproducts(colimits.category) {
     import category.{Obj, Object}
 

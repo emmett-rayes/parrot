@@ -77,7 +77,7 @@ warning-free.
    `Restriction`, `Monad`, the trace grid) have no `Self` and are named, not found by implicit search.
 4. **Combinations are bundles, not inheritance** (`ParserAlgebra(â€¦)` takes its structures as parameters); a structure
    that is another with more operations extends it (`Freyd`). A special case with an operation of its own is a class
-   with a view to the general structure and a construction back (`Terminal.limit`, `Terminal.FromLimit`); aliases
+   with a view to the general structure and a construction back (`Terminal.asLimit`, `Terminal.FromLimit`); aliases
    (`Monad.On`, `Limit.Of`) are only for pure refinements.
 5. **Objects are types with evidence:** `type Obj <: Type` (`import Category.Type`; `Type.TIsType` holds for every
    type), passed only through context bounds, except an object a structure chooses or is on, which is a `tracked`
@@ -132,7 +132,7 @@ One file per structure in `src/main/scala/parrot/category/`; the instances on ð
 `Partial.scala`; `Category.scala` also holds `Type`, `Object`, `Op`, the product category, `Empty` and `Discrete2`. A
 family of structures shares its member's file: `Products` is in `Product.scala` and `Coproducts` in `Coproduct.scala`,
 and the limits in a category are in the object `Limits` in `Limit.scala` (`InCategory`, `DiscreteInCategory` and their
-aliases `OfDiagram` and `OfDiscrete`), the colimits in `Colimits` in `Colimit.scala`.
+aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Colimit.scala`.
 
 ## `parrot.parser`
 

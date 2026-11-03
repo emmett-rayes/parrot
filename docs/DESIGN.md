@@ -71,7 +71,7 @@ Rejected:
   another with more operations extends it: `Freyd(promonad, strong)` extends the category of arrows
   `Promonad.Arrows(promonad)`.
 - **A special case with an operation of its own is a structure with a view** to the general one and a construction
-  back (`Terminal.limit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
+  back (`Terminal.asLimit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
   `Limit.Of`) only names a refinement.
 - **Refinements go through one alias per class, for its base:** the parameter that the first sentence of the class's
@@ -212,33 +212,33 @@ Each structure sits at the lowest level where its laws can be stated.
   natural as long as the cones are lawful; to clients, who see points only through the legs, the abstract type is the
   limit.
 - **Limits of a discrete shape have a type of apexes.** `Limits.DiscreteInCategory(category)` refines `InCategory`,
-  narrowing `D` to the diagrams of a shape whose only morphisms are identities, stated as a bound on their source
-  (`Self <: =:=`, which **2** and **0** satisfy), and gives the apex of each limit as a type function `Apex[O, F]` of
-  the objects *O* of the shape and the object map *F* of the diagram; clients ask through `Limits.OfDiscrete[T]`. A
+  narrowing `D` to the diagrams of a shape whose only morphisms are identities, stated as a bound on their source (`Self
+  <: =:=`, which **2** and **0** satisfy), and gives the apex of each limit as a type function `Apex[O, D]` of the
+  objects *O* of the shape and the object map *D* of the diagram; clients ask through `Limits.OfDiscreteDiagram[T]`. A
   functor preserves identities, so a discrete shape is determined by its objects and a diagram of it by its object map,
   and the apex can be too; for any other shape it cannot, since the limit depends on the morphisms. In 𝒮
   (`Total.DiscreteLimits`) every family of points is natural, so the apex is the type of all families, without
   abstraction.
 - **Colimits are the dual, stated directly** so that their legs and factorizations are morphisms of **C**:
   `Cocone(diagram, apex)`, `Colimit(diagram, apex)` with `factor` out of its apex, `Colimits.InCategory` and
-  `Colimits.DiscreteInCategory` with the apex `Apex[O, F]`, asked for through `Colimits.OfDiagram` and
-  `Colimits.OfDiscrete`. 𝒮 has all of them by the dual construction, `Total.ColimitOf` (`Total.Colimits`): the sum of
-  the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its object
-  *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points are
-  private to the construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a cocone,
-  so glued points are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the colimit.
-  In a discrete diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimits`), and the
-  factorization applies the leg at the object of a point.
+  `Colimits.DiscreteInCategory` with the apex `Apex[O, D]`, asked for through `Colimits.OfDiagram` and
+  `Colimits.OfDiscreteDiagram`. 𝒮 has all of them by the dual construction, `Total.ColimitOf` (`Total.Colimits`): the
+  sum of the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its
+  object *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points
+  are private to the construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a
+  cocone, so glued points are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the
+  colimit. In a discrete diagram no two points are glued, so the colimit is the sum itself (`Total.DiscreteColimits`),
+  and the factorization applies the leg at the object of a point.
 - **Terminal objects and products are structures with views** (§3). `Terminal(category)` is an object with `discard`
   (!); `Product(category, factor1, factor2, apex)` has `fst`, `snd` and `pair`. Each is a limit through its view
-  `limit`, of the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each from
-  a limit. `Products(category)`, the binary products of **C**, is a bifunctor with a `Product` on every image,
+  `asLimit`, of the empty diagram and of a diagram of shape **2** (`Category.Discrete2`), and `FromLimit` builds each
+  from a limit. `Products(category)`, the binary products of **C**, is a bifunctor with a `Product` on every image,
   `product[A, B]` on *F*[*A*,*B*], whose laws are its laws, and `bimap` defaults to ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩.
   `Products(limits)` (`Products.FromLimits`) builds them from discrete limits of shape **2**, with the apexes
   Apex[**2**,(*A*,*B*)] as tensor, as `Terminal(limits)` builds a terminal object; an instance with a tensor of its own
   implements one `Product` per pair of objects (`Total.Tuple2IsProduct[A, B]`). Dually, `Initial(category)` has `absurd`
   (¡) and `Coproduct(category, summand1, summand2, apex)` has `inl`, `inr` and `copair`, each a colimit through its view
-  `colimit` and built from one by `FromColimit`, and `Coproducts(category)` has a `Coproduct` on every image,
+  `asColimit` and built from one by `FromColimit`, and `Coproducts(category)` has a `Coproduct` on every image,
   `coproduct[A, B]`, with `Coproducts(colimits)` from discrete colimits.
 - **A cartesian structure is a terminal object and products,** `Cartesian(category, unit, tensor)`, whose unit is a
   `Terminal` and whose tensor is `Products`: the universal properties are stated once, in its parameters, and

@@ -43,7 +43,7 @@ abstract class Product(
   /** The product as a limit of the diagram (*A*₁,*A*₂) of shape **2**: its legs are the projections, and the
     * factorization of a cone is the pairing of its legs.
     */
-  final lazy val limit: Product.AsLimit.Of[this.type] = Product.AsLimit(this)
+  final lazy val asLimit: Product.AsLimit.Of[this.type] = Product.AsLimit(this)
 
   /** Laws that any `Product` must satisfy. */
   object ProductLaws {
@@ -93,25 +93,25 @@ object Product {
     FromLimit(limits.limit(Discrete2Diagram(limits.category, first, second)))
   }
 
-  /** The product from a limit *L* of a diagram (*X*,*Y*) of shape **2**.
+  /** The product from a limit *L* of a diagram (*A*₁,*A*₂) of shape **2**.
     *
     * The product is the apex of *L*, its projections are the legs of *L*, and ⟨*f*,*g*⟩ is the factorization through
     * *L* of the cone with legs *f* and *g*.
     */
-  open class FromLimit(tracked val cone: Limit.Of[Discrete2Diagram])
-      extends Product(cone.diagram.category, cone.diagram.first, cone.diagram.second, cone.apex) {
+  open class FromLimit(tracked val limit: Limit.Of[Discrete2Diagram])
+      extends Product(limit.diagram.category, limit.diagram.first, limit.diagram.second, limit.apex) {
     import category.{Obj, -->}
 
     def fst: P --> A1 = {
-      cone.leg[0]
+      limit.leg[0]
     }
 
     def snd: P --> A2 = {
-      cone.leg[1]
+      limit.leg[1]
     }
 
     def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P = {
-      cone.factor(PairCone(cone.diagram, category.Object[X])(f, g))
+      limit.factor(PairCone(limit.diagram, category.Object[X])(f, g))
     }
   }
 
@@ -273,7 +273,7 @@ object Products {
   type On[K <: Category] = Products { val category: K }
 
   /** The binary products of a category with discrete limits of shape **2**: the limits of the diagrams (*A*,*B*). */
-  def apply(limits: Limits.OfDiscrete[Discrete2Diagram.Into])
+  def apply(limits: Limits.OfDiscreteDiagram[Discrete2Diagram.Into])
     : On[limits.category.type] { type Self[A, B] = limits.Apex[Disc2, Components[A, B]] } = {
     FromLimits(limits)
   }
@@ -284,7 +284,7 @@ object Products {
     * constructor because the shape is discrete, and its projections and pairing are those of the limit
     * ([[Product.FromLimit]]).
     */
-  open class FromLimits(tracked val limits: Limits.OfDiscrete[Discrete2Diagram.Into])
+  open class FromLimits(tracked val limits: Limits.OfDiscreteDiagram[Discrete2Diagram.Into])
       extends Products(limits.category) {
     import category.{Obj, Object}
 
