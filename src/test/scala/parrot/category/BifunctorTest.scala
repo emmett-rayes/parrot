@@ -5,7 +5,7 @@ import org.scalacheck.Gen
 
 import Category.Type
 
-/** The laws of [[Bifunctor]], for bifunctors **K** × **K** → **K** on a category whose objects are all types. */
+/** The laws of [[Bifunctor]], for bifunctors **C** × **C** → **C** on a category whose objects are all types. */
 abstract class BifunctorSpec(
   tracked val category: Category { type Obj = Type },
   tracked val bifunctor: Bifunctor.Into[category.type] { val source1: category.type; val source2: category.type },

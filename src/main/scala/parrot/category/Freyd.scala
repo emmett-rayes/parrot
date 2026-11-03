@@ -3,7 +3,7 @@ package category
 
 import scala.annotation.targetName
 
-/** A Freyd category on a promonad *P* over **K**: its category of arrows, with a strength over ⊗ that *unit* and
+/** A Freyd category on a promonad *P* over **C**: its category of arrows, with a strength over ⊗ that *unit* and
   * composition preserve.
   *
   * Represents the category of arrows of *P* with a bistrong structure *S*, where

@@ -6,7 +6,7 @@ package category
   * Represents a monoidal closed category, where
   *   - *A* ⇒ *B*, also written as the exponential *B*ᴬ, is the internal hom object of *A* and *B*
   *   - *ev*: (*A* ⇒ *B*) ⊗ *A* → *B* is evaluation
-  *   - Λ(*f*): *C* → (*A* ⇒ *B*) is the curried form of *f*: *C* ⊗ *A* → *B*
+  *   - Λ(*f*): *X* → (*A* ⇒ *B*) is the curried form of *f*: *X* ⊗ *A* → *B*
   */
 abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
   import monoidal.{`*`, ***}
@@ -28,18 +28,18 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
   /** Evaluation *ev*: (*A* ⇒ *B*) ⊗ *A* → *B*. */
   def eval[A: Obj, B: Obj]: ((B `^` A) * A) --> B
 
-  /** Currying Λ: **K**(*C* ⊗ *A*,*B*) → **K**(*C*,*A* ⇒ *B*).
+  /** Currying Λ: **C**(*X* ⊗ *A*,*B*) → **C**(*X*,*A* ⇒ *B*).
     *
     * This is the unique morphism such that *ev* ∘ (Λ(*f*) ⊗ *id*) = *f*.
     */
-  def curry[A: Obj, B: Obj, C: Obj](f: (C * A) --> B): C --> (B `^` A)
+  def curry[A: Obj, B: Obj, X: Obj](f: (X * A) --> B): X --> (B `^` A)
 
   /** Uncurrying: *g* ↦ *ev* ∘ (*g* ⊗ *id*). */
-  final def uncurry[A: Obj, B: Obj, C: Obj](g: C --> (B `^` A)): (C * A) --> B = {
+  final def uncurry[A: Obj, B: Obj, X: Obj](g: X --> (B `^` A)): (X * A) --> B = {
     (g *** monoidal.category.identity[A]) >>> eval[A, B]
   }
 
-  /** The internal hom as a profunctor ⇒: **K**ᵒᵖ × **K** → **K**. */
+  /** The internal hom as a profunctor ⇒: **C**ᵒᵖ × **C** → **C**. */
   final lazy val internalHom: Closed.InternalHom.Of[this.type] = Closed.InternalHom(this)
 
   /** Laws that any `Closed` structure must satisfy: currying and uncurrying are inverse. */
@@ -47,15 +47,15 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
 
     /** *ev* ∘ (Λ(*f*) ⊗ *id*) = *f*
       */
-    def beta[A: Obj, B: Obj, C: Obj](f: (C * A) --> B)(
-      using ((C * A) --> B) is Observable
+    def beta[A: Obj, B: Obj, X: Obj](f: (X * A) --> B)(
+      using ((X * A) --> B) is Observable
     ): Boolean = {
       uncurry(curry(f)) =?= f
     }
 
     /** Λ(*ev* ∘ (*g* ⊗ *id*)) = *g* */
-    def eta[A: Obj, B: Obj, C: Obj](g: C --> (B `^` A))(
-      using (C --> (B `^` A)) is Observable
+    def eta[A: Obj, B: Obj, X: Obj](g: X --> (B `^` A))(
+      using (X --> (B `^` A)) is Observable
     ): Boolean = {
       curry(uncurry(g)) =?= g
     }
@@ -64,8 +64,8 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
       *
       * @note The premise is not checked: *f*′ must be equal to *f* by construction.
       */
-    def curryCongruence[A: Obj, B: Obj, C: Obj](f: (C * A) --> B, f2: (C * A) --> B)(
-      using (C --> (B `^` A)) is Observable
+    def curryCongruence[A: Obj, B: Obj, X: Obj](f: (X * A) --> B, f2: (X * A) --> B)(
+      using (X --> (B `^` A)) is Observable
     ): Boolean = {
       curry(f) =?= curry(f2)
     }
@@ -77,7 +77,7 @@ object Closed {
   /** The closed structures on a monoidal category **M**. */
   type On[M <: Monoidal] = Closed { val monoidal: M }
 
-  /** The internal hom ⇒: **K**ᵒᵖ × **K** → **K** of a closed structure, as an endoprofunctor.
+  /** The internal hom ⇒: **C**ᵒᵖ × **C** → **C** of a closed structure, as an endoprofunctor.
     *
     * Represents a profunctor, where
     *   - *A* ⇒ *B* is the object part

@@ -1,11 +1,11 @@
 package parrot
 package category
 
-/** A strong profunctor *P*: **K₁**ᵒᵖ × **K₂** → **V** over left modules (also called a Tambara module).
+/** A strong profunctor *P*: **C₁**ᵒᵖ × **C₂** → **V** over left modules (also called a Tambara module).
   *
   * Represents a strong profunctor over two **M**-modules, where
-  *   - ⊘₁: **M** × **K₁** → **K₁** is the left action of **M** on **K₁**
-  *   - ⊘₂: **M** × **K₂** → **K₂** is the left action of **M** on **K₂**
+  *   - ⊘₁: **M** × **C₁** → **C₁** is the left action of **M** on **C₁**
+  *   - ⊘₂: **M** × **C₂** → **C₂** is the left action of **M** on **C₂**
   *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*) is the left strength, an arrow of **V**
   */
 abstract class Strong(
@@ -86,11 +86,11 @@ abstract class Strong(
 
 object Strong {
 
-  /** A bistrong structure on a profunctor *P*: **K**ᵒᵖ × **K** → **V**, over a symmetric monoidal category **M** acting on
+  /** A bistrong structure on a profunctor *P*: **C**ᵒᵖ × **C** → **V**, over a symmetric monoidal category **M** acting on
     * itself.
     *
     * Represents a bistrong profunctor over the self-action of **M**, where
-    *   - ⊗: **K** × **K** → **K** is the tensor of **M**, which acts on **K** from both sides
+    *   - ⊗: **C** × **C** → **C** is the tensor of **M**, which acts on **C** from both sides
     *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*) is the left strength
     *   - *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*) is the right strength derived from the left strength
     *

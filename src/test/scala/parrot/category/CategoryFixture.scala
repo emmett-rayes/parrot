@@ -25,8 +25,8 @@ abstract class CategoryFixture(val name: String, tracked val category: Category 
   */
 object CategoryFixture {
 
-  /** The fixtures for a category **K**. */
-  type For[K <: Category] = CategoryFixture { val category: K }
+  /** The fixtures for a category **C**. */
+  type For[C <: Category] = CategoryFixture { val category: C }
 
   /** 𝒮: generated pure functions. */
   given TotalIsFixture: For[Total.type] = TotalFixture

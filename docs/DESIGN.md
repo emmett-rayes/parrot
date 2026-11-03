@@ -84,7 +84,7 @@ Rejected:
 - **Refinements go through one alias per class, for its base:** the parameter that the first sentence of the class's
   doc relates it to, whose preposition names the alias (`Endofunctor.On`, `Limit.Of`, `Monoid.In`, `Cone.Over`,
   `Cocone.Under` and `Into` for the target of a class documented as an arrow, `Functor.Into`), with what the doc
-  names as its argument (`Monad.On[K]` refines the category of the endofunctor). The base is refined only through its
+  names as its argument (`Monad.On[C]` refines the category of the endofunctor). The base is refined only through its
   alias and every other member inline after it, so each parameter has one spelling whatever the names at the use, and
   a refinement of the base is never cyclic, as `Endobifunctor { val category: category.type }` is, where `category` is
   the refinement's own member. A class with type parameters of its own (`StateT[S]`) has no alias, which would take
@@ -133,7 +133,7 @@ Rejected:
   val is not a path. Exports satisfy the initialization checkers, but an instance must then annotate each member whose
   type depends on another with its singleton type (`val monoidal: Products.type = Products`): the inferred type fails
   the override check, and any other annotation loses the refinement;
-- parameters named by single letters, after the mathematics (`K`, `P`, `M`): a letter names different things in
+- parameters named by single letters, after the mathematics (`C`, `P`, `M`): a letter names different things in
   different structures (`C` is a category, a Conway operator or a closed structure) and collides with the carrier
   aliases (`M.M`, `P.P`). Role names collide in refinements instead (`Product { val category: category.type }`), which
   the aliases that refine a structure avoid (`Product.Of[category.type]`);
@@ -176,12 +176,12 @@ Each structure sits at the lowest level where its laws can be stated.
 
 | Row | Over products | Over coproducts | Level |
 | --- | --- | --- | --- |
-| strength | `Bistrong` (⊗ = ×) | `Bistrong` (⊗ = +), also called choice | `Strong`: a profunctor over left modules (a Tambara module); `Bistrong`: over a symmetric **K** acting on itself |
+| strength | `Bistrong` (⊗ = ×) | `Bistrong` (⊗ = +), also called choice | `Strong`: a profunctor over left modules (a Tambara module); `Bistrong`: over a symmetric **C** acting on itself |
 | trace | `Traced` (×) | `Traced` (+) | a bistrong promonad: superposing needs composition and strength |
 | fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a bistrong promonad |
 
-- **Strength over left modules.** `Strong(profunctor, monoidal, module1, module2)` is a profunctor *P*: **K₁**ᵒᵖ ×
-  **K₂** → **V** with left actions (`Module`) of one monoidal **M** on **K₁** and **K₂**; its primitive is the left
+- **Strength over left modules.** `Strong(profunctor, monoidal, module1, module2)` is a profunctor *P*: **C₁**ᵒᵖ ×
+  **C₂** → **V** with left actions (`Module`) of one monoidal **M** on **C₁** and **C₂**; its primitive is the left
   strength *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*), `left`, as in the literature (Pastro and Street's Tambara
   modules; Moggi's strength is a left strength). The general definition costs nothing, since every instance is the
   self-action. *τ* is an arrow of **V**, like the action *P*(*f*,*g*), not a function on arrows of *P*: a strength needs
@@ -213,7 +213,7 @@ Each structure sits at the lowest level where its laws can be stated.
 - **Limits.** `Limit(diagram, apex)` is a cone over a diagram *D* with apex *X* (`Cone`) through which every cone
   factors, and `Limits.InCategory(category)` gives one for every diagram of its type member `D`, a type of diagrams into
   **C**. The limits of more diagrams serve for fewer, so a client asks for the diagrams it needs as a lower bound on
-  `D`, `Limits.OfDiagram[T]` for a type *T*[*K*] of diagrams into *K*: `Terminal(limits)` takes
+  `D`, `Limits.OfDiagram[T]` for a type *T*[**C**] of diagrams into **C**: `Terminal(limits)` takes
   `Limits.OfDiagram[EmptyDiagram.Into]`. 𝒮 has all of them by one construction, `Total.LimitOf`, which `Total.Limits`
   gives for every diagram: the product of the components is a polymorphic function type, since the objects are types,
   and the equalizer of the natural families is made by abstraction. Points are private to the construction, a class
@@ -271,8 +271,8 @@ Rejected:
 - `Bistrong` over two arbitrary left modules: a left module has no right action, so it would need right modules or
   bimodules, which have no client;
 - `Bistrong` constraining the profunctor towards the monoidal structure
-  (`Profunctor { val domain: monoidal.category.type; … }`): for a promonad, nothing makes its own **K** equal to
-  **M**.**K**, so the constraint refines **M** instead;
+  (`Profunctor { val domain: monoidal.category.type; … }`): for a promonad, nothing makes its own **C** equal to
+  **M**.**C**, so the constraint refines **M** instead;
 - separate duals over products and coproducts, where one `Bistrong.Op(strong, strong.monoidal.op)` serves both, its
   braiding unchecked;
 - solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number
@@ -293,7 +293,7 @@ Rejected:
   diagram, of any shape;
 - limits of every diagram, without a type of diagrams: `DiscreteInCategory` takes fewer diagrams, so its `limit` could
   not override the general one, whose parameter it would narrow, and `Terminal(limits)` would need every limit;
-- the type of diagrams as a type parameter, contravariant and indexed by the category (`InCategory[-D[K <: Category]]`):
+- the type of diagrams as a type parameter, contravariant and indexed by the category (`InCategory[-D[C <: Category]]`):
   the type parameters of a class cannot mention its parameters, so every instance and client passes a type lambda,
   where a type member names `category` and a lower bound at the use gives the same variance;
 - a type function of the object map as the apex of every `InCategory`: the limit of a shape with morphisms depends on

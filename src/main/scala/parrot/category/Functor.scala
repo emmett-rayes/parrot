@@ -60,14 +60,14 @@ object Functor {
   type Into[D <: Category] = Functor { val target: D }
 }
 
-/** An endofunctor on a category **K**.
+/** An endofunctor on a category **C**.
   *
-  * Represents a functor *F*: **K** → **K**.
+  * Represents a functor *F*: **C** → **C**.
   */
 abstract class Endofunctor(tracked val category: Category) extends Functor(category, category)
 
 object Endofunctor {
 
-  /** The endofunctors on a category **K**. */
-  type On[K <: Category] = Endofunctor { val category: K }
+  /** The endofunctors on a category **C**. */
+  type On[C <: Category] = Endofunctor { val category: C }
 }

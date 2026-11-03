@@ -136,7 +136,7 @@ abstract class Cartesian(
 object Cartesian {
 
   /** The cartesian monoidal structures on a category **C**. */
-  type On[K <: Category] = Cartesian { val category: K }
+  type On[C <: Category] = Cartesian { val category: C }
 
   /** The cocartesian opposite **C**ᵒᵖ of a cartesian category **C**.
     *
@@ -148,6 +148,6 @@ object Cartesian {
   object Op {
 
     /** The cocartesian opposite of a cartesian category **C**. */
-    type Of[K <: Cartesian] = Op { val cartesian: K }
+    type Of[C <: Cartesian] = Op { val cartesian: C }
   }
 }

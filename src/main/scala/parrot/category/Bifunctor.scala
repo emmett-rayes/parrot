@@ -141,14 +141,14 @@ object Bifunctor {
   }
 }
 
-/** An endobifunctor on a category **K**.
+/** An endobifunctor on a category **C**.
   *
-  * Represents a bifunctor *F*: **K** × **K** → **K**.
+  * Represents a bifunctor *F*: **C** × **C** → **C**.
   */
 abstract class Endobifunctor(tracked val category: Category) extends Bifunctor(category, category, category)
 
 object Endobifunctor {
 
-  /** The endobifunctors on a category **K**. */
-  type On[K <: Category] = Endobifunctor { val category: K }
+  /** The endobifunctors on a category **C**. */
+  type On[C <: Category] = Endobifunctor { val category: C }
 }

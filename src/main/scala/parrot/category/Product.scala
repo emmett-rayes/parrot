@@ -214,8 +214,8 @@ object Product {
     case 1 => Y
   }
 
-  /** The discrete 2-object diagram (*X*,*Y*): **2** → **K**, the functor out of **2** that maps 0 to an object *X* and
-    * 1 to an object *Y* of **K**.
+  /** The discrete 2-object diagram (*X*,*Y*): **2** → **C**, the functor out of **2** that maps 0 to an object *X* and
+    * 1 to an object *Y* of **C**.
     */
   final class Discrete2Diagram(
     tracked val category: Category,
@@ -241,14 +241,14 @@ object Product {
 
   object Discrete2Diagram {
 
-    /** The discrete 2-object diagrams into a category **K**. */
-    type Into[K <: Category] = Discrete2Diagram { val category: K }
+    /** The discrete 2-object diagrams into a category **C**. */
+    type Into[C <: Category] = Discrete2Diagram { val category: C }
   }
 }
 
-/** A binary product structure on a category **K**.
+/** A binary product structure on a category **C**.
   *
-  * Represents the product bifunctor ×: **K** × **K** → **K**, a product *A* × *B* of every two objects.
+  * Represents the product bifunctor ×: **C** × **C** → **C**, a product *A* × *B* of every two objects.
   */
 abstract class Products(tracked override val category: Category) extends Endobifunctor(category) {
   import category.{Obj, Object, -->, >>>}
@@ -266,7 +266,7 @@ abstract class Products(tracked override val category: Category) extends Endobif
     product[B1, B2].pair(product[A1, A2].fst >>> f, product[A1, A2].snd >>> g)
   }
 
-  /** The opposite bifunctor ×ᵒᵖ, as the binary coproducts of **K**ᵒᵖ. */
+  /** The opposite bifunctor ×ᵒᵖ, as the binary coproducts of **C**ᵒᵖ. */
   override lazy val op: Products.Op.Of[this.type] = Products.Op(this)
 
   /** Laws that any `Products` structure must satisfy.
@@ -317,8 +317,8 @@ object Products {
   import Category.Discrete2.Disc2
   import Product.{Components, Discrete2Diagram}
 
-  /** The binary product structures on a category **K**. */
-  type On[K <: Category] = Products { val category: K }
+  /** The binary product structures on a category **C**. */
+  type On[C <: Category] = Products { val category: C }
 
   /** The binary products of a category with discrete limits of the diagrams of shape **2**. */
   def apply(limits: Limits.OfDiscreteDiagram[Discrete2Diagram.Into])
@@ -346,7 +346,7 @@ object Products {
     }
   }
 
-  /** The binary products of a category **K**, as the binary coproducts of **K**ᵒᵖ.
+  /** The binary products of a category **C**, as the binary coproducts of **C**ᵒᵖ.
     *
     * The coproduct of two objects is their product, and the coproduct of morphisms is the product of their opposites.
     */
@@ -371,7 +371,7 @@ object Products {
 
   object Op {
 
-    /** The binary products *P* of a category **K**, as the binary coproducts of **K**ᵒᵖ. */
+    /** The binary products *P* of a category **C**, as the binary coproducts of **C**ᵒᵖ. */
     type Of[P <: Products] = Op { val products: P }
   }
 }

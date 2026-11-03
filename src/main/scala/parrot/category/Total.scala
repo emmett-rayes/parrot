@@ -170,8 +170,8 @@ object Total extends Category {
       (f, a) => f(a)
     }
 
-    def curry[A: Type, B: Type, C: Type](f: ((C, A)) -> B): C -> A -> B = {
-      c => a => f((c, a))
+    def curry[A: Type, B: Type, X: Type](f: ((X, A)) -> B): X -> A -> B = {
+      x => a => f((x, a))
     }
   }
 

@@ -5,19 +5,19 @@ import scala.annotation.targetName
 
 import Category.Type
 
-/** A promonad on **K** valued in 𝒮.
+/** A promonad on **C** valued in 𝒮.
   *
   * Represents a promonad (*P*, *η*, *μ*), where
-  *   - *η*: **K**(*A*,*B*) → *P*(*A*,*B*), the unit
+  *   - *η*: **C**(*A*,*B*) → *P*(*A*,*B*), the unit
   *   - *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*), the multiplication
   */
 abstract class Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total) {
   import category.{Obj, -->}
   import category.op.--> as ~~>
 
-  /** The unit *η*: **K**(*A*,*B*) → *P*(*A*,*B*).
+  /** The unit *η*: **C**(*A*,*B*) → *P*(*A*,*B*).
     *
-    * This is the identity-on-objects functor from **K** to the category induced by *P*. See [[arrows]].
+    * This is the identity-on-objects functor from **C** to the category induced by *P*. See [[arrows]].
     */
   def unit[A: Obj, B: Obj](f: A --> B): P[A, B]
 
@@ -50,7 +50,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
     compose(q, p)
   }
 
-  /** Every profunctor induces a category of arrows, where the objects are the objects of **K**, the morphisms are
+  /** Every profunctor induces a category of arrows, where the objects are the objects of **C**, the morphisms are
     * *P*(*A*,*B*), the identity is given by *η*, and composition is given by *μ*.
     */
   final lazy val arrows: Promonad.Arrows.Of[this.type] = Promonad.Arrows(this)
@@ -90,8 +90,8 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
 
 object Promonad {
 
-  /** The promonads on a category **K**. */
-  type On[K <: Category] = Promonad { val category: K }
+  /** The promonads on a category **C**. */
+  type On[C <: Category] = Promonad { val category: C }
 
   /** The category of arrows of a promonad *P*. */
   open class Arrows(tracked val promonad: Promonad) extends Category {
@@ -113,7 +113,7 @@ object Promonad {
     type Of[P <: Promonad] = Arrows { val promonad: P }
   }
 
-  /** The opposite *P*ᵒᵖ of a promonad *P* over **K**: a promonad over **K**ᵒᵖ, with every arrow reversed. */
+  /** The opposite *P*ᵒᵖ of a promonad *P* over **C**: a promonad over **C**ᵒᵖ, with every arrow reversed. */
   final class Op(tracked val promonad: Promonad) extends Promonad(promonad.category.op) {
     import promonad.category.Obj
 
@@ -128,9 +128,9 @@ object Promonad {
     }
   }
 
-  /** The hom promonad of a category **K**.
+  /** The hom promonad of a category **C**.
     *
-    * The hom promonad's arrows are the morphisms of **K** itself.
+    * The hom promonad's arrows are the morphisms of **C** itself.
     */
   open class Hom(tracked override val category: Category) extends Promonad(category) {
     import category.{Obj, -->}

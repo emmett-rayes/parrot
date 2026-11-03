@@ -3,10 +3,10 @@ package category
 
 import Category.Type
 
-/** The Kleisli promonad of a monad *M* on **K**: effectful arrows *A* → *M*[*B*].
+/** The Kleisli promonad of a monad *M* on **C**: effectful arrows *A* → *M*[*B*].
   *
-  * Represents a promonad over **K**, where
-  *   - *P*(*A*,*B*) = **K**(*A*,*M*[*B*])
+  * Represents a promonad over **C**, where
+  *   - *P*(*A*,*B*) = **C**(*A*,*M*[*B*])
   *   - *unit*(*f*) = *η* ∘ *f* embeds the pure morphisms
   *   - *multiply*(*g*,*f*) = *g*∘ *f* runs *f*, then *g* on its result
   */

@@ -210,9 +210,9 @@ object Coproduct {
   }
 }
 
-/** A binary coproduct structure on a category **K**.
+/** A binary coproduct structure on a category **C**.
   *
-  * Represents the coproduct bifunctor +: **K** × **K** → **K**, a coproduct *A* + *B* of every two objects.
+  * Represents the coproduct bifunctor +: **C** × **C** → **C**, a coproduct *A* + *B* of every two objects.
   */
 abstract class Coproducts(tracked override val category: Category) extends Endobifunctor(category) {
   import category.{Obj, Object, -->, >>>}
@@ -231,7 +231,7 @@ abstract class Coproducts(tracked override val category: Category) extends Endob
     coproduct[A1, A2].copair(f >>> coproduct[B1, B2].inl, g >>> coproduct[B1, B2].inr)
   }
 
-  /** The opposite bifunctor +ᵒᵖ, as the binary products of **K**ᵒᵖ. */
+  /** The opposite bifunctor +ᵒᵖ, as the binary products of **C**ᵒᵖ. */
   override lazy val op: Coproducts.Op.Of[this.type] = Coproducts.Op(this)
 
   /** Laws that any `Coproducts` structure must satisfy.
@@ -282,8 +282,8 @@ object Coproducts {
   import Category.Discrete2.Disc2
   import Product.{Components, Discrete2Diagram}
 
-  /** The binary coproduct structures on a category **K**. */
-  type On[K <: Category] = Coproducts { val category: K }
+  /** The binary coproduct structures on a category **C**. */
+  type On[C <: Category] = Coproducts { val category: C }
 
   /** The binary coproducts of a category with discrete colimits of the diagrams of shape **2**. */
   def apply(colimits: Colimits.OfDiscreteDiagram[Discrete2Diagram.Into])
@@ -311,7 +311,7 @@ object Coproducts {
     }
   }
 
-  /** The binary coproducts of a category **K**, as the binary products of **K**ᵒᵖ.
+  /** The binary coproducts of a category **C**, as the binary products of **C**ᵒᵖ.
     *
     * The product of two objects is their coproduct, and the product of morphisms is the coproduct of their opposites.
     */
@@ -336,7 +336,7 @@ object Coproducts {
 
   object Op {
 
-    /** The binary coproducts *S* of a category **K**, as the binary products of **K**ᵒᵖ. */
+    /** The binary coproducts *S* of a category **C**, as the binary products of **C**ᵒᵖ. */
     type Of[S <: Coproducts] = Op { val coproducts: S }
   }
 }

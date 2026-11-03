@@ -59,7 +59,7 @@ object Colimits {
   }
 
   /** The colimits of the diagrams of type *T*[**C**] in a category **C**. */
-  type OfDiagram[T[K <: Category] <: Functor.Into[K]] = InCategory { type D >: T[category.type] }
+  type OfDiagram[T[C <: Category] <: Functor.Into[C]] = InCategory { type D >: T[category.type] }
 
   /** Colimits of the diagrams *D* of a discrete shape in a category **C**. */
   abstract class DiscreteInCategory(tracked override val category: Category) extends InCategory(category) {
@@ -76,6 +76,6 @@ object Colimits {
   }
 
   /** The colimits of the diagrams of type *T*[**C**] of a discrete shape in a category **C**. */
-  type OfDiscreteDiagram[T[K <: Category] <: Functor.Into[K] { val source: Category { type Self <: =:= } }] =
+  type OfDiscreteDiagram[T[C <: Category] <: Functor.Into[C] { val source: Category { type Self <: =:= } }] =
     DiscreteInCategory { type D >: T[category.type] }
 }

@@ -118,13 +118,13 @@ warning-free.
     (`f2`); conditional laws state their premise in a `@note`.
 13. **Refinements go through the base's alias.** A class has one base, the parameter that the first sentence of its
     doc relates it to, usually the first (`Module` is over its `monoidal`), and one alias that refines it, named by that
-    preposition: `Endofunctor.On[K]`, `Limit.Of[D]`, `Monoid.In[V]`, `Cone.Over[D]`, `Cocone.Under[D]` and `Into`
-    for the target of a class documented as an arrow (`Functor.Into[K]`); a view takes `Of`
-    (`Category.Op.Of[this.type]`). Its argument is what the doc names: `Monad.On[K]` refines the category of the
+    preposition: `Endofunctor.On[C]`, `Limit.Of[D]`, `Monoid.In[V]`, `Cone.Over[D]`, `Cocone.Under[D]` and `Into`
+    for the target of a class documented as an arrow (`Functor.Into[D]`); a view takes `Of`
+    (`Category.Op.Of[this.type]`). Its argument is what the doc names: `Monad.On[C]` refines the category of the
     endofunctor. Refine the base only through the alias, also where an inline refinement would compile, and every
     other member inline after it (`Strong.Bistrong.On[parsers.type] { val monoidal: products.type }`). Add the alias
     with the first refinement of the base, with the class's first sentence as its doc, in the plural ("The cones over
-    a diagram *D*.") unless the base determines it ("The opposite of a category **K**."), and the doc's letter as its
+    a diagram *D*.") unless the base determines it ("The opposite of a category **C**."), and the doc's letter as its
     parameter unless the class has a member of that name (`Bifunctor.Op.Of[B]`, since a bifunctor's carrier is `F`).
     A class with type parameters of its own (`StateT[S]`) has no alias. A type member that clients bound has an alias
     beside the class, indexed by the category (`Limits.OfDiagram[T]` is `InCategory { type D >: T[category.type] }`).

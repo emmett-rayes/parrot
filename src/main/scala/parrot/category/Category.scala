@@ -169,7 +169,7 @@ object Category {
     def evidence: A is category.Obj
   }
 
-  /** The opposite **K**ᵒᵖ of a category **K**.
+  /** The opposite **C**ᵒᵖ of a category **C**.
     *
     * The opposite category has the same objects and identities, with every morphism reversed.
     */
@@ -188,8 +188,8 @@ object Category {
 
   object Op {
 
-    /** The opposite of a category **K**. */
-    type Of[K <: Category] = Op { val category: K }
+    /** The opposite of a category **C**. */
+    type Of[C <: Category] = Op { val category: C }
   }
 
   /** The product category **C₁** × **C₂** of two categories.

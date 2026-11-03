@@ -1,10 +1,10 @@
 package parrot
 package category
 
-/** A left module over a monoidal category **M** on a category **K** (also called a left actegory).
+/** A left module over a monoidal category **M** on a category **C** (also called a left actegory).
   *
-  * Represents a left module (**K**, ⊘), where
-  *   - ⊘: **M** × **K** → **K** is the action bifunctor
+  * Represents a left module (**C**, ⊘), where
+  *   - ⊘: **M** × **C** → **C** is the action bifunctor
   *   - *λ*: *I* ⊘ *A* ≅ *A* is the action left unitor
   *   - *α*: (*X* ⊗ *Y*) ⊘ *A* ≅ *X* ⊘ (*Y* ⊘ *A*) is the action associator
   */
@@ -18,7 +18,7 @@ abstract class Module(
   import monoidal.I
   import monoidal.`*`
 
-  /** The action of **M** on **K**: *X* ⊘ *A*. */
+  /** The action of **M** on **C**: *X* ⊘ *A*. */
   final type Action = action.F
 
   /** Infix alias for [[Action]]. */

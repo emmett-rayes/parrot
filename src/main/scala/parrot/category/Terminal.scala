@@ -120,7 +120,7 @@ object Terminal {
     }
   }
 
-  /** The empty diagram **0** → **K**, the unique functor out of the empty category.
+  /** The empty diagram **0** → **C**, the unique functor out of the empty category.
     */
   final class EmptyDiagram(tracked val category: Category) extends Functor(Empty, category) {
     import category.--> as ==>
@@ -139,7 +139,7 @@ object Terminal {
 
   object EmptyDiagram {
 
-    /** The empty diagram into a category **K**. */
-    type Into[K <: Category] = EmptyDiagram { val category: K }
+    /** The empty diagram into a category **C**. */
+    type Into[C <: Category] = EmptyDiagram { val category: C }
   }
 }
