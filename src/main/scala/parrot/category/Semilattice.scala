@@ -4,7 +4,7 @@ package category
 /** A semilattice in a cartesian category.
   *
   * Represents a commutative monoid (*M*, ⊥, ⊔) with idempotent multiplication, where
-  *   - ⊔ ∘ *β* = ⊔: the order of arguments does not matter
+  *   - ⊔ ∘ *σ* = ⊔: the order of arguments does not matter
   *   - ⊔ ∘ Δ = *id*: combining a value with itself changes nothing
   *
   * The induced preorder *a* ⊑ *b* ⇔ *a* ⊔ *b* = *b* has ⊔ as join and the unit ⊥ as least element.
@@ -20,7 +20,7 @@ abstract class Semilattice(tracked override val monoidal: Cartesian) extends Mon
   /** Laws that any `Semilattice` must satisfy. */
   object SemilatticeLaws {
 
-    /** ⊔ ∘ *β* = ⊔ */
+    /** ⊔ ∘ *σ* = ⊔ */
     def commutativity(using ((M * M) --> M) is Observable): Boolean = {
       (monoidal.braid[M, M] >>> multiply) =?= multiply
     }

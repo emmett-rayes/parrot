@@ -111,7 +111,7 @@ object Strong {
 
     /** The right strength *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*), an arrow of **V**.
       *
-      * The right strength is derived from the left strength as *P*(*β*,*β*) ∘ *τ*.
+      * The right strength is derived from the left strength as *P*(*σ*,*σ*) ∘ *τ*.
       */
     def right[A: Obj, B: Obj, C: Obj]: P[A, B] ==> P[A * C, B * C] = {
       left[A, B, C] >>> profunctor.dimap(monoidal.braid[A, C], monoidal.braid[C, B])

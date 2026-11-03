@@ -74,7 +74,7 @@ abstract class Cartesian(
       pair(f, g)
     }
 
-  /** *β* = ⟨*π*₂,*π*₁⟩
+  /** *σ* = ⟨*π*₂,*π*₁⟩
     */
   def braid[A: Obj, B: Obj]: (A * B) --> (B * A) = {
     snd[A, B] &&& fst[A, B]
@@ -104,7 +104,7 @@ abstract class Cartesian(
   /** Laws that any `Cartesian` structure must satisfy. */
   object CartesianLaws {
 
-    /** *β* = ⟨*π*₂,*π*₁⟩
+    /** *σ* = ⟨*π*₂,*π*₁⟩
       */
     def braidIsPairing[A: Obj, B: Obj](using ((A * B) --> (B * A)) is Observable): Boolean = {
       braid[A, B] =?= (snd[A, B] &&& fst[A, B])

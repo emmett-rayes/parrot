@@ -182,7 +182,7 @@ Each structure sits at the lowest level where its laws can be stated.
   nothing of **V**, and like the action it has no congruence law.
   `Bistrong(profunctor, monoidal)`, for a symmetric **M** acting on itself, is the only case with a right action too: it
   adds the right strength *τ*′, `right`, and the law that the two commute (`compatibility`). *τ*′ defaults to
-  *P*(*β*,*β*) ∘ *τ* and may be overridden, as `StrictParser` does to build `Zip(p, Success())` directly. `Strong` and
+  *P*(*σ*,*σ*) ∘ *τ* and may be overridden, as `StrictParser` does to build `Zip(p, Success())` directly. `Strong` and
   `Traced` are defined once, parameterized by the monoidal structure.
 - **A Freyd category is a category:** `Freyd(promonad, strong)` extends `Promonad.Arrows(promonad)`, the category of
   arrows of the promonad, with `first`, `second`, `parallel` and the laws that connect them to the strength. It names

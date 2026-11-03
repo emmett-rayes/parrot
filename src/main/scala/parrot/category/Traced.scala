@@ -75,7 +75,7 @@ abstract class Traced(tracked val strong: Strong.Bistrong.On[Promonad]) extends 
       trace[C * A, D * B, U](lhs) =?= (strong.right[C, D, A](profunctor.unit(g)) >>> strong.left[A, B, D](trace(p)))
     }
 
-    /** *tr*(*β*) = *id*
+    /** *tr*(*σ*) = *id*
       */
     def yanking[U: Obj](using P[U, U] is Observable): Boolean = {
       trace[U, U, U](profunctor.unit(monoidal.braid[U, U])) =?= profunctor.identity[U]

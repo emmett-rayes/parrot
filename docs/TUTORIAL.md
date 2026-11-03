@@ -2767,7 +2767,7 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 | Class | Adds | Instances |
 | --- | --- | --- |
 | `Monoidal(category, unit, tensor)` | a unit object `I`, given by an object `unit` of `category` (`category.Object`), a `tensor`, an endobifunctor on `category`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
-| `Symmetric(K, U, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, involution, hexagon | `Partial.Product` |
+| `Symmetric(K, U, T)` | a braiding σ : A ⊗ B → B ⊗ A with σ ∘ σ = id; laws: naturality, involution, hexagon | `Partial.Product` |
 | `Cartesian(K, U, T)` | the unit is a `Terminal` object, with `discard`, and the tensor is `Products`, a `Product` of every two objects with `fst`, `snd` and `pair` (`&&&`); the isomorphisms are derived | `Total.Products` |
 | `Cocartesian(K, U, T)` | the unit is an `Initial` object, with `absurd`, and the tensor is `Coproducts`, a `Coproduct` of every two objects with `inl`, `inr` and `copair` (`|||`); the isomorphisms are derived | `Total.Coproducts`, `Partial.Coproduct` |
 | `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry`, and the internal hom as a profunctor, `internalHom` | `Total.Exponentials` |
@@ -2893,7 +2893,7 @@ object Concatenation extends Monoid(Total.Products):
 
 The laws of `Concatenation` are **[Tested]**. In other monoidal categories, monoid objects are other things: in endofunctors with composition as tensor, they are monads (section 15.4).
 
-**Semilattices.** Some monoids have two extra properties: the order of the arguments does not matter, μ ∘ β = μ (**commutativity**), and combining a value with itself changes nothing, μ ∘ Δ = id (**idempotence**). The second law uses the diagonal Δ = ⟨id, id⟩, so it only makes sense when the tensor is a product. A commutative, idempotent monoid in a cartesian category is a **semilattice**, and in the library `Semilattice(M)` refines `Monoid(M)` for a `Cartesian` structure `M`.
+**Semilattices.** Some monoids have two extra properties: the order of the arguments does not matter, μ ∘ σ = μ (**commutativity**), and combining a value with itself changes nothing, μ ∘ Δ = id (**idempotence**). The second law uses the diagonal Δ = ⟨id, id⟩, so it only makes sense when the tensor is a product. A commutative, idempotent monoid in a cartesian category is a **semilattice**, and in the library `Semilattice(M)` refines `Monoid(M)` for a `Cartesian` structure `M`.
 
 Here is the connection with section 14.7. Given a semilattice, define a ≤ b to mean a · b = b. The monoid laws make this a preorder, and in it a · b is the join of a and b and the unit is the least element. Conversely, a join-semilattice gives a semilattice with the join as multiplication and ⊥ as unit. **[Standard: from memory]**
 
@@ -3167,9 +3167,9 @@ natural in A and B, dinatural in C, and compatible with the unitors and the asso
 
 The laws say that τ commutes with pre- and post-composition (naturality), that it does not depend on how C is presented (dinaturality), that carrying the unit along does nothing (unitality), and that carrying C ⊗ D along is carrying D, then C (associativity). A profunctor with a strength is also called a **Tambara module** **[Standard: Pastro and Street, from memory]**. Because the context sits on the left, τ is a **left strength**, as is the strength X × M(A) → M(X × A) of a monad **[Standard: Moggi 1991, from memory]**.
 
-When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′ = P(β, β) ∘ τ, and the two strengths commute: τ′ ∘ τ = P(α, α⁻¹) ∘ τ ∘ τ′. A profunctor with a left and a right strength that commute is **bistrong**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
+When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′ = P(σ, σ) ∘ τ, and the two strengths commute: τ′ ∘ τ = P(α, α⁻¹) ∘ τ ∘ τ′. A profunctor with a left and a right strength that commute is **bistrong**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
 
-The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Strong.Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(β, β) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
+The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Strong.Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(σ, σ) ∘ τ unless an instance overrides it with something more direct. The same class covers two very different strengths.
 
 - **Over products**, τ′ runs an arrow on the left component of a pair and τ on the right one. For a Kleisli promonad on 𝒮, every monad has one: `left(p)((c, a))` runs `p(a)` and pairs `c` with its result (`Kleisli.ProductStrength`).
 - **Over coproducts**, τ′ runs an arrow on the left case of an `Either` and passes the right case through untouched, and τ the other way round. It carries no value into the effect, so every monad on any category with coproducts has one, τ(p) = [η ∘ ι₁, M(ι₂) ∘ p] (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**. Their `left` is τ′: it names the case of the sum that an arrow runs on, not the side of the action.
@@ -3392,7 +3392,7 @@ satisfying, in diagrammatic order (each law is a picture of wires that can be de
 - **sliding**: tr(p ⨾ (id ⊗ h)) = tr((id ⊗ h) ⨾ p) for pure h : U → V: a pure transformation on the feedback wire can slide around the loop;
 - **vanishing**: tracing out the unit I does nothing, and tracing out U ⊗ V is tracing out V, then U;
 - **superposing**: tr(α ⨾ (g ⊗ p) ⨾ α⁻¹) = g ⊗ tr(p) for pure g: a wire that does not take part in the loop can be drawn beside it;
-- **yanking**: tr(β) = id: feeding one strand of a braid back into the other gives a straight wire.
+- **yanking**: tr(σ) = id: feeding one strand of a braid back into the other gives a straight wire.
 
 **[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4), and sliding and superposing are restricted to pure arrows, which are central **[Standard: Benton and Hyland 2003, from memory]**. That is the version the library's `Traced(S)` states.
 
@@ -3516,7 +3516,7 @@ The laws then come in two parts.
 
 - For guarded steps, all Elgot laws hold **[Tested]**, and so do the trace laws of the feedback derived from it, `Traced.OfElgot`, on loops whose continuing steps consume input.
 - For unguarded steps, the fixed-point law fails, since the loop stops where unrolling it would continue. The tests record this as a counterexample **[Tested: counterexample]**.
-- **Yanking fails** for the guarded trace, for every input. Yanking feeds the braiding back into itself, and the braiding passes a value to the feedback wire without consuming anything: it is the simplest unguarded loop. So tr(β) fails instead of being the identity **[Tested: counterexample]**. The guarded trace satisfies all other trace laws on guarded arguments.
+- **Yanking fails** for the guarded trace, for every input. Yanking feeds the braiding back into itself, and the braiding passes a value to the feedback wire without consuming anything: it is the simplest unguarded loop. So tr(σ) fails instead of being the identity **[Tested: counterexample]**. The guarded trace satisfies all other trace laws on guarded arguments.
 
 `StateT.GuardedRecursion`, from section 16.6, is the same idea for `Recursion`. A recursive call that comes after the measure has decreased runs, one that does not fails. Its law fix(f) = f(fix(f)) holds for guarded f **[Tested]** and fails for left-recursive f **[Tested: counterexample]**.
 
@@ -4197,7 +4197,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Strictly positive.** Of a pattern functor: the recursive parameter never appears to the left of a function arrow. Section 16.2.
 
-**Symmetric monoidal category.** A monoidal category with a braiding β that is its own inverse. Section 14.5.
+**Symmetric monoidal category.** A monoidal category with a braiding σ that is its own inverse. Section 14.5.
 
 **Total equality (≐).** Equality of total programs, defined type by type; on functions, agreement on every total argument. Definition 2.5.
 

@@ -66,7 +66,7 @@ abstract class Cocartesian(
       parallel(f, g)
     }
 
-  /** *β* = [*ι*₂,*ι*₁]
+  /** *σ* = [*ι*₂,*ι*₁]
     */
   def braid[A: Obj, B: Obj]: (A + B) --> (B + A) = {
     copair(inr[B, A], inl[B, A])
@@ -95,7 +95,7 @@ abstract class Cocartesian(
   /** Laws that any `Cocartesian` structure must satisfy. */
   object CocartesianLaws {
 
-    /** *β* = [*ι*₂,*ι*₁]
+    /** *σ* = [*ι*₂,*ι*₁]
       */
     def braidIsCopairing[A: Obj, B: Obj](using ((A + B) --> (B + A)) is Observable): Boolean = {
       braid[A, B] =?= (inr[B, A] ||| inl[B, A])
