@@ -1,12 +1,12 @@
 package parrot
 package category
 
-/** A strong profunctor *P*: **C₁**ᵒᵖ × **C₂** → **V** over left modules (also called a Tambara module).
+/** A strong profunctor *P*: **C₁**ᵒᵖ × **C₂** → **V** over two left modules (also called a Tambara module).
   *
-  * Represents a strong profunctor over two **M**-modules, where
+  * Represents a strong profunctor over two left **M**-modules, where
   *   - ⊘₁: **M** × **C₁** → **C₁** is the left action of **M** on **C₁**
   *   - ⊘₂: **M** × **C₂** → **C₂** is the left action of **M** on **C₂**
-  *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*) is the left strength, an arrow of **V**
+  *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*) is the left strength
   */
 abstract class Strong(
   tracked val profunctor: Profunctor,
@@ -18,33 +18,26 @@ abstract class Strong(
   import profunctor.domain.{Obj as Obj1, -->}
   import profunctor.codomain.{Obj as Obj2, --> as ->>}
   import profunctor.base.{Obj as ObjV, --> as ==>, >>>}
-  import monoidal.category.Obj as ObjM
   import monoidal.`*`
+  import monoidal.category.Obj as ObjM
   import module1.`~` as `~1`
   import module2.`~` as `~2`
 
-  private given IIsObj: (monoidal.I is ObjM) = monoidal.unit.evidence
-
-  private given TensorIsObj: [C: ObjM, D: ObjM] => ((C * D) is ObjM) = monoidal.tensor.objects[C, D]
-
+  private given IIsObj: (monoidal.I is ObjM)                             = monoidal.unit.evidence
+  private given PIsObj: [A: Obj1, B: Obj2] => (P[A, B] is ObjV)          = profunctor.objects[A, B]
+  private given TensorIsObj: [C: ObjM, D: ObjM] => ((C * D) is ObjM)     = monoidal.tensor.objects[C, D]
   private given Action1IsObj: [C: ObjM, A: Obj1] => ((C `~1` A) is Obj1) = module1.action.objects[C, A]
-
   private given Action2IsObj: [C: ObjM, B: Obj2] => ((C `~2` B) is Obj2) = module2.action.objects[C, B]
 
-  private given PIsObj: [A: Obj1, B: Obj2] => (P[A, B] is ObjV) = profunctor.objects[A, B]
-
-  /** The left strength *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*).
-    */
+  /** The left strength *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*). */
   def left[A: Obj1, B: Obj2, C: ObjM]: P[A, B] ==> P[C `~1` A, C `~2` B]
 
-  /** Laws that any `Strong` profunctor must satisfy.
-    *
-    * The left strength is natural in *A* and *B*, dinatural in *C*, and compatible with the unitors and associators of
-    * the actions.
-    */
+  /** Laws that any `Strong` profunctor must satisfy. */
   object StrongLaws {
 
     /** *τ* ∘ *P*(*f*,*g*) = *P*(*id* ⊘₁ *f*,*id* ⊘₂ *g*) ∘ *τ*
+      *
+      * *τ* is natural in *A* and *B*.
       */
     def naturality[A1: Obj1, A2: Obj2, B1: Obj1, B2: Obj2, C: ObjM](f: B1 --> A1, g: A2 ->> B2)(
       using (P[A1, A2] ==> P[C `~1` B1, C `~2` B2]) is Observable
@@ -56,7 +49,9 @@ abstract class Strong(
       (profunctor.dimap(f, g) >>> left[B1, B2, C]) =?= (left[A1, A2, C] >>> actions)
     }
 
-    /** *P*(*h* ⊘₁ *id*,*id*) ∘ *τ* = *P*(*id*,*h* ⊘₂ *id*) ∘ *τ*, dinaturality in *C*
+    /** *P*(*h* ⊘₁ *id*,*id*) ∘ *τ* = *P*(*id*,*h* ⊘₂ *id*) ∘ *τ*
+      *
+      * *τ* is dinatural in *C*.
       */
     def dinaturality[A: Obj1, B: Obj2, C1: ObjM, C2: ObjM](h: monoidal.category.Hom[C1, C2])(
       using (P[A, B] ==> P[C1 `~1` A, C2 `~2` B]) is Observable
@@ -86,41 +81,34 @@ abstract class Strong(
 
 object Strong {
 
-  /** A bistrong structure on a profunctor *P*: **C**ᵒᵖ × **C** → **V**, over a symmetric monoidal category **M** acting on
-    * itself.
+  /** A bistrong structure on a profunctor *P*: **C**ᵒᵖ × **C** → **V**, over a symmetric monoidal category **M** acting
+    * on itself.
     *
     * Represents a bistrong profunctor over the self-action of **M**, where
     *   - ⊗: **C** × **C** → **C** is the tensor of **M**, which acts on **C** from both sides
     *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*) is the left strength
-    *   - *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*) is the right strength derived from the left strength
+    *   - *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*) is the right strength
     *
-    * Here, the action is ⊗ itself because a right strength needs a right action, which a left module does not have.
+    * @note The action is ⊗ itself because a right strength needs a right action, which a left module does not have.
     */
   abstract class Bistrong(
     tracked override val profunctor: Profunctor { val codomain: domain.type },
     tracked override val monoidal: Symmetric.On[profunctor.domain.type],
   ) extends Strong(profunctor, monoidal, Module.OfMonoidal(monoidal), Module.OfMonoidal(monoidal)) {
-    import monoidal.`*`
     import profunctor.P
     import profunctor.base.{Obj as ObjV, --> as ==>, >>>}
+    import monoidal.`*`
     import monoidal.category.Obj
 
     private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
+    private given PIsObj: [A: Obj, B: Obj] => (P[A, B] is ObjV)     = profunctor.objects[A, B]
 
-    private given PIsObj: [A: Obj, B: Obj] => (P[A, B] is ObjV) = profunctor.objects[A, B]
-
-    /** The right strength *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*), an arrow of **V**.
-      *
-      * The right strength is derived from the left strength as *P*(*σ*,*σ*) ∘ *τ*.
-      */
+    /** The right strength *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*). */
     def right[A: Obj, B: Obj, C: Obj]: P[A, B] ==> P[A * C, B * C] = {
       left[A, B, C] >>> profunctor.dimap(monoidal.braid[A, C], monoidal.braid[C, B])
     }
 
-    /** Laws that any `Bistrong` profunctor must satisfy.
-      *
-      * The left and the right strength commute, up to the associator.
-      */
+    /** Laws that any `Bistrong` profunctor must satisfy. */
     object BistrongLaws {
 
       /** *τ*′ ∘ *τ* = *P*(*α*,*α*⁻¹) ∘ *τ* ∘ *τ*′
@@ -139,11 +127,12 @@ object Strong {
     /** The bistrong structures on a profunctor *P*. */
     type On[P <: Profunctor] = Bistrong { val profunctor: P }
 
-    /** The opposite *P*ᵒᵖ of a bistrong promonad *P*, over **M**ᵒᵖ.
+    /** The opposite *P*ᵒᵖ: **C** × **C**ᵒᵖ → 𝒮 over **M**ᵒᵖ of a bistrong promonad *P*: **C**ᵒᵖ × **C** → 𝒮 over a
+      * symmetric **M**.
       *
-      * The opposite has the same left strength, with every morphism reversed.
+      * The opposite bistrong promonad has the same left strength, with every morphism reversed.
       *
-      * @note **M** is meant to be `strong.monoidal.op`; its braiding is not checked.
+      * @note **M**ᵒᵖ is meant to be `strong.monoidal.op`; its braiding is not checked.
       */
     final class Op(
       tracked val strong: Bistrong.On[Promonad],

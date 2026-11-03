@@ -3,9 +3,9 @@ package category
 
 /** A semilattice in a cartesian category.
   *
-  * Represents a commutative monoid (*M*, ⊥, ⊔) with idempotent multiplication, where
-  *   - ⊔ ∘ *σ* = ⊔: the order of arguments does not matter
-  *   - ⊔ ∘ Δ = *id*: combining a value with itself changes nothing
+  * Represents a commutative monoid (*M*, ⊥, ⊔), where
+  *   - ⊥ is the unit
+  *   - ⊔ is commutative and idempotent
   *
   * The induced preorder *a* ⊑ *b* ⇔ *a* ⊔ *b* = *b* has ⊔ as join and the unit ⊥ as least element.
   */
@@ -13,8 +13,7 @@ abstract class Semilattice(tracked override val monoidal: Cartesian) extends Mon
   import monoidal.`*`
   import monoidal.category.{Obj, -->, >>>}
 
-  private given MIsObj: (M is Obj) = carrier
-
+  private given MIsObj: (M is Obj)                                = carrier
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** Laws that any `Semilattice` must satisfy. */
