@@ -62,7 +62,7 @@ object Expected {
   object Furthest extends Semilattice(Total.Products) {
     type Self = Expected
 
-    def carrier: Expected is Type = Type.TIsType
+    def evidence: Expected is Type = Type.TIsType
 
     def unit: Unit -> Expected = {
       _ => bottom

@@ -58,8 +58,8 @@ Rejected:
   `Object`, and `Cartesian` refines it to a `Terminal`, an `Object` with `discard`, as it refines the endobifunctor
   `tensor` to `Products`. An object has its own carrier, `Self`, and the `evidence` that it is an object,
   `Self is category.Obj`, so `A is category.Object` is the object *A*, which `category.Object[A]` builds from a context
-  bound, and no structure takes bare evidence. A terminal object and a product of two objects are objects themselves, so
-  they define their carrier and evidence (`Total.UnitIsTerminal` is a `Unit is Terminal`, and
+  bound, and no structure takes bare evidence. A terminal object, a product of two objects and a monoid are objects
+  themselves, so they define their carrier and evidence (`Total.UnitIsTerminal` is a `Unit is Terminal`, and
   `Total.Tuple2IsProduct[A, B]` an `(A, B) is Product`), and so do their duals.
 - **Structures are abstract classes,** because a refinement passes arguments to its parent (`Promonad(category)` extends
   `Endoprofunctor(category, Total)`), which a trait cannot. Type classes without parameters that are not structures

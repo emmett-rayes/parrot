@@ -11,9 +11,9 @@ package category
   */
 abstract class Semilattice(tracked override val monoidal: Cartesian) extends Monoid(monoidal) {
   import monoidal.`*`
-  import monoidal.category.{Obj, -->, >>>}
+  import monoidal.category.{Obj, identity, -->, >>>}
 
-  private given MIsObj: (M is Obj)                                = carrier
+  private given MIsObj: (M is Obj)                                = evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** Laws that any `Semilattice` must satisfy. */
@@ -26,7 +26,7 @@ abstract class Semilattice(tracked override val monoidal: Cartesian) extends Mon
 
     /** ⊔ ∘ Δ = *id* */
     def idempotence(using (M --> M) is Observable): Boolean = {
-      (monoidal.diagonal[M] >>> multiply) =?= monoidal.category.identity[M]
+      (monoidal.diagonal[M] >>> multiply) =?= identity[M]
     }
   }
 }

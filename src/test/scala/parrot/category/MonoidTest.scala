@@ -8,7 +8,7 @@ import Category.Type
 object StringConcat extends Monoid(Total.Products) {
   type Self = String
 
-  def carrier: String is Type = Type.TIsType
+  def evidence: String is Type = Type.TIsType
 
   def unit: Unit -> String = {
     _ => ""

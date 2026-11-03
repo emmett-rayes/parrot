@@ -37,7 +37,7 @@ abstract class SemilatticeSpec(
 object BooleanOr extends Semilattice(Total.Products) {
   type Self = Boolean
 
-  def carrier: Boolean is Type = Type.TIsType
+  def evidence: Boolean is Type = Type.TIsType
 
   def unit: Unit -> Boolean = {
     _ => false
@@ -52,7 +52,7 @@ object BooleanOr extends Semilattice(Total.Products) {
 object IntMax extends Semilattice(Total.Products) {
   type Self = Int
 
-  def carrier: Int is Type = Type.TIsType
+  def evidence: Int is Type = Type.TIsType
 
   def unit: Unit -> Int = {
     _ => Int.MinValue
@@ -67,7 +67,7 @@ object IntMax extends Semilattice(Total.Products) {
 object ConcatClaimedSemilattice extends Semilattice(Total.Products) {
   type Self = String
 
-  def carrier: String is Type = Type.TIsType
+  def evidence: String is Type = Type.TIsType
 
   def unit: Unit -> String = StringConcat.unit
 

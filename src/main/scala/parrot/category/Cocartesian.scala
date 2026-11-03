@@ -55,15 +55,15 @@ abstract class Cocartesian(
   }
 
   /** Every object is a monoid in exactly one way: creating with ¡ and merging with ∇. */
-  final def monoid[A: Obj]: Monoid.In[this.type] { type Self = A } = {
+  final def monoid[X: Obj]: Monoid.In[this.type] { type Self = X } = {
     new Monoid(this) {
-      type Self = A
+      type Self = X
 
-      def carrier: A is Obj = summon[A is Obj]
+      def evidence: X is Obj = summon
 
-      def unit: I --> A = absurd[A]
+      def unit: I --> X = absurd[X]
 
-      def multiply: (A + A) --> A = codiagonal[A]
+      def multiply: (X + X) --> X = codiagonal[X]
     }
   }
 

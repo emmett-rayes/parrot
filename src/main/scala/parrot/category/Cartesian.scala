@@ -52,15 +52,15 @@ abstract class Cartesian(
   }
 
   /** Every object is a comonoid in exactly one way: deleting with ! and copying with Δ. */
-  final def comonoid[A: Obj]: Comonoid.In[this.type] { type Self = A } = {
+  final def comonoid[X: Obj]: Comonoid.In[this.type] { type Self = X } = {
     new Comonoid(this) {
-      type Self = A
+      type Self = X
 
-      def carrier: A is Obj = summon[A is Obj]
+      def evidence: X is Obj = summon
 
-      def counit: A --> I = discard[A]
+      def counit: X --> I = discard[X]
 
-      def comultiply: A --> (A * A) = diagonal[A]
+      def comultiply: X --> (X * X) = diagonal[X]
     }
   }
 

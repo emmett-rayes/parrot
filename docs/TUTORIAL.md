@@ -2886,12 +2886,12 @@ In 𝒮 with pairs, η picks out an element and μ is a binary operation, so a m
 ```scala library
 object Concatenation extends Monoid(Total.Products):
   type Self = String
-  def carrier: String is Type                 = Type.TIsType
-  def unit: Unit -> String                    = _ => ""
+  def evidence: String is Type               = Type.TIsType
+  def unit: Unit -> String                   = _ => ""
   def multiply: ((String, String)) -> String = (a, b) => a + b
 ```
 
-The laws of `Concatenation` are **[Tested]**. In other monoidal categories, monoid objects are other things: in endofunctors with composition as tensor, they are monads (section 15.4).
+A monoid is an object with more structure, as a terminal object is, so `Monoid` extends `Category.Object` (section 11.4): an instance gives the object M as `Self`, with the `evidence` that it is an object of 𝒦. The laws of `Concatenation` are **[Tested]**. In other monoidal categories, monoid objects are other things: in endofunctors with composition as tensor, they are monads (section 15.4).
 
 **Semilattices.** Some monoids have two extra properties: the order of the arguments does not matter, μ ∘ σ = μ (**commutativity**), and combining a value with itself changes nothing, μ ∘ Δ = id (**idempotence**). The second law uses the diagonal Δ = ⟨id, id⟩, so it only makes sense when the tensor is a product. A commutative, idempotent monoid in a cartesian category is a **semilattice**, and in the library `Semilattice(M)` refines `Monoid(M)` for a `Cartesian` structure `M`.
 

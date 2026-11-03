@@ -84,10 +84,10 @@ warning-free.
    parameter of type `category.Object`: a `Category.Object(category)` has the object as its carrier (`Self`, *A*) and
    its `evidence: A is category.Obj`. Such are the factors of `Product(category, first, second)`, the apex of
    `Cone(diagram, apex)` and the unit of `Monoidal(category, unit, tensor)`, which `Cartesian` refines to a `Terminal`,
-   an object with `discard`. A `Terminal`, `Initial`, `Product` or `Coproduct` is itself an object, so its instances
-   define `Self` and `evidence`. `category.Object[A]` builds one from a context bound, and `A is category.Object` is one
-   of type *A*, so no structure takes bare evidence. Structures offer evidence only as values (`objects`, `evidence`,
-   `apex`): every given is `private` to the class that uses it, refinements included
+   an object with `discard`. A `Terminal`, `Initial`, `Product`, `Coproduct`, `Monoid` or `Comonoid` is itself an
+   object, so its instances define `Self` and `evidence`. `category.Object[A]` builds one from a context bound, and
+   `A is category.Object` is one of type *A*, so no structure takes bare evidence. Structures offer evidence only as
+   values (`objects`, `evidence`, `apex`): every given is `private` to the class that uses it, refinements included
    (`private given IIsObj: (I is Obj) = unit.evidence`), and the only public givens are type class instances next to
    their type class.
 6. **Instances are `object`s** nested in what they belong to (`Total.Products`, `Partial.Loops`); generic constructions

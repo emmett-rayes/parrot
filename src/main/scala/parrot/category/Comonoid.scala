@@ -8,23 +8,15 @@ package category
   *   - *ε*: *C* → *I* is the counit
   *   - *δ*: *C* → *C* ⊗ *C* is the comultiplication
   */
-abstract class Comonoid(tracked val monoidal: Monoidal) extends caps.Pure {
+abstract class Comonoid(tracked val monoidal: Monoidal) extends Category.Object(monoidal.category) {
   import monoidal.{I, `*`, ***}
-  import monoidal.category.{Obj, -->, >>>}
+  import monoidal.category.{Obj, identity, -->, >>>}
 
-  type Self
-
-  /** The carrier *C*. */
+  /** The comonoid object *C*. */
   final type C = Self
 
-  /** *C* is an object of **V**.
-    */
-  def carrier: C is Obj
-
-  private given CIsObj: (C is Obj) = carrier
-
-  private given IIsObj: (I is Obj) = monoidal.unit.evidence
-
+  private given CIsObj: (C is Obj)                                = evidence
+  private given IIsObj: (I is Obj)                                = monoidal.unit.evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** The counit *ε*: *C* → *I*. */
@@ -39,20 +31,20 @@ abstract class Comonoid(tracked val monoidal: Monoidal) extends caps.Pure {
     /** (*ε* ⊗ *id*) ∘ *δ* = *λ*⁻¹
       */
     def leftCounit(using (C --> (I * C)) is Observable): Boolean = {
-      (comultiply >>> (counit *** monoidal.category.identity[C])) =?= monoidal.leftUnitor[C].from
+      (comultiply >>> (counit *** identity[C])) =?= monoidal.leftUnitor[C].from
     }
 
     /** (*id* ⊗ *ε*) ∘ *δ* = *ρ*⁻¹
       */
     def rightCounit(using (C --> (C * I)) is Observable): Boolean = {
-      (comultiply >>> (monoidal.category.identity[C] *** counit)) =?= monoidal.rightUnitor[C].from
+      (comultiply >>> (identity[C] *** counit)) =?= monoidal.rightUnitor[C].from
     }
 
     /** *α* ∘ (*δ* ⊗ *id*) ∘ *δ* = (*id* ⊗ *δ*) ∘ *δ*
       */
     def coassociativity(using (C --> (C * (C * C))) is Observable): Boolean = {
-      (comultiply >>> (comultiply *** monoidal.category.identity[C]) >>> monoidal.associator[C, C, C].to)
-        =?= (comultiply >>> (monoidal.category.identity[C] *** comultiply))
+      (comultiply >>> (comultiply *** identity[C]) >>> monoidal.associator[C, C, C].to)
+        =?= (comultiply >>> (identity[C] *** comultiply))
     }
   }
 }

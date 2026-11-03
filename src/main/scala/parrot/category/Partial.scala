@@ -175,15 +175,15 @@ object Partial extends Category {
       * @note Unlike in a cartesian category, programs need not preserve it: one that does not terminate cannot be
       *   deleted, *p* ⨾ ! ≠ !. By Fox's theorem, this is exactly why the pairs of 𝒫 are not products.
       */
-    def comonoid[A: Type]: Comonoid.In[Product.type] { type Self = A } = {
+    def comonoid[X: Type]: Comonoid.In[Product.type] { type Self = X } = {
       new Comonoid(Product) {
-        type Self = A
+        type Self = X
 
-        def carrier: A is Type = Type.TIsType
+        def evidence: X is Type = Type.TIsType
 
-        def counit: A ~> Unit = _ => ()
+        def counit: X ~> Unit = _ => ()
 
-        def comultiply: A ~> (A, A) = a => (a, a)
+        def comultiply: X ~> (X, X) = x => (x, x)
       }
     }
   }
