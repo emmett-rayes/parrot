@@ -78,7 +78,13 @@ object Total extends Category {
   }
 
   /** The pair type (*A*,*B*) as the product *A* × *B* of 𝒮. */
-  final class Tuple2IsProduct[A, B] extends Product(Total, Object[A], Object[B], Object[(A, B)]) {
+  final class Tuple2IsProduct[A, B] extends Product(Total, Object[A], Object[B]) {
+    type Self = (A, B)
+
+    def evidence: (A, B) is Type = {
+      Type.TIsType
+    }
+
     def fst: ((A, B)) -> A = {
       _._1
     }
@@ -125,7 +131,13 @@ object Total extends Category {
   }
 
   /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of 𝒮. */
-  final class EitherIsCoproduct[A, B] extends Coproduct(Total, Object[A], Object[B], Object[Either[A, B]]) {
+  final class EitherIsCoproduct[A, B] extends Coproduct(Total, Object[A], Object[B]) {
+    type Self = Either[A, B]
+
+    def evidence: Either[A, B] is Type = {
+      Type.TIsType
+    }
+
     def inl: A -> Either[A, B] = {
       a => Left(a)
     }

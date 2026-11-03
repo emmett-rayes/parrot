@@ -5,15 +5,13 @@ package category
   *
   * Represents a product *P* = *A*₁ × *A*₂, where
   *   - *π*₁: *P* → *A*₁ and *π*₂: *P* → *A*₂ are the projections
-  *   - ⟨*f*,*g*⟩: *X* → *P* is the pairing of *f*: *X* → *A*₁ and *g*: *X* → *A*₂, the unique morphism with *π*₁ ∘
-  *     ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
+  *   - ⟨*f*,*g*⟩: *X* → *P* is the pairing of *f*: *X* → *A*₁ and *g*: *X* → *A*₂
   */
 abstract class Product(
-  tracked val category: Category,
+  tracked override val category: Category,
   tracked val first: category.Object,
   tracked val second: category.Object,
-  tracked val apex: category.Object,
-) extends caps.Pure {
+) extends Category.Object(category) {
   import category.{Obj, -->, >>>}
 
   /** The first factor *A*₁. */
@@ -22,14 +20,12 @@ abstract class Product(
   /** The second factor *A*₂. */
   final type A2 = second.A
 
-  /** The product *P*. */
-  final type P = apex.A
+  /** The product *P* of *A*₁ and *A*₂. */
+  final type P = Self
 
   private given A1IsObj: (A1 is Obj) = first.evidence
-
   private given A2IsObj: (A2 is Obj) = second.evidence
-
-  private given PIsObj: (P is Obj) = apex.evidence
+  private given PIsObj: (P is Obj)   = evidence
 
   /** The first projection *π*₁: *P* → *A*₁. */
   def fst: P --> A1
@@ -37,11 +33,14 @@ abstract class Product(
   /** The second projection *π*₂: *P* → *A*₂. */
   def snd: P --> A2
 
-  /** The pairing ⟨*f*,*g*⟩: *X* → *P* of *f*: *X* → *A*₁ and *g*: *X* → *A*₂. */
+  /** The pairing ⟨*f*,*g*⟩: *X* → *P* of *f*: *X* → *A*₁ and *g*: *X* → *A*₂.
+    *
+    * This is the unique morphism with *π*₁ ∘ ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*.
+    */
   def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P
 
-  /** The product as a limit of the diagram (*A*₁,*A*₂) of shape **2**: its legs are the projections, and the
-    * factorization of a cone is the pairing of its legs.
+  /** The product as a limit of the discrete 2-object diagram, with the projections as legs and the pairing ⟨*f*,*g*⟩ as
+    * the factorization of a cone with legs *f* and *g*.
     */
   final lazy val asLimit: Product.AsLimit.Of[this.type] = Product.AsLimit(this)
 
@@ -84,7 +83,7 @@ object Product {
   /** The products of two objects of a category **C**. */
   type Of[C <: Category] = Product { val category: C }
 
-  /** The product of *X* and *Y* in a category with limits of the diagrams of shape **2**. */
+  /** The product of two objects in a category with limits of the diagrams of shape **2**. */
   def apply(
     limits: Limits.OfDiagram[Discrete2Diagram.Into],
     factor1: limits.category.Object,
@@ -93,14 +92,20 @@ object Product {
     FromLimit(limits.limit(Discrete2Diagram(limits.category, factor1, factor2)))
   }
 
-  /** The product from a limit *L* of a diagram (*A*₁,*A*₂) of shape **2**.
+  /** The product from a limit *L* of a discrete 2-object diagram.
     *
-    * The product is the apex of *L*, its projections are the legs of *L*, and ⟨*f*,*g*⟩ is the factorization through
-    * *L* of the cone with legs *f* and *g*.
+    * The product is the apex of *L*, its projections are the legs of *L*, and ⟨*f*,*g*⟩: *X* → *P* is the factorization
+    * through *L* of the cone with apex *X* and legs *f* and *g*.
     */
   open class FromLimit(tracked val limit: Limit.Of[Discrete2Diagram])
-      extends Product(limit.diagram.category, limit.diagram.first, limit.diagram.second, limit.apex) {
+      extends Product(limit.diagram.category, limit.diagram.first, limit.diagram.second) {
     import category.{Obj, -->}
+
+    type Self = limit.X
+
+    def evidence: Self is Obj = {
+      limit.apex.evidence
+    }
 
     def fst: P --> A1 = {
       limit.leg[0]
@@ -115,13 +120,13 @@ object Product {
     }
   }
 
-  /** A product *P* as a limit of the diagram (*A*₁,*A*₂) of shape **2**.
+  /** A product *P* as a limit of the discrete 2-object diagram.
     *
-    * The apex of the limit is *P*, its legs are the projections, and the factorization of a cone is the pairing of its
-    * legs.
+    * The apex of the limit is *P*, its legs are the projections, and the factorization of the cone with apex *X* and
+    * legs *f* and *g* is ⟨*f*,*g*⟩: *X* → *P*.
     */
   final class AsLimit(tracked val product: Product)
-      extends Limit(Discrete2Diagram(product.category, product.first, product.second), product.apex) {
+      extends Limit(Discrete2Diagram(product.category, product.first, product.second), product) {
     import product.category.-->
 
     def leg[A: Disc2]: product.P --> diagram.F[A] = {
@@ -138,11 +143,14 @@ object Product {
 
   object AsLimit {
 
-    /** The product *P* as a limit of the diagram (*A*₁,*A*₂) of shape **2**. */
+    /** The product *P* as a limit of the discrete 2-object diagram. */
     type Of[P <: Product] = AsLimit { val product: P }
   }
 
-  /** The cone with apex *X* over a diagram of shape **2** whose legs are *f* and *g*. */
+  /** The cone with apex *X* over a diagram of shape **2**.
+    *
+    * The pair cone has legs *f* and *g*.
+    */
   final class PairCone(
     tracked override val diagram: Functor { val source: Discrete2.type },
     tracked override val apex: diagram.target.Object,
@@ -160,13 +168,15 @@ object Product {
     }
   }
 
-  /** The object map of a diagram (*X*,*Y*) of shape **2**: 0 ↦ *X* and 1 ↦ *Y*. */
+  /** The object map of the discrete 2-object diagram (*X*,*Y*): 0 ↦ *X* and 1 ↦ *Y*. */
   type Components[X, Y] = [A] =>> A match {
     case 0 => X
     case 1 => Y
   }
 
-  /** The diagram (*X*,*Y*): **2** → **K** of two objects *X* and *Y* of **K**. */
+  /** The discrete 2-object diagram (*X*,*Y*): **2** → **K**, the functor out of **2** that maps 0 to an object *X* and
+    * 1 to an object *Y* of **K**.
+    */
   final class Discrete2Diagram(
     tracked val category: Category,
     tracked val first: category.Object,
@@ -191,31 +201,26 @@ object Product {
 
   object Discrete2Diagram {
 
-    /** The diagrams of shape **2** into a category **K**. */
+    /** The discrete 2-object diagrams into a category **K**. */
     type Into[K <: Category] = Discrete2Diagram { val category: K }
   }
 }
 
 /** A binary product structure on a category **K**.
   *
-  * Represents the product bifunctor ×: **K** × **K** → **K**, a product *A* × *B* of every two objects, where
-  *   - *π*₁: *A* × *B* → *A* and *π*₂: *A* × *B* → *B* are the projections
-  *   - ⟨*f*,*g*⟩: *X* → *A* × *B* is the pairing of *f*: *X* → *A* and *g*: *X* → *B*, the unique morphism with *π*₁ ∘
-  *     ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*
-  *   - *f* × *g* = ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩ is the product of morphisms
-  *
-  * The structure at two objects *A* and *B* is a [[Product]] on *A* × *B*.
+  * Represents the product bifunctor ×: **K** × **K** → **K**, a product *A* × *B* of every two objects.
   */
 abstract class Products(tracked override val category: Category) extends Endobifunctor(category) {
   import category.{Obj, Object, -->, >>>}
 
   private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
-  /** The product of *A* and *B*: a [[Product]] on *A* × *B*, with its projections and pairing. */
-  def product[A: Obj, B: Obj]
-    : Product.Of[category.type] { val first: A is Object; val second: B is Object; val apex: F[A, B] is Object }
+  /** The product *X* × *Y* is a [[Product]]. */
+  def product[X: Obj, Y: Obj]: F[X, Y] is Product.Of[category.type] { val first: X is Object; val second: Y is Object }
 
-  /** *f* × *g* = ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩
+  /** The product *f* × *g*: *A*₁ × *A*₂ → *B*₁ × *B*₂ of *f*: *A*₁ → *B*₁ and *g*: *A*₂ → *B*₂.
+    *
+    * This is the pairing ⟨*f* ∘ *π*₁,*g* ∘ *π*₂⟩.
     */
   def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
     product[B1, B2].pair(product[A1, A2].fst >>> f, product[A1, A2].snd >>> g)
@@ -272,16 +277,15 @@ object Products {
   /** The binary product structures on a category **K**. */
   type On[K <: Category] = Products { val category: K }
 
-  /** The binary products of a category with discrete limits of shape **2**: the limits of the diagrams (*A*,*B*). */
+  /** The binary products of a category with discrete limits of the diagrams of shape **2**. */
   def apply(limits: Limits.OfDiscreteDiagram[Discrete2Diagram.Into])
     : On[limits.category.type] { type Self[A, B] = limits.Apex[Disc2, Components[A, B]] } = {
     FromLimits(limits)
   }
 
-  /** The binary products of discrete limits *L* of shape **2**.
+  /** The binary products from discrete limits *L* of the diagrams of shape **2**.
     *
-    * The product *A* × *B* is the apex Apex[**2**,(*A*,*B*)] of the limit of the diagram (*A*,*B*), a type constructor
-    * because the shape is discrete, and its projections and pairing are those of the limit ([[Product.FromLimit]]).
+    * The product *A* × *B* is the apex Apex[**2**,(*A*,*B*)] of the limit of the discrete 2-object diagram.
     */
   open class FromLimits(tracked val limits: Limits.OfDiscreteDiagram[Discrete2Diagram.Into])
       extends Products(limits.category) {
@@ -293,11 +297,9 @@ object Products {
       limits.limit(Discrete2Diagram(category, category.Object[A], category.Object[B])).apex.evidence
     }
 
-    def product[A: Obj, B: Obj]
-      : Product.Of[category.type] {
-        val first: A is Object; val second: B is Object; val apex: F[A, B] is Object
-      } = {
-      Product.FromLimit(limits.limit(Discrete2Diagram(category, category.Object[A], category.Object[B])))
+    def product[X: Obj, Y: Obj]
+      : F[X, Y] is Product.Of[category.type] { val first: X is Object; val second: Y is Object } = {
+      Product.FromLimit(limits.limit(Discrete2Diagram(category, category.Object[X], category.Object[Y])))
     }
   }
 }

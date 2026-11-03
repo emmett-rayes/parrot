@@ -171,9 +171,9 @@ object Cocartesian {
       cocartesian.tensor.objects[A, B]
     }
 
-    def product[A: Obj, B: Obj]
-      : OpProduct.In[cocartesian.type] { val first: A is Object; val second: B is Object } = {
-      OpProduct(cocartesian, category.Object[A], category.Object[B])
+    def product[X: Obj, Y: Obj]
+      : OpProduct.In[cocartesian.type] { val first: X is Object; val second: Y is Object } = {
+      OpProduct(cocartesian, category.Object[X], category.Object[Y])
     }
 
     override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
@@ -189,19 +189,18 @@ object Cocartesian {
     tracked val cocartesian: Cocartesian,
     tracked override val first: cocartesian.category.op.Object,
     tracked override val second: cocartesian.category.op.Object,
-  ) extends Product(
-      cocartesian.category.op,
-      first,
-      second,
-      cocartesian.category.op.Object(
-        using cocartesian.tensor.objects[first.A, second.A](using first.evidence, second.evidence),
-      ),
-    ) {
+  ) extends Product(cocartesian.category.op, first, second) {
     import category.{Obj, -->}
+
+    type Self = cocartesian.Tensor[A1, A2]
 
     private given A1IsObj: (A1 is Obj) = first.evidence
 
     private given A2IsObj: (A2 is Obj) = second.evidence
+
+    def evidence: Self is Obj = {
+      cocartesian.tensor.objects[A1, A2]
+    }
 
     def fst: P --> A1 = {
       cocartesian.inl[A1, A2]

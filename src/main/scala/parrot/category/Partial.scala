@@ -129,7 +129,13 @@ object Partial extends Category {
   }
 
   /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of 𝒫. */
-  final class EitherIsCoproduct[A, B] extends Coproduct(Partial, Object[A], Object[B], Object[Either[A, B]]) {
+  final class EitherIsCoproduct[A, B] extends Coproduct(Partial, Object[A], Object[B]) {
+    type Self = Either[A, B]
+
+    def evidence: Either[A, B] is Type = {
+      Type.TIsType
+    }
+
     def inl: A ~> Either[A, B] = {
       a => Left(a)
     }

@@ -15,7 +15,7 @@ abstract class Initial(tracked override val category: Category) extends Category
   /** The unique morphism ¡: *I* → *A*. */
   def absurd[A: Obj]: I --> A
 
-  /** The initial object as a colimit of the empty diagram, with ¡ as the factorization. */
+  /** The initial object as a colimit of the empty diagram, with ¡ as the factorization of a cocone with no legs. */
   final lazy val asColimit: Initial.AsColimit.Of[this.type] = Initial.AsColimit(this)
 
   /** Laws that any `Initial` must satisfy. */
@@ -36,7 +36,7 @@ object Initial {
   /** The initial objects of a category **C**. */
   type Of[C <: Category] = Initial { val category: C }
 
-  /** The initial object of a category with a colimit of the empty diagram: that colimit. */
+  /** The initial object of a category with colimits of the diagrams of shape **0**. */
   def apply(colimits: Colimits.OfDiagram[EmptyDiagram.Into]): Of[colimits.category.type] = {
     FromColimit(colimits.colimit(EmptyDiagram(colimits.category)))
   }

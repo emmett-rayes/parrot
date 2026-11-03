@@ -82,13 +82,14 @@ warning-free.
 5. **Objects are types with evidence:** `type Obj <: Type` (`import Category.Type`; `Type.TIsType` holds for every
    type), passed only through context bounds, except an object a structure chooses or is on, which is a `tracked`
    parameter of type `category.Object`: a `Category.Object(category)` has the object as its carrier (`Self`, *A*) and
-   its `evidence: A is category.Obj`. Such are the objects of `Product(category, first, second, apex)`, the apex of
+   its `evidence: A is category.Obj`. Such are the factors of `Product(category, first, second)`, the apex of
    `Cone(diagram, apex)` and the unit of `Monoidal(category, unit, tensor)`, which `Cartesian` refines to a `Terminal`,
-   an object with `discard`; instances of `Terminal(category)` and `Initial(category)` define `Self` and `evidence`.
-   `category.Object[A]` builds one from a context bound, and `A is category.Object` is one of type *A*, so no structure
-   takes bare evidence. Structures offer evidence only as values (`objects`, `evidence`, `apex`): every given is
-   `private` to the class that uses it, refinements included (`private given IIsObj: (I is Obj) = unit.evidence`), and
-   the only public givens are type class instances next to their type class.
+   an object with `discard`. A `Terminal`, `Initial`, `Product` or `Coproduct` is itself an object, so its instances
+   define `Self` and `evidence`. `category.Object[A]` builds one from a context bound, and `A is category.Object` is one
+   of type *A*, so no structure takes bare evidence. Structures offer evidence only as values (`objects`, `evidence`,
+   `apex`): every given is `private` to the class that uses it, refinements included
+   (`private given IIsObj: (I is Obj) = unit.evidence`), and the only public givens are type class instances next to
+   their type class.
 6. **Instances are `object`s** nested in what they belong to (`Total.Products`, `Partial.Loops`); generic constructions
    are `open class`es (`Kleisli(monad)`, `StateT[S](monad)`). Instances name evidence explicitly (`Type.TIsType`), never
    `summon`: a class-level forwarding given would recurse.
@@ -225,10 +226,11 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   `monad.functor.category` = `Total`); refine the parameter a member comes from (`Monad.On`), never intersect.
 - **A refinement sees the members of the type it refines,** so a name that is also one of them is cyclic or ambiguous
   inside it: `Product { val category: category.type }`, or `Limit.Of[diagram.type] { val apex: diagram.… }` for a
-  parameter `diagram`. The base's alias avoids it for the base (rule 13); for another member, import what the
-  refinement names (`import category.Object`), use a `this`-qualified path in methods, or give a method parameter
-  another name (`limit(functor)`). `Limits.OfDiagram` relies on it: in `InCategory { type D >: T[category.type] }`,
-  `category` is the refined structure's own.
+  parameter `diagram`. The base's alias avoids it for the base (rule 13); for another member, import what the refinement
+  names (`import category.Object`), use a `this`-qualified path in methods, or give a method parameter another name
+  (`limit(functor)`, `Product.apply(limits, factor1, factor2)`, and `Products.product[X, Y]`, since `A` is a member of
+  every `Object`). `Limits.OfDiagram` relies on it: in `InCategory { type D >: T[category.type] }`, `category` is the
+  refined structure's own.
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
 - **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
   passes to its parent (the points of `Total.LimitOf`) goes into the companion, indexed by the parameter it depends on

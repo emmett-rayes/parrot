@@ -175,9 +175,9 @@ object Cartesian {
       cartesian.tensor.objects[A, B]
     }
 
-    def coproduct[A: Obj, B: Obj]
-      : OpCoproduct.In[cartesian.type] { val left: A is Object; val right: B is Object } = {
-      OpCoproduct(cartesian, category.Object[A], category.Object[B])
+    def coproduct[X: Obj, Y: Obj]
+      : OpCoproduct.In[cartesian.type] { val left: X is Object; val right: Y is Object } = {
+      OpCoproduct(cartesian, category.Object[X], category.Object[Y])
     }
 
     override def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
@@ -193,19 +193,18 @@ object Cartesian {
     tracked val cartesian: Cartesian,
     tracked override val left: cartesian.category.op.Object,
     tracked override val right: cartesian.category.op.Object,
-  ) extends Coproduct(
-      cartesian.category.op,
-      left,
-      right,
-      cartesian.category.op.Object(
-        using cartesian.tensor.objects[left.A, right.A](using left.evidence, right.evidence),
-      ),
-    ) {
+  ) extends Coproduct(cartesian.category.op, left, right) {
     import category.{Obj, -->}
+
+    type Self = cartesian.Tensor[A1, A2]
 
     private given A1IsObj: (A1 is Obj) = left.evidence
 
     private given A2IsObj: (A2 is Obj) = right.evidence
+
+    def evidence: Self is Obj = {
+      cartesian.tensor.objects[A1, A2]
+    }
 
     def inl: A1 --> S = {
       cartesian.fst[A1, A2]

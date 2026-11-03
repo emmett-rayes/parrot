@@ -5,15 +5,13 @@ package category
   *
   * Represents a coproduct *S* = *A*₁ + *A*₂, where
   *   - *ι*₁: *A*₁ → *S* and *ι*₂: *A*₂ → *S* are the injections
-  *   - [*f*,*g*]: *S* → *X* is the copairing of *f*: *A*₁ → *X* and *g*: *A*₂ → *X*, the unique morphism with [*f*,*g*]
-  *     ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
+  *   - [*f*,*g*]: *S* → *X* is the copairing of *f*: *A*₁ → *X* and *g*: *A*₂ → *X*
   */
 abstract class Coproduct(
-  tracked val category: Category,
+  tracked override val category: Category,
   tracked val left: category.Object,
   tracked val right: category.Object,
-  tracked val apex: category.Object,
-) extends caps.Pure {
+) extends Category.Object(category) {
   import category.{Obj, -->, >>>}
 
   /** The first summand *A*₁. */
@@ -22,14 +20,12 @@ abstract class Coproduct(
   /** The second summand *A*₂. */
   final type A2 = right.A
 
-  /** The coproduct *S*. */
-  final type S = apex.A
+  /** The coproduct *S* of *A*₁ and *A*₂. */
+  final type S = Self
 
   private given A1IsObj: (A1 is Obj) = left.evidence
-
   private given A2IsObj: (A2 is Obj) = right.evidence
-
-  private given SIsObj: (S is Obj) = apex.evidence
+  private given SIsObj: (S is Obj)   = evidence
 
   /** The first injection *ι*₁: *A*₁ → *S*. */
   def inl: A1 --> S
@@ -37,11 +33,14 @@ abstract class Coproduct(
   /** The second injection *ι*₂: *A*₂ → *S*. */
   def inr: A2 --> S
 
-  /** The copairing [*f*,*g*]: *S* → *X* of *f*: *A*₁ → *X* and *g*: *A*₂ → *X*. */
+  /** The copairing [*f*,*g*]: *S* → *X* of *f*: *A*₁ → *X* and *g*: *A*₂ → *X*.
+    *
+    * This is the unique morphism with [*f*,*g*] ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*.
+    */
   def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X
 
-  /** The coproduct as a colimit of the diagram (*A*₁,*A*₂) of shape **2**: its legs are the injections, and the
-    * factorization of a cocone is the copairing of its legs.
+  /** The coproduct as a colimit of the discrete 2-object diagram, with the injections as legs and the copairing
+    * [*f*,*g*] as the factorization of a cocone with legs *f* and *g*.
     */
   final lazy val asColimit: Coproduct.AsColimit.Of[this.type] = Coproduct.AsColimit(this)
 
@@ -85,7 +84,7 @@ object Coproduct {
   /** The coproducts of two objects of a category **C**. */
   type Of[C <: Category] = Coproduct { val category: C }
 
-  /** The coproduct of *X* and *Y* in a category with colimits of the diagrams of shape **2**. */
+  /** The coproduct of two objects in a category with colimits of the diagrams of shape **2**. */
   def apply(
     colimits: Colimits.OfDiagram[Discrete2Diagram.Into],
     summand1: colimits.category.Object,
@@ -94,14 +93,20 @@ object Coproduct {
     FromColimit(colimits.colimit(Discrete2Diagram(colimits.category, summand1, summand2)))
   }
 
-  /** The coproduct from a colimit *L* of a diagram (*A*₁,*A*₂) of shape **2**.
+  /** The coproduct from a colimit *L* of a discrete 2-object diagram.
     *
-    * The coproduct is the apex of *L*, its injections are the legs of *L*, and [*f*,*g*] is the factorization through
-    * *L* of the cocone with legs *f* and *g*.
+    * The coproduct is the apex of *L*, its injections are the legs of *L*, and [*f*,*g*]: *S* → *X* is the
+    * factorization through *L* of the cocone with apex *X* and legs *f* and *g*.
     */
   open class FromColimit(tracked val colimit: Colimit.Of[Discrete2Diagram])
-      extends Coproduct(colimit.diagram.category, colimit.diagram.first, colimit.diagram.second, colimit.apex) {
+      extends Coproduct(colimit.diagram.category, colimit.diagram.first, colimit.diagram.second) {
     import category.{Obj, -->}
+
+    type Self = colimit.X
+
+    def evidence: Self is Obj = {
+      colimit.apex.evidence
+    }
 
     def inl: A1 --> S = {
       colimit.leg[0]
@@ -116,13 +121,13 @@ object Coproduct {
     }
   }
 
-  /** A coproduct *S* as a colimit of the diagram (*A*₁,*A*₂) of shape **2**.
+  /** A coproduct *S* as a colimit of the discrete 2-object diagram.
     *
-    * The apex of the colimit is *S*, its legs are the injections, and the factorization of a cocone is the copairing of
-    * its legs.
+    * The apex of the colimit is *S*, its legs are the injections, and the factorization of the cocone with apex *X* and
+    * legs *f* and *g* is [*f*,*g*]: *S* → *X*.
     */
   final class AsColimit(tracked val coproduct: Coproduct)
-      extends Colimit(Discrete2Diagram(coproduct.category, coproduct.left, coproduct.right), coproduct.apex) {
+      extends Colimit(Discrete2Diagram(coproduct.category, coproduct.left, coproduct.right), coproduct) {
     import coproduct.category.-->
 
     def leg[A: Disc2]: diagram.F[A] --> coproduct.S = {
@@ -139,11 +144,14 @@ object Coproduct {
 
   object AsColimit {
 
-    /** The coproduct *S* as a colimit of the diagram (*A*₁,*A*₂) of shape **2**. */
+    /** The coproduct *S* as a colimit of the discrete 2-object diagram. */
     type Of[S <: Coproduct] = AsColimit { val coproduct: S }
   }
 
-  /** The cocone with apex *X* under a diagram of shape **2** whose legs are *f* and *g*. */
+  /** The cocone with apex *X* under a diagram of shape **2**.
+    *
+    * The copair cocone has legs *f* and *g*.
+    */
   final class CopairCocone(
     tracked override val diagram: Functor { val source: Discrete2.type },
     tracked override val apex: diagram.target.Object,
@@ -164,24 +172,20 @@ object Coproduct {
 
 /** A binary coproduct structure on a category **K**.
   *
-  * Represents the coproduct bifunctor +: **K** × **K** → **K**, a coproduct *A* + *B* of every two objects, where
-  *   - *ι*₁: *A* → *A* + *B* and *ι*₂: *B* → *A* + *B* are the injections
-  *   - [*f*,*g*]: *A* + *B* → *X* is the copairing of *f*: *A* → *X* and *g*: *B* → *X*, the unique morphism with
-  *     [*f*,*g*] ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*
-  *   - *f* + *g* = [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*] is the coproduct of morphisms
-  *
-  * The structure at two objects *A* and *B* is a [[Coproduct]] on *A* + *B*.
+  * Represents the coproduct bifunctor +: **K** × **K** → **K**, a coproduct *A* + *B* of every two objects.
   */
 abstract class Coproducts(tracked override val category: Category) extends Endobifunctor(category) {
   import category.{Obj, Object, -->, >>>}
 
   private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
-  /** The coproduct of *A* and *B*: a [[Coproduct]] on *A* + *B*, with its injections and copairing. */
-  def coproduct[A: Obj, B: Obj]
-    : Coproduct.Of[category.type] { val left: A is Object; val right: B is Object; val apex: F[A, B] is Object }
+  /** The coproduct *X* + *Y* is a [[Coproduct]]. */
+  def coproduct[X: Obj, Y: Obj]
+    : F[X, Y] is Coproduct.Of[category.type] { val left: X is Object; val right: Y is Object }
 
-  /** *f* + *g* = [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*]
+  /** The coproduct *f* + *g*: *A*₁ + *A*₂ → *B*₁ + *B*₂ of *f*: *A*₁ → *B*₁ and *g*: *A*₂ → *B*₂.
+    *
+    * This is the copairing [*ι*₁ ∘ *f*,*ι*₂ ∘ *g*].
     */
   def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 --> B1, g: A2 --> B2): F[A1, A2] --> F[B1, B2] = {
     coproduct[A1, A2].copair(f >>> coproduct[B1, B2].inl, g >>> coproduct[B1, B2].inr)
@@ -238,19 +242,15 @@ object Coproducts {
   /** The binary coproduct structures on a category **K**. */
   type On[K <: Category] = Coproducts { val category: K }
 
-  /** The binary coproducts of a category with discrete colimits of shape **2**: the colimits of the diagrams
-    * (*A*,*B*).
-    */
+  /** The binary coproducts of a category with discrete colimits of the diagrams of shape **2**. */
   def apply(colimits: Colimits.OfDiscreteDiagram[Discrete2Diagram.Into])
     : On[colimits.category.type] { type Self[A, B] = colimits.Apex[Disc2, Components[A, B]] } = {
     FromColimits(colimits)
   }
 
-  /** The binary coproducts of discrete colimits *L* of shape **2**.
+  /** The binary coproducts from discrete colimits *L* of the diagrams of shape **2**.
     *
-    * The coproduct *A* + *B* is the apex Apex[**2**,(*A*,*B*)] of the colimit of the diagram (*A*,*B*), a type
-    * constructor because the shape is discrete, and its injections and copairing are those of the colimit
-    * ([[Coproduct.FromColimit]]).
+    * The coproduct *A* + *B* is the apex Apex[**2**,(*A*,*B*)] of the colimit of the discrete 2-object diagram.
     */
   open class FromColimits(tracked val colimits: Colimits.OfDiscreteDiagram[Discrete2Diagram.Into])
       extends Coproducts(colimits.category) {
@@ -262,11 +262,9 @@ object Coproducts {
       colimits.colimit(Discrete2Diagram(category, category.Object[A], category.Object[B])).apex.evidence
     }
 
-    def coproduct[A: Obj, B: Obj]
-      : Coproduct.Of[category.type] {
-        val left: A is Object; val right: B is Object; val apex: F[A, B] is Object
-      } = {
-      Coproduct.FromColimit(colimits.colimit(Discrete2Diagram(category, category.Object[A], category.Object[B])))
+    def coproduct[X: Obj, Y: Obj]
+      : F[X, Y] is Coproduct.Of[category.type] { val left: X is Object; val right: Y is Object } = {
+      Coproduct.FromColimit(colimits.colimit(Discrete2Diagram(category, category.Object[X], category.Object[Y])))
     }
   }
 }

@@ -15,7 +15,7 @@ abstract class Terminal(tracked override val category: Category) extends Categor
   /** The unique morphism !: *A* → *I*. */
   def discard[A: Obj]: A --> I
 
-  /** The terminal object as a limit of the empty diagram, with ! as the factorization. */
+  /** The terminal object as a limit of the empty diagram, with ! as the factorization of a cone with no legs. */
   final lazy val asLimit: Terminal.AsLimit.Of[this.type] = Terminal.AsLimit(this)
 
   /** Laws that any `Terminal` must satisfy. */
@@ -35,7 +35,7 @@ object Terminal {
   /** The terminal objects of a category **C**. */
   type Of[C <: Category] = Terminal { val category: C }
 
-  /** The terminal object of a category with a limit of the empty diagram: that limit. */
+  /** The terminal object of a category with limits of the diagrams of shape **0**. */
   def apply(limits: Limits.OfDiagram[EmptyDiagram.Into]): Of[limits.category.type] = {
     FromLimit(limits.limit(EmptyDiagram(limits.category)))
   }
