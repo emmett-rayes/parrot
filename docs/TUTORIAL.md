@@ -2767,7 +2767,7 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 | Class | Adds | Instances |
 | --- | --- | --- |
 | `Monoidal(category, unit, tensor)` | a unit object `I`, given by an object `unit` of `category` (`category.Object`), a `tensor`, an endobifunctor on `category`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
-| `Symmetric(K, U, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, symmetry, hexagon | `Partial.Product` |
+| `Symmetric(K, U, T)` | a braiding β : A ⊗ B → B ⊗ A with β ∘ β = id; laws: naturality, involution, hexagon | `Partial.Product` |
 | `Cartesian(K, U, T)` | the unit is a `Terminal` object, with `discard`, and the tensor is `Products`, a `Product` of every two objects with `fst`, `snd` and `pair` (`&&&`); the isomorphisms are derived | `Total.Products` |
 | `Cocartesian(K, U, T)` | the unit is an `Initial` object, with `absurd`, and the tensor is `Coproducts`, a `Coproduct` of every two objects with `inl`, `inr` and `copair` (`|||`); the isomorphisms are derived | `Total.Coproducts`, `Partial.Coproduct` |
 | `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry`, and the internal hom as a profunctor, `internalHom` | `Total.Exponentials` |

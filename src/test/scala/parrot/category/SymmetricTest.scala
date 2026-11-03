@@ -34,12 +34,12 @@ abstract class SymmetricSpec(
       }
     }
 
-    law("symmetry") {
+    law("involution") {
       val observations = observe[T1 * T2, T1 * T2]
 
       forAll(observations) { observe =>
         given (((T1 * T2) --> (T1 * T2)) is Observable) = observe
-        symmetry[T1, T2]
+        involution[T1, T2]
       }
     }
 

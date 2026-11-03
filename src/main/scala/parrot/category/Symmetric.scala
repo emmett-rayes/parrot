@@ -38,7 +38,7 @@ abstract class Symmetric(
 
     /** *β* ∘ *β* = *id*
       */
-    def symmetry[A: Obj, B: Obj](using ((A * B) --> (A * B)) is Observable): Boolean = {
+    def involution[A: Obj, B: Obj](using ((A * B) --> (A * B)) is Observable): Boolean = {
       (braid[A, B] >>> braid[B, A]) =?= category.identity[A * B]
     }
 
