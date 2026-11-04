@@ -11,9 +11,9 @@ A parser-combinator library derived from category theory, in Scala 3, with a tut
 library should read as a consequence of. No runtime dependencies (ScalaTest and ScalaCheck in `Test` only); add none:
 the point of the project is to build the structures from scratch.
 
-- `parrot.category`: categorical structures (categories, functors, limits, promonads, monoidal structures, strength,
-  restriction, traces, Conway and Elgot operators, recursion, monads and transformers), each with its laws as
-  executable code.
+- `parrot.category`: categorical structures (categories, functors, limits, promonads, premonoidal and monoidal
+  structures, strength, restriction, traces, Conway and Elgot operators, recursion, monads and transformers), each with
+  its laws as executable code.
 - `parrot.parser`: `ParserAlgebra`, the PEG combinators as a bundle of those structures, and two interpreters:
   `ReferenceParser`, the executable specification built only from library structures (slow and not stack-safe, so
   JSON tests parse on a 1 GiB-stack thread, `JsonFixtures.onDeepStack`; never optimize it at the expense of clarity),
@@ -76,9 +76,10 @@ warning-free.
    named by a `final` alias (`Hom`/`-->`, `F`, `P`, `A`, `M`, `C`). Structures *on* something (`Monoidal`, `Strong`,
    `Restriction`, `Monad`, the trace grid) have no `Self` and are named, not found by implicit search.
 4. **Combinations are bundles, not inheritance** (`ParserAlgebra(…)` takes its structures as parameters); a structure
-   that is another with more operations extends it (`Freyd`). A special case with an operation of its own is a class
-   with a view to the general structure and a construction back (`Terminal.asLimit`, `Terminal.FromLimit`); aliases
-   (`Monad.On`, `Limit.Of`) are only for pure refinements.
+   that is another with more operations extends it (`Monoidal` and `Freyd` extend `Premonoidal`, `Bifunctor` extends
+   `BinoidalFunctor`). A special case with an operation of its own is a class with a view to the general structure and
+   a construction back (`Terminal.asLimit`, `Terminal.FromLimit`); aliases (`Monad.On`, `Limit.Of`) are only for pure
+   refinements.
 5. **Objects are types with evidence:** `type Obj <: Type` (`import Category.Type`; `Type.TIsType` holds for every
    type), passed only through context bounds, except an object a structure chooses or is on, which is a `tracked`
    parameter of type `category.Object`: a `Category.Object(category)` has the object as its carrier (`Self`, *A*) and
@@ -195,11 +196,13 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   `ElgotTest.scala`), and **one test class per instance**, at its most specific structure. A refinement's spec extends
   its parent's, forwarding the subject under the same name; coverage is transitive (`Total.Products` has only a
   Cartesian test class). An extensible spec takes `structure: String = "<Name>"` last, passes it to `LawSuite` and
-  registers its laws in `also("<Name>")`, so a child reports them under its own name. Where the parent's spec needs
-  other fixtures, the child copies its laws into an `also` block instead (`FreydSpec`, `PromonadSpec`). `IsoLaws` has
-  no spec: `MonoidalLaws` and `ModuleLaws` check it.
-- **Specs take their subject, not a fixture:** `tracked val monoidal: Symmetric.On[…]`, named after its structure, with
-  the fixture found as a given, `using category: CategoryFixture.For[monoidal.category.type]`; where the subject takes
+  registers its laws in `also("<Name>")`, so a child reports them under its own name. Where the parent's spec needs a
+  fixture the child has no given for, the child passes it explicitly (`FreydSpec` passes `promonad.arrows` to
+  `PremonoidalSpec`) or copies the parent's laws into an `also` block (`PromonadSpec`). `IsoLaws` has no spec:
+  `PremonoidalLaws` and `ModuleLaws` check it.
+- **Specs take their subject, not a fixture:** `tracked val premonoidal: Premonoidal.On[…]`, named after its structure
+  (in a refinement's spec, after the root's: `CartesianSpec` forwards `premonoidal`), with the fixture found as a given,
+  `using category: CategoryFixture.For[premonoidal.category.type]`; where the subject takes
   the fixture's name (`CategorySpec`, `BifunctorSpec`, `PromonadSpec`), the fixture is `fixture`. There is one given
   fixture per category or promonad, in the `CategoryFixture` and `PromonadFixture` companions (the parser's in
   `ParserFixtures`, in `Grammars.scala`); derived categories (`Total.op`) need their own. `FunctorSpec` takes two,

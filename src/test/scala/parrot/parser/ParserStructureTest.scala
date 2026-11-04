@@ -19,6 +19,13 @@ class ReferenceIsClassicalTest
 class ReferenceZippingIsBistrongTest
     extends BistrongSpec("ReferenceParser (zipping)", Interpreters.reference.zipping)
 
+class ReferenceZippingIsBinoidalFunctorTest
+    extends BinoidalFunctorSpec(
+      "ReferenceParser (zipping)",
+      Interpreters.reference.parsers.arrows,
+      Freyd.Tensor(Interpreters.reference.parsers, Interpreters.reference.zipping),
+    )
+
 class ReferenceZippingIsFreydTest
     extends FreydSpec("ReferenceParser (zipping)", Interpreters.reference.zipped) {
   counterexample("interchange", "consuming input is not commutative") {
@@ -28,6 +35,13 @@ class ReferenceZippingIsFreydTest
 
 class ReferenceBranchingIsBistrongTest
     extends BistrongSpec("ReferenceParser (branching)", Interpreters.reference.branching)
+
+class ReferenceBranchingIsBinoidalFunctorTest
+    extends BinoidalFunctorSpec(
+      "ReferenceParser (branching)",
+      Interpreters.reference.parsers.arrows,
+      Freyd.Tensor(Interpreters.reference.parsers, Interpreters.reference.branching),
+    )
 
 class ReferenceBranchingIsFreydTest
     extends FreydSpec("ReferenceParser (branching)", Interpreters.reference.branched) {
@@ -85,6 +99,13 @@ class StrictIsClassicalTest
 class StrictZippingIsBistrongTest
     extends BistrongSpec("StrictParser (zipping)", Interpreters.strict.zipping)
 
+class StrictZippingIsBinoidalFunctorTest
+    extends BinoidalFunctorSpec(
+      "StrictParser (zipping)",
+      Interpreters.strict.parsers.arrows,
+      Freyd.Tensor(Interpreters.strict.parsers, Interpreters.strict.zipping),
+    )
+
 class StrictZippingIsFreydTest
     extends FreydSpec("StrictParser (zipping)", Interpreters.strict.zipped) {
   counterexample("interchange", "consuming input is not commutative") {
@@ -94,6 +115,13 @@ class StrictZippingIsFreydTest
 
 class StrictBranchingIsBistrongTest
     extends BistrongSpec("StrictParser (branching)", Interpreters.strict.branching)
+
+class StrictBranchingIsBinoidalFunctorTest
+    extends BinoidalFunctorSpec(
+      "StrictParser (branching)",
+      Interpreters.strict.parsers.arrows,
+      Freyd.Tensor(Interpreters.strict.parsers, Interpreters.strict.branching),
+    )
 
 class StrictBranchingIsFreydTest
     extends FreydSpec("StrictParser (branching)", Interpreters.strict.branched) {

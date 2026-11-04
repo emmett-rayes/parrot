@@ -5,21 +5,21 @@ import Category.Type
 
 /** The laws of [[Cartesian]]: the unitors, the associator and the braiding are those of the products. */
 abstract class CartesianSpec(
-  tracked override val monoidal: Cartesian.On[Category { type Obj = Type }],
+  tracked override val premonoidal: Cartesian.On[Category { type Obj = Type }],
 )(using
-  category: CategoryFixture.For[monoidal.category.type],
-  typename: TypeName[monoidal.type],
+  category: CategoryFixture.For[premonoidal.category.type],
+  typename: TypeName[premonoidal.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[monoidal.Tensor[X, Y]],
-  unit: Sample[monoidal.I],
-) extends SymmetricSpec(monoidal, "Cartesian") {
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[premonoidal.Tensor[X, Y]],
+  unit: Sample[premonoidal.I],
+) extends SymmetricSpec(premonoidal, "Cartesian") {
   import types.{T1, T2, T3, given}
   import category.*
-  import monoidal.category.-->
-  import monoidal.{I, `*`}
-  import monoidal.CartesianLaws.*
+  import premonoidal.category.-->
+  import premonoidal.{I, `*`}
+  import premonoidal.CartesianLaws.*
 
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[monoidal.Tensor[X, Y]] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[premonoidal.Tensor[X, Y]] = tensor[X, Y]
 
   law("braidIsPairing") {
     val observations = observe[T1 * T2, T2 * T1]

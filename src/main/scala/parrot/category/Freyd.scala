@@ -5,30 +5,52 @@ import scala.annotation.targetName
 
 /** A Freyd category **K** on a promonad *P* over **C**.
   *
-  * Represents the category of arrows of *P* with a bistrong structure (**C**, ⊗, *τ*, *τ*′), where
+  * Represents the premonoidal category **K** of arrows of *P* with a bistrong structure (**C**, ⊗, *τ*, *τ*′), where
   *   - **C** is a symmetric monoidal base category
-  *   - the right strength *τ*′ is the right whiskering
-  *   - the left strength *τ* is the left whiskering
+  *   - the tensor of **K** is the tensor of **C** on objects, with the right strength *τ*′(*p*) = *p* ⦸ *C* and the
+  *     left strength *τ*(*p*) = *C* ⊘ *p* as its morphism parts
+  *   - the unit, the unitors and the associator of **K** are those of **C**, as pure arrows
   *   - *p* ⋉ *q* = *τ*(*q*) ∘ *τ*′(*p*) runs *p*, then *q*
   *   - *p* ⋊ *q* = *τ*′(*p*) ∘ *τ*(*q*) runs *q*, then *p*
   *
   * **K** is a symmetric premonoidal category. Pure morphisms in **C** interchange with arrows in **K**.
   */
-final class Freyd(tracked override val promonad: Promonad, tracked val strong: Bistrong.On[promonad.type])
-    extends Promonad.Arrows(promonad) {
-  import strong.monoidal.{`*`, ***}
+final class Freyd(tracked val promonad: Promonad, tracked val strong: Bistrong.On[promonad.type])
+    extends Premonoidal(
+      promonad.arrows,
+      promonad.arrows.Object[strong.monoidal.I](using strong.monoidal.unit.evidence),
+      Freyd.Tensor(promonad, strong),
+    ) {
+  import category.{Iso, Obj, -->, <->, >>>}
+  import strong.monoidal.***
   import promonad.category.--> as ==>
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = strong.monoidal.tensor.objects[A, B]
+  private given IIsObj: (I is Obj)                                = unit.evidence
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
-  /** The right whiskering *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*). */
-  final def first[A: Obj, B: Obj, C: Obj](p: A --> B): (A * C) --> (B * C) = {
-    strong.right[A, B, C](p)
+  def leftUnitor[A: Obj]: (I * A) <-> A = {
+    val iso = strong.monoidal.leftUnitor[A]
+    Iso(promonad.unit(iso.to), promonad.unit(iso.from))
   }
 
-  /** The left whiskering *τ*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*). */
+  def rightUnitor[A: Obj]: (A * I) <-> A = {
+    val iso = strong.monoidal.rightUnitor[A]
+    Iso(promonad.unit(iso.to), promonad.unit(iso.from))
+  }
+
+  def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C)) = {
+    val iso = strong.monoidal.associator[A, B, C]
+    Iso(promonad.unit(iso.to), promonad.unit(iso.from))
+  }
+
+  /** The right strength *τ*′(*p*) = *p* ⦸ *C*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*). */
+  final def first[A: Obj, B: Obj, C: Obj](p: A --> B): (A * C) --> (B * C) = {
+    lmap[A, B, C](p)
+  }
+
+  /** The left strength *τ*(*p*) = *C* ⊘ *p*: *P*(*A*,*B*) → *P*(*C* ⊗ *A*,*C* ⊗ *B*). */
   final def second[A: Obj, B: Obj, C: Obj](p: A --> B): (C * A) --> (C * B) = {
-    strong.left[A, B, C](p)
+    rmap[A, B, C](p)
   }
 
   /** Runs *p*, then *q*, side by side: *p* ⋉ *q*. */
@@ -78,4 +100,30 @@ object Freyd {
 
   /** The Freyd categories on a promonad *P*. */
   type On[P <: Promonad] = Freyd { val promonad: P }
+
+  /** The tensor of the Freyd category on a promonad *P* over **C** with a bistrong structure *S*.
+    *
+    * Represents a binoidal functor on the arrows of *P*, where
+    *   - *A* ⊗ *B* is the tensor of **C**
+    *   - *p* ⦸ *C* = *τ*′(*p*), the right strength
+    *   - *C* ⊘ *p* = *τ*(*p*), the left strength
+    */
+  final class Tensor(tracked val promonad: Promonad, tracked val strong: Bistrong.On[promonad.type])
+      extends BinoidalFunctor(promonad.arrows, promonad.arrows, promonad.arrows) {
+    import promonad.arrows.{Obj, -->}
+
+    type Self = strong.monoidal.Tensor
+
+    def objects[A: Obj, B: Obj]: F[A, B] is Obj = {
+      strong.monoidal.tensor.objects[A, B]
+    }
+
+    def lmap[A: Obj, B: Obj, C: Obj](p: A --> B): F[A, C] --> F[B, C] = {
+      strong.right[A, B, C](p)
+    }
+
+    def rmap[A: Obj, B: Obj, C: Obj](p: A --> B): F[C, A] --> F[C, B] = {
+      strong.left[A, B, C](p)
+    }
+  }
 }

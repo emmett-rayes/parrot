@@ -7,18 +7,18 @@ import ColimitCoproducts.FName
 /** The laws of [[Coproducts]], for binary coproducts on a category whose objects are all types. */
 abstract class CoproductsSpec(
   tracked override val category: Category { type Obj = Type },
-  tracked override val bifunctor: Coproducts.On[category.type],
+  tracked override val binoidal: Coproducts.On[category.type],
 )(using
   fixture: CategoryFixture.For[category.type],
-  typename: TypeName[bifunctor.Self],
+  typename: TypeName[binoidal.Self],
   types: SampleTypes,
-  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[bifunctor.F[X, Y]],
-) extends BifunctorSpec(category, bifunctor, "Coproducts") {
+  sample: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[binoidal.F[X, Y]],
+) extends BifunctorSpec(category, binoidal, "Coproducts") {
   import types.{T1, T2, T3, T4, given}
   import fixture.*
   import category.-->
-  import bifunctor.F
-  import bifunctor.CoproductsLaws.*
+  import binoidal.F
+  import binoidal.CoproductsLaws.*
 
   private given BSample: [X: Sample, Y: Sample] => Sample[F[X, Y]] = sample[X, Y]
 

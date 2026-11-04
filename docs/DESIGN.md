@@ -69,8 +69,8 @@ Rejected:
   named, not found by carrier: 𝒮 carries both products and coproducts, and nothing about the carrier tells them apart.
 - **Combinations are bundles, not inheritance.** A class extending a product and a coproduct structure would inherit two
   `Tensor`s, two `I`s and two `braid`s, so `ParserAlgebra(…)` takes its structures as parameters. A structure that is
-  another with more operations extends it: `Freyd(promonad, strong)` extends the category of arrows
-  `Promonad.Arrows(promonad)`.
+  another with more operations extends it: `Bifunctor` extends `BinoidalFunctor`, and `Monoidal` and
+  `Freyd(promonad, strong)` extend `Premonoidal`.
 - **A special case with an operation of its own is a structure with a view** to the general one and a construction
   back (`Terminal.asLimit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
@@ -192,9 +192,16 @@ Each structure sits at the lowest level where its laws can be stated.
   adds the right strength *τ*′, `right`, which is *P*(*σ*,*σ*) ∘ *τ* by its law `braiding`. An instance may override
   *τ*′, as `StrictParser` does to build `Zip(p, Success())` directly, and the law checks the override. `Strong` and
   `Traced` are defined once, parameterized by the monoidal structure.
-- **A Freyd category is a category:** `Freyd(promonad, strong)` extends `Promonad.Arrows(promonad)`, the category of
-  arrows of the promonad, with `first`, `second`, `leftToRight` (⋉, `*>*`), `rightToLeft` (⋊, `*<*`) and the laws that
-  connect them to the strength. The operators look like a tensor without being one, since the category is premonoidal.
+- **Premonoidal before monoidal.** `Premonoidal(category, unit, tensor)` is on a `BinoidalFunctor`, a functor in each
+  argument separately: `lmap` maps the left argument (*f* ⦸ *C*) and `rmap` the right one (*C* ⊘ *g*), as for
+  profunctors, which inherit them, and there is no tensor of two morphisms. Its unitors and associator are central and
+  natural in each component. A bifunctor is a binoidal functor whose two maps interchange, with `bimap`, and a monoidal
+  category is a premonoidal one whose morphisms are all central, so `Bifunctor` extends `BinoidalFunctor` and
+  `Monoidal` extends `Premonoidal`, overriding its `tensor` with a bifunctor.
+- **A Freyd category is a premonoidal category:** `Freyd(promonad, strong)` extends `Premonoidal` on the category of
+  arrows `promonad.arrows`. Its tensor, `Freyd.Tensor`, has the strengths as `lmap` and `rmap`, and its unitors and
+  associator are those of **C**, as pure arrows. It adds `first`, `second`, `leftToRight` (⋉, `*>*`), `rightToLeft`
+  (⋊, `*<*`) and the laws that connect them to the strength; ⋉ and ⋊ look like a tensor of arrows without being one.
   It names the strengths after the component an arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of
   Freyd categories and the grid read as usual. It takes the promonad as well as the strength, so that its signature
   names the promonad whose arrows it has.
@@ -271,6 +278,10 @@ Each structure sits at the lowest level where its laws can be stated.
   a hierarchy of enriched categories.
 
 Rejected:
+- the tensor of a premonoidal category as an `Endobifunctor` exempt from the composition law: its instances would break
+  a law of their own structure;
+- a binoidal functor as a view of a bifunctor rather than its parent: `Monoidal` would then need a second name for its
+  tensor, since the premonoidal one would be the view;
 - strength as a refinement of `Monoidal` (`first = p *** id`), which is vacuous: every law follows from
   bifunctoriality;
 - naming the primitive strength `first`: with a left action it runs an arrow on the *second* component;

@@ -5,22 +5,22 @@ import Category.Type
 
 /** The laws of [[Symmetric]], for structures on a category whose objects are all types. */
 abstract class SymmetricSpec(
-  tracked override val monoidal: Symmetric.On[Category { type Obj = Type }],
+  tracked override val premonoidal: Symmetric.On[Category { type Obj = Type }],
   structure: String = "Symmetric",
 )(using
-  category: CategoryFixture.For[monoidal.category.type],
-  typename: TypeName[monoidal.type],
+  category: CategoryFixture.For[premonoidal.category.type],
+  typename: TypeName[premonoidal.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[monoidal.Tensor[X, Y]],
-  unit: Sample[monoidal.I],
-) extends MonoidalSpec(monoidal, structure) {
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[premonoidal.Tensor[X, Y]],
+  unit: Sample[premonoidal.I],
+) extends MonoidalSpec(premonoidal, structure) {
   import types.{T1, T2, T3, T4, given}
   import category.*
-  import monoidal.category.-->
-  import monoidal.`*`
-  import monoidal.SymmetricLaws.*
+  import premonoidal.category.-->
+  import premonoidal.`*`
+  import premonoidal.SymmetricLaws.*
 
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[monoidal.Tensor[X, Y]] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[premonoidal.Tensor[X, Y]] = tensor[X, Y]
 
   also("Symmetric") {
     law("braidNaturality") {

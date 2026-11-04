@@ -3180,14 +3180,14 @@ The laws of both, for every Kleisli instance in the library, are **[Tested]**.
 
 A bistrong promonad is almost a structure for running arrows side by side. Name the two strengths after the component an arrow runs on, `first` for τ′ and `second` for τ, and define p ⋉ q, `p *>* q` in code, as `first(p)` followed by `second(q)`. One more condition is needed, that the pure arrows and the composition of the promonad agree with the strength.
 
-**Definition 17.3 (Freyd category).** A **Freyd category** is the category of arrows of a promonad P on a symmetric monoidal category 𝒦, bistrong over its tensor, such that
+**Definition 17.3 (Freyd category).** A **Freyd category** 𝒦 is the category of arrows of a promonad P on a symmetric monoidal category 𝒞, bistrong over its tensor, such that
 
 - first(unit(f)) = unit(f ⊗ id): the strength of a pure arrow is the pure tensor, and
 - first(q ∘ p) = first(q) ∘ first(p): the strength respects composition.
 
 Freyd categories were introduced to model call-by-value languages with effects **[Standard: Power and Robinson; Levy, Power and Thielecke, from memory]**, and they are the semantics of Haskell's *arrows*, which programmers know as a design pattern **[Standard: Hughes 2000; Jacobs, Heunen and Hasuo 2009, from memory]**. A strong promonad is in fact a monoid in the category of strong profunctors, so the definition is a single monoid once more **[Standard: Rivas and Jaskelioff, from memory]**.
 
-In the library, a Freyd category is a category: `Freyd(promonad, strong)` takes a promonad and a bistrong structure on it, and extends `Promonad.Arrows(promonad)`, the category of arrows of the promonad, whose identity is η and whose composition is μ. It names the strengths `first` and `second`, states the two laws and offers both orders of running two arrows side by side: `leftToRight`, written `*>*`, runs the left arrow first, p ⋉ q, and `rightToLeft`, written `*<*`, runs the right arrow first, p ⋊ q.
+In the library, a Freyd category is a premonoidal category, in the sense explained below: `Freyd(promonad, strong)` takes a promonad and a bistrong structure on it, and extends `Premonoidal` on `promonad.arrows`, the category of arrows of the promonad, whose identity is η and whose composition is μ. It names the strengths `first` and `second`, states the two laws and offers both orders of running two arrows side by side: `leftToRight`, written `*>*`, runs the left arrow first, p ⋉ q, and `rightToLeft`, written `*<*`, runs the right arrow first, p ⋊ q.
 
 ```scala library
 val OptionFreyd = Freyd(Kleisli.OptionKleisli, Kleisli.OptionProduct)
@@ -3196,7 +3196,7 @@ import OptionFreyd.*>*
 val both: ((String, Int)) -> Option[(Int, Int)] = parse *>* positive
 ```
 
-**Premonoidal, not monoidal.** For pure functions, it does not matter whether the left or the right component is processed first: f ⊗ g = (f ⊗ id) then (id ⊗ g) = (id ⊗ g) then (f ⊗ id). This is the **interchange** law, and it says that ⊗ is a bifunctor. For effectful arrows it can fail, because the two orders run the effects in different orders. A logger whose log is a string shows it: if p logs `"a"` and q logs `"b"`, then `p *>* q` logs `"ab"`, and `p *<* q` logs `"ba"`. A category with a tensor that is a bifunctor only in each argument separately is called **premonoidal**, and Freyd categories are premonoidal **[Standard: Power and Robinson, from memory]**. That is why the two operators look like a tensor without being one. The library's tests record the failure of interchange as a counterexample, for the string logger and for parsers, which consume input in order **[Tested: counterexample]**.
+**Premonoidal, not monoidal.** For pure functions, it does not matter whether the left or the right component is processed first: f ⊗ g = (f ⊗ id) then (id ⊗ g) = (id ⊗ g) then (f ⊗ id). This is the **interchange** law, and it says that ⊗ is a bifunctor. For effectful arrows it can fail, because the two orders run the effects in different orders. A logger whose log is a string shows it: if p logs `"a"` and q logs `"b"`, then `p *>* q` logs `"ab"`, and `p *<* q` logs `"ba"`. A category with a tensor that is a bifunctor only in each argument separately is called **premonoidal**, and Freyd categories are premonoidal **[Standard: Power and Robinson, from memory]**. That is why the two operators look like a tensor without being one. In the library, such a tensor is a `BinoidalFunctor`, with `lmap` for an arrow on the left argument and `rmap` for one on the right, but no `bimap`, and `Premonoidal` is the structure on it, whose unitors and associator are central. A `Bifunctor` is a binoidal functor and a `Monoidal` structure a premonoidal one, and the tensor of `Freyd` has the two strengths as its `lmap` and `rmap`. The library's tests record the failure of interchange as a counterexample, for the string logger and for parsers, which consume input in order **[Tested: counterexample]**.
 
 What does survive is interchange with *pure* arrows. A pure arrow has no effect to order, so it interchanges with every arrow: unit(f) ⋉ q = unit(f) ⋊ q. Arrows with this property are called **central**. Centrality of the pure arrows is not another law: the first law of Definition 17.3 turns first(unit(f)) into unit(f ⊗ id), and the dinaturality of the strength moves a pure arrow on the context from one side of second(q) to the other **[Proved]**.
 
@@ -4047,6 +4047,8 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Bifunctor.** A functor of two arguments, such as `Tuple2` and `Either`. Definition 12.1.
 
+**Binoidal functor.** A functor of two arguments in each argument separately but not jointly; the tensor of a premonoidal category. In the library, `BinoidalFunctor`, which `Bifunctor` extends. Section 17.4.
+
 **Bistrong.** Having a left strength τ and a right strength τ′ that commute; over a symmetric monoidal category acting on itself, τ′ comes from τ by braiding, and the two always commute. In the library, `Bistrong`. Section 17.3.
 
 **Bundle.** A class that combines several structures by taking them as `tracked` parameters, rather than by inheritance, such as `ParserAlgebra`. Section 11.3.
@@ -4109,7 +4111,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Free theorem.** An equation about a polymorphic program that follows from its type alone. Chapter 9.
 
-**Freyd category.** The category of arrows of a promonad, with a strength that agrees with its pure arrows and its composition. Definition 17.3.
+**Freyd category.** The premonoidal category of arrows of a promonad, with a strength that agrees with its pure arrows and its composition. Definition 17.3.
 
 **Functor.** A map between categories preserving identities and composition. Definition 1.3.
 
@@ -4165,7 +4167,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Point.** An arrow from the terminal object; in 𝒮, a total value. Section 14.4.
 
-**Premonoidal.** Having a tensor that is a functor in each argument separately but not jointly, because effects are ordered. Section 17.4.
+**Premonoidal.** Having a tensor that is a functor in each argument separately but not jointly, because effects are ordered. In the library, `Premonoidal`, which `Monoidal` and `Freyd` extend. Section 17.4.
 
 **Preorder.** A reflexive and transitive relation; a category with at most one arrow between two objects; a 𝔹-category. Sections 1.2, 4.3.
 

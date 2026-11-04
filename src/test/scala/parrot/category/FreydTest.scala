@@ -5,20 +5,21 @@ import org.scalacheck.Gen
 
 import Category.Type
 
-/** The laws of [[Freyd]] and of its [[Category]], for Freyd categories on promonads over 𝒮. */
+/** The laws of [[Freyd]], for Freyd categories on promonads over 𝒮. */
 abstract class FreydSpec(
   name: String,
-  tracked val freyd: Freyd.On[Promonad.On[Category { type Obj = Type }]],
+  tracked override val premonoidal: Freyd.On[Promonad.On[Category { type Obj = Type }]],
 )(using
-  promonad: PromonadFixture.For[freyd.promonad.type],
+  promonad: PromonadFixture.For[premonoidal.promonad.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[freyd.strong.monoidal.Tensor[X, Y]],
-) extends LawSuite("Freyd", name) {
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[premonoidal.Tensor[X, Y]],
+  unitSample: Sample[premonoidal.I],
+) extends PremonoidalSpec(name, premonoidal, "Freyd")(using promonad.arrows, types, tensor, unitSample) {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
-  import freyd.{-->, >>>}
-  import freyd.strong.monoidal.`*`
-  import freyd.FreydLaws.*
+  import premonoidal.category.-->
+  import premonoidal.`*`
+  import premonoidal.FreydLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 
@@ -43,53 +44,6 @@ abstract class FreydSpec(
     }
   }
 
-  also("Category") {
-    import freyd.CategoryLaws.*
-
-    law("leftIdentity") {
-      val observations = observe[T1, T2]
-      val ps           = arrow[T1, T2]
-
-      forAll(observations, ps) { (observe, p) =>
-        given ((T1 --> T2) is Observable) = observe
-        leftIdentity(p)
-      }
-    }
-
-    law("rightIdentity") {
-      val observations = observe[T1, T2]
-      val ps           = arrow[T1, T2]
-
-      forAll(observations, ps) { (observe, p) =>
-        given ((T1 --> T2) is Observable) = observe
-        rightIdentity(p)
-      }
-    }
-
-    law("associativity") {
-      val observations = observe[T1, T4]
-      val ps           = arrow[T1, T2]
-      val qs           = arrow[T2, T3]
-      val rs           = arrow[T3, T4]
-
-      forAll(observations, ps, qs, rs) { (observe, p, q, r) =>
-        given ((T1 --> T4) is Observable) = observe
-        associativity(p, q, r)
-      }
-    }
-
-    law("congruence") {
-      val observations = observe[T1, T3]
-      val ps           = arrow[T1, T2]
-      val qs           = arrow[T2, T3]
-
-      forAll(observations, ps, qs) { (observe, p, q) =>
-        given ((T1 --> T3) is Observable) = observe
-        congruence(p, variant(p), q, variant(q))
-      }
-    }
-  }
-
   /** Interchange: running *p* and *q* side by side in either order gives the same result. It holds when the effect is
     * commutative and fails otherwise; it is not a law of Freyd categories.
     */
@@ -100,7 +54,7 @@ abstract class FreydSpec(
       q       <- arrow[T4, T3]
     } yield {
       given (((T1 * T4) --> (T2 * T3)) is Observable) = observe
-      freyd.leftToRight(p, q) =?= freyd.rightToLeft(p, q)
+      premonoidal.leftToRight(p, q) =?= premonoidal.rightToLeft(p, q)
     }
   }
 }

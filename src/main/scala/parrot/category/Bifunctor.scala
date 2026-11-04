@@ -3,28 +3,32 @@ package category
 
 /** A bifunctor *F*: **C₁** × **C₂** → **D**.
   *
-  * Represents a bifunctor *F*, where
-  *   - *F*[*A*,*B*] is the object part
+  * Represents a bifunctor *F*, a binoidal functor where
   *   - *F*(*f*,*g*): *F*[*A*₁,*A*₂] → *F*[*B*₁,*B*₂] is the morphism part
+  *   - *f* ⦸ *C* = *F*(*f*,*id*) and *C* ⊘ *g* = *F*(*id*,*g*)
   */
-abstract class Bifunctor(tracked val source1: Category, tracked val source2: Category, tracked val target: Category)
-    extends caps.Pure {
+abstract class Bifunctor(
+  tracked override val source1: Category,
+  tracked override val source2: Category,
+  tracked override val target: Category,
+) extends BinoidalFunctor(source1, source2, target) {
   import source1.{Obj as Obj1, -->}
   import source2.{Obj as Obj2, --> as ->>}
   import target.--> as ==>
 
-  type Self[_, _]
-
-  /** The bifunctor's object part *F*. */
-  final type F = Self
-
-  /** *F* maps a pair of objects of **C₁** and **C₂** to an object of **D**.
-    */
-  def objects[A: Obj1, B: Obj2]: F[A, B] is target.Obj
-
   /** *F* maps a pair of morphisms *f* of **C₁** and *g* of **C₂** to a morphism *F*(*f*,*g*) of **D**.
     */
   def bimap[A1: Obj1, A2: Obj2, B1: Obj1, B2: Obj2](f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]
+
+  /** *f* ⦸ *C* = *F*(*f*,*id*) */
+  final def lmap[A: Obj1, B: Obj1, C: Obj2](f: A --> B): F[A, C] ==> F[B, C] = {
+    bimap(f, source2.identity[C])
+  }
+
+  /** *C* ⊘ *g* = *F*(*id*,*g*) */
+  final def rmap[A: Obj2, B: Obj2, C: Obj1](g: A ->> B): F[C, A] ==> F[C, B] = {
+    bimap(source1.identity[C], g)
+  }
 
   /** The bifunctor as a functor out of the product category **C₁** × **C₂**. */
   final lazy val functor: Bifunctor.FromProduct.Of[this.type] = Bifunctor.FromProduct(this)
