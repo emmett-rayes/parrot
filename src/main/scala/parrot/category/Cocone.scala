@@ -17,14 +17,14 @@ abstract class Cocone(tracked val diagram: Functor, tracked val apex: diagram.ta
   /** The apex *X*. */
   final type X = apex.A
 
-  private given XIsObj: X is C.Obj                    = apex.evidence
-  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
-
   /** *ψ*_*A*: *D*[*A*] → *X*
     *
     * The legs form a natural transformation from *D* to the constant functor at *X*.
     */
   def leg[A: J.Obj]: D[A] ==> X
+
+  private given XIsObj: X is C.Obj                    = apex.evidence
+  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
 
   /** The cocone (*Y*, *h* ∘ *ψ*) induced by a morphism *h*: *X* → *Y*. */
   final def induced[Y: C.Obj](h: X ==> Y): Cocone.Under[diagram.type] { val apex: Y is C.Object } = {

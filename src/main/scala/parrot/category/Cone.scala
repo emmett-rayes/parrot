@@ -17,14 +17,14 @@ abstract class Cone(tracked val diagram: Functor, tracked val apex: diagram.targ
   /** The apex *X*. */
   final type X = apex.A
 
-  private given XIsObj: X is C.Obj                    = apex.evidence
-  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
-
   /** *ψ*_*A*: *X* → *D*[*A*]
     *
     * The legs form a natural transformation from the constant functor at *X* to *D*.
     */
   def leg[A: J.Obj]: X ==> D[A]
+
+  private given XIsObj: X is C.Obj                    = apex.evidence
+  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
 
   /** The cone (*Y*, *ψ* ∘ *h*) induced by a morphism *h*: *Y* → *X*. */
   final def induced[Y: C.Obj](h: Y ==> X): Cone.Over[diagram.type] { val apex: Y is C.Object } = {

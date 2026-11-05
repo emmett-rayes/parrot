@@ -16,14 +16,13 @@ abstract class Traced(tracked val strong: StrongPromonad) extends caps.Pure {
   import profunctor.{P, >>>}
   import profunctor.category.{Obj, -->}
 
-  private given IIsObj: (I is Obj) = monoidal.unit.evidence
-
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
-
   /** The trace *tr*: *P*(*A* ⊗ *U*,*B* ⊗ *U*) → *P*(*A*,*B*) of *p*, which feeds its *U* output back into its *U*
     * input.
     */
   def trace[A: Obj, B: Obj, U: Obj](p: P[A * U, B * U]): P[A, B]
+
+  private given IIsObj: (I is Obj)                                = monoidal.unit.evidence
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** Laws that any `Traced` structure must satisfy.
     *

@@ -15,10 +15,6 @@ abstract class Comonoid(tracked val monoidal: Monoidal) extends Category.Object(
   /** The comonoid object *C*. */
   final type C = Self
 
-  private given CIsObj: (C is Obj)                                = evidence
-  private given IIsObj: (I is Obj)                                = monoidal.unit.evidence
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
-
   /** The counit *ε*: *C* → *I*. */
   def counit: C --> I
 
@@ -27,6 +23,9 @@ abstract class Comonoid(tracked val monoidal: Monoidal) extends Category.Object(
 
   /** Laws that any `Comonoid` must satisfy. */
   object ComonoidLaws {
+    private given CIsObj: (C is Obj)                                = evidence
+    private given IIsObj: (I is Obj)                                = monoidal.unit.evidence
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
     /** (*ε* ⊗ *id*) ∘ *δ* = *λ*⁻¹
       */

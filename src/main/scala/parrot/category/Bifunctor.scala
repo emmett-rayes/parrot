@@ -20,12 +20,14 @@ abstract class Bifunctor(
     */
   def bimap[A1: Obj1, A2: Obj2, B1: Obj1, B2: Obj2](f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]
 
-  /** *f* ⦸ *C* = *F*(*f*,*id*) */
+  /** *f* ⦸ *C* = *F*(*f*,*id*)
+    */
   final def lmap[A: Obj1, B: Obj1, C: Obj2](f: A --> B): F[A, C] ==> F[B, C] = {
     bimap(f, source2.identity[C])
   }
 
-  /** *C* ⊘ *g* = *F*(*id*,*g*) */
+  /** *C* ⊘ *g* = *F*(*id*,*g*)
+    */
   final def rmap[A: Obj2, B: Obj2, C: Obj1](g: A ->> B): F[C, A] ==> F[C, B] = {
     bimap(source1.identity[C], g)
   }

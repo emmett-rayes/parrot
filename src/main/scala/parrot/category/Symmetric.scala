@@ -13,13 +13,13 @@ abstract class Symmetric(
 ) extends Monoidal(category, unit, tensor) {
   import category.{Iso, Obj, -->, <->, >>>}
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
-
   /** The braiding *σ*: *A* ⊗ *B* → *B* ⊗ *A*.
     *
     * @note The braiding is its own inverse. See [[braiding]].
     */
   def braid[A: Obj, B: Obj]: (A * B) --> (B * A)
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
   /** The braiding isomorphism *σ*: *A* ⊗ *B* ≅ *B* ⊗ *A*. */
   final def braiding[A: Obj, B: Obj]: (A * B) <-> (B * A) = {

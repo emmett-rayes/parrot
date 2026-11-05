@@ -18,13 +18,13 @@ abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
 
   import category.{Obj, -->, >>>}
 
-  private given MIsObj: [A: Obj] => (M[A] is Obj) = objects[A]
-
   /** The unit *η*: *A* → *M*[*A*]. */
   def unit[A: Obj]: A --> M[A]
 
   /** The multiplication *μ*: *M*[*M*[*A*]] → *M*[*A*]. */
   def flatten[A: Obj]: M[M[A]] --> M[A]
+
+  private given MIsObj: [A: Obj] => (M[A] is Obj) = objects[A]
 
   /** The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*]. */
   final def bind[A: Obj, B: Obj](f: A --> M[B]): M[A] --> M[B] = {

@@ -23,10 +23,6 @@ abstract class Module(
   /** Infix alias for [[Action]]. */
   final type ~ = Action
 
-  private given IIsObj: (I is ObjM)                                  = monoidal.unit.evidence
-  private given TensorIsObj: [X: ObjM, Y: ObjM] => ((X * Y) is ObjM) = monoidal.tensor.objects[X, Y]
-  private given ActionIsObj: [X: ObjM, A: Obj] => ((X ~ A) is Obj)   = action.objects[X, A]
-
   /** *λ*: *I* ⊘ *A* ≅ *A*
     */
   def leftUnitor[A: Obj]: (I ~ A) <-> A
@@ -34,6 +30,10 @@ abstract class Module(
   /** *α*: (*X* ⊗ *Y*) ⊘ *A* ≅ *X* ⊘ (*Y* ⊘ *A*)
     */
   def associator[X: ObjM, Y: ObjM, A: Obj]: ((X * Y) ~ A) <-> (X ~ (Y ~ A))
+
+  private given IIsObj: (I is ObjM)                                  = monoidal.unit.evidence
+  private given TensorIsObj: [X: ObjM, Y: ObjM] => ((X * Y) is ObjM) = monoidal.tensor.objects[X, Y]
+  private given ActionIsObj: [X: ObjM, A: Obj] => ((X ~ A) is Obj)   = action.objects[X, A]
 
   /** The action maps a pair of morphisms *g*: *X* → *Y* of **M** and *f*: *A* → *B* of **C** to a morphism *g* ⊘ *f*:
     * *X* ⊘ *A* → *Y* ⊘ *B* of **C**.

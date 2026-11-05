@@ -8,8 +8,8 @@ package category
   *   - *f* ⦸ *C*: *A* ⊗ *C* → *B* ⊗ *C* is the morphism part in the first argument, for *f*: *A* → *B* of **C₁**
   *   - *C* ⊘ *g*: *C* ⊗ *A* → *C* ⊗ *B* is the morphism part in the second argument, for *g*: *A* → *B* of **C₂**
   *
-  * It has no morphism part for two morphisms at once: (*f* ⦸ *D*) ∘ (*A* ⊘ *g*) and (*B* ⊘ *g*) ∘ (*f* ⦸ *C*) map
-  * *f* and *g* in opposite orders and can differ. A [[Bifunctor]] is a binoidal functor where they agree.
+  * It has no morphism part for two morphisms at once: (*f* ⦸ *D*) ∘ (*A* ⊘ *g*) and (*B* ⊘ *g*) ∘ (*f* ⦸ *C*) map *f*
+  * and *g* in opposite orders and can differ. A [[Bifunctor]] is a binoidal functor where they agree.
   */
 abstract class BinoidalFunctor(
   tracked val source1: Category,
@@ -25,16 +25,16 @@ abstract class BinoidalFunctor(
   /** The binoidal functor's object part *F*. */
   final type F = Self
 
-  private given FIsObj: [A: Obj1, B: Obj2] => (F[A, B] is target.Obj) = objects[A, B]
-
   /** *F* maps a pair of objects of **C₁** and **C₂** to an object of **D**.
     */
   def objects[A: Obj1, B: Obj2]: F[A, B] is target.Obj
 
-  /** *F* maps a morphism *f* of **C₁** to a morphism *f* ⦸ *C* of **D**. */
+  /** *F* maps a morphism *f* of **C₁** to a morphism *f* ⦸ *C* of **D**.
+    */
   def lmap[A: Obj1, B: Obj1, C: Obj2](f: A --> B): F[A, C] ==> F[B, C]
 
-  /** *F* maps a morphism *g* of **C₂** to a morphism *C* ⊘ *g* of **D**. */
+  /** *F* maps a morphism *g* of **C₂** to a morphism *C* ⊘ *g* of **D**.
+    */
   def rmap[A: Obj2, B: Obj2, C: Obj1](g: A ->> B): F[C, A] ==> F[C, B]
 
   /** Laws that any `BinoidalFunctor` must satisfy.
@@ -42,6 +42,7 @@ abstract class BinoidalFunctor(
     * The morphism part in each argument is a functor.
     */
   object BinoidalFunctorLaws {
+    private given FIsObj: [A: Obj1, B: Obj2] => (F[A, B] is target.Obj) = objects[A, B]
 
     /** *id* ⦸ *C* = *id*
       */

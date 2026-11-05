@@ -10,7 +10,7 @@ package category
   */
 abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
   import monoidal.{`*`, ***}
-  import monoidal.category.{Obj, -->, >>>}
+  import monoidal.category.{Obj, identity, -->, >>>}
 
   /** The internal hom *A* ⇒ *B*. */
   type Exp[A, B]
@@ -21,10 +21,6 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
   /** Internal homs of objects are objects. */
   def objects[A: Obj, B: Obj]: (B `^` A) is Obj
 
-  private given ExpIsObj: [A: Obj, B: Obj] => ((B `^` A) is Obj) = objects[A, B]
-
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
-
   /** Evaluation *ev*: (*A* ⇒ *B*) ⊗ *A* → *B*. */
   def eval[A: Obj, B: Obj]: ((B `^` A) * A) --> B
 
@@ -34,9 +30,12 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
     */
   def curry[A: Obj, B: Obj, X: Obj](f: (X * A) --> B): X --> (B `^` A)
 
+  private given ExpIsObj: [A: Obj, B: Obj] => ((B `^` A) is Obj)  = objects[A, B]
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
+
   /** Uncurrying: *g* ↦ *ev* ∘ (*g* ⊗ *id*). */
   final def uncurry[A: Obj, B: Obj, X: Obj](g: X --> (B `^` A)): (X * A) --> B = {
-    (g *** monoidal.category.identity[A]) >>> eval[A, B]
+    (g *** identity[A]) >>> eval[A, B]
   }
 
   /** The internal hom as a profunctor ⇒: **C**ᵒᵖ × **C** → **C**. */
@@ -89,7 +88,7 @@ object Closed {
   final class InternalHom(tracked val closed: Closed)
       extends Endoprofunctor(closed.monoidal.category, closed.monoidal.category) {
     import closed.monoidal.{`*`, ***}
-    import closed.monoidal.category.{Obj, -->, >>>}
+    import closed.monoidal.category.{Obj, identity, -->, >>>}
 
     type Self = closed.Exp
 
@@ -102,7 +101,7 @@ object Closed {
     }
 
     def bimap[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: B1 --> A1, g: A2 --> B2): P[A1, A2] --> P[B1, B2] = {
-      closed.curry((closed.monoidal.category.identity[P[A1, A2]] *** f) >>> closed.eval[A1, A2] >>> g)
+      closed.curry((identity[P[A1, A2]] *** f) >>> closed.eval[A1, A2] >>> g)
     }
   }
 

@@ -23,14 +23,14 @@ abstract class Strong(
   import module1.`~` as `~1`
   import module2.`~` as `~2`
 
+  /** The left strength *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*). */
+  def left[A: Obj1, B: Obj2, C: ObjM]: P[A, B] ==> P[C `~1` A, C `~2` B]
+
   private given IIsObj: (monoidal.I is ObjM)                             = monoidal.unit.evidence
   private given PIsObj: [A: Obj1, B: Obj2] => (P[A, B] is ObjV)          = profunctor.objects[A, B]
   private given TensorIsObj: [C: ObjM, D: ObjM] => ((C * D) is ObjM)     = monoidal.tensor.objects[C, D]
   private given Action1IsObj: [C: ObjM, A: Obj1] => ((C `~1` A) is Obj1) = module1.action.objects[C, A]
   private given Action2IsObj: [C: ObjM, B: Obj2] => ((C `~2` B) is Obj2) = module2.action.objects[C, B]
-
-  /** The left strength *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*). */
-  def left[A: Obj1, B: Obj2, C: ObjM]: P[A, B] ==> P[C `~1` A, C `~2` B]
 
   /** Laws that any `Strong` profunctor must satisfy. */
   object StrongLaws {

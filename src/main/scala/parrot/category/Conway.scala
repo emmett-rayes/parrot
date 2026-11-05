@@ -17,8 +17,6 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
   import profunctor.{P, >>>}
   import profunctor.category.{Obj, -->}
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
-
   /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*).
     *
     * It solves *x* = *p*(*a*,*x*) for *x*.
@@ -31,6 +29,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
     * diagonal law.
     */
   object ConwayLaws {
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
     /** *p*† = *p* ∘ ⟨*id*,*p*†⟩
       *
@@ -63,9 +62,8 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
 
     /** (*f* ∘ ⟨*π*₁,*g*⟩)† = *f* ∘ ⟨*id*,(*g* ∘ ⟨*π*₁,*f*⟩)†⟩ for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*
       *
-      * A fixed point of two arrows that feed each other can be taken through either. ⟨*π*₁,*g*⟩ keeps the parameter
-      * and runs *g*: with effects, it is *τ*(*g*) ∘ *η*(⟨*π*₁,*id*⟩). [[composition]] is the special case of a pure
-      * *g*.
+      * A fixed point of two arrows that feed each other can be taken through either. ⟨*π*₁,*g*⟩ keeps the parameter and
+      * runs *g*: with effects, it is *τ*(*g*) ∘ *η*(⟨*π*₁,*id*⟩). [[composition]] is the special case of a pure *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[A * Y, X], g: P[A * X, Y])(
       using P[A, X] is Observable
@@ -122,8 +120,8 @@ object Conway {
 
   /** The fixed point on *P*ᵒᵖ of an Elgot operator *E* on *P*: iteration read backwards.
     *
-    * The products of **C**ᵒᵖ are the coproducts of **C**, so a step *P*(*X*,*A* + *X*) is an arrow
-    * *P*ᵒᵖ(*A* × *X*,*X*), and its iteration *P*(*X*,*A*) is the fixed point *P*ᵒᵖ(*A*,*X*).
+    * The products of **C**ᵒᵖ are the coproducts of **C**, so a step *P*(*X*,*A* + *X*) is an arrow *P*ᵒᵖ(*A* ×
+    * *X*,*X*), and its iteration *P*(*X*,*A*) is the fixed point *P*ᵒᵖ(*A*,*X*).
     */
   open class OfElgot(tracked val elgot: Elgot)
       extends Conway(Bistrong.Op(elgot.strong)) {

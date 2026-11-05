@@ -13,10 +13,6 @@ abstract class Colimit(tracked override val diagram: Functor, tracked override v
   import diagram.target as C
   import C.--> as ==>
 
-  private given XIsObj: X is C.Obj = apex.evidence
-
-  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
-
   /** The factorization [*φ*]: *X* → *Y* of a cocone *K* = (*Y*, *φ*) through the colimit.
     *
     * This is the unique morphism with *φ* = [*φ*] ∘ *ψ*.
@@ -25,6 +21,8 @@ abstract class Colimit(tracked override val diagram: Functor, tracked override v
 
   /** Laws that any `Colimit` must satisfy. */
   object ColimitLaws {
+    private given XIsObj: X is C.Obj                    = apex.evidence
+    private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
 
     /** [*φ*] ∘ *ψ*_*A* = *φ*_*A*
       */

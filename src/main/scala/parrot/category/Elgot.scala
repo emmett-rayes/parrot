@@ -17,8 +17,6 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
   import profunctor.{P, >>>}
   import profunctor.category.{Obj, -->}
 
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
-
   /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*).
     *
     * It runs *p*; on *A* it stops, and on *X* it runs *p* again.
@@ -31,6 +29,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
     * codiagonal law.
     */
   object ElgotLaws {
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
 
     /** *p*† = [*id*,*p*†] ∘ *p*
       *
@@ -63,8 +62,8 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
 
     /** ([*ι*₁,*g*] ∘ *f*)† = [*id*,([*ι*₁,*f*] ∘ *g*)†] ∘ *f* for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*
       *
-      * A loop that alternates two steps can start with either. [*ι*₁,*g*] runs *g* on the right and passes *A*
-      * through: with effects, it is *η*([*ι*₁,*id*]) ∘ *τ*(*g*). [[composition]] is the special case of a pure *g*.
+      * A loop that alternates two steps can start with either. [*ι*₁,*g*] runs *g* on the right and passes *A* through:
+      * with effects, it is *η*([*ι*₁,*id*]) ∘ *τ*(*g*). [[composition]] is the special case of a pure *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[X, A + Y], g: P[Y, A + X])(
       using P[X, A] is Observable

@@ -23,10 +23,6 @@ abstract class Product(
   /** The product *P* of *A*₁ and *A*₂. */
   final type P = Self
 
-  private given A1IsObj: (A1 is Obj) = first.evidence
-  private given A2IsObj: (A2 is Obj) = second.evidence
-  private given PIsObj: (P is Obj)   = evidence
-
   /** The first projection *π*₁: *P* → *A*₁. */
   def fst: P --> A1
 
@@ -38,6 +34,10 @@ abstract class Product(
     * This is the unique morphism with *π*₁ ∘ ⟨*f*,*g*⟩ = *f* and *π*₂ ∘ ⟨*f*,*g*⟩ = *g*.
     */
   def pair[X: Obj](f: X --> A1, g: X --> A2): X --> P
+
+  private given A1IsObj: (A1 is Obj) = first.evidence
+  private given A2IsObj: (A2 is Obj) = second.evidence
+  private given PIsObj: (P is Obj)   = evidence
 
   /** The product as a limit of the discrete 2-object diagram, with the projections as legs and the pairing ⟨*f*,*g*⟩ as
     * the factorization of a cone with legs *f* and *g*.
@@ -253,10 +253,10 @@ object Product {
 abstract class Products(tracked override val category: Category) extends Endobifunctor(category) {
   import category.{Obj, Object, -->, >>>}
 
-  private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
-
   /** The product *X* × *Y* is a [[Product]]. */
   def product[X: Obj, Y: Obj]: F[X, Y] is Product.Of[category.type] { val first: X is Object; val second: Y is Object }
+
+  private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
   /** The product *f* × *g*: *A*₁ × *A*₂ → *B*₁ × *B*₂ of *f*: *A*₁ → *B*₁ and *g*: *A*₂ → *B*₂.
     *

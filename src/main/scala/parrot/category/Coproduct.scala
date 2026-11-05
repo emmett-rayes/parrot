@@ -23,10 +23,6 @@ abstract class Coproduct(
   /** The coproduct *S* of *A*₁ and *A*₂. */
   final type S = Self
 
-  private given A1IsObj: (A1 is Obj) = left.evidence
-  private given A2IsObj: (A2 is Obj) = right.evidence
-  private given SIsObj: (S is Obj)   = evidence
-
   /** The first injection *ι*₁: *A*₁ → *S*. */
   def inl: A1 --> S
 
@@ -38,6 +34,10 @@ abstract class Coproduct(
     * This is the unique morphism with [*f*,*g*] ∘ *ι*₁ = *f* and [*f*,*g*] ∘ *ι*₂ = *g*.
     */
   def copair[X: Obj](f: A1 --> X, g: A2 --> X): S --> X
+
+  private given A1IsObj: (A1 is Obj) = left.evidence
+  private given A2IsObj: (A2 is Obj) = right.evidence
+  private given SIsObj: (S is Obj)   = evidence
 
   /** The coproduct as a colimit of the discrete 2-object diagram, with the injections as legs and the copairing
     * [*f*,*g*] as the factorization of a cocone with legs *f* and *g*.
@@ -217,11 +217,11 @@ object Coproduct {
 abstract class Coproducts(tracked override val category: Category) extends Endobifunctor(category) {
   import category.{Obj, Object, -->, >>>}
 
-  private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
-
   /** The coproduct *X* + *Y* is a [[Coproduct]]. */
   def coproduct[X: Obj, Y: Obj]
     : F[X, Y] is Coproduct.Of[category.type] { val left: X is Object; val right: Y is Object }
+
+  private given FIsObj: [A: Obj, B: Obj] => (F[A, B] is Obj) = objects[A, B]
 
   /** The coproduct *f* + *g*: *A*₁ + *A*₂ → *B*₁ + *B*₂ of *f*: *A*₁ → *B*₁ and *g*: *A*₂ → *B*₂.
     *

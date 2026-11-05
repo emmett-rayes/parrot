@@ -30,9 +30,6 @@ abstract class Premonoidal(
   /** The unit object *I*. */
   final type I = unit.A
 
-  private given IIsObj: (I is Obj)                                = unit.evidence
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
-
   export tensor.{lmap, rmap}
 
   /** *λ*: *I* ⊗ *A* ≅ *A*
@@ -46,6 +43,9 @@ abstract class Premonoidal(
   /** *α*: (*A* ⊗ *B*) ⊗ *C* ≅ *A* ⊗ (*B* ⊗ *C*)
     */
   def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C))
+
+  private given IIsObj: (I is Obj)                                = unit.evidence
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
   /** Laws that any `Premonoidal` structure must satisfy.
     *

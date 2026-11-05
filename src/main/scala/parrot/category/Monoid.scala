@@ -15,10 +15,6 @@ abstract class Monoid(tracked val monoidal: Monoidal) extends Category.Object(mo
   /** The monoid object *M*. */
   final type M = Self
 
-  private given MIsObj: (M is Obj)                                = evidence
-  private given IIsObj: (I is Obj)                                = monoidal.unit.evidence
-  private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
-
   /** The unit *η*: *I* → *M*. */
   def unit: I --> M
 
@@ -27,6 +23,9 @@ abstract class Monoid(tracked val monoidal: Monoidal) extends Category.Object(mo
 
   /** Laws that any `Monoid` must satisfy. */
   object MonoidLaws {
+    private given MIsObj: (M is Obj)                                = evidence
+    private given IIsObj: (I is Obj)                                = monoidal.unit.evidence
+    private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
     /** *μ* ∘ (*η* ⊗ *id*) = *λ*
       */

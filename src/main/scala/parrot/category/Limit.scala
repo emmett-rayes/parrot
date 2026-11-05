@@ -13,9 +13,6 @@ abstract class Limit(tracked override val diagram: Functor, tracked override val
   import diagram.target as C
   import C.--> as ==>
 
-  private given XIsObj: X is C.Obj                    = apex.evidence
-  private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
-
   /** The factorization ⟨*φ*⟩: *Y* → *X* of a cone *K* = (*Y*, *φ*) through the limit.
     *
     * This is the unique morphism with *φ* = *ψ* ∘ ⟨*φ*⟩.
@@ -24,6 +21,8 @@ abstract class Limit(tracked override val diagram: Functor, tracked override val
 
   /** Laws that any `Limit` must satisfy. */
   object LimitLaws {
+    private given XIsObj: X is C.Obj                    = apex.evidence
+    private given DIsObj: [A: J.Obj] => (D[A] is C.Obj) = diagram.objects[A]
 
     /** *ψ*_*A* ∘ ⟨*φ*⟩ = *φ*_*A*
       */
