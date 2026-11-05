@@ -93,6 +93,10 @@ object Monad {
     def flatten[A: Type]: A -> A = {
       a => a
     }
+
+    override def bind[A: Type, B: Type](f: A -> B): A -> B = {
+      f
+    }
   }
 
   /** `Option` is a monad on 𝒮, the failure transformer [[OptionT]] over the identity, where

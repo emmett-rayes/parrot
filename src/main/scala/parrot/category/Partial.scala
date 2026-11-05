@@ -94,6 +94,14 @@ object Partial extends Category {
     def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 ~> B1, g: A2 ~> B2): (A1, A2) ~> (B1, B2) = {
       (a, b) => (f(a), g(b))
     }
+
+    override def lmap[A: Type, B: Type, C: Type](f: A ~> B): (A, C) ~> (B, C) = {
+      (a, c) => (f(a), c)
+    }
+
+    override def rmap[A: Type, B: Type, C: Type](g: A ~> B): (C, A) ~> (C, B) = {
+      (c, a) => (c, g(a))
+    }
   }
 
   /** The empty type 0 as the initial object of 𝒫. */
@@ -125,6 +133,16 @@ object Partial extends Category {
       : Either[A1, A2] ~> Either[B1, B2] = {
       case Left(a)  => Left(f(a))
       case Right(b) => Right(g(b))
+    }
+
+    override def lmap[A: Type, B: Type, C: Type](f: A ~> B): Either[A, C] ~> Either[B, C] = {
+      case Left(a)  => Left(f(a))
+      case Right(c) => Right(c)
+    }
+
+    override def rmap[A: Type, B: Type, C: Type](g: A ~> B): Either[C, A] ~> Either[C, B] = {
+      case Left(c)  => Left(c)
+      case Right(a) => Right(g(a))
     }
   }
 
@@ -189,7 +207,12 @@ object Partial extends Category {
   }
 
   /** The coproducts of 𝒫: tagged unions, with the empty type 0 as initial object. */
-  object Coproduct extends Cocartesian(Partial, NothingIsInitial, EitherIsCoproducts)
+  object Coproduct extends Cocartesian(Partial, NothingIsInitial, EitherIsCoproducts) {
+    override def codiagonal[A: Type]: Either[A, A] ~> A = {
+      case Left(a)  => a
+      case Right(a) => a
+    }
+  }
 
   /** Programs run side by side on pairs: the first component first. */
   object Parallel extends Bistrong.Hom(Programs, Product)

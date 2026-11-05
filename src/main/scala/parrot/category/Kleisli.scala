@@ -24,6 +24,10 @@ open class Kleisli(tracked val monad: Monad) extends Promonad(monad.category) {
   def multiply[A: Obj, B: Obj, C: Obj](g: B --> monad.M[C], f: A --> monad.M[B]): A --> monad.M[C] = {
     monad.category.andThen(f, monad.bind(g))
   }
+
+  override def identity[A: Obj]: A --> monad.M[A] = {
+    monad.unit[A]
+  }
 }
 
 object Kleisli {

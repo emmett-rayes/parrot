@@ -75,6 +75,14 @@ object Total extends Category {
     override def bimap[A1: Type, A2: Type, B1: Type, B2: Type](f: A1 -> B1, g: A2 -> B2): ((A1, A2)) -> (B1, B2) = {
       (a, b) => (f(a), g(b))
     }
+
+    override def lmap[A: Type, B: Type, C: Type](f: A -> B): ((A, C)) -> (B, C) = {
+      (a, c) => (f(a), c)
+    }
+
+    override def rmap[A: Type, B: Type, C: Type](g: A -> B): ((C, A)) -> (C, B) = {
+      (c, a) => (c, g(a))
+    }
   }
 
   /** The pair type (*A*,*B*) as the product *A* × *B* of 𝒮. */
@@ -128,6 +136,16 @@ object Total extends Category {
       case Left(a)  => Left(f(a))
       case Right(b) => Right(g(b))
     }
+
+    override def lmap[A: Type, B: Type, C: Type](f: A -> B): Either[A, C] -> Either[B, C] = {
+      case Left(a)  => Left(f(a))
+      case Right(c) => Right(c)
+    }
+
+    override def rmap[A: Type, B: Type, C: Type](g: A -> B): Either[C, A] -> Either[C, B] = {
+      case Left(c)  => Left(c)
+      case Right(a) => Right(g(a))
+    }
   }
 
   /** The tagged union `Either[A, B]` as the coproduct *A* + *B* of 𝒮. */
@@ -153,10 +171,19 @@ object Total extends Category {
   }
 
   /** The products of 𝒮: pairs, with the unit type 1 as terminal object. */
-  object Products extends Cartesian(Total, UnitIsTerminal, Tuple2IsProducts)
+  object Products extends Cartesian(Total, UnitIsTerminal, Tuple2IsProducts) {
+    override def diagonal[A: Type]: A -> (A, A) = {
+      a => (a, a)
+    }
+  }
 
   /** The coproducts of 𝒮: tagged unions, with the empty type 0 as initial object. */
-  object Coproducts extends Cocartesian(Total, NothingIsInitial, EitherIsCoproducts)
+  object Coproducts extends Cocartesian(Total, NothingIsInitial, EitherIsCoproducts) {
+    override def codiagonal[A: Type]: Either[A, A] -> A = {
+      case Left(a)  => a
+      case Right(a) => a
+    }
+  }
 
   /** The internal homs of 𝒮: function types, with evaluation and currying. */
   object Exponentials extends Closed(Products) {
@@ -172,6 +199,10 @@ object Total extends Category {
 
     def curry[A: Type, B: Type, X: Type](f: ((X, A)) -> B): X -> A -> B = {
       x => a => f((x, a))
+    }
+
+    override def uncurry[A: Type, B: Type, X: Type](g: X -> A -> B): ((X, A)) -> B = {
+      (x, a) => g(x)(a)
     }
   }
 
