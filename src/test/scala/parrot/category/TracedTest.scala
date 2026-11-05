@@ -17,23 +17,25 @@ abstract class TracedSpec(
 ) extends LawSuite("Traced", name) {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
+  import traced.strong.monoidal.{I, `*`}
   import traced.strong.profunctor
   import profunctor.P
   import traced.TracedLaws.*
   import profunctor.category.-->
 
-  private type +[X, Y] = traced.strong.monoidal.Tensor[X, Y]
-
-  private given TensorSample: [X: Sample, Y: Sample] => Sample[X + Y] = tensor[X, Y]
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[X * Y] = tensor[X, Y]
 
   /** Feedback steps on *A* ⊗ ℤ whose loops stop. */
-  def loop[A: Sample, B: Sample]: Gen[P[A + Int, B + Int]]
+  def loop[A: Sample, B: Sample]: Gen[P[A * Int, B * Int]]
 
   /** Feedback steps on *A* ⊗ (ℤ ⊗ ℤ) whose loops stop. */
-  def loop2[A: Sample, B: Sample]: Gen[P[A + (Int + Int), B + (Int + Int)]]
+  def loop2[A: Sample, B: Sample]: Gen[P[A * (Int * Int), B * (Int * Int)]]
 
   /** Arrows on *A* ⊗ *I*, which cannot loop. */
-  def straight[A: Sample, B: Sample]: Gen[P[A + traced.strong.monoidal.I, B + traced.strong.monoidal.I]]
+  def straight[A: Sample, B: Sample]: Gen[P[A * I, B * I]]
+
+  /** Pure feedback steps on *A* ⊗ ℤ whose loops stop. */
+  def pureLoop[A: Sample, B: Sample]: Gen[(A * Int) --> (B * Int)]
 
   /** A pure map that keeps loops stopping. */
   def shrink: Int --> Int
@@ -93,18 +95,29 @@ abstract class TracedSpec(
   }
 
   law("superposing") {
-    val observations = observe[T3 + T1, T4 + T2]
+    val observations = observe[T3 * T1, T4 * T2]
     val gs           = category.arrow[T3, T4]
     val ps           = loop[T1, T2]
 
     forAll(observations, gs, ps) { (observe, g, p) =>
-      given (P[T3 + T1, T4 + T2] is Observable) = observe
+      given (P[T3 * T1, T4 * T2] is Observable) = observe
       superposing(g, p)
     }
   }
 
   if guarded then counterexample("yanking", "the braiding feeds back without progress")(yankingHolds)
   else law("yanking")(yankingHolds)
+
+  law("centrality") {
+    val observations = observe[T1 * T3, T2 * T4]
+    val fs           = pureLoop[T1, T2]
+    val qs           = arrow[T3, T4]
+
+    forAll(observations, fs, qs) { (observe, f, q) =>
+      given (P[T1 * T3, T2 * T4] is Observable) = observe
+      centrality[T1, T2, T3, T4, Int](f, q)
+    }
+  }
 
   law("congruence") {
     val observations = observe[T1, T2]
@@ -131,6 +144,8 @@ class PartialFeedbackIsTracedTest extends TracedSpec("Partial (feedback)", Parti
   }
 
   def shrink: Int ~> Int = Partial.fromTotal(_ / 2)
+
+  def pureLoop[A: Sample, B: Sample]: Gen[Either[A, Int] ~> Either[B, Int]] = loop[A, B]
 }
 
 // ==== Guarded state ====
@@ -166,6 +181,8 @@ class StringStateFeedbackIsTracedTest
   }
 
   def shrink: Int -> Int = _ / 2
+
+  def pureLoop[A: Sample, B: Sample]: Gen[Either[A, Int] -> Either[B, Int]] = Descent.loop[A, B]
 }
 
 // ==== 𝒫ᵒᵖ: the product column, by duality ====
@@ -183,4 +200,6 @@ class PartialOpIsTracedTest
   }
 
   def shrink: Int ~> Int = Partial.fromTotal(_ / 2)
+
+  def pureLoop[A: Sample, B: Sample]: Gen[Either[B, Int] ~> Either[A, Int]] = loop[A, B]
 }

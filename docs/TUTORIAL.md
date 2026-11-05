@@ -3392,9 +3392,10 @@ satisfying, in diagrammatic order (each law is a picture of wires that can be de
 - **sliding**: tr(p ⨾ (id ⊗ h)) = tr((id ⊗ h) ⨾ p) for pure h : U → V: a pure transformation on the feedback wire can slide around the loop;
 - **vanishing**: tracing out the unit I does nothing, and tracing out U ⊗ V is tracing out V, then U;
 - **superposing**: tr(α ⨾ (g ⊗ p) ⨾ α⁻¹) = g ⊗ tr(p) for pure g: a wire that does not take part in the loop can be drawn beside it;
-- **yanking**: tr(σ) = id: feeding one strand of a braid back into the other gives a straight wire.
+- **yanking**: tr(σ) = id: feeding one strand of a braid back into the other gives a straight wire;
+- **centrality**: first(tr(f)) ⨾ second(q) = second(q) ⨾ first(tr(f)) for pure f: the trace of a pure arrow interchanges with every arrow q, so it is central.
 
-**[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4), and sliding and superposing are restricted to pure arrows, which are central **[Standard: Benton and Hyland 2003, from memory]**. That is the version the library's `Traced(S)` states.
+**[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4), and sliding and superposing are restricted to pure arrows, which are central, and the trace of a central arrow is central again **[Standard: Benton and Hyland 2003, from memory]**. That is the version the library's `Traced(S)` states, with centrality for the trace of a pure arrow.
 
 What feedback *means* depends on the tensor.
 

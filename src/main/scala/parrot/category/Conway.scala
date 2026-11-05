@@ -1,11 +1,10 @@
 package parrot
 package category
 
-/** A parameterized fixed-point operator on a Freyd category over products.
+/** A parameterized fixed-point structure on a bistrong promonad *P* over a cartesian category **M**.
   *
-  * Represents a Conway operator, where
-  *   - *p*†: *P*(*A*,*X*) for *p*: *P*(*A* × *X*,*X*) satisfies *p*† = ⟨*id*,*p*†⟩ ⨾ *p*: a solution of *x* =
-  *     *p*(*a*,*x*)
+  * Represents a Conway operator (Bloom–Ésik; Hasegawa), where
+  *   - *p*†: *P*(*A*,*X*) is the fixed point of *p*: *P*(*A* × *X*,*X*), a solution of *x* = *p*(*a*,*x*)
   *
   * In a strict language this column of the grid is nearly empty: computing *p*† means running *p*†, so the least
   * solution is the nowhere-defined arrow, and useful recursion needs function types ([[Recursion]]) or guardedness.
@@ -21,28 +20,41 @@ abstract class Conway(tracked val strong: Bistrong.On[Promonad] { val monoidal: 
 
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
-  /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*). */
+  /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*).
+    *
+    * It solves *x* = *p*(*a*,*x*) for *x*.
+    */
   def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X]
 
-  /** Laws that any `Conway` operator must satisfy, with naturality and uniformity for pure arrows and dinaturality for
-    * all arrows.
+  /** Laws that any `Conway` operator must satisfy.
+    *
+    * The fixed point is a fixed point, natural and uniform for pure arrows, dinatural for all arrows and satisfies the
+    * diagonal law.
     */
   object ConwayLaws {
 
-    /** *p*† = ⟨*id*,*p*†⟩ ⨾ *p*
+    /** *p*† = *p* ∘ ⟨*id*,*p*†⟩
+      *
+      * Unfolding one step changes nothing.
       */
     def fixedPoint[A: Obj, X: Obj](p: P[A * X, X])(using P[A, X] is Observable): Boolean = {
       fix(p) =?= (profunctor.unit(monoidal.diagonal[A]) >>> strong.left[A, X, A](fix(p)) >>> p)
     }
 
-    /** ((*h* × *id*) ⨾ *p*)† = *h* ⨾ *p*† for pure *h* */
+    /** (*p* ∘ *η*(*h* × *id*))† = *p*† ∘ *η*(*h*) for pure *h*: *A*₀ → *A*₁
+      *
+      * Pre-processing the parameter can be done inside the fixed point or before it.
+      */
     def parameterNaturality[A0: Obj, A1: Obj, X: Obj](p: P[A1 * X, X], h: A0 --> A1)(
       using P[A0, X] is Observable
     ): Boolean = {
       fix(strong.right[A0, A1, X](profunctor.unit(h)) >>> p) =?= (profunctor.unit(h) >>> fix(p))
     }
 
-    /** (*f* ⨾ *g*)† = ((*id* × *g*) ⨾ *f*)† ⨾ *g* for pure *g* */
+    /** (*η*(*g*) ∘ *f*)† = *η*(*g*) ∘ (*f* ∘ *η*(*id* × *g*))† for pure *g*: *Y* → *X*
+      *
+      * A pure step at the end of the body can be rotated to the start.
+      */
     def composition[A: Obj, X: Obj, Y: Obj](f: P[A * X, Y], g: Y --> X)(
       using P[A, X] is Observable
     ): Boolean = {
@@ -50,11 +62,11 @@ abstract class Conway(tracked val strong: Bistrong.On[Promonad] { val monoidal: 
         =?= (fix[A, Y](strong.left[Y, X, A](profunctor.unit(g)) >>> f) >>> profunctor.unit(g))
     }
 
-    /** (⟨*π*₁,*g*⟩ ⨾ *f*)† = ⟨*id*,(⟨*π*₁,*f*⟩ ⨾ *g*)†⟩ ⨾ *f* for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*: a
-      * fixed point of two arrows that feed each other can be taken through either.
+    /** (*f* ∘ ⟨*π*₁,*g*⟩)† = *f* ∘ ⟨*id*,(*g* ∘ ⟨*π*₁,*f*⟩)†⟩ for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*
       *
-      * ⟨*π*₁,*g*⟩ keeps the parameter and runs *g*; with effects it is ⟨*π*₁,*id*⟩ ⨾ *τ*(*g*). [[composition]] is
-      * the special case of a pure *g*.
+      * A fixed point of two arrows that feed each other can be taken through either. ⟨*π*₁,*g*⟩ keeps the parameter
+      * and runs *g*: with effects, it is *τ*(*g*) ∘ *η*(⟨*π*₁,*id*⟩). [[composition]] is the special case of a pure
+      * *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[A * Y, X], g: P[A * X, Y])(
       using P[A, X] is Observable
@@ -67,7 +79,10 @@ abstract class Conway(tracked val strong: Bistrong.On[Promonad] { val monoidal: 
         =?= (profunctor.unit(monoidal.diagonal[A]) >>> strong.left[A, Y, A](fix[A, Y](keepF >>> g)) >>> f)
     }
 
-    /** (*p*†)† = (⟨*id*,*π*₂⟩ ⨾ *p*)† */
+    /** (*p*†)† = (*p* ∘ *η*(⟨*id*,*π*₂⟩))†
+      *
+      * A fixed point inside a fixed point over the same state is one fixed point.
+      */
     def doubleDagger[A: Obj, X: Obj](p: P[(A * X) * X, X])(
       using P[A, X] is Observable
     ): Boolean = {
@@ -75,7 +90,9 @@ abstract class Conway(tracked val strong: Bistrong.On[Promonad] { val monoidal: 
         =?= fix[A, X](profunctor.unit(monoidal.pair(profunctor.category.identity[A * X], monoidal.snd[A, X])) >>> p)
     }
 
-    /** If (*id* × *h*) ⨾ *g* = *f* ⨾ *h* for pure *h*, then *f*† ⨾ *h* = *g*†.
+    /** If *g* ∘ *η*(*id* × *h*) = *η*(*h*) ∘ *f* for pure *h*: *X* → *Y*, then *η*(*h*) ∘ *f*† = *g*†.
+      *
+      * Fixed points related by a change of state representation are equal.
       *
       * @note The premise is not checked: *g* must be built to satisfy it.
       */
@@ -101,12 +118,13 @@ abstract class Conway(tracked val strong: Bistrong.On[Promonad] { val monoidal: 
 
 object Conway {
 
-  /** The parameterized fixed-point operators on a Freyd category with the strength *S*. */
+  /** The fixed-point structures on a bistrong promonad with the strength *S*. */
   type On[S <: Bistrong] = Conway { val strong: S }
 
-  /** Iteration read backwards: an Elgot operator on *P* is a Conway operator on *P*ᵒᵖ, whose products are the
-    * coproducts of **C**. A step *P*(*X*,*A* + *X*) is an arrow *P*ᵒᵖ(*A* × *X*,*X*), and its iteration *P*(*X*,*A*) is
-    * the fixed point *P*ᵒᵖ(*A*,*X*).
+  /** The fixed point on *P*ᵒᵖ of an Elgot operator *E* on *P*: iteration read backwards.
+    *
+    * The products of **C**ᵒᵖ are the coproducts of **C**, so a step *P*(*X*,*A* + *X*) is an arrow
+    * *P*ᵒᵖ(*A* × *X*,*X*), and its iteration *P*(*X*,*A*) is the fixed point *P*ᵒᵖ(*A*,*X*).
     */
   open class OfElgot(tracked val elgot: Elgot)
       extends Conway(Bistrong.Op(elgot.strong)) {
@@ -120,7 +138,7 @@ object Conway {
     }
   }
 
-  /** The fixed point of a trace on products: *p*† = *tr*(*p* ⨾ Δ). */
+  /** The fixed point of a trace *T* on products: *p*† = *tr*(*η*(Δ) ∘ *p*). */
   open class OfTraced(
     tracked val traced: Traced.On[Bistrong.On[Promonad] { val monoidal: Cartesian }],
   ) extends Conway(traced.strong) {

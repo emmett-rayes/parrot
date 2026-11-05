@@ -1,11 +1,10 @@
 package parrot
 package category
 
-/** An iteration operator on a Freyd category over coproducts.
+/** An iteration structure on a bistrong promonad *P* over a cocartesian category **M**.
   *
-  * Represents an Elgot operator, where
-  *   - *p*†: *P*(*X*,*A*) for *p*: *P*(*X*,*A* + *X*) satisfies *p*† = *p* ⨾ [*id*,*p*†]: run *p*; on *A* stop, on *X*
-  *     run again
+  * Represents an Elgot operator (Elgot; Bloom–Ésik), where
+  *   - *p*†: *P*(*X*,*A*) is the iteration of *p*: *P*(*X*,*A* + *X*), which runs *p* and, on *X*, runs it again
   *
   * In 𝒫 this is the while loop, defined for every *p*. In 𝒮 it cannot be: deciding whether a loop stops is the
   * halting problem. Total instances are guarded: they stop with failure on a step that makes no progress, and satisfy
@@ -21,28 +20,41 @@ abstract class Elgot(tracked val strong: Bistrong.On[Promonad] { val monoidal: C
 
   private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
 
-  /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*). */
+  /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*).
+    *
+    * It runs *p*; on *A* it stops, and on *X* it runs *p* again.
+    */
   def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A]
 
-  /** Laws that any `Elgot` operator must satisfy: the Conway iteration laws, with naturality and uniformity for pure
-    * arrows and dinaturality for all arrows.
+  /** Laws that any `Elgot` operator must satisfy.
+    *
+    * The iteration is a fixed point, natural and uniform for pure arrows, dinatural for all arrows and satisfies the
+    * codiagonal law.
     */
   object ElgotLaws {
 
-    /** *p*† = *p* ⨾ [*id*,*p*†]
+    /** *p*† = [*id*,*p*†] ∘ *p*
+      *
+      * Unrolling one iteration changes nothing.
       */
     def fixedPoint[A: Obj, X: Obj](p: P[X, A + X])(using P[X, A] is Observable): Boolean = {
       iterate(p) =?= (p >>> strong.left[X, A, A](iterate(p)) >>> profunctor.unit(monoidal.codiagonal[A]))
     }
 
-    /** (*p* ⨾ (*h* + *id*))† = *p*† ⨾ *h* for pure *h* */
+    /** (*η*(*h* + *id*) ∘ *p*)† = *η*(*h*) ∘ *p*† for pure *h*: *A* → *B*
+      *
+      * Post-processing the result can be done inside the loop or after it.
+      */
     def parameterNaturality[A: Obj, B: Obj, X: Obj](p: P[X, A + X], h: A --> B)(
       using P[X, B] is Observable
     ): Boolean = {
       iterate(p >>> strong.right[A, B, X](profunctor.unit(h))) =?= (iterate(p) >>> profunctor.unit(h))
     }
 
-    /** (*g* ⨾ *p*)† = *g* ⨾ (*p* ⨾ (*id* + *g*))† for pure *g* */
+    /** (*p* ∘ *η*(*g*))† = (*η*(*id* + *g*) ∘ *p*)† ∘ *η*(*g*) for pure *g*: *X* → *Y*
+      *
+      * A pure step at the start of each round can be rotated to the end.
+      */
     def composition[A: Obj, X: Obj, Y: Obj](p: P[Y, A + X], g: X --> Y)(
       using P[X, A] is Observable
     ): Boolean = {
@@ -50,11 +62,10 @@ abstract class Elgot(tracked val strong: Bistrong.On[Promonad] { val monoidal: C
         =?= (profunctor.unit(g) >>> iterate[A, Y](p >>> strong.left[X, Y, A](profunctor.unit(g))))
     }
 
-    /** (*f* ⨾ [*ι*₁,*g*])† = *f* ⨾ [*id*,(*g* ⨾ [*ι*₁,*f*])†] for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*: a loop
-      * that alternates two steps can start with either.
+    /** ([*ι*₁,*g*] ∘ *f*)† = [*id*,([*ι*₁,*f*] ∘ *g*)†] ∘ *f* for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*
       *
-      * [*ι*₁,*g*] runs *g* on the right and passes *A* through; with effects it is *τ*(*g*) ⨾ [*ι*₁,*id*].
-      * [[composition]] is the special case of a pure *g*.
+      * A loop that alternates two steps can start with either. [*ι*₁,*g*] runs *g* on the right and passes *A*
+      * through: with effects, it is *η*([*ι*₁,*id*]) ∘ *τ*(*g*). [[composition]] is the special case of a pure *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[X, A + Y], g: P[Y, A + X])(
       using P[X, A] is Observable
@@ -66,7 +77,10 @@ abstract class Elgot(tracked val strong: Bistrong.On[Promonad] { val monoidal: C
       iterate[A, X](fg) =?= (f >>> strong.left[Y, A, A](iterate[A, Y](gf)) >>> profunctor.unit(monoidal.codiagonal[A]))
     }
 
-    /** (*p*†)† = (*p* ⨾ [*id*,*ι*₂])† */
+    /** (*p*†)† = (*η*([*id*,*ι*₂]) ∘ *p*)†
+      *
+      * A loop inside a loop over the same state is one loop.
+      */
     def doubleDagger[A: Obj, X: Obj](p: P[X, (A + X) + X])(
       using P[X, A] is Observable
     ): Boolean = {
@@ -76,7 +90,9 @@ abstract class Elgot(tracked val strong: Bistrong.On[Promonad] { val monoidal: C
         )
     }
 
-    /** If *f* ⨾ (*id* + *h*) = *h* ⨾ *g* for pure *h*, then *f*† = *h* ⨾ *g*†.
+    /** If *η*(*id* + *h*) ∘ *f* = *g* ∘ *η*(*h*) for pure *h*: *X* → *Y*, then *f*† = *g*† ∘ *η*(*h*).
+      *
+      * Loops related by a change of state representation compute the same thing.
       *
       * @note The premise is not checked: *g* must be built to satisfy it.
       */
@@ -102,10 +118,10 @@ abstract class Elgot(tracked val strong: Bistrong.On[Promonad] { val monoidal: C
 
 object Elgot {
 
-  /** The iteration operators on a Freyd category with the strength *S*. */
+  /** The iteration structures on a bistrong promonad with the strength *S*. */
   type On[S <: Bistrong] = Elgot { val strong: S }
 
-  /** Fixed points read backwards: a Conway operator on *P* is an Elgot operator on *P*ᵒᵖ. */
+  /** The iteration on *P*ᵒᵖ of a Conway operator *C* on *P*: fixed points read backwards. */
   open class OfConway(tracked val conway: Conway)
       extends Elgot(Bistrong.Op(conway.strong)) {
     import strong.{monoidal, profunctor}
@@ -118,7 +134,7 @@ object Elgot {
     }
   }
 
-  /** The iteration of a trace on coproducts: *p*† = *tr*(∇ ⨾ *p*). */
+  /** The iteration of a trace *T* on coproducts: *p*† = *tr*(*p* ∘ *η*(∇)). */
   open class OfTraced(
     tracked val traced: Traced.On[Bistrong.On[Promonad] { val monoidal: Cocartesian }],
   ) extends Elgot(traced.strong) {

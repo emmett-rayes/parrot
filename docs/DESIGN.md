@@ -206,7 +206,8 @@ Each structure sits at the lowest level where its laws can be stated.
   Freyd categories and the grid read as usual. It takes the promonad as well as the strength, so that its signature
   names the promonad whose arrows it has.
 - **Traces and fixed points.** The trace laws restrict sliding and superposing to pure arrows, which are central
-  (traced *premonoidal* categories). The product row has no useful total instance in a strict language: computing
+  (traced *premonoidal* categories). The trace of a pure arrow is central (`centrality`), Benton and Hyland's centre
+  preservation restricted to pure arrows. The product row has no useful total instance in a strict language: computing
   ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first. Its instances exist by duality, on 𝒫ᵒᵖ, and the bridges (`OfElgot`,
   `OfConway`, `OfTraced`) are tested in both rows.
 - **Recursion at the types of arrows,** `Recursion`, is a fixed point in 𝒮 at the type *P*(*A*,*B*), not an operation
