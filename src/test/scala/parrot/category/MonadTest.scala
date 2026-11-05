@@ -60,6 +60,16 @@ abstract class MonadSpec(name: String, tracked val monad: Monad.On[Total.type])(
       flattenNaturality(f)
     }
   }
+
+  law("bindIsFlattenedMap") {
+    val observations = TotalFixture.observe[M[T1], M[T2]]
+    val fs           = TotalFixture.arrow[T1, M[T2]]
+
+    forAll(observations, fs) { (observe, f) =>
+      given ((M[T1] -> M[T2]) is Observable) = observe
+      bindIsFlattenedMap(f)
+    }
+  }
 }
 
 /** The writer monad of string concatenation: a log of what happened, in order. */

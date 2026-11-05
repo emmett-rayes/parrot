@@ -22,13 +22,13 @@ abstract class Bifunctor(
 
   /** *F*₁(*f*) = *F*(*f*,*id*)
     */
-  final def lmap[A: Obj1, B: Obj1, C: Obj2](f: A --> B): F[A, C] ==> F[B, C] = {
+  def lmap[A: Obj1, B: Obj1, C: Obj2](f: A --> B): F[A, C] ==> F[B, C] = {
     bimap(f, source2.identity[C])
   }
 
   /** *F*₂(*g*) = *F*(*id*,*g*)
     */
-  final def rmap[A: Obj2, B: Obj2, C: Obj1](g: A ->> B): F[C, A] ==> F[C, B] = {
+  def rmap[A: Obj2, B: Obj2, C: Obj1](g: A ->> B): F[C, A] ==> F[C, B] = {
     bimap(source1.identity[C], g)
   }
 
@@ -78,6 +78,18 @@ abstract class Bifunctor(
       g2: A2 ->> B2,
     )(using (F[A1, A2] ==> F[B1, B2]) is Observable): Boolean = {
       FunctorLaws.congruence[(A1, A2), (B1, B2)]((f, g), (f2, g2))
+    }
+
+    /** *F*₁(*f*) = *F*(*f*,*id*)
+      */
+    def lmapIsBimap[A: Obj1, B: Obj1, C: Obj2](f: A --> B)(using (F[A, C] ==> F[B, C]) is Observable): Boolean = {
+      lmap[A, B, C](f) =?= bimap(f, source2.identity[C])
+    }
+
+    /** *F*₂(*g*) = *F*(*id*,*g*)
+      */
+    def rmapIsBimap[A: Obj2, B: Obj2, C: Obj1](g: A ->> B)(using (F[C, A] ==> F[C, B]) is Observable): Boolean = {
+      rmap[A, B, C](g) =?= bimap(source1.identity[C], g)
     }
   }
 }

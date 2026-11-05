@@ -47,7 +47,7 @@ abstract class Cartesian(
   }
 
   /** The diagonal Δ: *A* → *A* ⊗ *A*. */
-  final def diagonal[A: Obj]: A --> (A * A) = {
+  def diagonal[A: Obj]: A --> (A * A) = {
     identity[A] &&& identity[A]
   }
 
@@ -108,6 +108,12 @@ abstract class Cartesian(
       */
     def braidIsPairing[A: Obj, B: Obj](using ((A * B) --> (B * A)) is Observable): Boolean = {
       braid[A, B] =?= (snd[A, B] &&& fst[A, B])
+    }
+
+    /** Δ = ⟨*id*,*id*⟩
+      */
+    def diagonalIsPairing[A: Obj](using (A --> (A * A)) is Observable): Boolean = {
+      diagonal[A] =?= (identity[A] &&& identity[A])
     }
 
     /** *λ* = *π*₂

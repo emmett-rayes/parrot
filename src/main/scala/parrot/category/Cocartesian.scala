@@ -50,7 +50,7 @@ abstract class Cocartesian(
   }
 
   /** The codiagonal ∇: *A* + *A* → *A*. */
-  final def codiagonal[A: Obj]: (A + A) --> A = {
+  def codiagonal[A: Obj]: (A + A) --> A = {
     identity[A] ||| identity[A]
   }
 
@@ -117,6 +117,12 @@ abstract class Cocartesian(
       */
     def braidIsCopairing[A: Obj, B: Obj](using ((A + B) --> (B + A)) is Observable): Boolean = {
       braid[A, B] =?= (inr[B, A] ||| inl[B, A])
+    }
+
+    /** ∇ = [*id*,*id*]
+      */
+    def codiagonalIsCopairing[A: Obj](using ((A + A) --> A) is Observable): Boolean = {
+      codiagonal[A] =?= (identity[A] ||| identity[A])
     }
 
     /** *λ*⁻¹ = *ι*₂

@@ -52,6 +52,20 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
     }
   }
 
+  law("zipDefinition") {
+    forAll(ParserGen.exact[(Int, Int), (Int, Int)](algebra), parsers, parsers) { (o, p, q) =>
+      given (P[(Int, Int), (Int, Int)] is Observable) = o
+      zipDefinition(p, q)
+    }
+  }
+
+  law("branchDefinition") {
+    forAll(ParserGen.exact[Either[Int, Int], Either[Int, Int]](algebra), parsers, parsers) { (o, p, q) =>
+      given (P[Either[Int, Int], Either[Int, Int]] is Observable) = o
+      branchDefinition(p, q)
+    }
+  }
+
   law("leftZero") {
     forAll(observe, parsers) { (o, p) =>
       given (P[Int, Int] is Observable) = o

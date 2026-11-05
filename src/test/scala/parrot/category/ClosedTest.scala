@@ -77,6 +77,16 @@ abstract class ClosedSpec(
     }
   }
 
+  law("uncurryIsEval") {
+    val observations = observe[T1 * T2, T4]
+    val gs           = arrow[T1 * T2, T4].map((f: (T1 * T2) --> T4) => closed.curry[T2, T4, T1](f))
+
+    forAll(observations, gs) { (observe, g) =>
+      given (((T1 * T2) --> T4) is Observable) = observe
+      uncurryIsEval[T2, T4, T1](g)
+    }
+  }
+
   also("Profunctor") {
     import closed.internalHom.BifunctorLaws.*
 
@@ -105,6 +115,24 @@ abstract class ClosedSpec(
       forAll(onHoms[T1, T2, T4, T3], fs, gs) { (observe, f, g) =>
         given (((T2 `^` T1) --> (T3 `^` T4)) is Observable) = observe
         congruence[T1, T2, T4, T3](f, variant(f), g, variant(g))
+      }
+    }
+
+    law("lmapIsBimap") {
+      val fs = arrow[T4, T1]
+
+      forAll(onHoms[T1, T2, T4, T2], fs) { (observe, f) =>
+        given (((T2 `^` T1) --> (T2 `^` T4)) is Observable) = observe
+        lmapIsBimap[T1, T4, T2](f)
+      }
+    }
+
+    law("rmapIsBimap") {
+      val gs = arrow[T2, T3]
+
+      forAll(onHoms[T1, T2, T1, T3], gs) { (observe, g) =>
+        given (((T2 `^` T1) --> (T3 `^` T1)) is Observable) = observe
+        rmapIsBimap[T2, T3, T1](g)
       }
     }
   }

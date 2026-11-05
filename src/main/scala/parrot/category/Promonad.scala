@@ -39,7 +39,7 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
   }
 
   /** The identity arrow *η*(*id*). */
-  final def identity[A: Obj]: P[A, A] = {
+  def identity[A: Obj]: P[A, A] = {
     unit(category.identity[A])
   }
 
@@ -92,6 +92,12 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
       */
     def unitCongruence[A: Obj, B: Obj](f: A ==> B, f2: A ==> B)(using P[A, B] is Observable): Boolean = {
       unit(f) =?= unit(f2)
+    }
+
+    /** *id* = *η*(*id*)
+      */
+    def identityIsUnit[A: Obj](using P[A, A] is Observable): Boolean = {
+      identity[A] =?= unit(category.identity[A])
     }
   }
 }

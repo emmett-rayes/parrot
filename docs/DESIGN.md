@@ -75,6 +75,11 @@ Rejected:
   back (`Terminal.asLimit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
   `Limit.Of`) only names a refinement.
+- **`final` only where definitional.** An alias, a renamed or flipped operation, syntax and a forward of a parameter's
+  member are `final`, since a faster version belongs to what they forward to. A derived operation, built from others
+  (Δ = ⟨*id*,*id*⟩, *f*\* = *μ* ∘ *M*(*f*), *F*₁(*f*) = *F*(*f*,*id*), *p* ⋉ *q* in a Freyd category), is not: an
+  instance can implement it directly, and a law of its structure equates it with its definition, so the laws check
+  the override. A construction that a client may specialize is an `open class` (`Kleisli`, `Freyd`).
 - **A dual is the view `op`** of the structure it is dual to, built by an `Op` class in the structure's companion: a
   `Terminal` is an `Initial` of the opposite category, a `Product` a `Coproduct` and `Products` are `Coproducts`. A
   construction on the opposite assembles the views of its parts (`Cartesian.Op` is the `Cocartesian` of `unit.op` and
@@ -166,6 +171,8 @@ Rejected:
 - `Bifunctor` extending `Functor`, which puts match types into every instance's signatures, and a separate class for
   categories whose objects are pairs of types, which duplicates `Category`;
 - operators with logic of their own, which hide an operation;
+- derived operations as `final` members: their definition then holds by construction, but an instance cannot compute
+  Δ in 𝒮 as *a* ↦ (*a*,*a*) instead of pairing two identities, nor a parser interpreter build *p* ⋉ *q* as one node;
 - givens that structures offer to their clients: a given member is found through the prefix of every type that
   mentions its structure, so two structures offering the same evidence, a monoidal structure and its tensor, are
   ambiguous for every client;

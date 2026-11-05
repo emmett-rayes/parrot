@@ -104,8 +104,10 @@ warning-free.
    category or the base of a promonad or a Freyd category, whose arrows are `-->`, `~~>` an acting category (a module's
    `monoidal`), `<--` and `<==` the opposites of `-->` and `==>` (`A <-- B` runs from `B` to `A`). Concretely `A -> B`
    in `Total` (𝒮) and `A ~> B` in `Partial` (𝒫). Objects: `*`, `+`, `` `^` `` (`` B `^` A `` is *A* ⇒ *B*), `<->`.
-9. **`final` on what is definitional:** aliases and members that only forward (`>>>`, `first`, `restricted`, the
-   parser syntax); redefinitions are `override` without `final`. A member forwarded unchanged from a parameter is an
+9. **`final` only on what is definitional:** aliases and members that only forward (`>>>`, `first`, `restricted`, the
+   parser syntax). A derived operation (`diagonal`, `bind`, `lmap`, `zip`) is a plain `def` that an instance may
+   override with a faster implementation, and a law equates it with its definition (`diagonalIsPairing`);
+   redefinitions are `override` without `final`. A member forwarded unchanged from a parameter is an
    `export` (no scaladoc); one that renames it or changes its meaning is a `final def` with its own doc
    (`ParserAlgebra.pure` is `parsers.unit(f)`). Eta-reduce aliases (`type Self = Tuple2`).
 10. **Monads are structure on their functor** (`Monad(functor: Endofunctor)`, primitives `unit` and `flatten`). Refine

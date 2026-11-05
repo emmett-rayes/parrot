@@ -60,6 +60,26 @@ abstract class BifunctorSpec(
         congruence(f, variant(f), g, variant(g))
       }
     }
+
+    law("lmapIsBimap") {
+      val observations = observe[F[T1, T2], F[T3, T2]]
+      val fs           = arrow[T1, T3]
+
+      forAll(observations, fs) { (observe, f) =>
+        given ((F[T1, T2] --> F[T3, T2]) is Observable) = observe
+        lmapIsBimap[T1, T3, T2](f)
+      }
+    }
+
+    law("rmapIsBimap") {
+      val observations = observe[F[T1, T2], F[T1, T3]]
+      val gs           = arrow[T2, T3]
+
+      forAll(observations, gs) { (observe, g) =>
+        given ((F[T1, T2] --> F[T1, T3]) is Observable) = observe
+        rmapIsBimap[T2, T3, T1](g)
+      }
+    }
   }
 }
 

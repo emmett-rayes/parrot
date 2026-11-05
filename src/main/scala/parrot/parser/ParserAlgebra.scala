@@ -139,12 +139,12 @@ abstract class ParserAlgebra(
   final lazy val branched: Freyd.On[branching.type] = Freyd(branching)
 
   /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* in [[zipped]]. */
-  final def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
+  def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {
     zipped.leftToRight(p, q)
   }
 
   /** Runs *p* on a left semantic input or *q* on a right one, tagging the result: *p* + *q* in [[branched]]. */
-  final def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
+  def branch[A, B, C, D](p: P[A, B], q: P[C, D]): P[Either[A, C], Either[B, D]] = {
     branched.leftToRight(p, q)
   }
 
@@ -420,6 +420,20 @@ abstract class ParserAlgebra(
       */
     def zipIdentity[A, C](using P[(A, C), (A, C)] is Observable): Boolean = {
       (success[A] ** success[C]) =?= success[(A, C)]
+    }
+
+    /** *zip*(*p*,*q*) = *p* ⋉ *q* in [[zipped]]
+      */
+    def zipDefinition[A, B, C, D](p: P[A, B], q: P[C, D])(using P[(A, C), (B, D)] is Observable): Boolean = {
+      (p ** q) =?= zipped.leftToRight(p, q)
+    }
+
+    /** *branch*(*p*,*q*) = *p* + *q* in [[branched]]
+      */
+    def branchDefinition[A, B, C, D](p: P[A, B], q: P[C, D])(
+      using P[Either[A, C], Either[B, D]] is Observable
+    ): Boolean = {
+      (p ++ q) =?= branched.leftToRight(p, q)
     }
 
     /** 0 ⨾ *p* = 0: nothing runs after a failure. */

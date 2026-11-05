@@ -30,6 +30,15 @@ abstract class CartesianSpec(
     }
   }
 
+  law("diagonalIsPairing") {
+    val observations = observe[T1, T1 * T1]
+
+    forAll(observations) { observe =>
+      given ((T1 --> (T1 * T1)) is Observable) = observe
+      diagonalIsPairing[T1]
+    }
+  }
+
   law("leftUnitorIsSnd") {
     val observations = observe[I * T1, T1]
 

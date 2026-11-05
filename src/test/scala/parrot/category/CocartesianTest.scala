@@ -30,6 +30,15 @@ abstract class CocartesianSpec(
     }
   }
 
+  law("codiagonalIsCopairing") {
+    val observations = observe[T1 + T1, T1]
+
+    forAll(observations) { observe =>
+      given (((T1 + T1) --> T1) is Observable) = observe
+      codiagonalIsCopairing[T1]
+    }
+  }
+
   law("leftUnitorInverseIsInr") {
     val observations = observe[T1, I + T1]
 

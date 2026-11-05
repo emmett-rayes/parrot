@@ -44,6 +44,28 @@ abstract class FreydSpec(
     }
   }
 
+  law("leftToRightIsStrengths") {
+    val observations = observe[T1 * T4, T2 * T3]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T4, T3]
+
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given (((T1 * T4) --> (T2 * T3)) is Observable) = observe
+      leftToRightIsStrengths(p, q)
+    }
+  }
+
+  law("rightToLeftIsStrengths") {
+    val observations = observe[T1 * T4, T2 * T3]
+    val ps           = arrow[T1, T2]
+    val qs           = arrow[T4, T3]
+
+    forAll(observations, ps, qs) { (observe, p, q) =>
+      given (((T1 * T4) --> (T2 * T3)) is Observable) = observe
+      rightToLeftIsStrengths(p, q)
+    }
+  }
+
   /** Interchange: running *p* and *q* side by side in either order gives the same result. It holds when the effect is
     * commutative and fails otherwise; it is not a law of Freyd categories.
     */

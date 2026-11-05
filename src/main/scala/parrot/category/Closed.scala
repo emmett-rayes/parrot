@@ -34,7 +34,7 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
   /** Uncurrying: *g* ↦ *ev* ∘ (*g* ⊗ *id*). */
-  final def uncurry[A: Obj, B: Obj, X: Obj](g: X --> (B `^` A)): (X * A) --> B = {
+  def uncurry[A: Obj, B: Obj, X: Obj](g: X --> (B `^` A)): (X * A) --> B = {
     (g *** identity[A]) >>> eval[A, B]
   }
 
@@ -57,6 +57,12 @@ abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
       using (X --> (B `^` A)) is Observable
     ): Boolean = {
       curry(uncurry(g)) =?= g
+    }
+
+    /** *uncurry*(*g*) = *ev* ∘ (*g* ⊗ *id*)
+      */
+    def uncurryIsEval[A: Obj, B: Obj, X: Obj](g: X --> (B `^` A))(using ((X * A) --> B) is Observable): Boolean = {
+      uncurry(g) =?= ((g *** identity[A]) >>> eval[A, B])
     }
 
     /** If *f* = *f*′, then Λ(*f*) = Λ(*f*′).

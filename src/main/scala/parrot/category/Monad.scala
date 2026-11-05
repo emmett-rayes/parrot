@@ -27,7 +27,7 @@ abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
   private given MIsObj: [A: Obj] => (M[A] is Obj) = objects[A]
 
   /** The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*]. */
-  final def bind[A: Obj, B: Obj](f: A --> M[B]): M[A] --> M[B] = {
+  def bind[A: Obj, B: Obj](f: A --> M[B]): M[A] --> M[B] = {
     map(f) >>> flatten[B]
   }
 
@@ -65,6 +65,12 @@ abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
       */
     def flattenNaturality[A: Obj, B: Obj](f: A --> B)(using (M[M[A]] --> M[B]) is Observable): Boolean = {
       (flatten[A] >>> map(f)) =?= (map(map(f)) >>> flatten[B])
+    }
+
+    /** *f*\* = *μ* ∘ *M*(*f*)
+      */
+    def bindIsFlattenedMap[A: Obj, B: Obj](f: A --> M[B])(using (M[A] --> M[B]) is Observable): Boolean = {
+      bind(f) =?= (map(f) >>> flatten[B])
     }
   }
 }

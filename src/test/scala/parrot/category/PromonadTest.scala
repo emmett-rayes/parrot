@@ -40,6 +40,15 @@ abstract class PromonadSpec(tracked val promonad: Promonad.On[Category { type Ob
     }
   }
 
+  law("identityIsUnit") {
+    val observations = observe[T1, T1]
+
+    forAll(observations) { observe =>
+      given (P[T1, T1] is Observable) = observe
+      identityIsUnit[T1]
+    }
+  }
+
   also("Profunctor") {
     import promonad.BifunctorLaws.*
 
@@ -68,6 +77,24 @@ abstract class PromonadSpec(tracked val promonad: Promonad.On[Category { type Ob
       forAll(onArrows[T1, T2, T4, T3], fs, gs) { (observe, f, g) =>
         given ((P[T1, T2] -> P[T4, T3]) is Observable) = observe
         congruence[T1, T2, T4, T3](f, category.variant(f), g, category.variant(g))
+      }
+    }
+
+    law("lmapIsBimap") {
+      val fs = category.arrow[T4, T1]
+
+      forAll(onArrows[T1, T2, T4, T2], fs) { (observe, f) =>
+        given ((P[T1, T2] -> P[T4, T2]) is Observable) = observe
+        lmapIsBimap[T1, T4, T2](f)
+      }
+    }
+
+    law("rmapIsBimap") {
+      val gs = category.arrow[T2, T3]
+
+      forAll(onArrows[T1, T2, T1, T3], gs) { (observe, g) =>
+        given ((P[T1, T2] -> P[T1, T3]) is Observable) = observe
+        rmapIsBimap[T2, T3, T1](g)
       }
     }
   }

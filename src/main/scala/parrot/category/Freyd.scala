@@ -15,7 +15,7 @@ import scala.annotation.targetName
   *
   * **K** is a symmetric premonoidal category. Pure morphisms in **C** interchange with arrows in **K**.
   */
-final class Freyd(tracked val strong: StrongPromonad)
+open class Freyd(tracked val strong: StrongPromonad)
     extends Premonoidal(
       strong.profunctor.arrows,
       strong.profunctor.arrows.Object[strong.monoidal.I](using strong.monoidal.unit.evidence),
@@ -55,12 +55,12 @@ final class Freyd(tracked val strong: StrongPromonad)
   }
 
   /** Runs *p*, then *q*, side by side: *p* ⋉ *q*. */
-  final def leftToRight[A: Obj, B: Obj, C: Obj, D: Obj](p: A --> B, q: C --> D): (A * C) --> (B * D) = {
+  def leftToRight[A: Obj, B: Obj, C: Obj, D: Obj](p: A --> B, q: C --> D): (A * C) --> (B * D) = {
     first[A, B, C](p) >>> second[C, D, B](q)
   }
 
   /** Runs *q*, then *p*, side by side: *p* ⋊ *q*. */
-  final def rightToLeft[A: Obj, B: Obj, C: Obj, D: Obj](p: A --> B, q: C --> D): (A * C) --> (B * D) = {
+  def rightToLeft[A: Obj, B: Obj, C: Obj, D: Obj](p: A --> B, q: C --> D): (A * C) --> (B * D) = {
     second[C, D, A](q) >>> first[A, B, D](p)
   }
 
@@ -93,6 +93,22 @@ final class Freyd(tracked val strong: StrongPromonad)
       using ((A * C) --> (B2 * C)) is Observable
     ): Boolean = {
       first[A, B2, C](p >>> q) =?= (first[A, B1, C](p) >>> first[B1, B2, C](q))
+    }
+
+    /** *p* ⋉ *q* = *τ*(*q*) ∘ *τ*′(*p*)
+      */
+    def leftToRightIsStrengths[A: Obj, B: Obj, C: Obj, D: Obj](p: A --> B, q: C --> D)(
+      using ((A * C) --> (B * D)) is Observable
+    ): Boolean = {
+      (p *>* q) =?= (first[A, B, C](p) >>> second[C, D, B](q))
+    }
+
+    /** *p* ⋊ *q* = *τ*′(*p*) ∘ *τ*(*q*)
+      */
+    def rightToLeftIsStrengths[A: Obj, B: Obj, C: Obj, D: Obj](p: A --> B, q: C --> D)(
+      using ((A * C) --> (B * D)) is Observable
+    ): Boolean = {
+      (p *<* q) =?= (second[C, D, A](q) >>> first[A, B, D](p))
     }
   }
 }
