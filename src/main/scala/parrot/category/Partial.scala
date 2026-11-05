@@ -162,7 +162,7 @@ object Partial extends Category {
       Iso(_._2, a => ((), a))
     }
 
-    def rightUnitor[A: Type]: (A, Unit) <-> A = {
+    override def rightUnitor[A: Type]: (A, Unit) <-> A = {
       Iso(_._1, a => (a, ()))
     }
 

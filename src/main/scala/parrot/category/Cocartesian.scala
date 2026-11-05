@@ -97,7 +97,7 @@ abstract class Cocartesian(
 
   /** *ρ* = [*id*,¡] and *ρ*⁻¹ = *ι*₁
     */
-  def rightUnitor[A: Obj]: (A + I) <-> A = {
+  override def rightUnitor[A: Obj]: (A + I) <-> A = {
     Iso(identity[A] ||| absurd[A], inl[A, I])
   }
 

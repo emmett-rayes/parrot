@@ -19,11 +19,18 @@ abstract class Symmetric(
     */
   def braid[A: Obj, B: Obj]: (A * B) --> (B * A)
 
+  private given IIsObj: (I is Obj)                                = unit.evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
   /** The braiding isomorphism *σ*: *A* ⊗ *B* ≅ *B* ⊗ *A*. */
   final def braiding[A: Obj, B: Obj]: (A * B) <-> (B * A) = {
     Iso(braid[A, B], braid[B, A])
+  }
+
+  /** *ρ* = *λ* ∘ *σ* and *ρ*⁻¹ = *σ* ∘ *λ*⁻¹
+    */
+  def rightUnitor[A: Obj]: (A * I) <-> A = {
+    Iso(braid[A, I] >>> leftUnitor[A].to, leftUnitor[A].from >>> braid[I, A])
   }
 
   /** The corresponding opposite **C**ᵒᵖ, with the same tensor and unit.
@@ -85,10 +92,6 @@ object Symmetric {
 
     def leftUnitor[A: Obj]: (I * A) <-> A = {
       Iso(symmetric.leftUnitor[A].from, symmetric.leftUnitor[A].to)
-    }
-
-    def rightUnitor[A: Obj]: (A * I) <-> A = {
-      Iso(symmetric.rightUnitor[A].from, symmetric.rightUnitor[A].to)
     }
 
     def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C)) = {

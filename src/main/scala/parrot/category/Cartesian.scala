@@ -88,7 +88,7 @@ abstract class Cartesian(
 
   /** *ρ* = *π*₁ and *ρ*⁻¹ = ⟨*id*,!⟩
     */
-  def rightUnitor[A: Obj]: (A * I) <-> A = {
+  override def rightUnitor[A: Obj]: (A * I) <-> A = {
     Iso(fst[A, I], identity[A] &&& discard[A])
   }
 
