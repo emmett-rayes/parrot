@@ -3,9 +3,9 @@ package category
 
 /** A bifunctor *F*: **C₁** × **C₂** → **D**.
   *
-  * Represents a bifunctor *F*, a binoidal functor where
+  * Represents a bifunctor *F*, where
+  *   - *F*[*A*₁,*A*₂] is the object part
   *   - *F*(*f*,*g*): *F*[*A*₁,*A*₂] → *F*[*B*₁,*B*₂] is the morphism part
-  *   - *f* ⦸ *C* = *F*(*f*,*id*) and *C* ⊘ *g* = *F*(*id*,*g*)
   */
 abstract class Bifunctor(
   tracked override val source1: Category,
@@ -20,13 +20,13 @@ abstract class Bifunctor(
     */
   def bimap[A1: Obj1, A2: Obj2, B1: Obj1, B2: Obj2](f: A1 --> B1, g: A2 ->> B2): F[A1, A2] ==> F[B1, B2]
 
-  /** *f* ⦸ *C* = *F*(*f*,*id*)
+  /** *F*₁(*f*) = *F*(*f*,*id*)
     */
   final def lmap[A: Obj1, B: Obj1, C: Obj2](f: A --> B): F[A, C] ==> F[B, C] = {
     bimap(f, source2.identity[C])
   }
 
-  /** *C* ⊘ *g* = *F*(*id*,*g*)
+  /** *F*₂(*g*) = *F*(*id*,*g*)
     */
   final def rmap[A: Obj2, B: Obj2, C: Obj1](g: A ->> B): F[C, A] ==> F[C, B] = {
     bimap(source1.identity[C], g)

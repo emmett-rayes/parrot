@@ -3,10 +3,8 @@ package category
 
 /** A monoidal structure on a category **C**.
   *
-  * Represents a monoidal category (**C**, ⊗, *I*), a premonoidal category where
-  *   - ⊗: **C** × **C** → **C** is the tensor, a bifunctor with the whiskerings *f* ⦸ *C* = *f* ⊗ *id* and *C* ⊘ *f* =
-  *     *id* ⊗ *f*
-  *   - every morphism is central, and *f* ⊗ *g* is the tensor of morphisms
+  * Represents a monoidal category (**C**, ⊗, *I*), where
+  *   - ⊗: **C** × **C** → **C** is the tensor bifunctor
   */
 abstract class Monoidal(
   tracked override val category: Category,

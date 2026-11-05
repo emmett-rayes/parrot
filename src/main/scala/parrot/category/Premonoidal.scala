@@ -4,15 +4,19 @@ package category
 /** A premonoidal structure on a category **C**.
   *
   * Represents a premonoidal category (**C**, ⊗, *I*), where
-  *   - ⊗: **C** × **C** → **C** is the tensor, a binoidal functor with the whiskerings *f* ⦸ *C* and *C* ⊘ *f*
+  *   - ⊗: **C** × **C** → **C** is the tensor binoidal functor
+  *   - ⦸: **C**(*A*,*B*) → **C**(*A* ⊗ *C*,*B* ⊗ *C*) is the right whiskering *f* ⦸ *C*
+  *   - ⊘: **C**(*A*,*B*) → **C**(*C* ⊗ *A*,*C* ⊗ *B*) is the left whiskering *C* ⊘ *f*
   *   - *I* is the unit object
   *   - *λ*: *I* ⊗ *A* ≅ *A* is the left unitor
   *   - *ρ*: *A* ⊗ *I* ≅ *A* is the right unitor
   *   - *α*: (*A* ⊗ *B*) ⊗ *C* ≅ *A* ⊗ (*B* ⊗ *C*) is the associator
   *
-  * A morphism is central if it interchanges with every morphism, on both sides: (*B* ⊘ *g*) ∘ (*h* ⦸ *C*) =
-  * (*h* ⦸ *D*) ∘ (*A* ⊘ *g*). The unitors and the associator are central, and natural in each component separately. A
-  * monoidal category is a premonoidal category whose morphisms are all central.
+  * A morphism is central if it interchanges with every morphism, on both sides, i.e. we have (*B* ⊘ *g*) ∘ (*h* ⦸ *C*)
+  *  = (*h* ⦸ *D*) ∘ (*A* ⊘ *g*).
+  *
+  * The unitors and the associator are central, and natural in each component separately. A monoidal category is a
+  * premonoidal category whose morphisms are all central.
   */
 abstract class Premonoidal(
   tracked val category: Category,
@@ -47,22 +51,19 @@ abstract class Premonoidal(
   private given IIsObj: (I is Obj)                                = unit.evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
-  /** Laws that any `Premonoidal` structure must satisfy.
-    *
-    * The unitors and the associator are central isomorphisms, natural in each component and coherent.
-    */
+  /** Laws that any `Premonoidal` structure must satisfy. */
   object PremonoidalLaws {
     import category.IsoLaws
 
     /** (*B* ⊘ *g*) ∘ (*h* ⦸ *C*) = (*h* ⦸ *D*) ∘ (*A* ⊘ *g*) */
-    private def interchangesLeft[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
+    private def interchangeLeft[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
       using ((A * C) --> (B * D)) is Observable
     ): Boolean = {
       (lmap[A, B, C](h) >>> rmap[C, D, B](g)) =?= (rmap[C, D, A](g) >>> lmap[A, B, D](h))
     }
 
     /** (*g* ⦸ *B*) ∘ (*C* ⊘ *h*) = (*D* ⊘ *h*) ∘ (*g* ⦸ *A*) */
-    private def interchangesRight[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
+    private def interchangeRight[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
       using ((C * A) --> (D * B)) is Observable
     ): Boolean = {
       (rmap[A, B, C](h) >>> lmap[C, D, B](g)) =?= (lmap[C, D, A](g) >>> rmap[A, B, D](h))
@@ -146,28 +147,31 @@ abstract class Premonoidal(
 
     /** (*A* ⊘ *g*) ∘ (*λ* ⦸ *X*) = (*λ* ⦸ *Y*) ∘ ((*I* ⊗ *A*) ⊘ *g*), and likewise on the right: *λ* is central. */
     def leftUnitorCentrality[A: Obj, X: Obj, Y: Obj](g: X --> Y)(
-      using (((I * A) * X) --> (A * Y)) is Observable,
+      using
+      (((I * A) * X) --> (A * Y)) is Observable,
       ((X * (I * A)) --> (Y * A)) is Observable,
     ): Boolean = {
-      interchangesLeft(leftUnitor[A].to, g) && interchangesRight(leftUnitor[A].to, g)
+      interchangeLeft(leftUnitor[A].to, g) && interchangeRight(leftUnitor[A].to, g)
     }
 
     /** (*A* ⊘ *g*) ∘ (*ρ* ⦸ *X*) = (*ρ* ⦸ *Y*) ∘ ((*A* ⊗ *I*) ⊘ *g*), and likewise on the right: *ρ* is central. */
     def rightUnitorCentrality[A: Obj, X: Obj, Y: Obj](g: X --> Y)(
-      using (((A * I) * X) --> (A * Y)) is Observable,
+      using
+      (((A * I) * X) --> (A * Y)) is Observable,
       ((X * (A * I)) --> (Y * A)) is Observable,
     ): Boolean = {
-      interchangesLeft(rightUnitor[A].to, g) && interchangesRight(rightUnitor[A].to, g)
+      interchangeLeft(rightUnitor[A].to, g) && interchangeRight(rightUnitor[A].to, g)
     }
 
     /** ((*A* ⊗ (*B* ⊗ *C*)) ⊘ *g*) ∘ (*α* ⦸ *X*) = (*α* ⦸ *Y*) ∘ (((*A* ⊗ *B*) ⊗ *C*) ⊘ *g*), and likewise on the
       * right: *α* is central.
       */
     def associatorCentrality[A: Obj, B: Obj, C: Obj, X: Obj, Y: Obj](g: X --> Y)(
-      using ((((A * B) * C) * X) --> ((A * (B * C)) * Y)) is Observable,
+      using
+      ((((A * B) * C) * X) --> ((A * (B * C)) * Y)) is Observable,
       ((X * ((A * B) * C)) --> (Y * (A * (B * C)))) is Observable,
     ): Boolean = {
-      interchangesLeft(associator[A, B, C].to, g) && interchangesRight(associator[A, B, C].to, g)
+      interchangeLeft(associator[A, B, C].to, g) && interchangeRight(associator[A, B, C].to, g)
     }
 
     /** (*A* ⊘ *λ*) ∘ *α* = *ρ* ⦸ *B* */
