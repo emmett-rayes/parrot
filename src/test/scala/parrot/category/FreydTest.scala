@@ -8,9 +8,9 @@ import Category.Type
 /** The laws of [[Freyd]], for Freyd categories on promonads over 𝒮. */
 abstract class FreydSpec(
   name: String,
-  tracked override val premonoidal: Freyd.On[Promonad.On[Category { type Obj = Type }]],
+  tracked override val premonoidal: Freyd.On[Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
 )(using
-  promonad: PromonadFixture.For[premonoidal.promonad.type],
+  promonad: PromonadFixture.For[premonoidal.strong.profunctor.type],
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[premonoidal.Tensor[X, Y]],
   unitSample: Sample[premonoidal.I],
@@ -60,28 +60,28 @@ abstract class FreydSpec(
 }
 
 class OptionKleisliProductIsFreydTest
-    extends FreydSpec("Kleisli[Option] on Product", Freyd(Kleisli.OptionKleisli, Kleisli.OptionProduct)) {
+    extends FreydSpec("Kleisli[Option] on Product", Freyd(Kleisli.OptionProduct)) {
   law("interchange", "holds: Option is a commutative monad") {
     forAll(interchange)(holds => holds)
   }
 }
 
 class OptionKleisliCoproductIsFreydTest
-    extends FreydSpec("Kleisli[Option] on Coproduct", Freyd(Kleisli.OptionKleisli, Kleisli.OptionCoproduct)) {
+    extends FreydSpec("Kleisli[Option] on Coproduct", Freyd(Kleisli.OptionCoproduct)) {
   law("interchange", "holds: only one side runs") {
     forAll(interchange)(holds => holds)
   }
 }
 
 class StringWriterKleisliProductIsFreydTest
-    extends FreydSpec("Kleisli[Writer[String]] on Product", Freyd(StringWriterKleisli, StringWriterProduct)) {
+    extends FreydSpec("Kleisli[Writer[String]] on Product", Freyd(StringWriterProduct)) {
   counterexample("interchange", "logs are not commutative") {
     forAll(interchange)(holds => holds)
   }
 }
 
 class StringWriterKleisliCoproductIsFreydTest
-    extends FreydSpec("Kleisli[Writer[String]] on Coproduct", Freyd(StringWriterKleisli, StringWriterCoproduct)) {
+    extends FreydSpec("Kleisli[Writer[String]] on Coproduct", Freyd(StringWriterCoproduct)) {
   law("interchange", "holds: only one side runs") {
     forAll(interchange)(holds => holds)
   }

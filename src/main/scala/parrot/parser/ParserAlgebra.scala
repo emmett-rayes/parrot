@@ -133,10 +133,10 @@ abstract class ParserAlgebra(
   // ==== Zipping and branching: the strengths ====
 
   /** Parsers as a Freyd category over products, with the strength [[zipping]]. */
-  final lazy val zipped: Freyd.On[parsers.type] { val strong: zipping.type } = Freyd(parsers, zipping)
+  final lazy val zipped: Freyd.On[zipping.type] = Freyd(zipping)
 
   /** Parsers as a Freyd category over coproducts, with the strength [[branching]]. */
-  final lazy val branched: Freyd.On[parsers.type] { val strong: branching.type } = Freyd(parsers, branching)
+  final lazy val branched: Freyd.On[branching.type] = Freyd(branching)
 
   /** Runs *p* on the left of a pair of semantic inputs, then *q* on the right: *p* ⋉ *q* in [[zipped]]. */
   final def zip[A, B, C, D](p: P[A, B], q: P[C, D]): P[(A, C), (B, D)] = {

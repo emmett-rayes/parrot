@@ -3187,10 +3187,10 @@ A bistrong promonad is almost a structure for running arrows side by side. Name 
 
 Freyd categories were introduced to model call-by-value languages with effects **[Standard: Power and Robinson; Levy, Power and Thielecke, from memory]**, and they are the semantics of Haskell's *arrows*, which programmers know as a design pattern **[Standard: Hughes 2000; Jacobs, Heunen and Hasuo 2009, from memory]**. A strong promonad is in fact a monoid in the category of strong profunctors, so the definition is a single monoid once more **[Standard: Rivas and Jaskelioff, from memory]**.
 
-In the library, a Freyd category is a premonoidal category, in the sense explained below: `Freyd(promonad, strong)` takes a promonad and a bistrong structure on it, and extends `Premonoidal` on `promonad.arrows`, the category of arrows of the promonad, whose identity is η and whose composition is μ. It names the strengths `first` and `second`, states the two laws and offers both orders of running two arrows side by side: `leftToRight`, written `*>*`, runs the left arrow first, p ⋉ q, and `rightToLeft`, written `*<*`, runs the right arrow first, p ⋊ q.
+In the library, a Freyd category is a premonoidal category, in the sense explained below: `Freyd(strong)` takes a bistrong structure on a promonad, a `StrongPromonad`, and extends `Premonoidal` on `strong.profunctor.arrows`, the category of arrows of the promonad, whose identity is η and whose composition is μ. It names the strengths `first` and `second`, states the two laws and offers both orders of running two arrows side by side: `leftToRight`, written `*>*`, runs the left arrow first, p ⋉ q, and `rightToLeft`, written `*<*`, runs the right arrow first, p ⋊ q.
 
 ```scala library
-val OptionFreyd = Freyd(Kleisli.OptionKleisli, Kleisli.OptionProduct)
+val OptionFreyd = Freyd(Kleisli.OptionProduct)
 import OptionFreyd.*>*
 
 val both: ((String, Int)) -> Option[(Int, Int)] = parse *>* positive

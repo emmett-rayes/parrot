@@ -11,8 +11,7 @@ package category
   * Conway operators are equivalent to traces for products ([[Traced.OfConway]], [[Conway.OfTraced]]) and dual to
   * iteration: an Elgot operator is a Conway operator on the opposite category.
   */
-abstract class Conway(tracked val strong: Bistrong.On[Promonad] { val monoidal: Cartesian })
-    extends caps.Pure {
+abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesian }) extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.`*`
   import profunctor.{P, >>>}
@@ -140,7 +139,7 @@ object Conway {
 
   /** The fixed point of a trace *T* on products: *p*† = *tr*(*η*(Δ) ∘ *p*). */
   open class OfTraced(
-    tracked val traced: Traced.On[Bistrong.On[Promonad] { val monoidal: Cartesian }],
+    tracked val traced: Traced.On[StrongPromonad { val monoidal: Cartesian }],
   ) extends Conway(traced.strong) {
     import strong.{monoidal, profunctor}
     import monoidal.`*`

@@ -11,8 +11,7 @@ package category
   * the laws for the steps that always make progress. Elgot operators are equivalent to traces for coproducts
   * ([[Traced.OfElgot]], [[Elgot.OfTraced]]).
   */
-abstract class Elgot(tracked val strong: Bistrong.On[Promonad] { val monoidal: Cocartesian })
-    extends caps.Pure {
+abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartesian }) extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.+
   import profunctor.{P, >>>}
@@ -136,7 +135,7 @@ object Elgot {
 
   /** The iteration of a trace *T* on coproducts: *p*† = *tr*(*p* ∘ *η*(∇)). */
   open class OfTraced(
-    tracked val traced: Traced.On[Bistrong.On[Promonad] { val monoidal: Cocartesian }],
+    tracked val traced: Traced.On[StrongPromonad { val monoidal: Cocartesian }],
   ) extends Elgot(traced.strong) {
     import strong.{monoidal, profunctor}
     import monoidal.+

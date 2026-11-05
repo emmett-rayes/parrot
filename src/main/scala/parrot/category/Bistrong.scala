@@ -77,3 +77,6 @@ object Bistrong {
     }
   }
 }
+
+/** The bistrong structures on a promonad. */
+type StrongPromonad = Bistrong.On[Promonad]

@@ -3,8 +3,9 @@
 Scala compiler behaviors that cost time in this repository, with minimal reproductions ready to be filed upstream.
 The design of the library is in [`DESIGN.md`](DESIGN.md).
 
-All four have been verified with Scala 3.10.0. The first two are worked around by turning the flags (`-Wsafe-init`,
-`-Wunused:imports`) off in `build.sbt` and `pants.toml`, the third by type patterns, the fourth by not exporting givens.
+All five have been verified with Scala 3.10.0. The first two are worked around by turning the flags (`-Wsafe-init`,
+`-Wunused:imports`) off in `build.sbt` and `pants.toml`, the third by type patterns, the fourth by not exporting givens,
+the fifth by typing views by what they carry.
 
 **`-Wsafe-init` false positive when a `tracked` constructor parameter is forwarded to a parent class.** Options:
 `-source:future -language:experimental.modularity -Wsafe-init`.
@@ -82,6 +83,41 @@ class Mon(val U: Chosen) {
 Without capture checking it compiles, and so does exporting `IIsEv` declared as a `val`. A given of a type that does
 not depend on a path (`given Int`) exports. The library exports no givens: each class declares the private givens it
 uses, as `Monoidal` does for its unit `I = unit.A`.
+
+**A view typed by a refinement of a subclass's `tracked` parameter is a cyclic reference.** Options:
+`-source:future -language:experimental.modularity`.
+
+```scala
+abstract class Cat {
+  type Self[A, B]
+  final lazy val op: Cat.Op.Of[this.type] = Cat.Op(this)
+}
+object Cat {
+  final class Op(tracked val category: Cat) extends Cat { type Self[A, B] = category.Self[B, A] }
+  object Op { type Of[C <: Cat] = Op { val category: C } }
+}
+
+abstract class Bi(tracked val source: Cat) {
+  type Self[A, B]
+  final type F = Self
+}
+
+abstract class Pro(tracked val category: Cat) extends Bi(category) {
+  final type P = F
+  final lazy val reversed: Pro.Op.Of[this.type] = Pro.Op(this)
+}
+object Pro {
+  final class Op(tracked val promonad: Pro) extends Pro(promonad.category.op) {
+    type Self[A, B] = promonad.Self[B, A]
+  }
+  object Op { type Of[P <: Pro] = Op { val promonad: P } } // error: Cyclic reference involving val promonad
+}
+```
+
+Without the abstract `Self` of `Cat`, or without the aliases `F` and `P`, it compiles, and so does `Cat.op`, whose `Op`
+passes no arguments to its parent. The same cycle arises wherever a signature refines `Promonad.Op`'s `promonad`, so
+the library has no view of the opposite promonad (`Bistrong.Op` builds it), and opposite views are typed by what they
+carry, as `Bifunctor.op` and `Symmetric.op` are.
 
 Not a bug, but costly: under capture checking, a `given` declared with an unreduced match type fails, because the check
 adds a capture variable to the scrutinee; declare it in reduced form.

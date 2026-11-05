@@ -3,7 +3,7 @@ package category
 
 import scala.annotation.targetName
 
-/** A Freyd category **K** on a promonad *P* over **C**.
+/** A Freyd category **K** on a bistrong promonad *P* over **C**.
   *
   * Represents the premonoidal category **K** of arrows of *P* with a bistrong structure (**C**, ⊗, *τ*, *τ*′), where
   *   - **C** is a symmetric monoidal base category
@@ -15,32 +15,33 @@ import scala.annotation.targetName
   *
   * **K** is a symmetric premonoidal category. Pure morphisms in **C** interchange with arrows in **K**.
   */
-final class Freyd(tracked val promonad: Promonad, tracked val strong: Bistrong.On[promonad.type])
+final class Freyd(tracked val strong: StrongPromonad)
     extends Premonoidal(
-      promonad.arrows,
-      promonad.arrows.Object[strong.monoidal.I](using strong.monoidal.unit.evidence),
-      Freyd.Tensor(promonad, strong),
+      strong.profunctor.arrows,
+      strong.profunctor.arrows.Object[strong.monoidal.I](using strong.monoidal.unit.evidence),
+      Freyd.Tensor(strong),
     ) {
   import category.{Iso, Obj, -->, <->, >>>}
   import strong.monoidal.***
-  import promonad.category.--> as ==>
+  import strong.profunctor
+  import profunctor.category.--> as ==>
 
   private given IIsObj: (I is Obj)                                = unit.evidence
   private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = tensor.objects[A, B]
 
   def leftUnitor[A: Obj]: (I * A) <-> A = {
     val iso = strong.monoidal.leftUnitor[A]
-    Iso(promonad.unit(iso.to), promonad.unit(iso.from))
+    Iso(profunctor.unit(iso.to), profunctor.unit(iso.from))
   }
 
   def rightUnitor[A: Obj]: (A * I) <-> A = {
     val iso = strong.monoidal.rightUnitor[A]
-    Iso(promonad.unit(iso.to), promonad.unit(iso.from))
+    Iso(profunctor.unit(iso.to), profunctor.unit(iso.from))
   }
 
   def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C)) = {
     val iso = strong.monoidal.associator[A, B, C]
-    Iso(promonad.unit(iso.to), promonad.unit(iso.from))
+    Iso(profunctor.unit(iso.to), profunctor.unit(iso.from))
   }
 
   /** The right strength *τ*′(*p*) = *p* ⦸ *C*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*). */
@@ -83,7 +84,7 @@ final class Freyd(tracked val promonad: Promonad, tracked val strong: Bistrong.O
     /** *τ*′(*unit*(*f*)) = *unit*(*f* ⊗ *id*)
       */
     def unit[A: Obj, B: Obj, C: Obj](f: A ==> B)(using ((A * C) --> (B * C)) is Observable): Boolean = {
-      first[A, B, C](promonad.unit(f)) =?= promonad.unit(f *** promonad.category.identity[C])
+      first[A, B, C](profunctor.unit(f)) =?= profunctor.unit(f *** profunctor.category.identity[C])
     }
 
     /** *τ*′(*q* ∘ *p*) = *τ*′(*q*) ∘ *τ*′(*p*)
@@ -98,19 +99,19 @@ final class Freyd(tracked val promonad: Promonad, tracked val strong: Bistrong.O
 
 object Freyd {
 
-  /** The Freyd categories on a promonad *P*. */
-  type On[P <: Promonad] = Freyd { val promonad: P }
+  /** The Freyd categories on a bistrong promonad with the strength *S*. */
+  type On[S <: Bistrong] = Freyd { val strong: S }
 
-  /** The tensor of the Freyd category on a promonad *P* over **C** with a bistrong structure *S*.
+  /** The tensor of the Freyd category on a bistrong promonad *P* over **C**.
     *
     * Represents a binoidal functor on the arrows of *P*, where
     *   - *A* ⊗ *B* is the tensor of **C**
     *   - *p* ⦸ *C* = *τ*′(*p*), the right strength
     *   - *C* ⊘ *p* = *τ*(*p*), the left strength
     */
-  final class Tensor(tracked val promonad: Promonad, tracked val strong: Bistrong.On[promonad.type])
-      extends BinoidalFunctor(promonad.arrows, promonad.arrows, promonad.arrows) {
-    import promonad.arrows.{Obj, -->}
+  final class Tensor(tracked val strong: StrongPromonad)
+      extends BinoidalFunctor(strong.profunctor.arrows, strong.profunctor.arrows, strong.profunctor.arrows) {
+    import strong.profunctor.arrows.{Obj, -->}
 
     type Self = strong.monoidal.Tensor
 

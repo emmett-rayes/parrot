@@ -69,8 +69,8 @@ Rejected:
   named, not found by carrier: 𝒮 carries both products and coproducts, and nothing about the carrier tells them apart.
 - **Combinations are bundles, not inheritance.** A class extending a product and a coproduct structure would inherit two
   `Tensor`s, two `I`s and two `braid`s, so `ParserAlgebra(…)` takes its structures as parameters. A structure that is
-  another with more operations extends it: `Bifunctor` extends `BinoidalFunctor`, and `Monoidal` and
-  `Freyd(promonad, strong)` extend `Premonoidal`.
+  another with more operations extends it: `Bifunctor` extends `BinoidalFunctor`, and `Monoidal` and `Freyd(strong)`
+  extend `Premonoidal`.
 - **A special case with an operation of its own is a structure with a view** to the general one and a construction
   back (`Terminal.asLimit` and `Terminal.FromLimit`, `Bifunctor.functor`, `Promonad.arrows`): an instance can override
   the operation with a better implementation, and the laws of both structures still check it. An alias (`Monad.On`,
@@ -198,13 +198,14 @@ Each structure sits at the lowest level where its laws can be stated.
   natural in each component. A bifunctor is a binoidal functor whose two maps interchange, with `bimap`, and a monoidal
   category is a premonoidal one whose morphisms are all central, so `Bifunctor` extends `BinoidalFunctor` and
   `Monoidal` extends `Premonoidal`, overriding its `tensor` with a bifunctor.
-- **A Freyd category is a premonoidal category:** `Freyd(promonad, strong)` extends `Premonoidal` on the category of
-  arrows `promonad.arrows`. Its tensor, `Freyd.Tensor`, has the strengths as `lmap` and `rmap`, and its unitors and
+- **A Freyd category is a premonoidal category:** `Freyd(strong)` extends `Premonoidal` on the category of arrows
+  `strong.profunctor.arrows`. Its tensor, `Freyd.Tensor`, has the strengths as `lmap` and `rmap`, and its unitors and
   associator are those of **C**, as pure arrows. It adds `first`, `second`, `leftToRight` (⋉, `*>*`), `rightToLeft`
   (⋊, `*<*`) and the laws that connect them to the strength; ⋉ and ⋊ look like a tensor of arrows without being one.
   It names the strengths after the component an arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of
-  Freyd categories and the grid read as usual. It takes the promonad as well as the strength, so that its signature
-  names the promonad whose arrows it has.
+  Freyd categories and the grid read as usual. It takes only the strength, a `StrongPromonad`
+  (`Bistrong.On[Promonad]`), whose profunctor is the promonad, as `Traced`, `Elgot` and `Conway` do: the structures on
+  a bistrong promonad share one parameter type.
 - **Traces and fixed points.** The trace laws restrict sliding and superposing to pure arrows, which are central
   (traced *premonoidal* categories). The trace of a pure arrow is central (`centrality`), Benton and Hyland's centre
   preservation restricted to pure arrows. The product row has no useful total instance in a strict language: computing
@@ -293,6 +294,10 @@ Rejected:
 - `Bistrong` constraining the profunctor towards the monoidal structure
   (`Profunctor { val domain: monoidal.category.type; … }`): for a promonad, nothing makes its own **C** equal to
   **M**.**C**, so the constraint refines **M** instead;
+- a Freyd category taking its promonad besides the strength, `Freyd(promonad, strong: Bistrong.On[promonad.type])`:
+  the promonad repeats `strong.profunctor`, and with the strength depending on it, a parameter that refines the
+  strength (`Freyd { val strong: Bistrong { val monoidal: Cocartesian } }`) makes scalac 3.10.0 hang on every
+  constructor call whose using clause depends on that parameter, which is the shape of every spec;
 - separate duals over products and coproducts, where one `Bistrong.Op(strong)` serves both, and **M**ᵒᵖ as a
   parameter of it, of which only the category and the carrier of the tensor could be checked;
 - solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number

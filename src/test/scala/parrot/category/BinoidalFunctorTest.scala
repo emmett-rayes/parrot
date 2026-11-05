@@ -91,26 +91,26 @@ class OptionKleisliProductIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "Kleisli[Option] on Product",
       Kleisli.OptionKleisli.arrows,
-      Freyd.Tensor(Kleisli.OptionKleisli, Kleisli.OptionProduct),
+      Freyd.Tensor(Kleisli.OptionProduct),
     )
 
 class OptionKleisliCoproductIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "Kleisli[Option] on Coproduct",
       Kleisli.OptionKleisli.arrows,
-      Freyd.Tensor(Kleisli.OptionKleisli, Kleisli.OptionCoproduct),
+      Freyd.Tensor(Kleisli.OptionCoproduct),
     )
 
 class StringWriterKleisliProductIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "Kleisli[Writer[String]] on Product",
       StringWriterKleisli.arrows,
-      Freyd.Tensor(StringWriterKleisli, StringWriterProduct),
+      Freyd.Tensor(StringWriterProduct),
     )
 
 class StringWriterKleisliCoproductIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "Kleisli[Writer[String]] on Coproduct",
       StringWriterKleisli.arrows,
-      Freyd.Tensor(StringWriterKleisli, StringWriterCoproduct),
+      Freyd.Tensor(StringWriterCoproduct),
     )

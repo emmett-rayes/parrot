@@ -23,7 +23,7 @@ class ReferenceZippingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "ReferenceParser (zipping)",
       Interpreters.reference.parsers.arrows,
-      Freyd.Tensor(Interpreters.reference.parsers, Interpreters.reference.zipping),
+      Freyd.Tensor(Interpreters.reference.zipping),
     )
 
 class ReferenceZippingIsFreydTest
@@ -40,7 +40,7 @@ class ReferenceBranchingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "ReferenceParser (branching)",
       Interpreters.reference.parsers.arrows,
-      Freyd.Tensor(Interpreters.reference.parsers, Interpreters.reference.branching),
+      Freyd.Tensor(Interpreters.reference.branching),
     )
 
 class ReferenceBranchingIsFreydTest
@@ -103,7 +103,7 @@ class StrictZippingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "StrictParser (zipping)",
       Interpreters.strict.parsers.arrows,
-      Freyd.Tensor(Interpreters.strict.parsers, Interpreters.strict.zipping),
+      Freyd.Tensor(Interpreters.strict.zipping),
     )
 
 class StrictZippingIsFreydTest
@@ -120,7 +120,7 @@ class StrictBranchingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "StrictParser (branching)",
       Interpreters.strict.parsers.arrows,
-      Freyd.Tensor(Interpreters.strict.parsers, Interpreters.strict.branching),
+      Freyd.Tensor(Interpreters.strict.branching),
     )
 
 class StrictBranchingIsFreydTest

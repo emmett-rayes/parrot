@@ -10,7 +10,7 @@ package category
   * the equation *u* = *p*(*a*,*u*)₂: a recursive definition. The laws are those of traced monoidal categories, with
   * sliding and superposing restricted to pure arrows, which are central.
   */
-abstract class Traced(tracked val strong: Bistrong.On[Promonad]) extends caps.Pure {
+abstract class Traced(tracked val strong: StrongPromonad) extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.{I, `*`}
   import profunctor.{P, >>>}
