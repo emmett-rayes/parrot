@@ -67,7 +67,12 @@ warning-free.
 ## The encoding of `parrot.category`
 
 1. **Structures are `abstract class … extends caps.Pure`**. Type classes without parameters that are not structures
-   (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
+   (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits. The one exception is a diamond: a
+   refinement independent of another refinement of the same class is a parameterless trait with the class as its
+   self-type (`trait SymmetricPremonoidal extends caps.Pure { this: Premonoidal => … }`), mixed into the classes below
+   both (`Symmetric extends Monoidal(…), SymmetricPremonoidal`, `Freyd`). A parameter that needs both is their
+   intersection (`Premonoidal & SymmetricPremonoidal`, `SymmetricPremonoidal.On[C]`). The trait is named after the
+   structure it makes of its self-type, and the class below both keeps the usual name (`Symmetric`).
 2. **What a structure is on is a `tracked val` parameter** (a stable path you can import from), named by its role in
    one lowercase word (`source`, `target`, `category`, `monoidal`, `strong`), indexed when there are two (`source1`,
    `source2`); what it adds is a member. A constraint between parameters refines the *later* one towards the earlier:
@@ -202,8 +207,10 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   Cartesian test class). An extensible spec takes `structure: String = "<Name>"` last, passes it to `LawSuite` and
   registers its laws in `also("<Name>")`, so a child reports them under its own name. Where the parent's spec needs a
   fixture the child has no given for, the child passes it explicitly (`FreydSpec` passes `promonad.arrows` to
-  `PremonoidalSpec`) or copies the parent's laws into an `also` block (`PromonadSpec`). `IsoLaws` has no spec:
-  `PremonoidalLaws` and `ModuleLaws` check it.
+  `SymmetricPremonoidalSpec`) or copies the parent's laws into an `also` block (`PromonadSpec`). Below a diamond, the
+  spec extends one parent's and copies the other's laws (`SymmetricSpec` extends `SymmetricPremonoidalSpec` and copies
+  `Monoidal`'s).
+  `IsoLaws` has no spec: `PremonoidalLaws` and `ModuleLaws` check it.
 - **Specs take their subject, not a fixture:** `tracked val premonoidal: Premonoidal.On[…]`, named after its structure
   (in a refinement's spec, after the root's: `CartesianSpec` forwards `premonoidal`), with the fixture found as a given,
   `using category: CategoryFixture.For[premonoidal.category.type]`; where the subject takes
@@ -231,7 +238,8 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
 - **Spike first.** For "does the type system accept X", compile a twenty-line file with Scala CLI at the library's
   version and flags: `scala compile --server=false -S 3.10.0 -O <flag> …`, one `-O` per flag in `build.sbt`.
 - **Singleton chains.** Path-dependent code type-checks only if every link is a singleton type (`promonad.category` =
-  `monad.functor.category` = `Total`); refine the parameter a member comes from (`Monad.On`), never intersect.
+  `monad.functor.category` = `Total`); refine the parameter a member comes from (`Monad.On`), never intersect. The
+  intersection with a self-typed trait (`Premonoidal.On[C] & SymmetricPremonoidal`) is no refinement and keeps chains.
 - **A refinement sees the members of the type it refines,** so a name that is also one of them is cyclic or ambiguous
   inside it: `Product { val category: category.type }`, or `Limit.Of[diagram.type] { val apex: diagram.… }` for a
   parameter `diagram`. The base's alias avoids it for the base (rule 13); for another member, import what the refinement
@@ -240,6 +248,10 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   every `Object`). `Limits.OfDiagram` relies on it: in `InCategory { type D >: T[category.type] }`, `category` is the
   refined structure's own.
 - **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
+- **A mixin takes its class as self-type, not as parent.** A trait that extends a class restates the class's
+  parameters at their declared types, so in a subclass of `Freyd`, which passes `strong.profunctor.arrows` to
+  `Premonoidal`, it fails with "value category in class Premonoidal is not a legal implementation of `category`"; a
+  self-typed trait mixes in there.
 - **A parent's arguments cannot name the class's members**, since `this` does not exist yet: a type that an instance
   passes to its parent (the points of `Total.LimitOf`) goes into the companion, indexed by the parameter it depends on
   (`LimitOf.Point.Of[diagram.type]`). Nor can a class's type parameters name its parameters: a type that depends on

@@ -128,8 +128,8 @@ object Elgot {
 
   /** The iteration of a trace *T* on coproducts: *p*† = *tr*(*p* ∘ *η*(∇)). */
   open class OfTraced(
-    tracked val traced: Traced.On[StrongPromonad { val monoidal: Cocartesian }],
-  ) extends Elgot(traced.strong) {
+    tracked val traced: Traced.On[Freyd.On[StrongPromonad { val monoidal: Cocartesian }]],
+  ) extends Elgot(traced.premonoidal.strong) {
     import strong.{monoidal, profunctor}
     import monoidal.+
     import profunctor.{P, >>>}

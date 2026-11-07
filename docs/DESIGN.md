@@ -64,6 +64,13 @@ Rejected:
 - **Structures are abstract classes,** because a refinement passes arguments to its parent (`Promonad(category)` extends
   `Endoprofunctor(category, Total)`), which a trait cannot. Type classes without parameters that are not structures
   (`Category.Type`, `Eq`, `Observable`, `Preorder`, `Measure`) are traits.
+- **A trait only at a diamond:** a refinement independent of another refinement of the same class, each with a model
+  without the other, is a parameterless trait with the class as its self-type, and the structures below both mix it
+  in. Symmetry is one: the Freyd category of a non-commutative writer is symmetric but not monoidal, a non-commutative
+  monoid as a discrete category is monoidal but not symmetric, and 𝒮 with × is both. So `SymmetricPremonoidal` is a
+  trait on `Premonoidal`, `Symmetric` extends `Monoidal(…)` and mixes it in, and so does `Freyd`. The trait is not a
+  subtype of its class, so a parameter that needs both is their intersection (`Premonoidal & SymmetricPremonoidal`,
+  `SymmetricPremonoidal.On[C]`).
 - **`Self` only when the structure has its own carrier** (a category's morphisms, a functor's object map, a monoid's
   object). Structures *on* something (`Monoidal`, `Module`, `Strong`, `Restriction`, the trace grid, `Monad`) are
   named, not found by carrier: 𝒮 carries both products and coproducts, and nothing about the carrier tells them apart.
@@ -140,6 +147,16 @@ Rejected:
   val is not a path. Exports satisfy the initialization checkers, but an instance must then annotate each member whose
   type depends on another with its singleton type (`val monoidal: Products.type = Products`): the inferred type fails
   the override check, and any other annotation loses the refinement;
+- the axis as a trait extending its class: it restates the class's parameters at their declared types, so below a
+  class that passes them without forwarding them, such as a subclass of `Freyd`, the refinement that the class adds
+  conflicts with the declared type, and the mixin is rejected;
+- traits with trait parameters: only the first class to mix a trait in passes its arguments, and a refining trait
+  cannot override a parameter, so it cannot narrow it, as `Cartesian` narrows the unit of `Monoidal` to a `Terminal`;
+- a class for symmetric premonoidal categories beside the one for symmetric monoidal categories, related by a view:
+  two definitions of the braiding and its laws;
+- symmetry as a structure on a premonoidal category, as `Closed` is on a monoidal one: a client of a symmetric
+  monoidal category reaches it through two paths (`symmetry.braid` and `symmetry.premonoidal.parallel`), and
+  `Cartesian` hands out its derived braiding through a view;
 - parameters named by single letters, after the mathematics (`C`, `P`, `M`): a letter names different things in
   different structures (`C` is a category, a Conway operator or a closed structure) and collides with the carrier
   aliases (`M.M`, `P.P`). Role names collide in refinements instead (`Product { val category: category.type }`), which
@@ -186,7 +203,7 @@ Each structure sits at the lowest level where its laws can be stated.
 | Row | Over products | Over coproducts | Level |
 | --- | --- | --- | --- |
 | strength | `Bistrong` (⊗ = ×) | `Bistrong` (⊗ = +), also called choice | `Strong`: a profunctor over left modules (a Tambara module); `Bistrong`: over a symmetric **C** acting on itself |
-| trace | `Traced` (×) | `Traced` (+) | a bistrong promonad: superposing needs composition and strength |
+| trace | `Traced` (×) | `Traced` (+) | a symmetric premonoidal category: sliding and superposing need central morphisms |
 | fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a bistrong promonad |
 
 - **Strength over left modules.** `Strong(profunctor, monoidal, module1, module2)` is a profunctor *P*: **C₁**ᵒᵖ ×
@@ -197,27 +214,36 @@ Each structure sits at the lowest level where its laws can be stated.
   nothing of **V**, and like the action it has no congruence law.
   `Bistrong(profunctor, monoidal)`, for a symmetric **M** acting on itself, is the only case with a right action too: it
   adds the right strength *τ*′, `right`, which is *P*(*σ*,*σ*) ∘ *τ* by its law `braiding`. An instance may override
-  *τ*′, as `StrictParser` does to build `Zip(p, Success())` directly, and the law checks the override. `Strong` and
-  `Traced` are defined once, parameterized by the monoidal structure.
+  *τ*′, as `StrictParser` does to build `Zip(p, Success())` directly, and the law checks the override. `Strong` is
+  defined once, parameterized by the monoidal structure, and so is `Traced`, by its symmetric premonoidal category.
 - **Premonoidal before monoidal.** `Premonoidal(category, unit, tensor)` is on a `BinoidalFunctor`, a functor in each
   argument separately: `lmap` maps the left argument (*f* ⦸ *C*) and `rmap` the right one (*C* ⊘ *g*), as for
   profunctors, which inherit them, and there is no tensor of two morphisms. Its unitors and associator are central and
   natural in each component. A bifunctor is a binoidal functor whose two maps interchange, with `bimap`, and a monoidal
   category is a premonoidal one whose morphisms are all central, so `Bifunctor` extends `BinoidalFunctor` and
   `Monoidal` extends `Premonoidal`, overriding its `tensor` with a bifunctor.
-- **A Freyd category is a premonoidal category:** `Freyd(strong)` extends `Premonoidal` on the category of arrows
-  `strong.profunctor.arrows`. Its tensor, `Freyd.Tensor`, has the strengths as `lmap` and `rmap`, and its unitors and
-  associator are those of **C**, as pure arrows. It adds `first`, `second`, `leftToRight` (⋉, `*>*`), `rightToLeft`
-  (⋊, `*<*`) and the laws that connect them to the strength; ⋉ and ⋊ look like a tensor of arrows without being one.
-  It names the strengths after the component an arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of
-  Freyd categories and the grid read as usual. It takes only the strength, a `StrongPromonad`
-  (`Bistrong.On[Promonad]`), whose profunctor is the promonad, as `Traced`, `Elgot` and `Conway` do: the structures on
-  a bistrong promonad share one parameter type.
-- **Traces and fixed points.** The trace laws restrict sliding and superposing to pure arrows, which are central
-  (traced *premonoidal* categories). The trace of a pure arrow is central (`centrality`), Benton and Hyland's centre
-  preservation restricted to pure arrows. The product row has no useful total instance in a strict language: computing
-  ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first. Its instances exist by duality, on 𝒫ᵒᵖ, and the bridges (`OfElgot`,
-  `OfConway`, `OfTraced`) are tested in both rows.
+- **Symmetry is an axis of its own.** `SymmetricPremonoidal`, the trait on `Premonoidal` (§3), adds the braiding *σ*,
+  central, natural in each component separately and its own inverse, and derives the right unitor from it. A symmetric
+  monoidal category is a monoidal one with a symmetry, `Symmetric`, which has no laws of its own: naturality in each
+  component and the interchange law of the tensor give naturality in both. `Cartesian` and `Cocartesian` refine it.
+- **A Freyd category is a symmetric premonoidal category:** `Freyd(strong)` extends `Premonoidal` on the category of
+  arrows `strong.profunctor.arrows` and mixes in `SymmetricPremonoidal`. Its tensor, `Freyd.Tensor`, has the
+  strengths as `lmap` and `rmap`, and its unitors, associator and braiding are those of **C**, as pure arrows. It adds
+  `first`, `second`, `leftToRight` (⋉, `*>*`), `rightToLeft` (⋊, `*<*`) and the laws that connect them to the
+  strength; ⋉ and ⋊ look like a tensor of arrows without being one. It names the strengths after the component an
+  arrow runs on, `first` = *τ*′ and `second` = *τ*, so that the laws of Freyd categories read as usual. It takes only
+  the strength, a `StrongPromonad` (`Bistrong.On[Promonad]`), whose profunctor is the promonad, as `Elgot` and
+  `Conway` do: the structures on a bistrong promonad share one parameter type.
+- **Traces are on a symmetric premonoidal category,** `Traced(premonoidal)`, after Benton and Hyland, and their laws
+  are stated in it, with its whiskerings, unitors, associator and braiding. Only central morphisms interchange with
+  every morphism, so sliding and superposing hold for central morphisms, a premise that the laws state in a note and
+  that the specs meet with pure arrows; the trace of a central morphism is central (`centrality`). In a monoidal
+  category every morphism is central, so a traced symmetric monoidal category is a special case.
+- **Fixed points are on a bistrong promonad,** whose base provides Δ and ∇ (`Conway` and `Elgot`). The bridges build
+  the trace on the Freyd category of the strength (`Traced.OfElgot`, `Traced.OfConway`) and take back a trace on a
+  Freyd category (`Elgot.OfTraced`, `Conway.OfTraced`). The product row has no useful total instance in a strict
+  language: computing ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first. Its instances exist by duality, on 𝒫ᵒᵖ, and the bridges
+  are tested in both rows.
 - **Recursion at the types of arrows,** `Recursion`, is a fixed point in 𝒮 at the type *P*(*A*,*B*), not an operation
   of the category of arrows: a grammar rule refers to itself as a value. In 𝒫 it ties the η-expanded knot; in 𝒮 it is
   guarded. Mutual recursion is a fixed point of a family of arrows, `fixFamily`, with one knot per arrow.
@@ -305,6 +331,10 @@ Rejected:
   the promonad repeats `strong.profunctor`, and with the strength depending on it, a parameter that refines the
   strength (`Freyd { val strong: Bistrong { val monoidal: Cocartesian } }`) makes scalac 3.10.0 hang on every
   constructor call whose using clause depends on that parameter, which is the shape of every spec;
+- traces on a bistrong promonad: the laws then state the structure of the Freyd category through the operations of
+  its base (*η*(*id* ⊗ *h*), *η*(*α*)), and a traced symmetric monoidal category is not an instance;
+- traces on a Freyd category: sliding and superposing would take pure arrows without a premise, but *η* returns into
+  the laws, and a traced symmetric monoidal category is again not an instance;
 - separate duals over products and coproducts, where one `Bistrong.Op(strong)` serves both, and **M**ᵒᵖ as a
   parameter of it, of which only the category and the carrier of the tensor could be checked;
 - solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number

@@ -56,14 +56,14 @@ abstract class Premonoidal(
     import category.IsoLaws
 
     /** (*B* ⊘ *g*) ∘ (*h* ⦸ *C*) = (*h* ⦸ *D*) ∘ (*A* ⊘ *g*) */
-    private def interchangeLeft[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
+    private[category] def interchangeLeft[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
       using ((A * C) --> (B * D)) is Observable
     ): Boolean = {
       (lmap[A, B, C](h) >>> rmap[C, D, B](g)) =?= (rmap[C, D, A](g) >>> lmap[A, B, D](h))
     }
 
     /** (*g* ⦸ *B*) ∘ (*C* ⊘ *h*) = (*D* ⊘ *h*) ∘ (*g* ⦸ *A*) */
-    private def interchangeRight[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
+    private[category] def interchangeRight[A: Obj, B: Obj, C: Obj, D: Obj](h: A --> B, g: C --> D)(
       using ((C * A) --> (D * B)) is Observable
     ): Boolean = {
       (rmap[A, B, C](h) >>> lmap[C, D, B](g)) =?= (lmap[C, D, A](g) >>> rmap[A, B, D](h))

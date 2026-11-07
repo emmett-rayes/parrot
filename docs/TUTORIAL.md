@@ -2767,9 +2767,9 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 | Class | Adds | Instances |
 | --- | --- | --- |
 | `Monoidal(category, unit, tensor)` | a unit object `I`, given by an object `unit` of `category` (`category.Object`), a `tensor`, an endobifunctor on `category`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
-| `Symmetric(K, U, T)` | a braiding σ : A ⊗ B → B ⊗ A with σ ∘ σ = id; laws: naturality, involution, hexagon | `Partial.Product` |
-| `Cartesian(K, U, T)` | the unit is a `Terminal` object, with `discard`, and the tensor is `Products`, a `Product` of every two objects with `fst`, `snd` and `pair` (`&&&`); the isomorphisms are derived | `Total.Products` |
-| `Cocartesian(K, U, T)` | the unit is an `Initial` object, with `absurd`, and the tensor is `Coproducts`, a `Coproduct` of every two objects with `inl`, `inr` and `copair` (`|||`); the isomorphisms are derived | `Total.Coproducts`, `Partial.Coproduct` |
+| `Symmetric(category, unit, tensor)` | a braiding σ : A ⊗ B → B ⊗ A with σ ∘ σ = id, from the trait `SymmetricPremonoidal`; laws: naturality in each component, centrality, involution, hexagon | `Partial.Product` |
+| `Cartesian(category, unit, tensor)` | the unit is a `Terminal` object, with `discard`, and the tensor is `Products`, a `Product` of every two objects with `fst`, `snd` and `pair` (`&&&`); the isomorphisms are derived | `Total.Products` |
+| `Cocartesian(category, unit, tensor)` | the unit is an `Initial` object, with `absurd`, and the tensor is `Coproducts`, a `Coproduct` of every two objects with `inl`, `inr` and `copair` (`|||`); the isomorphisms are derived | `Total.Coproducts`, `Partial.Coproduct` |
 | `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry`, and the internal hom as a profunctor, `internalHom` | `Total.Exponentials` |
 
 `Cartesian` and `Cocartesian` are refinements of `Symmetric`, because being a product is a property of a tensor: it says that the tensor of two objects has the universal property of section 14.1. `Cartesian` refines its parameters as well: its unit is a `Terminal` object, an object with `discard`, and its tensor is a `Products` structure, a bifunctor with the product X × Y of every two objects as a `Product`, an object with projections and pairing (`product[X, Y]`), whose tensor of arrows is the one the universal property gives, f × g = ⟨f ∘ π₁, g ∘ π₂⟩ (law `bimapIsPairing`); `Cartesian` names the projections and pairing of those products `fst`, `snd` and `pair`. So the universal properties are stated once, in `Terminal` and `Products`, and `Cartesian` only derives the associator, unitors and braiding from the projections; its laws check that an instance that overrides them still agrees. `Total.Products` is `Cartesian(Total, Total.UnitIsTerminal, Total.Tuple2IsProducts)`. `Cocartesian` is the dual: its unit is an `Initial` object, an object with `absurd`, its tensor is a `Coproducts` structure, a `Coproduct` of every two objects whose tensor of arrows is f + g = [ι₁ ∘ f, ι₂ ∘ g] (law `bimapIsCopairing`), and it derives the same isomorphisms from the injections. `Total.Coproducts` is `Cocartesian(Total, Total.NothingIsInitial, Total.EitherIsCoproducts)`. `Closed`, on the other hand, is structure *on* a monoidal category, so it takes one as a parameter.
@@ -3196,7 +3196,7 @@ import OptionFreyd.*>*
 val both: ((String, Int)) -> Option[(Int, Int)] = parse *>* positive
 ```
 
-**Premonoidal, not monoidal.** For pure functions, it does not matter whether the left or the right component is processed first: f ⊗ g = (f ⊗ id) then (id ⊗ g) = (id ⊗ g) then (f ⊗ id). This is the **interchange** law, and it says that ⊗ is a bifunctor. For effectful arrows it can fail, because the two orders run the effects in different orders. A logger whose log is a string shows it: if p logs `"a"` and q logs `"b"`, then `p *>* q` logs `"ab"`, and `p *<* q` logs `"ba"`. A category with a tensor that is a bifunctor only in each argument separately is called **premonoidal**, and Freyd categories are premonoidal **[Standard: Power and Robinson, from memory]**. That is why the two operators look like a tensor without being one. In the library, such a tensor is a `BinoidalFunctor`, with `lmap` for an arrow on the left argument and `rmap` for one on the right, but no `bimap`, and `Premonoidal` is the structure on it, whose unitors and associator are central. A `Bifunctor` is a binoidal functor and a `Monoidal` structure a premonoidal one, and the tensor of `Freyd` has the two strengths as its `lmap` and `rmap`. The library's tests record the failure of interchange as a counterexample, for the string logger and for parsers, which consume input in order **[Tested: counterexample]**.
+**Premonoidal, not monoidal.** For pure functions, it does not matter whether the left or the right component is processed first: f ⊗ g = (f ⊗ id) then (id ⊗ g) = (id ⊗ g) then (f ⊗ id). This is the **interchange** law, and it says that ⊗ is a bifunctor. For effectful arrows it can fail, because the two orders run the effects in different orders. A logger whose log is a string shows it: if p logs `"a"` and q logs `"b"`, then `p *>* q` logs `"ab"`, and `p *<* q` logs `"ba"`. A category with a tensor that is a bifunctor only in each argument separately is called **premonoidal**, and Freyd categories are premonoidal **[Standard: Power and Robinson, from memory]**. That is why the two operators look like a tensor without being one. In the library, such a tensor is a `BinoidalFunctor`, with `lmap` for an arrow on the left argument and `rmap` for one on the right, but no `bimap`, and `Premonoidal` is the structure on it, whose unitors and associator are central. A `Bifunctor` is a binoidal functor and a `Monoidal` structure a premonoidal one, and the tensor of `Freyd` has the two strengths as its `lmap` and `rmap`. Symmetry is independent of all this: the trait `SymmetricPremonoidal` adds a braiding to a premonoidal category, and both a `Freyd` category, whose braiding is η(σ), and a `Symmetric` monoidal category mix it in. The library's tests record the failure of interchange as a counterexample, for the string logger and for parsers, which consume input in order **[Tested: counterexample]**.
 
 What does survive is interchange with *pure* arrows. A pure arrow has no effect to order, so it interchanges with every arrow: unit(f) ⋉ q = unit(f) ⋊ q. Arrows with this property are called **central**. Centrality of the pure arrows is not another law: the first law of Definition 17.3 turns first(unit(f)) into unit(f ⊗ id), and the dinaturality of the strength moves a pure arrow on the context from one side of second(q) to the other **[Proved]**.
 
@@ -3382,20 +3382,20 @@ The first column is chapter 17. This chapter introduces the other two, shows how
 
 Think of an arrow p : A ⊗ U → B ⊗ U as a box with two inputs and two outputs. **Feedback** connects the U output back to the U input, and leaves a box from A to B.
 
-**Definition 19.1 (trace).** A **trace** on a promonad P with a strength over a symmetric monoidal structure ⊗ is an operation
+**Definition 19.1 (trace).** A **trace** on a symmetric premonoidal category, such as the Freyd category of a promonad P with a strength over a symmetric monoidal structure ⊗, is an operation
 
 tr : P(A ⊗ U, B ⊗ U) → P(A, B)
 
 satisfying, in diagrammatic order (each law is a picture of wires that can be deformed without changing the box):
 
 - **tightening**: tr(first(f) ⨾ p ⨾ first(g)) = f ⨾ tr(p) ⨾ g: what happens before and after the loop can be moved out of it;
-- **sliding**: tr(p ⨾ (id ⊗ h)) = tr((id ⊗ h) ⨾ p) for pure h : U → V: a pure transformation on the feedback wire can slide around the loop;
+- **sliding**: tr(p ⨾ (id ⊗ h)) = tr((id ⊗ h) ⨾ p) for central h : U → V, such as a pure one: a central transformation on the feedback wire can slide around the loop;
 - **vanishing**: tracing out the unit I does nothing, and tracing out U ⊗ V is tracing out V, then U;
-- **superposing**: tr(α ⨾ (g ⊗ p) ⨾ α⁻¹) = g ⊗ tr(p) for pure g: a wire that does not take part in the loop can be drawn beside it;
+- **superposing**: tr(α ⨾ (g ⊗ p) ⨾ α⁻¹) = g ⊗ tr(p) for central g: a wire that does not take part in the loop can be drawn beside it;
 - **yanking**: tr(σ) = id: feeding one strand of a braid back into the other gives a straight wire;
-- **centrality**: first(tr(f)) ⨾ second(q) = second(q) ⨾ first(tr(f)) for pure f: the trace of a pure arrow interchanges with every arrow q, so it is central.
+- **centrality**: first(tr(f)) ⨾ second(q) = second(q) ⨾ first(tr(f)) for central f: the trace of a central arrow interchanges with every arrow q, so it is central.
 
-**[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4), and sliding and superposing are restricted to pure arrows, which are central, and the trace of a central arrow is central again **[Standard: Benton and Hyland 2003, from memory]**. That is the version the library's `Traced(S)` states, with centrality for the trace of a pure arrow.
+**[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4), and sliding and superposing are restricted to pure arrows, which are central, and the trace of a central arrow is central again **[Standard: Benton and Hyland 2003, from memory]**. That is the version the library's `Traced(premonoidal)` states: it is on a symmetric premonoidal category (`SymmetricPremonoidal`), such as a `Freyd` category, its laws are written with the whiskerings, unitors, associator and braiding of that category, and its tests take pure arrows as the central ones. In a monoidal category every arrow is central, so a traced symmetric monoidal category is a special case.
 
 What feedback *means* depends on the tensor.
 
@@ -4200,11 +4200,11 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Strictly positive.** Of a pattern functor: the recursive parameter never appears to the left of a function arrow. Section 16.2.
 
-**Symmetric monoidal category.** A monoidal category with a braiding σ that is its own inverse. Section 14.5.
+**Symmetric monoidal category.** A monoidal category with a braiding σ that is its own inverse. In the library, `Symmetric`, a `Monoidal` category with the trait `SymmetricPremonoidal`, which a symmetric premonoidal category such as a `Freyd` category has too. Section 14.5.
 
 **Total equality (≐).** Equality of total programs, defined type by type; on functions, agreement on every total argument. Definition 2.5.
 
-**Trace.** Feedback: an operation P(A ⊗ U, B ⊗ U) → P(A, B), with the laws of traced monoidal categories. Definition 19.1.
+**Trace.** Feedback: an operation P(A ⊗ U, B ⊗ U) → P(A, B) on a symmetric premonoidal category, with the laws of traced monoidal categories for central arrows. Definition 19.1.
 
 **`tracked` parameter.** A constructor parameter whose singleton type is kept in the type of the constructed value, which lets structures take their bases as parameters. Section 11.2.
 

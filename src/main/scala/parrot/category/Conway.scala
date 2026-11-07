@@ -133,8 +133,8 @@ object Conway {
 
   /** The fixed point of a trace *T* on products: *p*† = *tr*(*η*(Δ) ∘ *p*). */
   open class OfTraced(
-    tracked val traced: Traced.On[StrongPromonad { val monoidal: Cartesian }],
-  ) extends Conway(traced.strong) {
+    tracked val traced: Traced.On[Freyd.On[StrongPromonad { val monoidal: Cartesian }]],
+  ) extends Conway(traced.premonoidal.strong) {
     import strong.{monoidal, profunctor}
     import monoidal.`*`
     import profunctor.{P, >>>}

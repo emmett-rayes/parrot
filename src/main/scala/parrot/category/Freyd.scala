@@ -9,7 +9,7 @@ import scala.annotation.targetName
   *   - **C** is a symmetric monoidal base category
   *   - the tensor of **K** is the tensor of **C** on objects, with the right strength *τ*′(*p*) = *p* ⦸ *C* and the
   *     left strength *τ*(*p*) = *C* ⊘ *p* as its morphism parts
-  *   - the unit, the unitors and the associator of **K** are those of **C**, as pure arrows
+  *   - the unit, the unitors, the associator and the braiding of **K** are those of **C**, as pure arrows
   *   - *p* ⋉ *q* = *τ*(*q*) ∘ *τ*′(*p*) runs *p*, then *q*
   *   - *p* ⋊ *q* = *τ*′(*p*) ∘ *τ*(*q*) runs *q*, then *p*
   *
@@ -20,7 +20,8 @@ open class Freyd(tracked val strong: StrongPromonad)
       strong.profunctor.arrows,
       strong.profunctor.arrows.Object[strong.monoidal.I](using strong.monoidal.unit.evidence),
       Freyd.Tensor(strong),
-    ) {
+    ),
+      SymmetricPremonoidal {
   import category.{Iso, Obj, -->, <->, >>>}
   import strong.monoidal.***
   import strong.profunctor
@@ -34,7 +35,7 @@ open class Freyd(tracked val strong: StrongPromonad)
     Iso(profunctor.unit(iso.to), profunctor.unit(iso.from))
   }
 
-  def rightUnitor[A: Obj]: (A * I) <-> A = {
+  override def rightUnitor[A: Obj]: (A * I) <-> A = {
     val iso = strong.monoidal.rightUnitor[A]
     Iso(profunctor.unit(iso.to), profunctor.unit(iso.from))
   }
@@ -42,6 +43,10 @@ open class Freyd(tracked val strong: StrongPromonad)
   def associator[A: Obj, B: Obj, C: Obj]: ((A * B) * C) <-> (A * (B * C)) = {
     val iso = strong.monoidal.associator[A, B, C]
     Iso(profunctor.unit(iso.to), profunctor.unit(iso.from))
+  }
+
+  def braid[A: Obj, B: Obj]: (A * B) --> (B * A) = {
+    profunctor.unit(strong.monoidal.braid[A, B])
   }
 
   /** The right strength *τ*′(*p*) = *p* ⦸ *C*: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*). */

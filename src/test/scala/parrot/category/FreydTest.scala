@@ -14,7 +14,7 @@ abstract class FreydSpec(
   types: SampleTypes,
   tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[premonoidal.Tensor[X, Y]],
   unitSample: Sample[premonoidal.I],
-) extends PremonoidalSpec(name, premonoidal, "Freyd")(using promonad.arrows, types, tensor, unitSample) {
+) extends SymmetricPremonoidalSpec(name, premonoidal, "Freyd")(using promonad.arrows, types, tensor, unitSample) {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
   import premonoidal.category.-->

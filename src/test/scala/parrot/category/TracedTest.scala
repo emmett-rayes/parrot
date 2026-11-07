@@ -9,16 +9,16 @@ import Category.Type
 /** The laws of [[Traced]], with feedback that stops. */
 abstract class TracedSpec(
   name: String,
-  tracked val traced: Traced.On[Bistrong.On[Promonad.On[Category { type Obj = Type }]]],
+  tracked val traced: Traced.On[Freyd.On[Bistrong.On[Promonad.On[Category { type Obj = Type }]]]],
 )(using
-  promonad: PromonadFixture.For[traced.strong.profunctor.type],
+  promonad: PromonadFixture.For[traced.premonoidal.strong.profunctor.type],
   types: SampleTypes,
-  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[traced.strong.monoidal.Tensor[X, Y]],
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[traced.premonoidal.Tensor[X, Y]],
 ) extends LawSuite("Traced", name) {
   import types.{T1, T2, T3, T4, given}
   import promonad.*
-  import traced.strong.monoidal.{I, `*`}
-  import traced.strong.profunctor
+  import traced.premonoidal.{I, `*`}
+  import traced.premonoidal.strong.profunctor
   import profunctor.P
   import traced.TracedLaws.*
   import profunctor.category.-->
@@ -70,7 +70,7 @@ abstract class TracedSpec(
 
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
-      sliding[T1, T2, Int, Int](p, shrink)
+      sliding[T1, T2, Int, Int](p, profunctor.unit(shrink))
     }
   }
 
@@ -101,7 +101,7 @@ abstract class TracedSpec(
 
     forAll(observations, gs, ps) { (observe, g, p) =>
       given (P[T3 * T1, T4 * T2] is Observable) = observe
-      superposing(g, p)
+      superposing(profunctor.unit(g), p)
     }
   }
 
@@ -115,7 +115,7 @@ abstract class TracedSpec(
 
     forAll(observations, fs, qs) { (observe, f, q) =>
       given (P[T1 * T3, T2 * T4] is Observable) = observe
-      centrality[T1, T2, T3, T4, Int](f, q)
+      centrality[T1, T2, T3, T4, Int](profunctor.unit(f), q)
     }
   }
 
