@@ -127,39 +127,39 @@ object Sample {
   /** Points of the sum of a diagram (*X*,*Y*) of shape **2**, which are data: a point is determined by its object and
     * its point there, as a tagged union is.
     */
-  given Discrete2SumSample: [X: Sample, Y: Sample] => Sample[Total.Sum[Disc2, Components[X, Y]]] = {
+  given Discrete2ExistsSample: [X: Sample, Y: Sample] => Sample[Total.Exists[Disc2, Components[X, Y]]] = {
     def tagged[A](a: A is Disc2, x: Components[X, Y][A]): Either[X, Y] = {
       a.index match {
         case Disc2.Index.Zero => Left(summon[A =:= 0].substituteCo[[T] =>> Components[X, Y][T]](x))
         case Disc2.Index.One  => Right(summon[A =:= 1].substituteCo[[T] =>> Components[X, Y][T]](x))
       }
     }
-    val either: Total.Sum[Disc2, Components[X, Y]] -> Either[X, Y] = s => tagged[s.A](s.obj, s.at)
-    val sum: Either[X, Y] -> Total.Sum[Disc2, Components[X, Y]] = {
-      case Left(x)  => Total.Sum[Disc2, Components[X, Y], 0](Disc2.Zero, x)
-      case Right(y) => Total.Sum[Disc2, Components[X, Y], 1](Disc2.One, y)
+    val either: Total.Exists[Disc2, Components[X, Y]] -> Either[X, Y] = s => tagged[s.A](s.obj, s.at)
+    val exists: Either[X, Y] -> Total.Exists[Disc2, Components[X, Y]] = {
+      case Left(x)  => Total.Exists[Disc2, Components[X, Y], 0](Disc2.Zero, x)
+      case Right(y) => Total.Exists[Disc2, Components[X, Y], 1](Disc2.One, y)
     }
     val eithers = EitherSample[X, Y]
-    val sumIsEq: Total.Sum[Disc2, Components[X, Y]] is Eq = new Eq {
-      type Self = Total.Sum[Disc2, Components[X, Y]]
+    val existsIsEq: Total.Exists[Disc2, Components[X, Y]] is Eq = new Eq {
+      type Self = Total.Exists[Disc2, Components[X, Y]]
 
       def equal(s: Self, t: Self): Boolean = {
         eithers.eq.equal(either(s), either(t))
       }
     }
-    Sample(eithers.gen.map(sum), eithers.cogen.contramap(either), sumIsEq, eithers.inhabited)
+    Sample(eithers.gen.map(exists), eithers.cogen.contramap(either), existsIsEq, eithers.inhabited)
   }
 
   /** The sum of the empty diagram, which has no points: it is never generated. */
-  given EmptySumSample: Sample[Total.Sum[Absurd, [A] =>> Nothing]] = {
-    val sumIsEq: Total.Sum[Absurd, [A] =>> Nothing] is Eq = new Eq {
-      type Self = Total.Sum[Absurd, [A] =>> Nothing]
+  given EmptyExistsSample: Sample[Total.Exists[Absurd, [A] =>> Nothing]] = {
+    val existsIsEq: Total.Exists[Absurd, [A] =>> Nothing] is Eq = new Eq {
+      type Self = Total.Exists[Absurd, [A] =>> Nothing]
 
       def equal(s: Self, t: Self): Boolean = {
         true
       }
     }
-    Sample(Gen.fail, Cogen[Unit].contramap(_ => ()), sumIsEq, inhabited = false)
+    Sample(Gen.fail, Cogen[Unit].contramap(_ => ()), existsIsEq, inhabited = false)
   }
 
   /** Samples of pairs from samples of their components, for all component types: the samples of the carrier of a
@@ -180,8 +180,8 @@ object Sample {
   /** Samples of sums of shape **2** from samples of their points, for all point types: the samples of the carrier of
     * the coproducts of colimits.
     */
-  given Discrete2SumSamples: ([X, Y] => (Sample[X], Sample[Y]) ?-> Sample[Total.Sum[Disc2, Components[X, Y]]]) = {
-    [X, Y] => (_: Sample[X], _: Sample[Y]) ?=> Discrete2SumSample[X, Y]
+  given Discrete2ExistsSamples: ([X, Y] => (Sample[X], Sample[Y]) ?-> Sample[Total.Exists[Disc2, Components[X, Y]]]) = {
+    [X, Y] => (_: Sample[X], _: Sample[Y]) ?=> Discrete2ExistsSample[X, Y]
   }
 
   /** Samples of tagged unions from samples of their alternatives, for all alternative types. */

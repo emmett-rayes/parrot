@@ -282,7 +282,7 @@ Each structure sits at the lowest level where its laws can be stated.
   `Cocone(diagram, apex)`, `Colimit(diagram, apex)` with `factor` out of its apex, `Colimits.InCategory` and
   `Colimits.DiscreteInCategory` with the apex `Apex[O, D]`, asked for through `Colimits.OfDiagram` and
   `Colimits.OfDiscreteDiagram`. 𝒮 has all of them by the dual construction, `Total.ColimitOf` (`Total.Colimits`): the
-  sum of the points is an existential type, `Total.Sum[O, F]`, a point of *F*[*A*] together with the evidence for its
+  sum of the points is an existential type, `Total.Exists[O, F]`, a point of *F*[*A*] together with the evidence for its
   object *A*, a type that it hides, and the coequalizer that glues *x* to *D*(*f*)(*x*) is made by abstraction. Points
   are private to the construction (`ColimitOf.Point`) and only the factorization reads them, through the legs of a
   cocone, so glued points are indistinguishable as long as the cocones are lawful; to clients, the abstract type is the

@@ -298,7 +298,7 @@ object Total extends Category {
     *
     * This models existential types.
     */
-  abstract class Sum[O <: Type, F[_]] extends caps.Pure {
+  abstract class Exists[O <: Type, F[_]] extends caps.Pure {
 
     /** The object *A* of the point. */
     type A
@@ -310,11 +310,11 @@ object Total extends Category {
     def at: F[A]
   }
 
-  object Sum {
+  object Exists {
 
     /** The point *x* of *F*[*X*] at the object *X*. */
-    def apply[O <: Type, F[_], X](o: X is O, x: F[X]): Sum[O, F] = {
-      new Sum[O, F] {
+    def apply[O <: Type, F[_], X](o: X is O, x: F[X]): Exists[O, F] = {
+      new Exists[O, F] {
         type A = X
 
         def obj: X is O = o
@@ -338,7 +338,7 @@ object Total extends Category {
     import ColimitOf.Point
 
     def leg[A: J.Obj as obj]: diagram.F[A] -> X = {
-      x => Point(diagram)(Sum(obj, x))
+      x => Point(diagram)(Exists(obj, x))
     }
 
     def factor(cocone: Cocone.Under[diagram.type]): X -> cocone.X = {
@@ -354,7 +354,7 @@ object Total extends Category {
       * apart.
       */
     final class Point private[ColimitOf] (tracked val diagram: Functor.Into[Total.type])(
-      private[ColimitOf] val sum: Sum[diagram.source.Obj, diagram.F],
+      private[ColimitOf] val sum: Exists[diagram.source.Obj, diagram.F],
     ) extends caps.Pure
 
     object Point {
@@ -379,7 +379,7 @@ object Total extends Category {
   /** The colimit of a diagram *D*: **J** → 𝒮 of a discrete shape.
     *
     * Represents the colimit (*X*, *ψ*), where
-    *   - *X* = Σ_*A* *D*[*A*] is the type of points *x* of *D*[*A*] tagged with *A* ([[Sum]])
+    *   - *X* = Σ_*A* *D*[*A*] is the type of points *x* of *D*[*A*] tagged with *A* ([[Exists]])
     *   - *ψ*_*A*(*x*) = (*A*, *x*)
     *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*)
     *
@@ -387,11 +387,11 @@ object Total extends Category {
     */
   final class DiscreteColimitOf(
     tracked override val diagram: Functor.Into[Total.type] { val source: Category { type Self <: =:= } },
-  ) extends Colimit(diagram, diagram.target.Object[Sum[diagram.source.Obj, diagram.F]]) {
+  ) extends Colimit(diagram, diagram.target.Object[Exists[diagram.source.Obj, diagram.F]]) {
     import diagram.source as J
 
     def leg[A: J.Obj as obj]: diagram.F[A] -> X = {
-      x => Sum(obj, x)
+      x => Exists(obj, x)
     }
 
     def factor(cocone: Cocone.Under[diagram.type]): X -> cocone.X = {
@@ -405,7 +405,7 @@ object Total extends Category {
     */
   object DiscreteColimits extends category.Colimits.DiscreteInCategory(Total) {
     type D                     = Functor.Into[Total.type] { val source: Category { type Self <: =:= } }
-    type Apex[O <: Type, D[_]] = Sum[O, D]
+    type Apex[O <: Type, D[_]] = Exists[O, D]
 
     def colimit(functor: D)
       : Colimit.Of[functor.type] { val apex: Apex[functor.source.Obj, functor.F] is functor.target.Object } = {
