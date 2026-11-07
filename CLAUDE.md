@@ -4,6 +4,7 @@ Onboarding for AI coding agents (`AGENTS.md` points here). The reasons behind ev
 `docs/DESIGN.md`, together with the rejected alternatives and what the library leaves out on purpose; the known
 compiler issues, with reproductions, are in `docs/compiler-issues.md`. Check them before adding a construct or fighting
 the compiler. Treat the design decisions as settled; reopen one only with a new argument, and record the result there.
+`docs/CONCEPTS.md` maps how the structures of `parrot.category` relate.
 
 ## What Parrot is
 
@@ -46,7 +47,8 @@ pants check <file>                     # fast single-file type-check; also: pant
 
 **Before finishing a change:** `testFull` passes with no warnings. After touching `StrictParser`, `Scanner`, `CharSet`
 or `Fn`, run the JSON benchmark (JSON_checker 34/34, ≈ 110 MiB/s). After changing the tutorial, or library code it
-uses, run the snippet checker.
+uses, run the snippet checker. After adding or renaming a structure, or changing its parameters or what it extends,
+update `docs/CONCEPTS.md`.
 
 ## Compiler flags and their idioms
 

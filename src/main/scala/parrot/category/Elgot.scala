@@ -15,7 +15,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
   import strong.{monoidal, profunctor}
   import monoidal.+
   import profunctor.{P, >>>}
-  import profunctor.category.{Obj, -->}
+  import profunctor.category.{Obj, identity, -->}
 
   /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*).
     *
@@ -57,7 +57,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       using P[X, A] is Observable
     ): Boolean = {
       iterate[A, X](profunctor.unit(g) >>> p)
-        =?= (profunctor.unit(g) >>> iterate[A, Y](p >>> strong.left[X, Y, A](profunctor.unit(g))))
+        =?= (profunctor.unit(g) >>> iterate[A, Y](p >>> profunctor.unit(monoidal.parallel(identity[A], g))))
     }
 
     /** ([*ι*₁,*g*] ∘ *f*)† = [*id*,([*ι*₁,*f*] ∘ *g*)†] ∘ *f* for *f*: *X* → *A* + *Y* and *g*: *Y* → *A* + *X*
@@ -69,9 +69,9 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       using P[X, A] is Observable
     ): Boolean = {
       val fg = f >>> strong.left[Y, A + X, A](g) >>>
-        profunctor.unit(monoidal.copair(monoidal.inl[A, X], profunctor.category.identity[A + X]))
+        profunctor.unit(monoidal.copair(monoidal.inl[A, X], identity[A + X]))
       val gf = g >>> strong.left[X, A + Y, A](f) >>>
-        profunctor.unit(monoidal.copair(monoidal.inl[A, Y], profunctor.category.identity[A + Y]))
+        profunctor.unit(monoidal.copair(monoidal.inl[A, Y], identity[A + Y]))
       iterate[A, X](fg) =?= (f >>> strong.left[Y, A, A](iterate[A, Y](gf)) >>> profunctor.unit(monoidal.codiagonal[A]))
     }
 
@@ -83,9 +83,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       using P[X, A] is Observable
     ): Boolean = {
       iterate[A, X](iterate[A + X, X](p))
-        =?= iterate[A, X](
-          p >>> profunctor.unit(monoidal.copair(profunctor.category.identity[A + X], monoidal.inr[A, X])),
-        )
+        =?= iterate[A, X](p >>> profunctor.unit(monoidal.copair(identity[A + X], monoidal.inr[A, X])))
     }
 
     /** If *η*(*id* + *h*) ∘ *f* = *g* ∘ *η*(*h*) for pure *h*: *X* → *Y*, then *f*† = *g*† ∘ *η*(*h*).

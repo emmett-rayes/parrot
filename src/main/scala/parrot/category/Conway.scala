@@ -15,7 +15,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
   import strong.{monoidal, profunctor}
   import monoidal.`*`
   import profunctor.{P, >>>}
-  import profunctor.category.{Obj, -->}
+  import profunctor.category.{Obj, identity, -->}
 
   /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*).
     *
@@ -57,7 +57,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       using P[A, X] is Observable
     ): Boolean = {
       fix[A, X](f >>> profunctor.unit(g))
-        =?= (fix[A, Y](strong.left[Y, X, A](profunctor.unit(g)) >>> f) >>> profunctor.unit(g))
+        =?= (fix[A, Y](profunctor.unit(monoidal.parallel(identity[A], g)) >>> f) >>> profunctor.unit(g))
     }
 
     /** (*f* ∘ ⟨*π*₁,*g*⟩)† = *f* ∘ ⟨*id*,(*g* ∘ ⟨*π*₁,*f*⟩)†⟩ for *f*: *A* × *Y* → *X* and *g*: *A* × *X* → *Y*
@@ -68,9 +68,9 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[A * Y, X], g: P[A * X, Y])(
       using P[A, X] is Observable
     ): Boolean = {
-      val keepG = profunctor.unit(monoidal.pair(monoidal.fst[A, X], profunctor.category.identity[A * X])) >>>
+      val keepG = profunctor.unit(monoidal.pair(monoidal.fst[A, X], identity[A * X])) >>>
         strong.left[A * X, Y, A](g)
-      val keepF = profunctor.unit(monoidal.pair(monoidal.fst[A, Y], profunctor.category.identity[A * Y])) >>>
+      val keepF = profunctor.unit(monoidal.pair(monoidal.fst[A, Y], identity[A * Y])) >>>
         strong.left[A * Y, X, A](f)
       fix[A, X](keepG >>> f)
         =?= (profunctor.unit(monoidal.diagonal[A]) >>> strong.left[A, Y, A](fix[A, Y](keepF >>> g)) >>> f)
@@ -84,7 +84,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       using P[A, X] is Observable
     ): Boolean = {
       fix[A, X](fix[A * X, X](p))
-        =?= fix[A, X](profunctor.unit(monoidal.pair(profunctor.category.identity[A * X], monoidal.snd[A, X])) >>> p)
+        =?= fix[A, X](profunctor.unit(monoidal.pair(identity[A * X], monoidal.snd[A, X])) >>> p)
     }
 
     /** If *g* ∘ *η*(*id* × *h*) = *η*(*h*) ∘ *f* for pure *h*: *X* → *Y*, then *η*(*h*) ∘ *f*† = *g*†.
