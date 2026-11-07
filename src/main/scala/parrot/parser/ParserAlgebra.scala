@@ -9,29 +9,30 @@ import scala.util.matching.Regex
 
 import category.Category.Type
 
-/** An algebra of parsers.
+/** An algebra of parsers on a category of pure functions.
   *
-  * A parser *P*(*A*,*B*) consumes a prefix of the input while turning a semantic input *A* into a semantic result *B*.
-  * No combinator is primitive except those that read the input. Each of the others is an operation of one of the
-  * categorical structures the algebra is built from, where
-  *   - [[parsers]]: parsers form a promonad over the category of pure functions (*unit*, ⨾)
-  *   - [[products]]: pairs of semantic values, in the category of pure functions
-  *   - [[coproducts]]: tagged unions of semantic values, in the category of pure functions
-  *   - [[zipping]]: a strength over products, which allows parsers to manipulate pairs of semantic values
-  *   - [[branching]]: a strength over coproducts, which allows parsers to manipulate tagged unions of semantic values
-  *   - [[choice]]: a classical restriction structure on parsers (0, *p̄*, *p̄*ᶜ, ⊳)
-  *   - [[loops]]: guarded iteration (†, and the repetition combinators derived from it)
-  *   - [[knots]]: guarded recursion at the types of parsers (*fix*)
-  *
-  * Iteration and recursion are guarded by the input: a loop step that continues, or a recursive call, must come after
-  * input has been consumed; otherwise that step or call fails. So every parser terminates.
-  *
-  * Parsers report diagnostics: what they expected where they failed furthest ([[Expected]]), a writer effect produced
-  * on success and on failure. Lookahead and negation are silent: they report nothing about the parser they test.
+  * Represents parsers *P*(*A*,*B*), which consume a prefix of the input while turning a semantic input *A* into a
+  * semantic result *B*, where
+  *   - [[parsers]] runs one parser after another on the remaining input, and turns pure functions into parsers
+  *   - [[products]] combines several results into one, as a pair
+  *   - [[coproducts]] records which of two alternatives produced a result, as a tagged union
+  *   - [[zipping]] runs a parser on one component of a pair, which gives concatenation
+  *   - [[branching]] runs a parser on one side of a tagged union, so that the tag decides which parser runs
+  *   - [[choice]] gives ordered choice with backtracking, lookahead, negation and failure
+  *   - [[loops]] runs a parser repeatedly, which gives repetition
+  *   - [[knots]] lets a parser refer to itself, which gives recursive rules
   *
   * An interpreter chooses the structures and implements the primitives `lift`, `literal`, `regex`, `rule` and
-  * `diagnose`. It may override a derived combinator with a faster implementation of the same equation.
+  * `diagnose`. Every other combinator is derived. An interpreter may override one with a faster implementation as long
+  * as it respects the same equations. See [[ParserAlgebra.ParserLaws]].
+  *
+  * @note Iteration and recursion are guarded by the input. A loop step that continues, or a recursive call, fails
+  *   unless input was consumed before it, so every parser terminates.
+  *
+  * @note Diagnostics are a writer effect, produced on success and on failure. Lookahead and negation are silent with
+  *   respect to diagnostics. See [[Expected]].
   */
+
 abstract class ParserAlgebra(
   tracked val parsers: Promonad.On[Category { type Obj = Type }],
   tracked val products: Cartesian.On[parsers.category.type] {
@@ -59,8 +60,11 @@ abstract class ParserAlgebra(
   /** Includes a pure Scala function among the pure functions of the algebra. */
   def lift[A, B](f: A -> B): A --> B
 
-  /** Names `p` as the rule `label`, for diagnostics. It runs `p`; where `p` fails at or before its start, it reports
-    * that it expected `label` there, and otherwise it puts every expectation of `p` in the context of `label`.
+  /** Names `p` as the rule `label`.
+    *
+    * This is used for diagnostics, where the rule parses exactly as `p` does. If `p` fails without expecting anything
+    * past its start, the rule reports that it expected `label` there. Otherwise, it reports what `p` expected, with
+    * `label` added to the context of each expectation.
     */
   def rule[A, B](p: P[A, B], label: String): P[A, B]
 
@@ -407,13 +411,13 @@ abstract class ParserAlgebra(
     final def iterate(using DummyImplicit): P[A, B] = ParserAlgebra.this.iterate(p)
 
   /** The equations of parsing expression grammars, in the vocabulary of parsers. Most are laws of the structures the
-    * algebra is built from; checking them on the combinators also checks the overrides of interpreters.
+    * algebra is built from. Checking the laws on the combinators also checks the overrides of interpreters.
     *
     * The laws come in two tiers. Equations hold for results, offsets and diagnostics, observed with an [[Observable]].
     * Inequations *p* ⊑ *q* say that *p* and *q* have the same results and offsets and that *q* reports at least what
-    * *p* reports, observed with a [[Preorder]]: they are the equations that only hold up to diagnostics, because a
-    * silent lookahead or a failure forgets what the parser before it expected. Every combinator preserves ⊑, so parsers
-    * are enriched over preorders.
+    * *p* reports, observed with a [[Preorder]]. These are equations that only hold up to diagnostics, because a silent
+    * lookahead or a failure forgets what the parser before it expected. Every combinator preserves ⊑, so parsers are
+    * enriched over preorders.
     */
   object ParserLaws {
 

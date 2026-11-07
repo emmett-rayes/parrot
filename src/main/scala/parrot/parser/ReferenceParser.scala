@@ -5,13 +5,15 @@ import category.*
 
 import scala.util.matching.Regex
 
-/** The reference interpreter of [[ParserAlgebra]]: the specification against which other interpreters are checked.
+/** The reference interpreter of [[ParserAlgebra]].
   *
-  * A parser is a Kleisli arrow of a monad built from the library's transformers: the state transformer over the failure
-  * transformer over the writer of [[Expected]], with semantic input *A* and result *B*. Every structure is derived
-  * from that monad: backtracking choice and silent lookahead from the classical structure [[ReferenceParser.Silent]]
-  * lifted through the state, iteration and recursion guarded by the length of the remaining input. It is slow and not
-  * stack-safe on deep nesting; it is meant to be obviously right.
+  * A parser is a Kleisli arrow of a monad built from the state transformer over the failure and the writer transformer
+  * over the diagnostics. Every structure is derived from that monad. Backtracking choice and silent lookahead from a
+  * classical structure lifted through the state. Iteration and recursion are guarded by the length of the remaining
+  * input.
+  *
+  * This interpreter is slow and not stack-safe on deep nesting. It is meant to be obviously right and serves as the
+  * specification against which other interpreters are checked.
   */
 class ReferenceParser
     extends ParserAlgebra(
@@ -86,8 +88,8 @@ object ReferenceParser {
     *   - *m* ⊳ *n* reports what *m* expected and, where *m* fails, also what *n* expected
     *
     * With this structure **R2**, **R3** and the laws of zero and complement hold exactly, and **R1** and **R4** up to
-    * diagnostics (see [[ParserAlgebra.ParserLaws]]). Keeping the diagnostics of tests, as [[OptionT.ClassicalOf]] does,
-    * would make **R1** and **R4** exact but break **R2** and the laws of zero and complement.
+    * diagnostics. Keeping the diagnostics of tests, as [[OptionT.ClassicalOf]] does, would make **R1** and **R4** exact
+    * but break **R2** and the laws of zero and complement.
     */
   object Silent extends Monad.Classical(Outcome) {
 

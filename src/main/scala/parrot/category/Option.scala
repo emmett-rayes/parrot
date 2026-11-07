@@ -9,10 +9,6 @@ import Category.Type
   *   - *T*[*A*] = *M*[1 + *A*]: the effects of *M*, then a result or none ([[OptionT.FunctorOf]])
   *   - *η*(*a*) = *η*′(*Some*(*a*))
   *   - *μ* runs the inner computation of a result and keeps a failure, with the effects of *M* in both cases
-  *
-  * Over the identity, it is `Option` ([[Monad.OptionIsMonad]]). Over a writer, *T*[*A*] = *W* × (1 + *A*): the output
-  * is produced whether or not the computation fails. This is the shape of a parser that reports what it expected on
-  * success and on failure.
   */
 open class OptionT(tracked val monad: Monad.On[Total.type]) extends Monad(OptionT.FunctorOf(monad)) {
 
