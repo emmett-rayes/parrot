@@ -70,3 +70,4 @@ abstract class CocartesianSpec(
 class ScalaCoproductIsCocartesianTest   extends CocartesianSpec(Total.Coproducts)
 class PartialCoproductIsCocartesianTest extends CocartesianSpec(Partial.Coproduct)
 class TotalColimitIsCocartesianTest     extends CocartesianSpec(ColimitCocartesian)
+class PartialColimitIsCocartesianTest   extends CocartesianSpec(PartialColimitCocartesian)

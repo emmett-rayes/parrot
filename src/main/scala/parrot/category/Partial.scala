@@ -241,6 +241,43 @@ object Partial extends Category {
   /** Programs run on one side of a tagged union. */
   object Choice extends Bistrong.Hom(Programs, Coproduct)
 
+  /** The colimit of a diagram *D*: **J** → 𝒫 of a discrete shape.
+    *
+    * Represents the colimit (*X*, *ψ*), where
+    *   - *X* = Σ_*A* *D*[*A*] is the type of points *x* of *D*[*A*] tagged with *A* ([[Total.Exists]])
+    *   - *ψ*_*A*(*x*) = (*A*, *x*)
+    *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*)
+    *
+    * The only morphisms of **J** are identities, so no two points are glued.
+    */
+  final class DiscreteColimitOf(
+    tracked override val diagram: Functor.Into[Partial.type] { val source: Category { type Self <: =:= } },
+  ) extends Colimit(diagram, diagram.target.Object[Total.Exists[diagram.source.Obj, diagram.F]]) {
+    import diagram.source as J
+
+    def leg[A: J.Obj as obj]: diagram.F[A] ~> X = {
+      x => Total.Exists(obj, x)
+    }
+
+    def factor(cocone: Cocone.Under[diagram.type]): X ~> cocone.X = {
+      s => cocone.leg[s.A](using s.obj).run(s.at)
+    }
+  }
+
+  /** The colimits of every diagram of a discrete shape in 𝒫.
+    *
+    * Every diagram with object map *D* on a shape with objects *O* has the colimit given by [[DiscreteColimitOf]].
+    */
+  object DiscreteColimits extends Colimits.DiscreteInCategory(Partial) {
+    type D                     = Functor.Into[Partial.type] { val source: Category { type Self <: =:= } }
+    type Apex[O <: Type, D[_]] = Total.Exists[O, D]
+
+    def colimit(functor: D)
+      : Colimit.Of[functor.type] { val apex: Apex[functor.source.Obj, functor.F] is functor.target.Object } = {
+      DiscreteColimitOf(functor)
+    }
+  }
+
   /** 𝒫 is a restriction category, where
     *   - *p̄* = *a* ↦ (*p*(*a*); *a*) runs *p* for its termination only
     *

@@ -17,3 +17,12 @@ object ColimitInitial extends Initial.FromColimit(Total.DiscreteColimitOf(Termin
 
 /** 𝒮 as a cocartesian category from its discrete colimits. */
 object ColimitCocartesian extends Cocartesian(Total, ColimitInitial, ColimitCoproducts)
+
+/** The binary coproducts of 𝒫 from its colimits of shape **2**: the points of two types, tagged by their object. */
+object PartialColimitCoproducts extends Coproducts.FromColimits(Partial.DiscreteColimits)
+
+/** The initial object of 𝒫 from its colimit of the empty diagram: the sum with no points. */
+object PartialColimitInitial extends Initial.FromColimit(Partial.DiscreteColimitOf(Terminal.EmptyDiagram(Partial)))
+
+/** 𝒫 as a cocartesian category from its discrete colimits. */
+object PartialColimitCocartesian extends Cocartesian(Partial, PartialColimitInitial, PartialColimitCoproducts)

@@ -31,3 +31,4 @@ abstract class InitialSpec(tracked val initial: Initial.Of[Category { type Obj =
 class ScalaNothingIsInitialTest   extends InitialSpec(Total.NothingIsInitial)
 class PartialNothingIsInitialTest extends InitialSpec(Partial.NothingIsInitial)
 class TotalColimitIsInitialTest   extends InitialSpec(ColimitInitial)
+class PartialColimitIsInitialTest extends InitialSpec(PartialColimitInitial)
