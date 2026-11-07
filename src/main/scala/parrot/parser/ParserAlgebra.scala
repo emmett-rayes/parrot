@@ -159,7 +159,10 @@ abstract class ParserAlgebra(
 
   // ==== Choice: the classical restriction structure ====
 
-  export choice.orElse
+  /** Runs *p*, or *q* on the same input where *p* fails: ordered choice, the override *p* ⊳ *q*. */
+  final def orElse[A, B](p: P[A, B], q: P[A, B]): P[A, B] = {
+    choice.orElse(p, q)
+  }
 
   /** Fails without consuming anything: the restriction zero 0. */
   final def failure[A, B]: P[A, B] = {
