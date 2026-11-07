@@ -245,6 +245,11 @@ Each structure sits at the lowest level where its laws can be stated.
   Freyd category (`Elgot.OfTraced`, `Conway.OfTraced`). The product row has no useful total instance in a strict
   language: computing ⟨*id*,*p*†⟩ ⨾ *p* requires *p*† first. Its instances exist by duality, on 𝒫ᵒᵖ, and the bridges
   are tested in both rows.
+- **Kleisli exponentials are on a bistrong promonad** as well, `ClosedFreyd(strong)`, after Power and Thielecke: an
+  object *A* ⇒ *B* of **C**, evaluation as an arrow and currying into **C**, *P*(*X* ⊗ *A*,*B*) ≅ **C**(*X*,*A* ⇒ *B*),
+  so a curried arrow is pure. 𝒫 has them over 𝒮 (`Partial.Exponentials`, on `Partial.Computations`), although it is
+  not closed for its own pairs, and so does every Kleisli promonad over a monad on 𝒮 (`Kleisli.ClosedFreydOf`). Over a
+  hom promonad they are a `Closed` structure.
 - **Recursion at the types of arrows,** `Recursion`, is a fixed point in 𝒮 at the type *P*(*A*,*B*), not an operation
   of the category of arrows: a grammar rule refers to itself as a value. In 𝒫 it ties the η-expanded knot; in 𝒮 it is
   guarded. Mutual recursion is a fixed point of a family of arrows, `fixFamily`, derived from `fix` by Bekić's theorem
@@ -333,6 +338,8 @@ Rejected:
   the promonad repeats `strong.profunctor`, and with the strength depending on it, a parameter that refines the
   strength (`Freyd { val strong: Bistrong { val monoidal: Cocartesian } }`) makes scalac 3.10.0 hang on every
   constructor call whose using clause depends on that parameter, which is the shape of every spec;
+- closed Freyd categories as a subclass of `Freyd`: the exponential is structure on the strength, as `Closed` is on a
+  monoidal category, and the structures on a bistrong promonad share one parameter type;
 - traces on a bistrong promonad: the laws then state the structure of the Freyd category through the operations of
   its base (*η*(*id* ⊗ *h*), *η*(*α*)), and a traced symmetric monoidal category is not an instance;
 - traces on a Freyd category: sliding and superposing would take pure arrows without a premise, but *η* returns into

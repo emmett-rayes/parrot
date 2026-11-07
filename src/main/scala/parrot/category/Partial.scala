@@ -83,6 +83,22 @@ object Partial extends Category {
   /** 𝒫 as a promonad over itself. */
   object Programs extends Promonad.Hom(Partial)
 
+  /** 𝒫 as a promonad over 𝒮: programs, with the functions of 𝒮 as pure arrows.
+    *
+    * Its category of arrows is 𝒫, and its functor of pure arrows is [[Inclusion]].
+    */
+  object Computations extends Promonad(Total) {
+    type Self = Partial
+
+    def unit[A: Type, B: Type](f: A -> B): A ~> B = {
+      fromTotal(f)
+    }
+
+    def multiply[A: Type, B: Type, C: Type](g: B ~> C, f: A ~> B): A ~> C = {
+      Partial.compose(g, f)
+    }
+  }
+
   /** Pairs as a bifunctor on 𝒫: *f* × *g* runs *f*, then *g*. */
   object Tuple2IsBifunctor extends Endobifunctor(Partial) {
     type Self = Tuple2
@@ -240,6 +256,40 @@ object Partial extends Category {
 
   /** Programs run on one side of a tagged union. */
   object Choice extends Bistrong.Hom(Programs, Coproduct)
+
+  /** Programs run side by side on the products of 𝒮: the first component first. */
+  object ComputationsProduct extends Bistrong(Computations, Total.Products) {
+    def left[A: Type, B: Type, C: Type]: (A ~> B) -> ((C, A) ~> (C, B)) = {
+      p => (c, a) => (c, p(a))
+    }
+  }
+
+  /** Programs run on one side of a coproduct of 𝒮. */
+  object ComputationsCoproduct extends Bistrong(Computations, Total.Coproducts) {
+    def left[A: Type, B: Type, C: Type]: (A ~> B) -> (Either[C, A] ~> Either[C, B]) = {
+      p => {
+        case Left(c)  => Left(c)
+        case Right(a) => Right(p(a))
+      }
+    }
+  }
+
+  /** The Kleisli exponentials of 𝒫: program types, with running and currying. */
+  object Exponentials extends ClosedFreyd(ComputationsProduct) {
+    type Exp[A, B] = A ~> B
+
+    def objects[A: Type, B: Type]: (A ~> B) is Type = {
+      Type.TIsType
+    }
+
+    def eval[A: Type, B: Type]: (A ~> B, A) ~> B = {
+      (p, a) => p(a)
+    }
+
+    def curry[A: Type, B: Type, X: Type](p: (X, A) ~> B): X -> (A ~> B) = {
+      x => a => p((x, a))
+    }
+  }
 
   /** The colimit of a diagram *D*: **J** → 𝒫 of a discrete shape.
     *

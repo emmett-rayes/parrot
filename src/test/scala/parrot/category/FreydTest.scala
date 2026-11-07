@@ -132,3 +132,17 @@ class PartialChoiceIsFreydTest extends FreydSpec("Partial on Coproduct", Freyd(P
     forAll(interchange)(holds => holds)
   }
 }
+
+class PartialComputationsProductIsFreydTest
+    extends FreydSpec("Computations on Product", Freyd(Partial.ComputationsProduct)) {
+  law("interchange", "holds: programs diverge in either order if one side does") {
+    forAll(interchange)(holds => holds)
+  }
+}
+
+class PartialComputationsCoproductIsFreydTest
+    extends FreydSpec("Computations on Coproduct", Freyd(Partial.ComputationsCoproduct)) {
+  law("interchange", "holds: only one side runs") {
+    forAll(interchange)(holds => holds)
+  }
+}

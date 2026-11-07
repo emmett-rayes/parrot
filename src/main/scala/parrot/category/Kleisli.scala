@@ -129,6 +129,29 @@ object Kleisli {
     }
   }
 
+  /** The Kleisli exponentials of a Kleisli promonad over a monad *M* on 𝒮, where
+    *   - *A* ⇒ *B* = *A* → *M*[*B*]
+    *   - *ev*(*p*,*a*) = *p*(*a*)
+    *   - Λ(*p*) = *x* ↦ *a* ↦ *p*(*x*,*a*)
+    */
+  open class ClosedFreydOf(tracked override val strong: ProductStrength) extends ClosedFreyd(strong) {
+    import strong.profunctor.monad.M
+
+    type Exp[A, B] = A -> M[B]
+
+    def objects[A: Type, B: Type]: (A -> M[B]) is Type = {
+      Type.TIsType
+    }
+
+    def eval[A: Type, B: Type]: ((A -> M[B], A)) -> M[B] = {
+      (p, a) => p(a)
+    }
+
+    def curry[A: Type, B: Type, X: Type](p: ((X, A)) -> M[B]): X -> A -> M[B] = {
+      x => a => p((x, a))
+    }
+  }
+
   /** The Kleisli promonad of `Option` on 𝒮: functions that may fail. */
   object OptionKleisli extends Kleisli(Monad.OptionIsMonad)
 

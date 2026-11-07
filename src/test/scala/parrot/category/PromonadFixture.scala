@@ -60,6 +60,9 @@ object PromonadFixture {
   /** 𝒫 at its total programs, as a promonad over itself. */
   given PartialProgramsIsFixture: For[Partial.Programs.type] = PartialProgramsFixture
 
+  /** 𝒫 at its total programs, as a promonad over 𝒮. */
+  given PartialComputationsIsFixture: For[Partial.Computations.type] = PartialComputationsFixture
+
   /** 𝒫ᵒᵖ as a promonad over itself, at its total programs. */
   given PartialOpIsFixture: For[PartialFixedPoints.strong.profunctor.type] = PartialOpFixture
 
@@ -85,6 +88,17 @@ object PromonadFixture {
 /** 𝒫 at its total programs, as a promonad over itself. */
 object PartialProgramsFixture extends PromonadFixture("Partial", Partial.Programs) {
   val category: PartialFixture.type = PartialFixture
+
+  def arrow[X: Sample, Y: Sample]: Gen[X ~> Y] = PartialFixture.arrow[X, Y]
+
+  def variant[X: Sample, Y: Sample](p: X ~> Y): X ~> Y = PartialFixture.variant(p)
+
+  def observe[X: Sample, Y: Sample]: Gen[(X ~> Y) is Observable] = PartialFixture.observe[X, Y]
+}
+
+/** 𝒫 at its total programs, as a promonad over 𝒮. */
+object PartialComputationsFixture extends PromonadFixture("Computations", Partial.Computations) {
+  val category: TotalFixture.type = TotalFixture
 
   def arrow[X: Sample, Y: Sample]: Gen[X ~> Y] = PartialFixture.arrow[X, Y]
 
