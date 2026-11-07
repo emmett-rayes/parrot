@@ -1,57 +1,88 @@
 package parrot
 package category
 
-/** Recursion on a promonad: a fixed point at its arrow types for every function from arrows to arrows.
+/** A recursion structure on a promonad *P* over **C**.
   *
-  * Represents a fixed-point operator on the objects *P*(*A*,*B*) of 𝒮, where
-  *   - *fix*(*f*) = *f*(*fix*(*f*)) for *f*: *P*(*A*,*B*) → *P*(*A*,*B*)
-  *   - *fixFamily*(*n*,*f*) = *f*(*fixFamily*(*n*,*f*)) for *f* on families of *n* arrows: mutual recursion
-  *
-  * A family could be solved one arrow at a time, by Bekić's theorem, but that applies *f* exponentially often in *n*;
-  * instances solve it at once, with one knot per arrow.
-  *
-  * These are fixed points in 𝒮 at function types, not a structure of the category of arrows: a grammar rule refers to
-  * itself as a value. In 𝒫 they exist for every *f* ([[Partial.Knots]]): the arrow types of 𝒫 contain the
-  * nowhere-terminating program, which is the least solution. In 𝒮 they exist for guarded *f*, which use their argument
-  * only after making progress; a total instance stops with failure where *f* would recurse without progress, so the law
-  * holds for guarded *f* only.
+  * Represents fixed points at the types of the arrows of *P*, where
+  *   - *fix*: (*P*(*A*,*B*) → *P*(*A*,*B*)) → *P*(*A*,*B*) is the fixed-point operator.
+  *   - *fixFamily*: (*P*(*A*,*B*)ⁿ → *P*(*A*,*B*)ⁿ) → *P*(*A*,*B*)ⁿ is the fixed-point operator on a family of *n*
+  *     arrows.
   */
 abstract class Recursion(tracked val promonad: Promonad) extends caps.Pure {
-  import promonad.P
+  import promonad.arrows.-->
   import promonad.category.Obj
 
-  /** The fixed point *fix*(*f*) of *f*: *P*(*A*,*B*) → *P*(*A*,*B*). */
-  def fix[A: Obj, B: Obj](f: P[A, B] -> P[A, B]): P[A, B]
-
-  /** The fixed point of *f* on families of *n* arrows *P*(*A*,*B*), indexed by 0 ≤ *i* < *n*: *n* arrows that may refer
-    * to each other.
+  /** The fixed point *fix*(*f*): *P*(*A*,*B*) of *f*: *P*(*A*,*B*) → *P*(*A*,*B*).
+    *
+    * It solves *p* = *f*(*p*) for the arrow *p*.
     */
-  def fixFamily[A: Obj, B: Obj](n: Int)(f: (Int -> P[A, B]) -> Int -> P[A, B]): Int -> P[A, B]
+  def fix[A: Obj, B: Obj](f: (A --> B) -> (A --> B)): A --> B
 
-  /** Laws that any `Recursion` must satisfy. */
+  /** The fixed point *fixFamily*(*n*,*f*): *P*(*A*,*B*)ⁿ of *f*: *P*(*A*,*B*)ⁿ → *P*(*A*,*B*)ⁿ.
+    *
+    * It solves *p*ᵢ = *f*(*p*)ᵢ for the arrows *p*ᵢ of a family indexed by 0 ≤ *i* < *n*.
+    */
+  def fixFamily[A: Obj, B: Obj](n: Int)(f: (Int -> (A --> B)) -> Int -> (A --> B)): Int -> (A --> B) = {
+    bekic(n)(f)
+  }
+
+  /** The fixed point of *f*: *P*(*A*,*B*)ⁿ → *P*(*A*,*B*)ⁿ by Bekić's theorem, with *fix* only.
+    *
+    * The arrow *p*ₖ is *fix*(*x* ↦ *f*(*q*)ₖ), where *q* puts *x* at *k*, the solved *p*ᵢ at *i* < *k*, and the arrows
+    * at *i* > *k* solved in the same way, given *x*. This applies *f* exponentially often in *n*.
+    *
+    * @note Indices outside 0 ≤ *i* < *n* are unconstrained: they get *fix*(*id*).
+    */
+  private def bekic[A: Obj, B: Obj](n: Int)(f: (Int -> (A --> B)) -> Int -> (A --> B)): Int -> (A --> B) = {
+    def solve(k: Int, family: Int -> (A --> B)): Int -> (A --> B) = {
+      if k >= n then family
+      else {
+        def at(p: A --> B): Int -> (A --> B) = i => if i == k then p else family(i)
+        val solved                           = fix[A, B](x => f(solve(k + 1, at(x)))(k))
+        solve(k + 1, at(solved))
+      }
+    }
+    solve(0, _ => fix[A, B](p => p))
+  }
+
+  /** Laws that any `Recursion` structure must satisfy. */
   object RecursionLaws {
 
     /** *fix*(*f*) = *f*(*fix*(*f*))
+      *
+      * Unfolding one step changes nothing.
       */
-    def fixedPoint[A: Obj, B: Obj](f: P[A, B] -> P[A, B])(
-      using P[A, B] is Observable
-    ): Boolean = {
+    def fixedPoint[A: Obj, B: Obj](f: (A --> B) -> (A --> B))(using (A --> B) is Observable): Boolean = {
       fix(f) =?= f(fix(f))
     }
 
-    /** *fixFamily*(*n*,*f*)(*i*) = *f*(*fixFamily*(*n*,*f*))(*i*) for every *i* < *n*
+    /** *fixFamily*(*n*,*f*)ᵢ = *f*(*fixFamily*(*n*,*f*))ᵢ for 0 ≤ *i* < *n*
+      *
+      * Unfolding one step of every arrow of the family changes nothing.
       */
-    def familyFixedPoint[A: Obj, B: Obj](n: Int)(f: (Int -> P[A, B]) -> Int -> P[A, B])(
-      using P[A, B] is Observable
+    def familyFixedPoint[A: Obj, B: Obj](n: Int)(f: (Int -> (A --> B)) -> Int -> (A --> B))(
+      using (A --> B) is Observable
     ): Boolean = {
       val solved = fixFamily(n)(f)
       (0 until n).forall(i => solved(i) =?= f(solved)(i))
+    }
+
+    /** *fixFamily*(*n*,*f*)ᵢ = *bekic*(*n*,*f*)ᵢ for 0 ≤ *i* < *n*
+      *
+      * Solving a family at once agrees with solving it one arrow at a time.
+      */
+    def fixFamilyIsBekic[A: Obj, B: Obj](n: Int)(f: (Int -> (A --> B)) -> Int -> (A --> B))(
+      using (A --> B) is Observable
+    ): Boolean = {
+      val solved = fixFamily(n)(f)
+      val nested = bekic(n)(f)
+      (0 until n).forall(i => solved(i) =?= nested(i))
     }
   }
 }
 
 object Recursion {
 
-  /** Recursion on a promonad *P*. */
+  /** The recursion structures on a promonad *P*. */
   type On[P <: Promonad] = Recursion { val promonad: P }
 }

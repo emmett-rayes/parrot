@@ -265,7 +265,9 @@ object Partial extends Category {
       knot
     }
 
-    def fixFamily[A: Type, B: Type](@unused n: Int)(f: (Int -> (A ~> B)) -> Int -> (A ~> B)): Int -> (A ~> B) = {
+    override def fixFamily[A: Type, B: Type](@unused n: Int)(
+      f: (Int -> (A ~> B)) -> Int -> (A ~> B)
+    ): Int -> (A ~> B) = {
       lazy val knots: Int -> (A ~> B) = f(i => a => knots(i)(a))
       knots
     }

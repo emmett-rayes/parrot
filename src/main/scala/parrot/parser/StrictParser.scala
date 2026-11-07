@@ -821,7 +821,7 @@ object StrictParser {
     /** One [[Rec]] knot per arrow of the family, each with its own record of active calls, so that seed growing handles
       * mutual left recursion; `f` is applied once.
       */
-    def fixFamily[A: Type, B: Type](n: Int)(f: (Int -> Node[A, B]) -> Int -> Node[A, B]): Int -> Node[A, B] = {
+    override def fixFamily[A: Type, B: Type](n: Int)(f: (Int -> Node[A, B]) -> Int -> Node[A, B]): Int -> Node[A, B] = {
       lazy val solved: Int -> Node[A, B] = f(i => knots(i))
       lazy val knots: Vector[Rec[A, B]]  = Vector.tabulate(n)(i => Rec[A, B](_ => solved(i)))
       for knot <- knots do {

@@ -247,7 +247,8 @@ Each structure sits at the lowest level where its laws can be stated.
   are tested in both rows.
 - **Recursion at the types of arrows,** `Recursion`, is a fixed point in 𝒮 at the type *P*(*A*,*B*), not an operation
   of the category of arrows: a grammar rule refers to itself as a value. In 𝒫 it ties the η-expanded knot; in 𝒮 it is
-  guarded. Mutual recursion is a fixed point of a family of arrows, `fixFamily`, with one knot per arrow.
+  guarded. Mutual recursion is a fixed point of a family of arrows, `fixFamily`, derived from `fix` by Bekić's theorem
+  and overridden by the instances with one knot per arrow.
 - **Guarded iteration and recursion** (`StateT.GuardedIteration`, `StateT.GuardedRecursion`) are total by construction
   and lawful on guarded arguments, after Goncharov and Schröder; yanking fails for the guarded trace, which is a
   counterexample test.
@@ -338,8 +339,10 @@ Rejected:
   the laws, and a traced symmetric monoidal category is again not an instance;
 - separate duals over products and coproducts, where one `Bistrong.Op(strong)` serves both, and **M**ᵒᵖ as a
   parameter of it, of which only the category and the carrier of the tensor could be checked;
-- solving mutual recursion one arrow at a time (Bekić), which applies the definition exponentially often in the number
-  of arrows and cannot share a guard between separately tied knots;
+- solving mutual recursion only one arrow at a time (Bekić): it is the default of `fixFamily`, which needs only `fix`,
+  but it applies the definition exponentially often in the number of arrows and cannot share a guard between
+  separately tied knots, so every instance overrides it with one knot per arrow, and `fixFamilyIsBekic` checks that
+  the two agree on guarded families;
 - restriction on a promonad: R1–R4 need only composition, and the law that pure arrows are total states, for a hom
   promonad such as 𝒫 over itself, that every arrow is total;
 - the join as the primitive of `Classical`, with *f* ⊳ *g* = *f* ∨ (*g* ∘ *f̄*ᶜ): a method must return something for

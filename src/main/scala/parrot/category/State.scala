@@ -141,7 +141,7 @@ object StateT {
       knot(Int.MaxValue)
     }
 
-    def fixFamily[A: Type, B: Type](@unused n: Int)(
+    override def fixFamily[A: Type, B: Type](@unused n: Int)(
       f: (Int -> A -> S -> M[(B, S)]) -> Int -> A -> S -> M[(B, S)]
     ): Int -> A -> S -> M[(B, S)] = {
       def knots(bound: Int): Int -> A -> S -> M[(B, S)] = {

@@ -42,6 +42,17 @@ abstract class RecursionSpec(
       familyFixedPoint[Int, T2](2)(rec => i => if i == 0 then g0(rec(1)) else g1(rec(0)))
     }
   }
+
+  law("fixFamilyIsBekic", "two arrows, each calling the other") {
+    val observations = observe[Int, T2]
+    val g0s          = guarded[T2]
+    val g1s          = guarded[T2]
+
+    forAll(observations, g0s, g1s) { (observe, g0, g1) =>
+      given (P[Int, T2] is Observable) = observe
+      fixFamilyIsBekic[Int, T2](2)(rec => i => if i == 0 then g0(rec(1)) else g1(rec(0)))
+    }
+  }
 }
 
 // ==== 𝒫 ====
