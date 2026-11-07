@@ -81,8 +81,7 @@ abstract class ParserAlgebra(
     diagnose(p)(a, source)._2
   }
 
-  extension [B](p: P[Unit, B]) {
-
+  extension [B](p: P[Unit, B])
     /** Runs `p` on a prefix of `source`, reporting what was expected where it failed furthest if it fails. */
     def parse(source: String): Try[(result: B, offset: Int)] = {
       diagnose(p)((), source) match {
@@ -91,6 +90,7 @@ abstract class ParserAlgebra(
       }
     }
 
+  extension [B](p: P[Unit, B])
     /** Runs `p` on the whole of `source`. */
     def parseAll(source: String): Try[(result: B, offset: Int)] = {
       diagnose(p)((), source) match {
@@ -101,7 +101,6 @@ abstract class ParserAlgebra(
         case (expected, scala.None) => scala.util.Failure(ParseError(expected))
       }
     }
-  }
 
   // ==== Sequencing: the promonad ====
 
@@ -307,86 +306,104 @@ abstract class ParserAlgebra(
 
   // ==== Syntax ====
 
-  extension [A, B](self: P[A, B]) {
-
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[rule]]. */
     @targetName("ruleExt")
-    final def rule(label: String): P[A, B] = ParserAlgebra.this.rule(self, label)
+    final def rule(label: String): P[A, B] = ParserAlgebra.this.rule(p, label)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[map]]. */
     @targetName("mapExt")
-    final def map[C](g: B --> C): P[A, C] = ParserAlgebra.this.map(self, g)
+    final def map[C](g: B --> C): P[A, C] = ParserAlgebra.this.map(p, g)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[mapInput]]. */
     @targetName("mapInputExt")
-    final def mapInput[C](f: C --> A): P[C, B] = ParserAlgebra.this.mapInput(self, f)
+    final def mapInput[C](f: C --> A): P[C, B] = ParserAlgebra.this.mapInput(p, f)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[andThen]]. */
-    final def >>[C](other: P[B, C]): P[A, C] = ParserAlgebra.this.andThen(self, other)
+    final def >>[C](q: P[B, C]): P[A, C] = ParserAlgebra.this.andThen(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[zip]]. */
-    final def **[C, D](other: P[C, D]): P[(A, C), (B, D)] = ParserAlgebra.this.zip(self, other)
+    final def **[C, D](q: P[C, D]): P[(A, C), (B, D)] = ParserAlgebra.this.zip(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[pair]]. */
-    final def &&[C](other: P[A, C]): P[A, (B, C)] = ParserAlgebra.this.pair(self, other)
+    final def &&[C](q: P[A, C]): P[A, (B, C)] = ParserAlgebra.this.pair(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[skipThen]]. */
-    final def *>[C](other: P[A, C]): P[A, C] = ParserAlgebra.this.skipThen(self, other)
+    final def *>[C](q: P[A, C]): P[A, C] = ParserAlgebra.this.skipThen(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[thenSkip]]. */
-    final def <*[C](other: P[A, C]): P[A, B] = ParserAlgebra.this.thenSkip(self, other)
+    final def <*[C](q: P[A, C]): P[A, B] = ParserAlgebra.this.thenSkip(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[between]]. */
     @targetName("betweenExt")
-    final def between[C, D](open: P[A, C], close: P[A, D]): P[A, B] = ParserAlgebra.this.between(self, open, close)
+    final def between[C, D](open: P[A, C], close: P[A, D]): P[A, B] = ParserAlgebra.this.between(p, open, close)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[branch]]. */
-    final def ++[C, D](other: P[C, D]): P[Either[A, C], Either[B, D]] = ParserAlgebra.this.branch(self, other)
+    final def ++[C, D](q: P[C, D]): P[Either[A, C], Either[B, D]] = ParserAlgebra.this.branch(p, q)
 
+  extension [A, C](p: P[A, C])
     /** Infix extension for [[merge]]. */
-    final def ||[C](other: P[C, B]): P[Either[A, C], B] = ParserAlgebra.this.merge(self, other)
+    final def ||[B](q: P[B, C]): P[Either[A, B], C] = ParserAlgebra.this.merge(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[orElse]]. */
-    final def |>(other: P[A, B]): P[A, B] = ParserAlgebra.this.orElse(self, other)
+    final def |>(q: P[A, B]): P[A, B] = ParserAlgebra.this.orElse(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[or]]. */
-    final def +>[C](other: P[A, C]): P[A, Either[B, C]] = ParserAlgebra.this.or(self, other)
+    final def +>[C](q: P[A, C]): P[A, Either[B, C]] = ParserAlgebra.this.or(p, q)
 
+  extension [A, B](p: P[A, B])
     /** Prefix form of [[lookahead]]. */
-    final def unary_~ : P[A, A] = ParserAlgebra.this.lookahead(self)
+    final def unary_~ : P[A, A] = ParserAlgebra.this.lookahead(p)
 
+  extension [A, B](p: P[A, B])
     /** Prefix form of [[not]]. */
-    final def unary_! : P[A, A] = ParserAlgebra.this.not(self)
+    final def unary_! : P[A, A] = ParserAlgebra.this.not(p)
 
+  extension [A, B](p: P[A, B])
     /** Postfix form of [[attempt]]. */
     @targetName("attemptExt")
-    final def attempt(using DummyImplicit): P[A, Either[B, A]] = ParserAlgebra.this.attempt(self)
+    final def attempt(using DummyImplicit): P[A, Either[B, A]] = ParserAlgebra.this.attempt(p)
 
+  extension [A, B](p: P[A, B])
     /** Postfix form of [[optional]]. */
     @targetName("optionalExt")
-    final def optional(using DummyImplicit): P[A, Either[B, A]] = ParserAlgebra.this.optional(self)
+    final def optional(using DummyImplicit): P[A, Either[B, A]] = ParserAlgebra.this.optional(p)
 
+  extension [A, B](p: P[A, B])
     /** Postfix form of [[repeated]]. */
     @targetName("repeatedExt")
-    final def repeated(using DummyImplicit): P[A, Vector[B]] = ParserAlgebra.this.repeated(self)
+    final def repeated(using DummyImplicit): P[A, Vector[B]] = ParserAlgebra.this.repeated(p)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[times]]. */
     @targetName("timesExt")
-    final def times(n: Int): P[A, Vector[B]] = ParserAlgebra.this.times(self, n)
+    final def times(n: Int): P[A, Vector[B]] = ParserAlgebra.this.times(p, n)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[atLeast]]. */
     @targetName("atLeastExt")
-    final def atLeast(n: Int): P[A, Vector[B]] = ParserAlgebra.this.atLeast(self, n)
+    final def atLeast(n: Int): P[A, Vector[B]] = ParserAlgebra.this.atLeast(p, n)
 
+  extension [A, B](p: P[A, B])
     /** Infix extension for [[separatedBy]]. */
     @targetName("separatedByExt")
-    final def separatedBy[C](separator: P[A, C]): P[A, Vector[B]] = ParserAlgebra.this.separatedBy(self, separator)
-  }
+    final def separatedBy[C](separator: P[A, C]): P[A, Vector[B]] = ParserAlgebra.this.separatedBy(p, separator)
 
-  extension [A, B](self: P[A, Either[B, A]])
+  extension [A, B](p: P[A, Either[B, A]])
     /** Postfix form of [[iterate]]. */
     @targetName("iterateExt")
-    final def iterate(using DummyImplicit): P[A, B] = ParserAlgebra.this.iterate(self)
+    final def iterate(using DummyImplicit): P[A, B] = ParserAlgebra.this.iterate(p)
 
   /** The equations of parsing expression grammars, in the vocabulary of parsers. Most are laws of the structures the
     * algebra is built from; checking them on the combinators also checks the overrides of interpreters.

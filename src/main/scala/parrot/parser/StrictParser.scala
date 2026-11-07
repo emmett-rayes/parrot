@@ -123,10 +123,11 @@ object StrictParser {
     /** Wraps a successful `value` without boxing. */
     inline def apply[B](value: B): Out[B] = value
 
-    extension [B](out: Out[B])
+    extension (out: Out[Any])
       /** True if `out` is a failure. */
       inline def isFailed: Boolean = out.asInstanceOf[AnyRef] eq Failed
 
+    extension [B](out: Out[B])
       /** The value of a successful `out`. */
       inline def get: B = out.asInstanceOf[B]
   }

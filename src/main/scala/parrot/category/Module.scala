@@ -42,13 +42,11 @@ abstract class Module(
     action.bimap(g, f)
   }
 
-  extension [X: ObjM, Y: ObjM](g: X ~~> Y) {
-
+  extension [X: ObjM, Y: ObjM](g: X ~~> Y)
     /** Infix extension for [[act]]. */
     final def ~~[A: Obj, B: Obj](f: A --> B): (X ~ A) --> (Y ~ B) = {
       act(g, f)
     }
-  }
 
   /** Laws that any `Module` must satisfy. */
   object ModuleLaws {

@@ -136,6 +136,11 @@ Rejected:
   arrow of both (a Kleisli arrow `A -> M[B]` on 𝒮), Scala reports an ambiguity or rejects the argument, never a wrong
   composition, since both readings type-check only if *B* = *M*(*B*). Each operator forwards its arguments in order to
   a named method (`p >>> q` is `andThen(p, q)`), so every operation has a name that docs, laws and searches can use.
+- **One header per extension method.** A shared header fixes one receiver for every method under it, and each method
+  must name its own type parameters around it: under `extension [A, B](self: P[A, B])`, the syntax for
+  `merge[A, B, C](p: P[A, C], q: P[B, C])` reads `||[C](other: P[C, B]): P[Either[A, C], B]`, with *B* and *C*
+  swapped. With a header of its own, each extension binds only what its receiver needs, under the names of the method
+  it forwards to, so the syntax and its operation read alike.
 
 Rejected:
 - bases as type parameters, which cannot be imported from and need `ValueOf` and casts to recover the base values;

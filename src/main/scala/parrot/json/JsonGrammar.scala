@@ -14,6 +14,7 @@ final class JsonGrammar(tracked val algebra: ParserAlgebra) {
       self.map(lift[B, Option[B]](Some(_))) |> pure(lift[A, Option[B]](_ => scala.None))
     }
 
+  extension [A, B](self: P[A, B])
     /** Tries `self`, falling back to `other`, into the union of their results. */
     private def union[C](other: P[A, C]): P[A, B | C] = {
       self.map(lift[B, B | C](b => b)) |> other.map(lift[C, B | C](c => c))

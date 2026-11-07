@@ -186,6 +186,9 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
 - Method bodies and `match`es in braces; `if … then … else`; aligned `=`, `:` and `=>` in consecutive declarations
   and cases; trailing commas in multi-line lists; braces in imports only around several selectors
   (`import category.-->`, `import category.{Obj, -->}`).
+- **Every extension method has its own `extension` header**, without braces, so that the header binds only what its
+  receiver needs, named as in the method it forwards to: for `merge[A, B, C](p: P[A, C], q: P[B, C])`, the header is
+  `extension [A, C](p: P[A, C])` and the method `final def ||[B](q: P[B, C]): P[Either[A, B], C]` (`docs/DESIGN.md`).
 - No unicode in code, and diagrammatic composition (`>>>`) there; unicode math and `∘` only in scaladoc.
 - **Every** public member has scaladoc, exports excepted. Math: variables in `*italics*`, categories in `**bold**` or
   as 𝒮 and 𝒫, `∘` for composition, no spaces in argument lists (`**C**(*A*,*B*)`). Laws state their equation first.
