@@ -107,7 +107,7 @@ abstract class ParserAlgebra(
 
   /** Succeeds without consuming anything, returning its semantic input: the identity arrow *id*. */
   final def success[A]: P[A, A] = {
-    parsers.identity[A]
+    parsers.arrows.identity[A]
   }
 
   /** Applies *f* to the semantic input without consuming anything: *unit*(*f*). */
@@ -117,7 +117,7 @@ abstract class ParserAlgebra(
 
   /** Runs *p*, then *q* on the remaining input with the result of *p* as its semantic input: *p* ⨾ *q*. */
   def andThen[A, B, C](p: P[A, B], q: P[B, C]): P[A, C] = {
-    parsers.multiply(q, p)
+    parsers.arrows.andThen(p, q)
   }
 
   /** Applies *g* to the result of *p*: *p* ⨾ *unit*(*g*). */
