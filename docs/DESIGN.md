@@ -417,10 +417,11 @@ Rejected:
 
 ## 6. The parser
 
-- **The algebra is a bundle:** `ParserAlgebra(parsers, products, coproducts, zipping, branching, choice, loops, knots)`,
-  every combinator an operation of one of them. An interpreter chooses the structures and implements five primitives:
-  `lift`, `literal`, `regex`, `rule` and `diagnose`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`,
-  `Nothing`, `Vector`): every interpreter made the same choice, and fixing them removes a layer of type members.
+- **The algebra is a bundle:**
+  `ParserAlgebra(sequencing, products, coproducts, zipping, branching, choice, loops, knots)`, every combinator an
+  operation of one of them. An interpreter chooses the structures and implements five primitives: `lift`, `literal`,
+  `regex`, `rule` and `diagnose`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`, `Nothing`, `Vector`):
+  every interpreter made the same choice, and fixing them removes a layer of type members.
 - **Ordered choice is override,** derived from the classical structure. `attempt(p): P[A, B + A]`, which runs `p` once
   and reports the outcome, is derived from override and the injections of the pure functions, and is the form an
   optimizing interpreter can implement in one pass; `optional` is `attempt`.

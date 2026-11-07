@@ -9,12 +9,12 @@ import ParserFixtures.given
 
 // ==== ReferenceParser ====
 
-class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.parsers.arrows)
+class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.sequencing.arrows)
 
-class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.parsers)
+class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.sequencing)
 
 class ReferenceIsClassicalTest
-    extends ClassicalSpec("ReferenceParser", Interpreters.reference.choice, Interpreters.reference.parsers.pure)
+    extends ClassicalSpec("ReferenceParser", Interpreters.reference.choice, Interpreters.reference.sequencing.pure)
 
 class ReferenceZippingIsBistrongTest
     extends BistrongSpec("ReferenceParser (zipping)", Interpreters.reference.zipping)
@@ -22,7 +22,7 @@ class ReferenceZippingIsBistrongTest
 class ReferenceZippingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "ReferenceParser (zipping)",
-      Interpreters.reference.parsers.arrows,
+      Interpreters.reference.sequencing.arrows,
       Freyd.Tensor(Interpreters.reference.zipping),
     )
 
@@ -39,7 +39,7 @@ class ReferenceBranchingIsBistrongTest
 class ReferenceBranchingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "ReferenceParser (branching)",
-      Interpreters.reference.parsers.arrows,
+      Interpreters.reference.sequencing.arrows,
       Freyd.Tensor(Interpreters.reference.branching),
     )
 
@@ -89,12 +89,12 @@ class ReferenceIsPreorderTest
 
 // ==== StrictParser ====
 
-class StrictIsCategoryTest extends CategorySpec(Interpreters.strict.parsers.arrows)
+class StrictIsCategoryTest extends CategorySpec(Interpreters.strict.sequencing.arrows)
 
-class StrictIsPromonadTest extends PromonadSpec(Interpreters.strict.parsers)
+class StrictIsPromonadTest extends PromonadSpec(Interpreters.strict.sequencing)
 
 class StrictIsClassicalTest
-    extends ClassicalSpec("StrictParser", Interpreters.strict.choice, Interpreters.strict.parsers.pure)
+    extends ClassicalSpec("StrictParser", Interpreters.strict.choice, Interpreters.strict.sequencing.pure)
 
 class StrictZippingIsBistrongTest
     extends BistrongSpec("StrictParser (zipping)", Interpreters.strict.zipping)
@@ -102,7 +102,7 @@ class StrictZippingIsBistrongTest
 class StrictZippingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "StrictParser (zipping)",
-      Interpreters.strict.parsers.arrows,
+      Interpreters.strict.sequencing.arrows,
       Freyd.Tensor(Interpreters.strict.zipping),
     )
 
@@ -119,7 +119,7 @@ class StrictBranchingIsBistrongTest
 class StrictBranchingIsBinoidalFunctorTest
     extends BinoidalFunctorSpec(
       "StrictParser (branching)",
-      Interpreters.strict.parsers.arrows,
+      Interpreters.strict.sequencing.arrows,
       Freyd.Tensor(Interpreters.strict.branching),
     )
 

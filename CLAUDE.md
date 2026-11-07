@@ -116,7 +116,7 @@ warning-free.
    override with a faster implementation, and a law equates it with its definition (`diagonalIsPairing`);
    redefinitions are `override` without `final`. A member forwarded unchanged from a parameter is an
    `export` (no scaladoc); one that renames it or changes its meaning is a `final def` with its own doc
-   (`ParserAlgebra.pure` is `parsers.unit(f)`). Eta-reduce aliases (`type Self = Tuple2`).
+   (`ParserAlgebra.pure` is `sequencing.unit(f)`). Eta-reduce aliases (`type Self = Tuple2`).
 10. **Monads are structure on their functor** (`Monad(functor: Endofunctor)`, primitives `unit` and `flatten`). Refine
     through the functor, `Monad.On[Total.type]`, not `Monad { val category: Total.type }`, or the singleton chain
     breaks. Plain monads are transformers over `Monad.Identity`.
@@ -133,7 +133,7 @@ warning-free.
     for the target of a class documented as an arrow (`Functor.Into[D]`); a view takes `Of`
     (`Category.Op.Of[this.type]`). Its argument is what the doc names: `Monad.On[C]` refines the category of the
     endofunctor. Refine the base only through the alias, also where an inline refinement would compile, and every
-    other member inline after it (`Bistrong.On[parsers.type] { val monoidal: products.type }`). Add the alias
+    other member inline after it (`Bistrong.On[sequencing.type] { val monoidal: products.type }`). Add the alias
     with the first refinement of the base, with the class's first sentence as its doc, in the plural ("The cones over
     a diagram *D*.") unless the base determines it ("The opposite of a category **C**."), and the doc's letter as its
     parameter unless the class has a member of that name (`Bifunctor.Op.Of[B]`, since a bifunctor's carrier is `F`).
@@ -149,7 +149,7 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
 ## `parrot.parser`
 
 - A parser `P[A, B]` consumes a prefix of the input while turning a semantic input `A` into a result `B`.
-  `ParserAlgebra(parsers, products, coproducts, zipping, branching, choice, loops, knots)`: every combinator is an
+  `ParserAlgebra(sequencing, products, coproducts, zipping, branching, choice, loops, knots)`: every combinator is an
   operation of one of these (`|>` is restriction override, i.e. PEG ordered choice). Loops and recursion are
   **guarded**: a step or call that makes no progress fails. Interpreters implement only `lift`, `literal`, `regex`,
   `rule` and `diagnose`.

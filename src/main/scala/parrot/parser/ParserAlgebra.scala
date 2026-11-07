@@ -13,7 +13,7 @@ import category.Category.Type
   *
   * Represents parsers *P*(*A*,*B*), which consume a prefix of the input while turning a semantic input *A* into a
   * semantic result *B*, where
-  *   - [[parsers]] runs one parser after another on the remaining input, and turns pure functions into parsers
+  *   - [[sequencing]] runs one parser after another on the remaining input, and turns pure functions into parsers
   *   - [[products]] combines several results into one, as a pair
   *   - [[coproducts]] records which of two alternatives produced a result, as a tagged union
   *   - [[zipping]] runs a parser on one component of a pair, which gives concatenation
@@ -34,26 +34,26 @@ import category.Category.Type
   */
 
 abstract class ParserAlgebra(
-  tracked val parsers: Promonad.On[Category { type Obj = Type }],
-  tracked val products: Cartesian.On[parsers.category.type] {
-    val unit: Unit is parsers.category.Object; val tensor: Bifunctor { type Self = Tuple2 }
+  tracked val sequencing: Promonad.On[Category { type Obj = Type }],
+  tracked val products: Cartesian.On[sequencing.category.type] {
+    val unit: Unit is sequencing.category.Object; val tensor: Bifunctor { type Self = Tuple2 }
   },
-  tracked val coproducts: Cocartesian.On[parsers.category.type] {
-    val unit: Nothing is parsers.category.Object; val tensor: Bifunctor { type Self = Either }
+  tracked val coproducts: Cocartesian.On[sequencing.category.type] {
+    val unit: Nothing is sequencing.category.Object; val tensor: Bifunctor { type Self = Either }
   },
-  tracked val zipping: Bistrong.On[parsers.type] { val monoidal: products.type },
-  tracked val branching: Bistrong.On[parsers.type] { val monoidal: coproducts.type },
-  tracked val choice: Classical.On[parsers.arrows.type],
+  tracked val zipping: Bistrong.On[sequencing.type] { val monoidal: products.type },
+  tracked val branching: Bistrong.On[sequencing.type] { val monoidal: coproducts.type },
+  tracked val choice: Classical.On[sequencing.arrows.type],
   tracked val loops: Elgot.On[branching.type],
-  tracked val knots: Recursion.On[parsers.type],
+  tracked val knots: Recursion.On[sequencing.type],
 ) extends caps.Pure {
-  import parsers.category.>>>
+  import sequencing.category.>>>
 
   /** Parsers *P*(*A*,*B*) from semantic input *A* to semantic result *B*. */
-  final type P = parsers.P
+  final type P = sequencing.P
 
   /** Pure functions on semantic values. */
-  final type --> = parsers.category.-->
+  final type --> = sequencing.category.-->
 
   // ==== Primitives ====
 
@@ -111,17 +111,17 @@ abstract class ParserAlgebra(
 
   /** Succeeds without consuming anything, returning its semantic input: the identity arrow *id*. */
   final def success[A]: P[A, A] = {
-    parsers.arrows.identity[A]
+    sequencing.arrows.identity[A]
   }
 
   /** Applies *f* to the semantic input without consuming anything: *unit*(*f*). */
   final def pure[A, B](f: A --> B): P[A, B] = {
-    parsers.unit(f)
+    sequencing.unit(f)
   }
 
   /** Runs *p*, then *q* on the remaining input with the result of *p* as its semantic input: *p* ⨾ *q*. */
   def andThen[A, B, C](p: P[A, B], q: P[B, C]): P[A, C] = {
-    parsers.arrows.andThen(p, q)
+    sequencing.arrows.andThen(p, q)
   }
 
   /** Applies *g* to the result of *p*: *p* ⨾ *unit*(*g*). */
@@ -266,14 +266,14 @@ abstract class ParserAlgebra(
 
   /** Pairs the semantic input with the empty collection. */
   private def start[A, B]: P[A, (A, Vector[B])] = {
-    pure(products.pair(parsers.category.identity[A], lift[A, Vector[B]](_ => Vector.empty)))
+    pure(products.pair(sequencing.category.identity[A], lift[A, Vector[B]](_ => Vector.empty)))
   }
 
   /** Runs *item* once on the semantic input, appending its result to the collection. */
   private def step[A, B](item: P[A, B]): P[(A, Vector[B]), (A, Vector[B])] = {
     val reshape =
       products.pair(products.fst[A, Vector[B]], products.pair(products.snd[A, Vector[B]], products.fst[A, Vector[B]]))
-    val finish = products.parallel(parsers.category.identity[A], lift[(Vector[B], B), Vector[B]]((bs, b) => bs :+ b))
+    val finish = products.parallel(sequencing.category.identity[A], lift[(Vector[B], B), Vector[B]]((bs, b) => bs :+ b))
     map(mapInput(zip(success[A], zip(success[Vector[B]], item)), reshape), finish)
   }
 

@@ -249,7 +249,7 @@ object ParserGen {
   }
 }
 
-object ReferenceFixture extends PromonadFixture("ReferenceParser", Interpreters.reference.parsers) {
+object ReferenceFixture extends PromonadFixture("ReferenceParser", Interpreters.reference.sequencing) {
   import promonad.P
   val category: TotalFixture.type = TotalFixture
 
@@ -261,7 +261,7 @@ object ReferenceFixture extends PromonadFixture("ReferenceParser", Interpreters.
   def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable] = ParserGen.observe[X, Y](Interpreters.reference)
 }
 
-object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict.parsers) {
+object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict.sequencing) {
   import promonad.P
   val category: FnsFixture.type = FnsFixture
 
@@ -304,18 +304,18 @@ object StrictDiagnosticsFixture
 object ParserFixtures {
 
   /** [[ReferenceFixture]], for the promonad of `ReferenceParser`. */
-  given ReferenceIsFixture: PromonadFixture.For[Interpreters.reference.parsers.type] = ReferenceFixture
+  given ReferenceIsFixture: PromonadFixture.For[Interpreters.reference.sequencing.type] = ReferenceFixture
 
   /** [[ReferenceFixture]], for the category of `ReferenceParser`. */
-  given ReferenceCategoryIsFixture: CategoryFixture.For[Interpreters.reference.parsers.arrows.type] = {
+  given ReferenceCategoryIsFixture: CategoryFixture.For[Interpreters.reference.sequencing.arrows.type] = {
     ReferenceFixture.arrows
   }
 
   /** [[StrictFixture]], for the promonad of `StrictParser`. */
-  given StrictIsFixture: PromonadFixture.For[Interpreters.strict.parsers.type] = StrictFixture
+  given StrictIsFixture: PromonadFixture.For[Interpreters.strict.sequencing.type] = StrictFixture
 
   /** [[StrictFixture]], for the category of `StrictParser`. */
-  given StrictCategoryIsFixture: CategoryFixture.For[Interpreters.strict.parsers.arrows.type] = StrictFixture.arrows
+  given StrictCategoryIsFixture: CategoryFixture.For[Interpreters.strict.sequencing.arrows.type] = StrictFixture.arrows
 
   /** [[FnsFixture]], for the pure functions of `StrictParser`. */
   given FnsIsFixture: CategoryFixture.For[Fns.type] = FnsFixture
