@@ -9,15 +9,16 @@ import scala.util.matching.Regex
 
 import category.Category.Type
 
-/** An algebra of parsers: the combinators of parsing expression grammars, derived from categorical structure.
+/** An algebra of parsers.
   *
   * A parser *P*(*A*,*B*) consumes a prefix of the input while turning a semantic input *A* into a semantic result *B*.
   * No combinator is primitive except those that read the input. Each of the others is an operation of one of the
-  * structures the algebra is built from, where
+  * categorical structures the algebra is built from, where
   *   - [[parsers]]: parsers form a promonad over the category of pure functions (*unit*, ⨾)
-  *   - [[products]] and [[coproducts]]: pairs and tagged unions of semantic values, in the category of pure functions
-  *   - [[zipping]]: a strength over products, which makes parsers a Freyd category, [[zipped]] (⋉, ⟨-,-⟩)
-  *   - [[branching]]: a strength over coproducts, which makes parsers a Freyd category, [[branched]] (+, [-,-])
+  *   - [[products]]: pairs of semantic values, in the category of pure functions
+  *   - [[coproducts]]: tagged unions of semantic values, in the category of pure functions
+  *   - [[zipping]]: a strength over products, which allows parsers to manipulate pairs of semantic values
+  *   - [[branching]]: a strength over coproducts, which allows parsers to manipulate tagged unions of semantic values
   *   - [[choice]]: a classical restriction structure on parsers (0, *p̄*, *p̄*ᶜ, ⊳)
   *   - [[loops]]: guarded iteration (†, and the repetition combinators derived from it)
   *   - [[knots]]: guarded recursion at the types of parsers (*fix*)

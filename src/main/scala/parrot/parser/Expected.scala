@@ -14,7 +14,7 @@ final case class Expectation(label: String, context: List[String]) derives CanEq
   }
 }
 
-/** What a parse expected at the furthest position where something failed: the diagnostics of a parse.
+/** What a parse expected at the furthest position where something failed.
   *
   * Diagnostics form a join-semilattice, where
   *   - ⊥ = (−1,∅): nothing was expected

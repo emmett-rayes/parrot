@@ -11,25 +11,23 @@ import scala.util.{Try, Failure as TryFailure, Success as TrySuccess}
 import category.Category.Type
 
 /** An optimizing [[ParserAlgebra]] interpreter that normalizes parsers at construction time and runs them without
-  * allocating intermediate structure.
+  * allocating intermediate objects at runtime.
   *
-  * Parsers are reified terms ([[StrictParser.Node]]) over reified pure functions ([[Fn]]). The structures on nodes are
-  * implemented by smart constructors that rewrite towards a normal form, so the derived combinators collapse into
-  * specialized nodes:
-  *   - ⟨*p*,*q*⟩ = Δ ⨾ (*p* ⋉ *q*) becomes [[StrictParser.Node.Pair]]: the input is never duplicated into a pair
-  *   - ⟨*p*,*q*⟩ ⨾ *π*₂ becomes [[StrictParser.Node.SkipThen]]: no result pair is built
-  *   - [*p*,*q*] = (*p* + *q*) ⨾ ∇ becomes [[StrictParser.Node.Merge]], and (*p* + *q*) ⨾ [*f*,*g*] becomes [*p* ⨾
-  *     *f*,*q* ⨾ *g*]: no intermediate tagged union is built
-  *   - (*p* ⊳ *q*) ⨾ *f* becomes (*p* ⨾ *f*) ⊳ (*q* ⨾ *f*)
+  * Parsers are reified parser terms over reified pure functions. The structures on nodes are implemented by smart
+  * constructors that rewrite towards a normal form, so the derived combinators collapse into specialized nodes. See
+  * [[StrictParser.Node]] and [[Fn]].
   *
-  * Regular expressions in the single-character-atom fragment are compiled to a [[Scanner]]; other expressions fall back
-  * to `java.util.regex`, matched in context ([[Scanner.matchAt]]). Nested ordered choices are flattened into a single
-  * [[StrictParser.Node.Choice]] that dispatches on the next character using static first-set and nullability analysis
-  * ([[StrictParser.Info]]). Recursion ties a knot ([[StrictParser.Node.Rec]]).
+  * Regular expressions in the single-character-atom fragment are precompiled. See [[Scanner]]. Other expressions fall
+  * back to `scala.util.matching.Regex`.
   *
-  * It agrees with [[ReferenceParser]] on every grammar, with one extension: where a recursive parser calls itself with
-  * the same semantic input at the same position, the reference fails the call, while this interpreter supports left
-  * recursion by seed growing.
+  * Nested ordered choices are flattened into a single choice node that dispatches on the next character using static
+  * first-set and nullability analysis. See [[StrictParser.Info]].
+  *
+  * Recursion ties a knot [[StrictParser.Node.Rec]].
+  *
+  * This interpreter agrees with [[ReferenceParser]] on every grammar, with one extension: where a recursive parser
+  * calls itself with the same semantic input at the same position, the reference fails the call, while this interpreter
+  * supports left recursion by seed growing.
   */
 class StrictParser
     extends ParserAlgebra(
@@ -141,8 +139,10 @@ object StrictParser {
     var leftRecursive: Boolean = false
   }
 
-  /** The mutable state of a single run: the current position, the stack of active recursive calls, and, when
-    * `diagnostics` is set, what was expected where something failed furthest.
+  /** The mutable state of a single run.
+    *
+    * The state contains the current position, the stack of active recursive calls, and, when `diagnostics` is set, what
+    * was expected where something failed furthest.
     *
     * Without diagnostics, nothing is recorded and choices dispatch on the next character. With diagnostics, choices try
     * every alternative in order and failures are recorded exactly as [[ReferenceParser]] reports them.
@@ -416,7 +416,9 @@ object StrictParser {
       }
     }
 
-    /** Runs `p` and `q` on the same semantic input, pairing their results. */
+    /** Runs `p` and `q` on the same semantic input, pairing their results: ⟨*p*,*q*⟩ = Δ ⨾ (*p* ⋉ *q*), where the input
+      * is never duplicated into a pair.
+      */
     final case class Pair[A, B, C](p: Node[A, B], q: Node[A, C]) extends Node[A, (B, C)] {
       def run(a: A, s: State): Out[(B, C)] = {
         val b = p.run(a, s)
@@ -428,14 +430,18 @@ object StrictParser {
       }
     }
 
-    /** Runs `p` then `q` on the same semantic input, keeping only the result of `q`. */
+    /** Runs `p` then `q` on the same semantic input, keeping only the result of `q`: ⟨*p*,*q*⟩ ⨾ *π*₂, where no result
+      * pair is built.
+      */
     final case class SkipThen[A, B, C](p: Node[A, B], q: Node[A, C]) extends Node[A, C] {
       def run(a: A, s: State): Out[C] = {
         if p.run(a, s).isFailed then Out.failed else q.run(a, s)
       }
     }
 
-    /** Runs `p` then `q` on the same semantic input, keeping only the result of `p`. */
+    /** Runs `p` then `q` on the same semantic input, keeping only the result of `p`: ⟨*p*,*q*⟩ ⨾ *π*₁, where no result
+      * pair is built.
+      */
     final case class ThenSkip[A, B, C](p: Node[A, B], q: Node[A, C]) extends Node[A, B] {
       def run(a: A, s: State): Out[B] = {
         val b = p.run(a, s)
@@ -443,7 +449,9 @@ object StrictParser {
       }
     }
 
-    /** Copairing: runs `p` on `Left` or `q` on `Right` into a common result type `C`. */
+    /** Copairing: runs `p` on `Left` or `q` on `Right` into a common result type `C`: [*p*,*q*] = (*p* + *q*) ⨾ ∇,
+      * where no intermediate tagged union is built.
+      */
     final case class Merge[A, B, C](p: Node[A, C], q: Node[B, C]) extends Node[Either[A, B], C] {
       def run(ab: Either[A, B], s: State): Out[C] = ab match {
         case Left(a)  => p.run(a, s)
@@ -672,7 +680,12 @@ object StrictParser {
 
   import Node.*
 
-  /** Normalizing sequential composition, right-associated so that redexes surface at the head. */
+  /** Normalizing sequential composition, right-associated so that redexes surface at the head.
+    *
+    * Pure post-processing distributes over copairing and ordered choice:
+    *   - (*p* + *q*) ⨾ [*f*,*g*] becomes [*p* ⨾ *f*,*q* ⨾ *g*]: no intermediate tagged union is built
+    *   - (*p* ⊳ *q*) ⨾ *f* becomes (*p* ⨾ *f*) ⊳ (*q* ⨾ *f*)
+    */
   private def sequence[A, B, C](p: Node[A, B], q: Node[B, C]): Node[A, C] = {
     (p, q) match {
       case (_: Success[?], _)                                     => q
