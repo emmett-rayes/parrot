@@ -13,7 +13,7 @@ abstract class Colimit(tracked override val diagram: Functor, tracked override v
   import diagram.target as C
   import C.--> as ==>
 
-  /** The factorization [*φ*]: *X* → *Y* of a cocone *K* = (*Y*, *φ*) through the colimit.
+  /** The factorization [*φ*]: *X* → *Y* of a cocone (*Y*, *φ*) through the colimit.
     *
     * This is the unique morphism with *φ* = [*φ*] ∘ *ψ*.
     */
@@ -65,7 +65,7 @@ object Colimits {
     /** The type *D* of the diagrams of a discrete shape with a colimit. */
     override type D <: Functor.Into[category.type] { val source: Category { type Self <: =:= } }
 
-    /** The apex Apex[*O*,*D*] of the colimit of a diagram with *D* on a shape with objects *O*. */
+    /** The apex Apex[*O*,*D*] of the colimit of a diagram with object map *D* on a shape with objects *O*. */
     type Apex[O <: Category.Type, D[_]]
 
     /** The colimit of a diagram *D*, with apex Apex[*O*,*D*]. */

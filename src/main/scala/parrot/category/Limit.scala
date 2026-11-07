@@ -13,7 +13,7 @@ abstract class Limit(tracked override val diagram: Functor, tracked override val
   import diagram.target as C
   import C.--> as ==>
 
-  /** The factorization ⟨*φ*⟩: *Y* → *X* of a cone *K* = (*Y*, *φ*) through the limit.
+  /** The factorization ⟨*φ*⟩: *Y* → *X* of a cone (*Y*, *φ*) through the limit.
     *
     * This is the unique morphism with *φ* = *ψ* ∘ ⟨*φ*⟩.
     */
@@ -65,7 +65,7 @@ object Limits {
     /** The type *D* of the diagrams of a discrete shape with a limit. */
     override type D <: Functor.Into[category.type] { val source: Category { type Self <: =:= } }
 
-    /** The apex Apex[*O*,*D*] of the limit of a diagram with *D* on a shape with objects *O*. */
+    /** The apex Apex[*O*,*D*] of the limit of a diagram with object map *D* on a shape with objects *O*. */
     type Apex[O <: Category.Type, D[_]]
 
     /** The limit of a diagram *D*, with apex Apex[*O*,*D*]. */

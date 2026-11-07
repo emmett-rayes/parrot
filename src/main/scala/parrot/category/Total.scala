@@ -11,7 +11,7 @@ import Category.Type
   *   - *id* = *a* ↦ *a*
   *   - *g* ∘ *f* = *a* ↦ *g*(*f*(*a*))
   *
-  * 𝒮 is bicartesian closed. See [[Product]], [[Coproduct]], [[Exponential]].
+  * 𝒮 is bicartesian closed. See [[Products]], [[Coproducts]], [[Exponentials]].
   *
   * @note Capture checking makes functions pure. Totality is promised by the user. A function that may diverge belongs
   *   to 𝒫 instead. See [[Partial]].
@@ -206,19 +206,12 @@ object Total extends Category {
     }
   }
 
-  /** The limit of a diagram *D*: **J** → 𝒮: the natural families of points of *D*.
+  /** The limit of a diagram *D*: **J** → 𝒮.
     *
     * Represents the limit (*X*, *ψ*), where
-    *   - *X* is the type of natural families *x* = (*x*_*A*)_*A*, a point *x*_*A* of *D*[*A*] for each object *A* of
-    *     **J**, with *D*(*f*)(*x*_*A*) = *x*_*B* for every *f*: *A* → *B* of **J** ([[LimitOf.Point]])
-    *   - *ψ*_*A*(*x*) = *x*_*A*: the leg at *A* picks the point at *A*
-    *   - ⟨*φ*⟩(*y*) = (*φ*_*A*(*y*))_*A*: a cone (*Y*, *φ*) factors through the family of its legs at *y*
-    *
-    * This is the construction of limits from products and equalizers. The families of points are the product
-    * ∏_*A* *D*[*A*], which exists in 𝒮 because its objects are types: it is a polymorphic function type. The natural
-    * families are a subset of the product, the equalizer of *x* ↦ *x*_*B* and *x* ↦ *D*(*f*)(*x*_*A*), and Scala has
-    * no subset types; [[LimitOf.Point]] makes the subset by abstraction (tutorial, §6.5). Neither step looks at the
-    * shape of **J**, so this one construction gives every limit of 𝒮.
+    *   - *X* is the type of natural families *x* = (*x*_*A*)_*A* of points *x*_*A* of *D*[*A*]
+    *   - *ψ*_*A*(*x*) = *x*_*A*
+    *   - ⟨*φ*⟩(*y*) = (*φ*_*A*(*y*))_*A*
     */
   final class LimitOf(tracked override val diagram: Functor.Into[Total.type])
       extends Limit(diagram, diagram.target.Object[LimitOf.Point.Of[diagram.type]]) {
@@ -236,17 +229,10 @@ object Total extends Category {
 
   object LimitOf {
 
-    /** A point of the limit of a diagram *D*: a natural family of points (*x*_*A*)_*A* of *D*, where `at[A]` is
-      * *x*_*A*.
+    /** A point of the limit of a diagram *D*.
       *
-      * The type of `at` holds every family, natural or not. The constructor is private to [[LimitOf]], and the only
-      * operation that builds points is [[LimitOf.factor]], from the legs of a cone, which are natural by
-      * [[Cone.ConeLaws.commutes]]. So every point that exists is natural, and since clients see a point only
-      * through the legs, `Point` is, to them, the subset of natural families: by representation independence, as for
-      * any abstract type (tutorial, §6.5).
-      *
-      * @note Naturality is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
-      *   cones are lawful, and it is the cone law of the limit itself, *D*(*f*) ∘ *ψ*_*A* = *ψ*_*B*, at each point.
+      * `at[A]` is the point at *A*. Only [[LimitOf.factor]] builds points, from the legs of a lawful cone, so every
+      * point is a natural family.
       */
     final class Point private[LimitOf] (tracked val diagram: Functor.Into[Total.type])(
       val at: [A] -> (A is diagram.source.Obj) ?-> diagram.F[A],
@@ -259,8 +245,9 @@ object Total extends Category {
     }
   }
 
-  /** The limits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the limit
-    * [[LimitOf]](*D*).
+  /** The limits of every diagram in 𝒮.
+    *
+    * Every diagram *D*: **J** → 𝒮, of any shape **J**, has the limit given by [[LimitOf]].
     */
   object Limits extends category.Limits.InCategory(Total) {
     type D = Functor.Into[Total.type]
@@ -270,16 +257,14 @@ object Total extends Category {
     }
   }
 
-  /** The limit of a diagram *D*: **J** → 𝒮 of a discrete shape: all families of points of *D*.
+  /** The limit of a diagram *D*: **J** → 𝒮 of a discrete shape.
     *
     * Represents the limit (*X*, *ψ*), where
-    *   - *X* = ∏_*A* *D*[*A*] is the type of families *x* = (*x*_*A*)_*A*, a point *x*_*A* of *D*[*A*] for each object
-    *     *A* of **J**
-    *   - *ψ*_*A*(*x*) = *x*_*A*: the leg at *A* picks the point at *A*
-    *   - ⟨*φ*⟩(*y*) = (*φ*_*A*(*y*))_*A*: a cone (*Y*, *φ*) factors through the family of its legs at *y*
+    *   - *X* = ∏_*A* *D*[*A*] is the type of families *x* = (*x*_*A*)_*A* of points *x*_*A* of *D*[*A*]
+    *   - *ψ*_*A*(*x*) = *x*_*A*
+    *   - ⟨*φ*⟩(*y*) = (*φ*_*A*(*y*))_*A*
     *
-    * The only morphisms of **J** are identities, so every family is natural and the limit is the product itself: unlike
-    * [[LimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
+    * The only morphisms of **J** are identities, so every family is natural.
     */
   final class DiscreteLimitOf(
     tracked override val diagram: Functor.Into[Total.type] { val source: Category { type Self <: =:= } },
@@ -295,8 +280,9 @@ object Total extends Category {
     }
   }
 
-  /** The limits of every diagram of a discrete shape in 𝒮: the limit of a diagram with object map *D* on a shape with
-    * objects *O* is [[DiscreteLimitOf]], the type of families Apex[*O*,*D*] = ∏_*A* *D*[*A*].
+  /** The limits of every diagram of a discrete shape in 𝒮.
+    *
+    * Every diagram with object map *D* on a shape with objects *O* has the limit given by [[DiscreteLimitOf]].
     */
   object DiscreteLimits extends category.Limits.DiscreteInCategory(Total) {
     type D                     = Functor.Into[Total.type] { val source: Category { type Self <: =:= } }
@@ -308,8 +294,9 @@ object Total extends Category {
     }
   }
 
-  /** A point of the sum Σ_*A* *F*[*A*] of a family of types indexed by the objects *A* of a type class *O*: a point of
-    * *F*[*A*] at one object *A*, which its type does not show.
+  /** A point of the sum Σ_*A* *F*[*A*] over the objects *A* of a type class *O*.
+    *
+    * This models existential types.
     */
   abstract class Sum[O <: Type, F[_]] extends caps.Pure {
 
@@ -337,19 +324,13 @@ object Total extends Category {
     }
   }
 
-  /** The colimit of a diagram *D*: **J** → 𝒮: the points of *D*, glued along its morphisms.
+  /** The colimit of a diagram *D*: **J** → 𝒮.
     *
     * Represents the colimit (*X*, *ψ*), where
-    *   - *X* is the type of glued points (*A*, *x*), a point *x* of *D*[*A*] at one object *A* of **J**, with
-    *     (*A*, *x*) = (*B*, *D*(*f*)(*x*)) for every *f*: *A* → *B* of **J** ([[ColimitOf.Point]])
-    *   - *ψ*_*A*(*x*) = (*A*, *x*): the leg at *A* tags a point with *A*
-    *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*): a cocone (*Y*, *φ*) factors through its leg at the object of a point
-    *
-    * This is the construction of colimits from coproducts and coequalizers. The points at all objects are the sum
-    * Σ_*A* *D*[*A*], which exists in 𝒮 because its objects are types: it is an existential type ([[Sum]]). The glued
-    * points are a quotient of the sum, the coequalizer of (*f*, *x*) ↦ (*A*, *x*) and (*f*, *x*) ↦ (*B*, *D*(*f*)(*x*)),
-    * and Scala has no quotient types; [[ColimitOf.Point]] makes the quotient by abstraction (tutorial, §7.6). Neither
-    * step looks at the shape of **J**, so this one construction gives every colimit of 𝒮.
+    *   - *X* is the type of points *x* of *D*[*A*] tagged with *A*, with (*A*, *x*) = (*B*, *D*(*f*)(*x*)) for
+    *     *f*: *A* → *B*
+    *   - *ψ*_*A*(*x*) = (*A*, *x*)
+    *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*)
     */
   final class ColimitOf(tracked override val diagram: Functor.Into[Total.type])
       extends Colimit(diagram, diagram.target.Object[ColimitOf.Point.Of[diagram.type]]) {
@@ -367,17 +348,10 @@ object Total extends Category {
 
   object ColimitOf {
 
-    /** A point of the colimit of a diagram *D*: a point of *D* at one object, where `sum` is (*A*, *x*), up to gluing.
+    /** A point of the colimit of a diagram *D*.
       *
-      * The representation holds the object of a point, so it tells glued points apart. It is private to [[ColimitOf]],
-      * with the constructor: the only operation that builds points is [[ColimitOf.leg]], and the only one that reads
-      * them is [[ColimitOf.factor]], through the legs of a cocone, which agree on glued points by
-      * [[Cocone.CoconeLaws.commutes]]. So no client can tell glued points apart, and `Point` is, to them, the quotient
-      * of the sum by the gluing: by representation independence, as for any abstract type (tutorial, §7.6).
-      *
-      * @note The gluing is not checked, and cannot be: it quantifies over every morphism of **J**. It holds because
-      *   cocones are lawful, and it is the cocone law of the colimit itself, *ψ*_*B* ∘ *D*(*f*) = *ψ*_*A*, at each
-      *   point.
+      * Only [[ColimitOf.factor]] reads points, through the legs of a lawful cocone, so no client can tell glued points
+      * apart.
       */
     final class Point private[ColimitOf] (tracked val diagram: Functor.Into[Total.type])(
       private[ColimitOf] val sum: Sum[diagram.source.Obj, diagram.F],
@@ -390,8 +364,9 @@ object Total extends Category {
     }
   }
 
-  /** The colimits of every diagram in 𝒮: every diagram *D*: **J** → 𝒮, of any shape **J**, has the colimit
-    * [[ColimitOf]](*D*).
+  /** The colimits of every diagram in 𝒮.
+    *
+    * Every diagram *D*: **J** → 𝒮, of any shape **J**, has the colimit given by [[ColimitOf]].
     */
   object Colimits extends category.Colimits.InCategory(Total) {
     type D = Functor.Into[Total.type]
@@ -401,15 +376,14 @@ object Total extends Category {
     }
   }
 
-  /** The colimit of a diagram *D*: **J** → 𝒮 of a discrete shape: the sum of the points of *D*.
+  /** The colimit of a diagram *D*: **J** → 𝒮 of a discrete shape.
     *
     * Represents the colimit (*X*, *ψ*), where
-    *   - *X* = Σ_*A* *D*[*A*] is the type of points of *D*[*A*] at an object *A* of **J** ([[Sum]])
-    *   - *ψ*_*A*(*x*) = (*A*, *x*): the leg at *A* tags a point with *A*
-    *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*): a cocone (*Y*, *φ*) factors through its leg at the object of a point
+    *   - *X* = Σ_*A* *D*[*A*] is the type of points *x* of *D*[*A*] tagged with *A* ([[Sum]])
+    *   - *ψ*_*A*(*x*) = (*A*, *x*)
+    *   - [*φ*](*A*, *x*) = *φ*_*A*(*x*)
     *
-    * The only morphisms of **J** are identities, so no two points are glued and the colimit is the sum itself: unlike
-    * [[ColimitOf]], it needs no abstraction, and its apex depends only on the objects of *D*.
+    * The only morphisms of **J** are identities, so no two points are glued.
     */
   final class DiscreteColimitOf(
     tracked override val diagram: Functor.Into[Total.type] { val source: Category { type Self <: =:= } },
@@ -425,8 +399,9 @@ object Total extends Category {
     }
   }
 
-  /** The colimits of every diagram of a discrete shape in 𝒮: the colimit of a diagram with object map *D* on a shape
-    * with objects *O* is [[DiscreteColimitOf]], the type of points Apex[*O*,*D*] = Σ_*A* *D*[*A*].
+  /** The colimits of every diagram of a discrete shape in 𝒮.
+    *
+    * Every diagram with object map *D* on a shape with objects *O* has the colimit given by [[DiscreteColimitOf]].
     */
   object DiscreteColimits extends category.Colimits.DiscreteInCategory(Total) {
     type D                     = Functor.Into[Total.type] { val source: Category { type Self <: =:= } }
