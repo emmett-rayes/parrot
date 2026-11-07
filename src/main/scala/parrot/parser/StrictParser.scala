@@ -17,6 +17,9 @@ import category.Category.Type
   * constructors that rewrite towards a normal form, so the derived combinators collapse into specialized nodes. See
   * [[StrictParser.Node]] and [[Fn]].
   *
+  * Nodes return their results unboxed and signal failure with a private sentinel value instead of an `Option`, so that
+  * tracking failure allocates nothing. See [[StrictParser.Out]].
+  *
   * Regular expressions in the single-character-atom fragment are precompiled. See [[Scanner]]. Other expressions fall
   * back to `scala.util.matching.Regex`.
   *
@@ -62,13 +65,13 @@ class StrictParser
   def diagnose[A, B](p: Node[A, B])(a: A, source: String): (Expected, Option[(B, Int)]) = {
     val state = new State(source, diagnostics = true)
     val out   = p.run(a, state)
-    (state.reported, Option.when(!out.isFailed)((out.get, state.offset)))
+    (state.reported, out.fold(scala.None)(b => Some((b, state.offset))))
   }
 
   override def run[A, B](p: Node[A, B])(a: A, source: String): Option[(B, Int)] = {
     val state = new State(source, diagnostics = false)
     val out   = p.run(a, state)
-    Option.when(!out.isFailed)((out.get, state.offset))
+    out.fold(scala.None)(b => Some((b, state.offset)))
   }
 
   extension [B](p: Node[Unit, B])
@@ -111,7 +114,7 @@ object StrictParser {
   object Out {
 
     /** Unboxed representation: either a value of `B` itself, or the failure sentinel. */
-    opaque type Out[+B] = Any
+    opaque type Out[+B] = B | Failed.type
 
     private object Failed
 
@@ -121,13 +124,23 @@ object StrictParser {
     /** Wraps a successful `value` without boxing. */
     inline def apply[B](value: B): Out[B] = value
 
-    extension (out: Out[Any])
+    extension [B](out: Out[B]) {
+
       /** True if `out` is a failure. */
       inline def isFailed: Boolean = out.asInstanceOf[AnyRef] eq Failed
 
-    extension [B](out: Out[B])
       /** The value of a successful `out`. */
-      inline def get: B = out.asInstanceOf[B]
+      private inline def get: B = out.asInstanceOf[B]
+
+      /** Applies `f` to the value of a successful `out`. */
+      inline def map[C](inline f: B -> C): Out[C] = if isFailed then failed else Out(f(get))
+
+      /** Runs `f` on the value of a successful `out`, and fails if `out` failed. */
+      inline def flatMap[C](inline f: B -> Out[C]): Out[C] = if isFailed then failed else f(get)
+
+      /** `ifFailed` if `out` is a failure, and `f` of its value otherwise. */
+      inline def fold[C](inline ifFailed: C)(inline f: B -> C): C = if isFailed then ifFailed else f(get)
+    }
   }
 
   /** An active call of the recursive parser `rec` on `arg` at `start`, with the seed it grows if it turns out to be
@@ -147,7 +160,7 @@ object StrictParser {
     * Without diagnostics, nothing is recorded and choices dispatch on the next character. With diagnostics, choices try
     * every alternative in order and failures are recorded exactly as [[ReferenceParser]] reports them.
     */
-  final class State(val source: String, val diagnostics: Boolean) {
+  final private[StrictParser] class State(val source: String, val diagnostics: Boolean) {
     var offset: Int                        = 0
     private var failedAt: Int              = -1
     private var expected: Set[Expectation] = Set.empty
@@ -169,7 +182,7 @@ object StrictParser {
     }
 
     /** Replaces the diagnostics, returning the previous ones. */
-    private[StrictParser] def swap(next: Expected): Expected = {
+    def swap(next: Expected): Expected = {
       val previous = Expected(failedAt, expected)
       failedAt = next.position
       expected = next.expectations
@@ -182,7 +195,7 @@ object StrictParser {
     private lazy val heads = mutable.ArrayBuffer.empty[Head[?, ?]]
 
     /** The innermost active call of `rec`, if it started at `at`. */
-    private[StrictParser] def findHead[A, B](rec: Node.Rec[A, B], at: Int): Option[Head[A, B]] = {
+    def findHead[A, B](rec: Node.Rec[A, B], at: Int): Option[Head[A, B]] = {
       @tailrec
       def loop(i: Int): Option[Head[A, B]] = {
         if i < 0 then scala.None
@@ -196,13 +209,15 @@ object StrictParser {
       loop(heads.size - 1)
     }
 
-    private[StrictParser] def pushHead[A, B](rec: Node.Rec[A, B], arg: A, at: Int): Head[A, B] = {
+    /** Pushes the call of `rec` on `arg` at `at` as the innermost active call. */
+    def pushHead[A, B](rec: Node.Rec[A, B], arg: A, at: Int): Head[A, B] = {
       val head = Head(rec, arg, at)
       heads += head
       head
     }
 
-    private[StrictParser] def popHead(): Unit = {
+    /** Pops the innermost active call. */
+    def popHead(): Unit = {
       heads.dropRightInPlace(1)
     }
   }
@@ -399,20 +414,17 @@ object StrictParser {
     /** Sequential composition: runs `p`, then feeds its result to `q`. */
     final case class Seq[A, B, C](p: Node[A, B], q: Node[B, C]) extends Node[A, C] {
       def run(a: A, s: State): Out[C] = {
-        val b = p.run(a, s)
-        if b.isFailed then Out.failed else q.run(b.get, s)
+        p.run(a, s).flatMap(q.run(_, s))
       }
     }
 
     /** Monoidal product: runs `p` on the left input and `q` on the right input, pairing their results. */
     final case class Zip[A, B, C, D](p: Node[A, B], q: Node[C, D]) extends Node[(A, C), (B, D)] {
       def run(ac: (A, C), s: State): Out[(B, D)] = {
-        val b = p.run(ac._1, s)
-        if b.isFailed then Out.failed
-        else {
-          val d = q.run(ac._2, s)
-          if d.isFailed then Out.failed else Out((b.get, d.get))
-        }
+        for {
+          b <- p.run(ac._1, s)
+          d <- q.run(ac._2, s)
+        } yield (b, d)
       }
     }
 
@@ -421,12 +433,10 @@ object StrictParser {
       */
     final case class Pair[A, B, C](p: Node[A, B], q: Node[A, C]) extends Node[A, (B, C)] {
       def run(a: A, s: State): Out[(B, C)] = {
-        val b = p.run(a, s)
-        if b.isFailed then Out.failed
-        else {
-          val c = q.run(a, s)
-          if c.isFailed then Out.failed else Out((b.get, c.get))
-        }
+        for {
+          b <- p.run(a, s)
+          c <- q.run(a, s)
+        } yield (b, c)
       }
     }
 
@@ -552,14 +562,11 @@ object StrictParser {
         @tailrec
         def step(cur: A): Out[B] = {
           val start = s.offset
-          val out   = p.run(cur, s)
-          if out.isFailed then Out.failed
-          else
-            out.get match {
-              case Left(b)                         => Out(b)
-              case Right(next) if s.offset > start => step(next)
-              case Right(_)                        => Out.failed
-            }
+          p.run(cur, s).flatMap {
+            case Left(b)                         => Out(b)
+            case Right(next) if s.offset > start => step(next)
+            case Right(_)                        => Out.failed
+          }
         }
         step(a)
       }
@@ -591,12 +598,12 @@ object StrictParser {
           if count >= max then Out(results.result())
           else {
             val start = s.offset
-            val item  = next()
-            if item.isFailed then { if count >= min then Out(results.result()) else Out.failed }
-            else if count >= min && s.offset == start then Out.failed
-            else {
-              results += item.get
-              loop(results, count + 1)
+            next().fold(if count >= min then Out(results.result()) else Out.failed) { item =>
+              if count >= min && s.offset == start then Out.failed
+              else {
+                results += item
+                loop(results, count + 1)
+              }
             }
           }
         }
@@ -604,22 +611,23 @@ object StrictParser {
         if max == 0 then Out(Vector.empty)
         else {
           val start0 = s.offset
-          val first  = p.run(a, s)
-          if first.isFailed then {
+          p.run(a, s).fold {
             s.offset = start0
             if min == 0 then Out(Vector.empty) else Out.failed
-          } else if min == 0 && s.offset == start0 then Out.failed
-          else if max == 1 then Out(Vector(first.get))
-          else {
-            val start  = s.offset
-            val second = next()
-            if second.isFailed then { if min <= 1 then Out(Vector(first.get)) else Out.failed }
-            else if min <= 1 && s.offset == start then Out.failed
+          } { first =>
+            if min == 0 && s.offset == start0 then Out.failed
+            else if max == 1 then Out(Vector(first))
             else {
-              val results = Vector.newBuilder[B]
-              results += first.get
-              results += second.get
-              loop(results, 2)
+              val start = s.offset
+              next().fold(if min <= 1 then Out(Vector(first)) else Out.failed) { second =>
+                if min <= 1 && s.offset == start then Out.failed
+                else {
+                  val results = Vector.newBuilder[B]
+                  results += first
+                  results += second
+                  loop(results, 2)
+                }
+              }
             }
           }
         }

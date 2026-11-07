@@ -140,7 +140,9 @@ Rejected:
   must name its own type parameters around it: under `extension [A, B](self: P[A, B])`, the syntax for
   `merge[A, B, C](p: P[A, C], q: P[B, C])` reads `||[C](other: P[C, B]): P[Either[A, C], B]`, with *B* and *C*
   swapped. With a header of its own, each extension binds only what its receiver needs, under the names of the method
-  it forwards to, so the syntax and its operation read alike.
+  it forwards to, so the syntax and its operation read alike. The exception is the interface of an opaque type, such as
+  `StrictParser.Out`: its operations forward to no named method and all take the same receiver, so they share one
+  header, under which they call each other without it.
 
 Rejected:
 - bases as type parameters, which cannot be imported from and need `ValueOf` and casts to recover the base values;
@@ -438,6 +440,9 @@ Rejected:
   invariant (if a parser succeeds where the next character is `c`, then `c ∈ first`, or it is nullable and consumed
   nothing), which the random law tests check indirectly. It dispatches choices on the next character, records no
   diagnostics on the fast path, and re-runs in a diagnostic mode only when a parse fails.
+- **The optimizing interpreter returns results unboxed:** a node returns its value itself or a private failure
+  sentinel (`StrictParser.Out`, the option monad without its box), read through inline eliminators that leave no
+  closures. `Option` results double the allocation of the JSON benchmark and cost a tenth of its throughput.
 - **Agreement is the core invariant:** both interpreters give the same results, offsets and diagnostics on every
   grammar without left recursion, checked by random grammars, the law specifications and the JSON grammar.
   `StrictParser` supports left recursion by seed growing, an extension beyond the specification, where the reference
