@@ -6,11 +6,9 @@ package category
   * Represents a trace (Benton–Hyland), where
   *   - *tr*: **C**(*A* ⊗ *U*,*B* ⊗ *U*) → **C**(*A*,*B*) feeds the *U* output back into the *U* input
   *
-  * With ⊗ the coproduct, *tr*(*p*) runs *p* until it leaves through *B*, i.e. a loop. With ⊗ the product, *tr*(*p*)
-  * solves the recursive equation *u* = *p*(*a*,*u*)₂, i.e. a fixed point.
-  *
-  * Sliding and superposing hold for central morphisms, which interchange with every morphism: in a monoidal category
-  * these are all morphisms, in a Freyd category the pure arrows ([[Freyd]]).
+  * Sliding and superposing hold for pure morphisms. In a monoidal category, all morphisms are pure. In a Freyd
+  * category, the pure morphisms are the arrows *η*(*f*) of its base. Pure morphisms are central, i.e. they interchange
+  * with every morphism, but a central morphism need not be pure.
   */
 abstract class Traced(tracked val premonoidal: SymmetricPremonoidal) extends caps.Pure {
   import premonoidal.{I, `*`, associator, braid, lmap, rightUnitor, rmap}
@@ -39,11 +37,12 @@ abstract class Traced(tracked val premonoidal: SymmetricPremonoidal) extends cap
       trace(lmap[A0, A1, U](f) >>> p >>> lmap[B1, B0, U](g)) =?= (f >>> trace(p) >>> g)
     }
 
-    /** *tr*ⱽ((*B* ⊘ *h*) ∘ *p*) = *tr*ᵁ(*p* ∘ (*A* ⊘ *h*)) for central *h*: *U* → *V*
+    /** *tr*ⱽ((*B* ⊘ *h*) ∘ *p*) = *tr*ᵁ(*p* ∘ (*A* ⊘ *h*)) for pure *h*: *U* → *V*
       *
-      * A central map on the feedback wire can slide around the loop.
+      * A pure map on the feedback wire can slide around the loop.
       *
-      * @note The premise is not checked: *h* must be central, such as a pure arrow of a Freyd category.
+      * @note The premise is not checked: *h* must be pure, such as an arrow *η*(*f*) of a Freyd category. Being central
+      *   is not enough.
       */
     def sliding[A: Obj, B: Obj, U: Obj, V: Obj](
       p: (A * V) --> (B * U),
@@ -73,11 +72,12 @@ abstract class Traced(tracked val premonoidal: SymmetricPremonoidal) extends cap
       trace[A, B, U * V](p) =?= trace[A, B, U](trace[A * U, B * U, V](inner))
     }
 
-    /** *tr*(*α*⁻¹ ∘ (*D* ⊘ *p*) ∘ (*g* ⦸ (*A* ⊗ *U*)) ∘ *α*) = (*D* ⊘ *tr*(*p*)) ∘ (*g* ⦸ *A*) for central *g*
+    /** *tr*(*α*⁻¹ ∘ (*D* ⊘ *p*) ∘ (*g* ⦸ (*A* ⊗ *U*)) ∘ *α*) = (*D* ⊘ *tr*(*p*)) ∘ (*g* ⦸ *A*) for pure *g*
       *
       * A wire that does not take part in the loop can be drawn beside it.
       *
-      * @note The premise is not checked: *g*: *C* → *D* must be central, such as a pure arrow of a Freyd category.
+      * @note The premise is not checked: *g*: *C* → *D* must be pure, such as an arrow *η*(*f*) of a Freyd category.
+      *   Being central is not enough.
       */
     def superposing[A: Obj, B: Obj, C: Obj, D: Obj, U: Obj](
       g: C --> D,

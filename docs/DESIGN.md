@@ -203,7 +203,7 @@ Each structure sits at the lowest level where its laws can be stated.
 | Row | Over products | Over coproducts | Level |
 | --- | --- | --- | --- |
 | strength | `Bistrong` (⊗ = ×) | `Bistrong` (⊗ = +), also called choice | `Strong`: a profunctor over left modules (a Tambara module); `Bistrong`: over a symmetric **C** acting on itself |
-| trace | `Traced` (×) | `Traced` (+) | a symmetric premonoidal category: sliding and superposing need central morphisms |
+| trace | `Traced` (×) | `Traced` (+) | a symmetric premonoidal category: sliding and superposing need pure morphisms |
 | fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a bistrong promonad |
 
 - **Strength over left modules.** `Strong(profunctor, monoidal, module1, module2)` is a profunctor *P*: **C₁**ᵒᵖ ×
@@ -235,10 +235,11 @@ Each structure sits at the lowest level where its laws can be stated.
   the strength, a `StrongPromonad` (`Bistrong.On[Promonad]`), whose profunctor is the promonad, as `Elgot` and
   `Conway` do: the structures on a bistrong promonad share one parameter type.
 - **Traces are on a symmetric premonoidal category,** `Traced(premonoidal)`, after Benton and Hyland, and their laws
-  are stated in it, with its whiskerings, unitors, associator and braiding. Only central morphisms interchange with
-  every morphism, so sliding and superposing hold for central morphisms, a premise that the laws state in a note and
-  that the specs meet with pure arrows; the trace of a central morphism is central (`centrality`). In a monoidal
-  category every morphism is central, so a traced symmetric monoidal category is a special case.
+  are stated in it, with its whiskerings, unitors, associator and braiding. Sliding and superposing hold for pure
+  morphisms, the arrows *η*(*f*) of a Freyd category: these are central, but a central morphism need not be pure, and
+  the laws are not required for it. The laws state the premise in a note, and the specs meet it with pure arrows; the
+  trace of a central morphism is central (`centrality`). In a monoidal category every morphism is pure, so a traced
+  symmetric monoidal category is a special case.
 - **Fixed points are on a bistrong promonad,** whose base provides Δ and ∇ (`Conway` and `Elgot`). The bridges build
   the trace on the Freyd category of the strength (`Traced.OfElgot`, `Traced.OfConway`) and take back a trace on a
   Freyd category (`Elgot.OfTraced`, `Conway.OfTraced`). The product row has no useful total instance in a strict

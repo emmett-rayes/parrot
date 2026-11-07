@@ -3389,13 +3389,13 @@ tr : P(A ⊗ U, B ⊗ U) → P(A, B)
 satisfying, in diagrammatic order (each law is a picture of wires that can be deformed without changing the box):
 
 - **tightening**: tr(first(f) ⨾ p ⨾ first(g)) = f ⨾ tr(p) ⨾ g: what happens before and after the loop can be moved out of it;
-- **sliding**: tr(p ⨾ (id ⊗ h)) = tr((id ⊗ h) ⨾ p) for central h : U → V, such as a pure one: a central transformation on the feedback wire can slide around the loop;
+- **sliding**: tr(p ⨾ (id ⊗ h)) = tr((id ⊗ h) ⨾ p) for pure h : U → V: a pure transformation on the feedback wire can slide around the loop;
 - **vanishing**: tracing out the unit I does nothing, and tracing out U ⊗ V is tracing out V, then U;
-- **superposing**: tr(α ⨾ (g ⊗ p) ⨾ α⁻¹) = g ⊗ tr(p) for central g: a wire that does not take part in the loop can be drawn beside it;
+- **superposing**: tr(α ⨾ (g ⊗ p) ⨾ α⁻¹) = g ⊗ tr(p) for pure g: a wire that does not take part in the loop can be drawn beside it;
 - **yanking**: tr(σ) = id: feeding one strand of a braid back into the other gives a straight wire;
 - **centrality**: first(tr(f)) ⨾ second(q) = second(q) ⨾ first(tr(f)) for central f: the trace of a central arrow interchanges with every arrow q, so it is central.
 
-**[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4), and sliding and superposing are restricted to pure arrows, which are central, and the trace of a central arrow is central again **[Standard: Benton and Hyland 2003, from memory]**. That is the version the library's `Traced(premonoidal)` states: it is on a symmetric premonoidal category (`SymmetricPremonoidal`), such as a `Freyd` category, its laws are written with the whiskerings, unitors, associator and braiding of that category, and its tests take pure arrows as the central ones. In a monoidal category every arrow is central, so a traced symmetric monoidal category is a special case.
+**[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4), and sliding and superposing are restricted to pure arrows, which are central, and the trace of a central arrow is central again **[Standard: Benton and Hyland 2003, from memory]**. That is the version the library's `Traced(premonoidal)` states: it is on a symmetric premonoidal category (`SymmetricPremonoidal`), such as a `Freyd` category, its laws are written with the whiskerings, unitors, associator and braiding of that category, and sliding and superposing are stated for pure arrows, not for all central ones: a central arrow need not be pure, and the laws are not required for it. Its tests take pure arrows. In a monoidal category every arrow is pure, so a traced symmetric monoidal category is a special case.
 
 What feedback *means* depends on the tensor.
 
@@ -4204,7 +4204,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Total equality (≐).** Equality of total programs, defined type by type; on functions, agreement on every total argument. Definition 2.5.
 
-**Trace.** Feedback: an operation P(A ⊗ U, B ⊗ U) → P(A, B) on a symmetric premonoidal category, with the laws of traced monoidal categories for central arrows. Definition 19.1.
+**Trace.** Feedback: an operation P(A ⊗ U, B ⊗ U) → P(A, B) on a symmetric premonoidal category, with the laws of traced monoidal categories for pure arrows. Definition 19.1.
 
 **`tracked` parameter.** A constructor parameter whose singleton type is kept in the type of the constructed value, which lets structures take their bases as parameters. Section 11.2.
 
