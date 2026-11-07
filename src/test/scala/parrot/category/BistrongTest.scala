@@ -36,6 +36,11 @@ class OptionKleisliProductIsBistrongTest
 class OptionKleisliCoproductIsBistrongTest
     extends BistrongSpec("Kleisli[Option] on Coproduct", Kleisli.OptionCoproduct)
 
+class TotalParallelIsBistrongTest   extends BistrongSpec("Total on Product", Total.Parallel)
+class TotalChoiceIsBistrongTest     extends BistrongSpec("Total on Coproduct", Total.Choice)
+class PartialParallelIsBistrongTest extends BistrongSpec("Partial on Product", Partial.Parallel)
+class PartialChoiceIsBistrongTest   extends BistrongSpec("Partial on Coproduct", Partial.Choice)
+
 /** The string writer's arrows, run side by side on pairs. */
 object StringWriterProduct extends Kleisli.ProductStrength(StringWriterKleisli)
 

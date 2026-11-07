@@ -134,5 +134,6 @@ object StringWriterKleisliFixture extends PromonadFixture("Kleisli[Writer[String
 
 class OptionKleisliIsPromonadTest       extends PromonadSpec(Kleisli.OptionKleisli)
 class ScalaFunctionsIsPromonadTest      extends PromonadSpec(Total.Functions)
+class PartialProgramsIsPromonadTest     extends PromonadSpec(Partial.Programs)
 class StringWriterKleisliIsPromonadTest extends PromonadSpec(StringWriterKleisli)
 class StringWriterKleisliIsCategoryTest extends CategorySpec(StringWriterKleisli.arrows)

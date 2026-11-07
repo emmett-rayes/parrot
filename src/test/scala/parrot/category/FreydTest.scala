@@ -108,3 +108,27 @@ class StringWriterKleisliCoproductIsFreydTest
     forAll(interchange)(holds => holds)
   }
 }
+
+class TotalParallelIsFreydTest extends FreydSpec("Total on Product", Freyd(Total.Parallel)) {
+  law("interchange", "holds: functions have no effects") {
+    forAll(interchange)(holds => holds)
+  }
+}
+
+class TotalChoiceIsFreydTest extends FreydSpec("Total on Coproduct", Freyd(Total.Choice)) {
+  law("interchange", "holds: only one side runs") {
+    forAll(interchange)(holds => holds)
+  }
+}
+
+class PartialParallelIsFreydTest extends FreydSpec("Partial on Product", Freyd(Partial.Parallel)) {
+  law("interchange", "holds: programs diverge in either order if one side does") {
+    forAll(interchange)(holds => holds)
+  }
+}
+
+class PartialChoiceIsFreydTest extends FreydSpec("Partial on Coproduct", Freyd(Partial.Choice)) {
+  law("interchange", "holds: only one side runs") {
+    forAll(interchange)(holds => holds)
+  }
+}

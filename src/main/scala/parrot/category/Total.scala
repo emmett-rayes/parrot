@@ -185,6 +185,12 @@ object Total extends Category {
     }
   }
 
+  /** Functions run side by side on pairs. */
+  object Parallel extends Bistrong.Hom(Functions, Products)
+
+  /** Functions run on one side of a tagged union. */
+  object Choice extends Bistrong.Hom(Functions, Coproducts)
+
   /** The internal homs of 𝒮: function types, with evaluation and currying. */
   object Exponentials extends Closed(Products) {
     type Exp[A, B] = A -> B
