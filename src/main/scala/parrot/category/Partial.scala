@@ -104,6 +104,27 @@ object Partial extends Category {
     }
   }
 
+  /** The empty type 0 as the terminal object of 𝒫.
+    *
+    * A program into 0 never returns, so there is exactly one from each type, and ! diverges on every argument. The unit
+    * type 1 is not terminal: a program that diverges is a second program into it.
+    */
+  object NothingIsTerminal extends Terminal(Partial) {
+    type Self = Nothing
+
+    def evidence: Nothing is Type = {
+      Type.TIsType
+    }
+
+    def discard[A: Type]: A ~> Nothing = {
+      @annotation.tailrec
+      def diverge(a: A): Nothing = {
+        diverge(a)
+      }
+      a => diverge(a)
+    }
+  }
+
   /** The empty type 0 as the initial object of 𝒫. */
   object NothingIsInitial extends Initial(Partial) {
     type Self = Nothing

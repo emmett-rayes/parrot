@@ -2805,7 +2805,7 @@ def below(a: Int, b: Int): Boolean = join(a, b) == b
 
 | Construction | Set | 𝒮 | 𝒫 |
 | --- | --- | --- | --- |
-| terminal, initial | yes | `Unit`, `Nothing` | `Nothing` is initial; `Unit` is not terminal, since `_ => loop()` is a second arrow into it |
+| terminal, initial | yes | `Unit`, `Nothing` | `Nothing` is initial and terminal, a zero object: every program into it diverges (`Partial.NothingIsTerminal`); `Unit` is not terminal, since `_ => loop()` is a second arrow into it |
 | products | yes | tuples | not products; tuples form a symmetric monoidal structure (restriction products, chapter 18) |
 | coproducts | yes | `Either` | `Either` |
 | exponentials | yes | function types | not in the sense of section 14.1 |
@@ -2816,7 +2816,7 @@ def below(a: Int, b: Int): Boolean = join(a, b) == b
 
 ### 14.9 Set and Scala
 
-In Set, every universal construction exists, and its uniqueness is a theorem about sets. In 𝒮, the finite ones exist, they are programs, and their uniqueness is a law that can be tested. In 𝒫, the constructions that would let a program detect non-termination, products and a terminal object, are lost, which is the categorical shadow of the halting problem. The monoidal structures of the library describe what remains.
+In Set, every universal construction exists, and its uniqueness is a theorem about sets. In 𝒮, the finite ones exist, they are programs, and their uniqueness is a law that can be tested. In 𝒫, the constructions that would let a program detect non-termination, such as products, are lost, which is the categorical shadow of the halting problem. The monoidal structures of the library describe what remains.
 
 ### References for chapter 14
 
@@ -3792,7 +3792,7 @@ With effects, more changes. Effectful arrows run side by side only in an order, 
 
 Subset types and quotient types are not available as type formers, so equalizers, pullbacks and coequalizers have no representing type in general, limits and colimits exist uniformly only by abstraction (sections 6.5 and 7.6), and categories whose homs are subsets or quotients, such as lawful lenses, monoid homomorphisms and Rel, are not Scala categories as they stand (chapters 6 and 7). Functors and other maps that exist only by non-constructive arguments have no Scala counterpart (chapter 5). Objects that are values need an encoding (chapter 8). Polymorphism over kinds is missing, so each kind of object needs its own class (chapter 10).
 
-General recursion is lost from 𝒮: a bicartesian closed category with fixed points for all arrows collapses (Proposition 14.3), so 𝒮 has only guarded fixed points, and unguarded ones live in 𝒫, which in turn has no products and no terminal object. In a strict language, fixed points over products are nearly useless, since computing one requires it first (section 19.4).
+General recursion is lost from 𝒮: a bicartesian closed category with fixed points for all arrows collapses (Proposition 14.3), so 𝒮 has only guarded fixed points, and unguarded ones live in 𝒫, which in turn has no products. In a strict language, fixed points over products are nearly useless, since computing one requires it first (section 19.4).
 
 ### 21.5 What is gained
 
@@ -3822,7 +3822,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Yoneda lemma for endofunctors on 𝒮 | yes | yes | yes | `toYoneda`, `fromYoneda` | [Proved, given A1, A2] | 13 |
 | Equivalence of categories | yes | yes | yes | examples | [Proved] for the examples | 13 |
 | Terminal, initial, products, coproducts, exponentials | yes | yes | yes | `Total.Products`, `Total.Coproducts`, `Total.Exponentials` | [Proved]; laws [Tested] | 14 |
-| Products and a terminal object in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Product` | [Proved] | 14, 18 |
+| Products in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Product` | [Proved] | 14, 18 |
 | Monoidal, symmetric, cartesian, cocartesian, closed structure | yes | yes | yes | `Monoidal` … `Closed` | [Tested] | 14 |
 | Joins; semilattices | yes | yes | yes | `Semilattice` | [Tested] | 14, 15 |
 | Equalizers, pullbacks, all limits | yes | by abstraction | yes | `Total.LimitOf`, for lawful cones | [Convention]; representing types [Open] | 6 |
