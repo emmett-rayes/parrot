@@ -4,30 +4,25 @@ package category
 /** A parameterized fixed-point structure on a bistrong promonad *P* over a cartesian category **M**.
   *
   * Represents a Conway operator (Bloom–Ésik; Hasegawa), where
-  *   - *p*†: *P*(*A*,*X*) is the fixed point of *p*: *P*(*A* × *X*,*X*), a solution of *x* = *p*(*a*,*x*)
+  *   - †: is the fixed point operator.
   *
-  * In a strict language this column of the grid is nearly empty: computing *p*† means running *p*†, so the least
-  * solution is the nowhere-defined arrow, and useful recursion needs function types ([[Recursion]]) or guardedness.
-  * Conway operators are equivalent to traces for products ([[Traced.OfConway]], [[Conway.OfTraced]]) and dual to
-  * iteration: an Elgot operator is a Conway operator on the opposite category.
+  * Conway operators are equivalent to traces for products. See [[Traced.OfConway]]. Conway operators are dual to Elgot
+  * iteration. See [[Elgot]].
   */
 abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesian }) extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.`*`
   import profunctor.{P, >>>}
-  import profunctor.category.{Obj, identity, -->}
+  import profunctor.arrows.-->
+  import profunctor.category.{Obj, identity, --> as ==>}
 
   /** The fixed point *p*†: *P*(*A*,*X*) of *p*: *P*(*A* × *X*,*X*).
     *
     * It solves *x* = *p*(*a*,*x*) for *x*.
     */
-  def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X]
+  def fix[A: Obj, X: Obj](p: (A * X) --> X): A --> X
 
-  /** Laws that any `Conway` operator must satisfy.
-    *
-    * The fixed point is a fixed point, natural and uniform for pure arrows, dinatural for all arrows and satisfies the
-    * diagonal law.
-    */
+  /** Laws that any `Conway` operator must satisfy. */
   object ConwayLaws {
     private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
@@ -35,7 +30,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       *
       * Unfolding one step changes nothing.
       */
-    def fixedPoint[A: Obj, X: Obj](p: P[A * X, X])(using P[A, X] is Observable): Boolean = {
+    def fixedPoint[A: Obj, X: Obj](p: (A * X) --> X)(using (A --> X) is Observable): Boolean = {
       fix(p) =?= (profunctor.unit(monoidal.diagonal[A]) >>> strong.left[A, X, A](fix(p)) >>> p)
     }
 
@@ -43,8 +38,8 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       *
       * Pre-processing the parameter can be done inside the fixed point or before it.
       */
-    def parameterNaturality[A0: Obj, A1: Obj, X: Obj](p: P[A1 * X, X], h: A0 --> A1)(
-      using P[A0, X] is Observable
+    def parameterNaturality[A0: Obj, A1: Obj, X: Obj](p: (A1 * X) --> X, h: A0 ==> A1)(
+      using (A0 --> X) is Observable
     ): Boolean = {
       fix(strong.right[A0, A1, X](profunctor.unit(h)) >>> p) =?= (profunctor.unit(h) >>> fix(p))
     }
@@ -53,8 +48,8 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       *
       * A pure step at the end of the body can be rotated to the start.
       */
-    def composition[A: Obj, X: Obj, Y: Obj](f: P[A * X, Y], g: Y --> X)(
-      using P[A, X] is Observable
+    def composition[A: Obj, X: Obj, Y: Obj](f: P[A * X, Y], g: Y ==> X)(
+      using (A --> X) is Observable
     ): Boolean = {
       fix[A, X](f >>> profunctor.unit(g))
         =?= (fix[A, Y](profunctor.unit(monoidal.parallel(identity[A], g)) >>> f) >>> profunctor.unit(g))
@@ -66,7 +61,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       * runs *g*: with effects, it is *τ*(*g*) ∘ *η*(⟨*π*₁,*id*⟩). [[composition]] is the special case of a pure *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[A * Y, X], g: P[A * X, Y])(
-      using P[A, X] is Observable
+      using (A --> X) is Observable
     ): Boolean = {
       val keepG = profunctor.unit(monoidal.pair(monoidal.fst[A, X], identity[A * X])) >>>
         strong.left[A * X, Y, A](g)
@@ -81,7 +76,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       * A fixed point inside a fixed point over the same state is one fixed point.
       */
     def doubleDagger[A: Obj, X: Obj](p: P[(A * X) * X, X])(
-      using P[A, X] is Observable
+      using (A --> X) is Observable
     ): Boolean = {
       fix[A, X](fix[A * X, X](p))
         =?= fix[A, X](profunctor.unit(monoidal.pair(identity[A * X], monoidal.snd[A, X])) >>> p)
@@ -96,8 +91,8 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
     def uniformity[A: Obj, X: Obj, Y: Obj](
       f: P[A * X, X],
       g: P[A * Y, Y],
-      h: X --> Y,
-    )(using P[A, Y] is Observable): Boolean = {
+      h: X ==> Y,
+    )(using (A --> Y) is Observable): Boolean = {
       (fix(f) >>> profunctor.unit(h)) =?= fix(g)
     }
 
@@ -106,7 +101,7 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
       * @note The premise is not checked: *p*′ must be equal to *p* by construction.
       */
     def congruence[A: Obj, X: Obj](p: P[A * X, X], p2: P[A * X, X])(
-      using P[A, X] is Observable
+      using (A --> X) is Observable
     ): Boolean = {
       fix(p) =?= fix(p2)
     }
@@ -128,9 +123,10 @@ object Conway {
     import strong.{monoidal, profunctor}
     import monoidal.`*`
     import profunctor.P
+    import profunctor.arrows.-->
     import profunctor.category.Obj
 
-    def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X] = {
+    def fix[A: Obj, X: Obj](p: (A * X) --> X): (A --> X) = {
       elgot.iterate[A, X](p)
     }
   }
@@ -142,11 +138,12 @@ object Conway {
     import strong.{monoidal, profunctor}
     import monoidal.`*`
     import profunctor.{P, >>>}
+    import profunctor.arrows.-->
     import profunctor.category.Obj
 
     private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 
-    def fix[A: Obj, X: Obj](p: P[A * X, X]): P[A, X] = {
+    def fix[A: Obj, X: Obj](p: (A * X) --> X): (A --> X) = {
       traced.trace[A, X, X](p >>> profunctor.unit(monoidal.diagonal[X]))
     }
   }

@@ -4,30 +4,25 @@ package category
 /** An iteration structure on a bistrong promonad *P* over a cocartesian category **M**.
   *
   * Represents an Elgot operator (Elgot; Bloom–Ésik), where
-  *   - *p*†: *P*(*X*,*A*) is the iteration of *p*: *P*(*X*,*A* + *X*), which runs *p* and, on *X*, runs it again
+  *   - †: is the iteration operator.
   *
-  * In 𝒫 this is the while loop, defined for every *p*. In 𝒮 it cannot be: deciding whether a loop stops is the
-  * halting problem. Total instances are guarded: they stop with failure on a step that makes no progress, and satisfy
-  * the laws for the steps that always make progress. Elgot operators are equivalent to traces for coproducts
-  * ([[Traced.OfElgot]], [[Elgot.OfTraced]]).
+  * Elgot operators are equivalent to traces for coproducts. See [[Traced.OfElgot]]. Elgot operators are dual to Conway
+  * fixed points. See [[Conway]].
   */
 abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartesian }) extends caps.Pure {
   import strong.{monoidal, profunctor}
   import monoidal.+
   import profunctor.{P, >>>}
-  import profunctor.category.{Obj, identity, -->}
+  import profunctor.arrows.-->
+  import profunctor.category.{Obj, identity, --> as ==>}
 
   /** The iteration *p*†: *P*(*X*,*A*) of *p*: *P*(*X*,*A* + *X*).
     *
     * It runs *p*; on *A* it stops, and on *X* it runs *p* again.
     */
-  def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A]
+  def iterate[A: Obj, X: Obj](p: X --> (A + X)): X --> A
 
-  /** Laws that any `Elgot` operator must satisfy.
-    *
-    * The iteration is a fixed point, natural and uniform for pure arrows, dinatural for all arrows and satisfies the
-    * codiagonal law.
-    */
+  /** Laws that any `Elgot` operator must satisfy. */
   object ElgotLaws {
     private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
 
@@ -35,7 +30,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       *
       * Unrolling one iteration changes nothing.
       */
-    def fixedPoint[A: Obj, X: Obj](p: P[X, A + X])(using P[X, A] is Observable): Boolean = {
+    def fixedPoint[A: Obj, X: Obj](p: X --> (A + X))(using (X --> A) is Observable): Boolean = {
       iterate(p) =?= (p >>> strong.left[X, A, A](iterate(p)) >>> profunctor.unit(monoidal.codiagonal[A]))
     }
 
@@ -43,8 +38,8 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       *
       * Post-processing the result can be done inside the loop or after it.
       */
-    def parameterNaturality[A: Obj, B: Obj, X: Obj](p: P[X, A + X], h: A --> B)(
-      using P[X, B] is Observable
+    def parameterNaturality[A: Obj, B: Obj, X: Obj](p: X --> (A + X), h: A ==> B)(
+      using (X --> B) is Observable
     ): Boolean = {
       iterate(p >>> strong.right[A, B, X](profunctor.unit(h))) =?= (iterate(p) >>> profunctor.unit(h))
     }
@@ -53,8 +48,8 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       *
       * A pure step at the start of each round can be rotated to the end.
       */
-    def composition[A: Obj, X: Obj, Y: Obj](p: P[Y, A + X], g: X --> Y)(
-      using P[X, A] is Observable
+    def composition[A: Obj, X: Obj, Y: Obj](p: P[Y, A + X], g: X ==> Y)(
+      using (X --> A) is Observable
     ): Boolean = {
       iterate[A, X](profunctor.unit(g) >>> p)
         =?= (profunctor.unit(g) >>> iterate[A, Y](p >>> profunctor.unit(monoidal.parallel(identity[A], g))))
@@ -66,7 +61,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       * with effects, it is *η*([*ι*₁,*id*]) ∘ *τ*(*g*). [[composition]] is the special case of a pure *g*.
       */
     def dinaturality[A: Obj, X: Obj, Y: Obj](f: P[X, A + Y], g: P[Y, A + X])(
-      using P[X, A] is Observable
+      using (X --> A) is Observable
     ): Boolean = {
       val fg = f >>> strong.left[Y, A + X, A](g) >>>
         profunctor.unit(monoidal.copair(monoidal.inl[A, X], identity[A + X]))
@@ -80,7 +75,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       * A loop inside a loop over the same state is one loop.
       */
     def doubleDagger[A: Obj, X: Obj](p: P[X, (A + X) + X])(
-      using P[X, A] is Observable
+      using (X --> A) is Observable
     ): Boolean = {
       iterate[A, X](iterate[A + X, X](p))
         =?= iterate[A, X](p >>> profunctor.unit(monoidal.copair(identity[A + X], monoidal.inr[A, X])))
@@ -95,8 +90,8 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
     def uniformity[A: Obj, X: Obj, Y: Obj](
       f: P[X, A + X],
       g: P[Y, A + Y],
-      h: X --> Y,
-    )(using P[X, A] is Observable): Boolean = {
+      h: X ==> Y,
+    )(using (X --> A) is Observable): Boolean = {
       iterate(f) =?= (profunctor.unit(h) >>> iterate(g))
     }
 
@@ -105,7 +100,7 @@ abstract class Elgot(tracked val strong: StrongPromonad { val monoidal: Cocartes
       * @note The premise is not checked: *p*′ must be equal to *p* by construction.
       */
     def congruence[A: Obj, X: Obj](p: P[X, A + X], p2: P[X, A + X])(
-      using P[X, A] is Observable
+      using (X --> A) is Observable
     ): Boolean = {
       iterate(p) =?= iterate(p2)
     }
@@ -123,9 +118,10 @@ object Elgot {
     import strong.{monoidal, profunctor}
     import monoidal.+
     import profunctor.P
+    import profunctor.arrows.-->
     import profunctor.category.Obj
 
-    def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A] = {
+    def iterate[A: Obj, X: Obj](p: X --> (A + X)): (X --> A) = {
       conway.fix[A, X](p)
     }
   }
@@ -137,11 +133,12 @@ object Elgot {
     import strong.{monoidal, profunctor}
     import monoidal.+
     import profunctor.{P, >>>}
+    import profunctor.arrows.-->
     import profunctor.category.Obj
 
     private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
 
-    def iterate[A: Obj, X: Obj](p: P[X, A + X]): P[X, A] = {
+    def iterate[A: Obj, X: Obj](p: X --> (A + X)): (X --> A) = {
       traced.trace[X, A, X](profunctor.unit(monoidal.codiagonal[X]) >>> p)
     }
   }
