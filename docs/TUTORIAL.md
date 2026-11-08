@@ -3590,8 +3590,8 @@ A parser `P[A, B]` consumes a prefix of the input while turning a **semantic inp
 | `products`, `coproducts` | cartesian and cocartesian structure of `-->`, on `Tuple2` and `Either` | 14 | used by the derived combinators |
 | `zipping` | strength over products, which makes parsers a Freyd category, `zipped` | 17 | `**`, and derived from it `&&`, `*>`, `<*`, `between` |
 | `branching` | strength over coproducts, which makes parsers a Freyd category, `branched` | 17 | `++`, and derived from it `\|\|` |
-| `choice` | classical restriction structure | 18 | `failure`, `~` (lookahead), `!` (negation), `attempt`, `\|>`, `+>`, `optional` |
-| `loops` | guarded iteration | 19 | `iterate`, and derived from it `repeated`, `times`, `atLeast`, `separatedBy` |
+| `choice` | classical restriction structure | 18 | `failure`, `~` (lookahead), `!` (negation), `attempt`, `\|>`, `+>`, `?` (optional) |
+| `loops` | guarded iteration | 19 | `iterate`, and derived from it `*` (repeated), `+` (atLeastOnce), `times`, `atLeast`, `separatedBy` |
 | `knots` | guarded recursion at the types of parsers | 19 | `recursive` |
 
 An interpreter chooses the structures and implements five primitives: `lift`, which includes Scala functions among the pure functions `-->`; `literal` and `regex`, which read the input; `rule`, which names a parser for error messages; and `diagnose`, which runs a parser. Every other combinator is defined once, in `ParserAlgebra`, from the structures. For instance:

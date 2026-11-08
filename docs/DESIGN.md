@@ -433,6 +433,9 @@ Rejected:
 - **Iteration and recursion are guarded by the input:** a loop step that continues, or a recursive call, must come after
   consumed input, or it fails. Every parser therefore terminates, and repeating an item that consumes nothing fails
   instead of looping or stopping silently.
+- **The postfix operators are PEG's, written with a dot:** `p.?`, `p.*` and `p.+` forward to `optional`, `repeated` and
+  `atLeastOnce`, beside the extensions of those names. With `~` for PEG's `&`, `!`, and `|>` for its `/`, they complete
+  the notation of parsing expression grammars.
 - **The reference interpreter builds nothing new:** it is the Kleisli category of
   `StateT[Input](OptionT(Writer(Expected.Furthest)))`, and every structure is a generic construction of the library.
   It is the specification, meant to be obviously right; it is slow and not stack-safe.
@@ -450,6 +453,10 @@ Rejected:
   fails the left-recursive call.
 
 Rejected, until an interpreter needs other semantic types: abstract semantic types and mixin traits for the algebra.
+
+Rejected for the postfix operators: the bare `p?`, which needs `scala.language.postfixOps` in every grammar and takes
+what follows as its argument, so `p? >> q` does not parse; and `p * n` for `times` beside `p.*`, since where `P` is a
+function, as in the reference, `a * 2` resolves to `a.*.apply(2)`.
 
 ### Diagnostics
 

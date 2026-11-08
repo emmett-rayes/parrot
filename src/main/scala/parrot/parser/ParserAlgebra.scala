@@ -307,6 +307,11 @@ abstract class ParserAlgebra(
     repeat(unrolled(p, n), p)
   }
 
+  /** Runs *p* at least once, until it fails, collecting the results: *p*⁺ = *atLeast*(*p*,1). */
+  def atLeastOnce[A, B](p: P[A, B]): P[A, Vector[B]] = {
+    atLeast(p, 1)
+  }
+
   /** Runs *p* one or more times, separated by *separator*, collecting the results. */
   def separatedBy[A, B, C](p: P[A, B], separator: P[A, C]): P[A, Vector[B]] = {
     repeat(unrolled(p, 1), skipThen(separator, p))
@@ -389,9 +394,26 @@ abstract class ParserAlgebra(
     final def optional(using DummyImplicit): P[A, Either[B, A]] = ParserAlgebra.this.optional(p)
 
   extension [A, B](p: P[A, B])
+    /** Postfix form of [[optional]]. */
+    final def ? : P[A, Either[B, A]] = ParserAlgebra.this.optional(p)
+
+  extension [A, B](p: P[A, B])
     /** Postfix form of [[repeated]]. */
     @targetName("repeatedExt")
     final def repeated(using DummyImplicit): P[A, Vector[B]] = ParserAlgebra.this.repeated(p)
+
+  extension [A, B](p: P[A, B])
+    /** Postfix form of [[repeated]]. */
+    final def * : P[A, Vector[B]] = ParserAlgebra.this.repeated(p)
+
+  extension [A, B](p: P[A, B])
+    /** Postfix form of [[atLeastOnce]]. */
+    @targetName("atLeastOnceExt")
+    final def atLeastOnce(using DummyImplicit): P[A, Vector[B]] = ParserAlgebra.this.atLeastOnce(p)
+
+  extension [A, B](p: P[A, B])
+    /** Postfix form of [[atLeastOnce]]. */
+    final def + : P[A, Vector[B]] = ParserAlgebra.this.atLeastOnce(p)
 
   extension [A, B](p: P[A, B])
     /** Infix extension for [[times]]. */
@@ -593,6 +615,11 @@ abstract class ParserAlgebra(
       val cons  = lift[(B, Vector[B]), Vector[B]]((b, bs) => b +: bs)
       val empty = lift[A, Vector[B]](_ => Vector.empty)
       p.repeated =?= ((p && p.repeated).map(cons) |> pure(empty))
+    }
+
+    /** *p*⁺ = *atLeast*(*p*,1) */
+    def atLeastOnceDefinition[A, B](p: P[A, B])(using P[A, Vector[B]] is Observable): Boolean = {
+      atLeastOnce(p) =?= atLeast(p, 1)
     }
   }
 }

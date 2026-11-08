@@ -185,6 +185,13 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
     }
   }
 
+  law("atLeastOnceDefinition") {
+    forAll(ParserGen.exact[Int, Vector[Int]](algebra), parsers) { (o, p) =>
+      given (P[Int, Vector[Int]] is Observable) = o
+      atLeastOnceDefinition(p)
+    }
+  }
+
   law("ruleTransparent", "without diagnostics") {
     forAll(semantic, parsers, Gen.oneOf("x", "y")) { (o, p, label) =>
       given (P[Int, Int] is Observable) = o

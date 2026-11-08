@@ -274,7 +274,10 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   (`object Observable extends ComponentwiseObservable`). `CanEqual` is not an equality: build `Eq` with `Eq.structural`.
   Exporting a given whose type depends on a path fails under capture checking (`docs/compiler-issues.md`): name the
   type and declare a private given instead (`Monoidal.I = unit.A` and `IIsObj`).
-- **Nullary extensions** that clash with a method of the same name take `(using DummyImplicit)`.
+- **Nullary extensions** that clash with a method of the same name take `(using DummyImplicit)`. A nullary extension
+  beside a unary one of the same name fails where the receiver has an `apply`: with `p.*` and `p * n`, `a * 2` on a
+  function `P` (`ReferenceParser`) is `a.*.apply(2)`, whatever the order, type parameters or `using` clauses. Spike
+  parser syntax on a function `P` too, not only an abstract one.
 - **Imports.** `import monoidal.{*, ***}` is an error, since `*` is the wildcard; import a tensor alias `*` backticked:
   ``import monoidal.{I, `*`, given}``. Pants infers no dependency from a relative import at the top of a file
   (`import Category.Discrete2.Disc2` after the package clauses), and `pants check` can then fail with "Not found": put

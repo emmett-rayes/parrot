@@ -40,6 +40,9 @@ class ReferenceParserTest extends AnyFunSuite {
     val _      = assert(either.parse("c").isFailure)
     val _      = assert((a +> b).parse("b").get == (result = Right("b"), offset = 1))
     val _      = assert(a.attempt.parse("b").get == (result = Right(()), offset = 0))
+    val _      = assert(a.?.parse("a").get == (result = Left("a"), offset = 1))
+    val _      = assert(a.?.parse("b").get == (result = Right(()), offset = 0))
+    val _      = assert(a.optional.parse("a").get == (result = Left("a"), offset = 1))
     assert(((a +> b) >> (pure[String, Int](_.length) || pure(_ => 0))).parse("a").get == (result = 1, offset = 1))
   }
 
@@ -60,6 +63,15 @@ class ReferenceParserTest extends AnyFunSuite {
     val _ = assert(a.atLeast(2).parse("aaab").get == (result = Vector("a", "a", "a"), offset = 3))
     val _ = assert(a.atLeast(2).parse("ab").isFailure)
     assert(a.separatedBy(literal(",")).parse("a,a,ab").get == (result = Vector("a", "a", "a"), offset = 5))
+  }
+
+  test("the operators of repetition: * and +") {
+    val _ = assert(a.*.parse("aab").get == (result = Vector("a", "a"), offset = 2))
+    val _ = assert(a.*.parse("b").get == (result = Vector.empty, offset = 0))
+    val _ = assert(a.+.parse("aab").get == (result = Vector("a", "a"), offset = 2))
+    val _ = assert(a.+.parse("b").isFailure)
+    val _ = assert(a.atLeastOnce.parse("aab").get == (result = Vector("a", "a"), offset = 2))
+    assert(a.atLeastOnce.parse("b").isFailure)
   }
 
   test("repetition is guarded: an item that succeeds without consuming input fails the repetition") {
