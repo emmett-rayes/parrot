@@ -189,8 +189,8 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
 - **Every extension method has its own `extension` header**, without braces, so that the header binds only what its
   receiver needs, named as in the method it forwards to: for `merge[A, B, C](p: P[A, C], q: P[B, C])`, the header is
   `extension [A, C](p: P[A, C])` and the method `final def ||[B](q: P[B, C]): P[Either[A, B], C]` (`docs/DESIGN.md`).
-  The exception is the interface of an opaque type, which forwards to nothing: `StrictParser.Out`'s operations share
-  one braced header.
+  The exception is a family on one receiver that forwards to nothing, which shares one braced header: the interface of
+  an opaque type (`StrictParser.Out`'s operations), and `parse` and `parseAll`.
 - No unicode in code, and diagrammatic composition (`>>>`) there; unicode math and `∘` only in scaladoc.
 - **Every** public member has scaladoc, exports excepted. Math: variables in `*italics*`, categories in `**bold**` or
   as 𝒮 and 𝒫, `∘` for composition, no spaces in argument lists (`**C**(*A*,*B*)`). Laws state their equation first.

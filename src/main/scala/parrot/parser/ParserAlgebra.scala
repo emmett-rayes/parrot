@@ -86,7 +86,8 @@ abstract class ParserAlgebra(
     diagnose(p)(a, source)._2
   }
 
-  extension [B](p: P[Unit, B])
+  extension [B](p: P[Unit, B]) {
+
     /** Runs `p` on a prefix of `source`, reporting what was expected where it failed furthest if it fails. */
     def parse(source: String): Try[(result: B, offset: Int)] = {
       run(p)((), source) match {
@@ -95,7 +96,6 @@ abstract class ParserAlgebra(
       }
     }
 
-  extension [B](p: P[Unit, B])
     /** Runs `p` on the whole of `source`. */
     def parseAll(source: String): Try[(result: B, offset: Int)] = {
       run(p)((), source) match {
@@ -106,6 +106,7 @@ abstract class ParserAlgebra(
         case scala.None => scala.util.Failure(ParseError(diagnose(p)((), source)._1))
       }
     }
+  }
 
   // ==== Sequencing: the promonad ====
 

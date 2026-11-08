@@ -140,9 +140,9 @@ Rejected:
   must name its own type parameters around it: under `extension [A, B](self: P[A, B])`, the syntax for
   `merge[A, B, C](p: P[A, C], q: P[B, C])` reads `||[C](other: P[C, B]): P[Either[A, C], B]`, with *B* and *C*
   swapped. With a header of its own, each extension binds only what its receiver needs, under the names of the method
-  it forwards to, so the syntax and its operation read alike. The exception is the interface of an opaque type, such as
-  `StrictParser.Out`: its operations forward to no named method and all take the same receiver, so they share one
-  header, under which they call each other without it.
+  it forwards to, so the syntax and its operation read alike. The exceptions forward to no named method and all take
+  the same receiver, so they share one header: the interface of an opaque type, such as `StrictParser.Out`, whose
+  operations call each other under it without the receiver, and `parse` and `parseAll`.
 
 Rejected:
 - bases as type parameters, which cannot be imported from and need `ValueOf` and casts to recover the base values;
