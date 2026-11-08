@@ -133,6 +133,7 @@ object Partial extends Category {
     }
 
     def discard[A: Type]: A ~> Nothing = {
+      @annotation.nowarn("msg=Infinite recursive call")
       @annotation.tailrec
       def diverge(a: A): Nothing = {
         diverge(a)
