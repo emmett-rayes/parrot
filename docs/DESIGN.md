@@ -419,9 +419,17 @@ Rejected:
 
 - **The algebra is a bundle:**
   `ParserAlgebra(sequencing, products, coproducts, zipping, branching, choice, loops, knots)`, every combinator an
-  operation of one of them. An interpreter chooses the structures and implements five primitives: `lift`, `literal`,
-  `regex`, `rule` and `diagnose`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`, `Nothing`, `Vector`):
+  operation of one of them. An interpreter chooses the structures and implements four primitives: `lift`, `literal`,
+  `regex` and `rule`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`, `Nothing`, `Vector`):
   every interpreter made the same choice, and fixing them removes a layer of type members.
+- **Running is a map out of the algebra, not an operation of it:** `Semantics(algebra)` has one primitive, `denote`,
+  which sends a parser to its meaning, a function of the semantic input and the state of a parse. That function is the
+  carrier of the reference, the specification. `diagnose`, `run`, `parse` and `parseAll` evaluate it. A grammar takes
+  only the algebra, so it cannot run its parsers. `Semantics` is a bundle on the algebra and no subclass of it, because
+  it adds a map and no operations; each interpreter nests one and exports what clients call.
+- **Parsers are observed at every position:** a regular expression sees the input before its position, so
+  `regex("^b".r)` and `literal("b")` agree at the start of every source and differ after anything that consumes input.
+  The law fixtures and the agreement tests therefore observe at random offsets.
 - **Ordered choice is override,** derived from the classical structure. `attempt(p): P[A, B + A]`, which runs `p` once
   and reports the outcome, is derived from override and the injections of the pure functions, and is the form an
   optimizing interpreter can implement in one pass; `optional` is `attempt`.
@@ -448,7 +456,7 @@ Rejected:
   sentinel (`StrictParser.Out`, the option monad without its box), read through inline eliminators that leave no
   closures. `Option` results double the allocation of the JSON benchmark and cost a tenth of its throughput.
 - **Agreement is the core invariant:** both interpreters give the same results, offsets and diagnostics on every
-  grammar without left recursion, checked by random grammars, the law specifications and the JSON grammar.
+  grammar without left recursion and at every position, checked by random grammars, the law specifications and the JSON grammar.
   `StrictParser` supports left recursion by seed growing, an extension beyond the specification, where the reference
   fails the left-recursive call.
 

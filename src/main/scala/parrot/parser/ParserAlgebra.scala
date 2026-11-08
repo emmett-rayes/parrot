@@ -4,7 +4,6 @@ package parser
 import category.*
 
 import scala.annotation.targetName
-import scala.util.Try
 import scala.util.matching.Regex
 
 import category.Category.Type
@@ -22,9 +21,10 @@ import category.Category.Type
   *   - [[loops]] runs a parser repeatedly, which gives repetition
   *   - [[knots]] lets a parser refer to itself, which gives recursive rules
   *
-  * An interpreter chooses the structures and implements the primitives `lift`, `literal`, `regex`, `rule` and
-  * `diagnose`. Every other combinator is derived. An interpreter may override one with a faster implementation as long
-  * as it respects the same equations. See [[ParserAlgebra.ParserLaws]].
+  * An interpreter chooses the structures and implements the primitives `lift`, `literal`, `regex` and `rule`. Every
+  * other combinator is derived. An interpreter may override one with a faster implementation as long as it respects
+  * the same equations. See [[ParserAlgebra.ParserLaws]]. What its parsers mean, and how they are run, is its
+  * [[Semantics]].
   *
   * @note Iteration and recursion are guarded by the input. A loop step that continues, or a recursive call, fails
   *   unless input was consumed before it, so every parser terminates.
@@ -75,38 +75,6 @@ abstract class ParserAlgebra(
     * and lookbehind and `\b` see the input before the current position.
     */
   def regex(expected: Regex): P[Unit, String]
-
-  /** Runs `p` on semantic input `a` at the start of `source`: what it expected where it failed furthest, and its result
-    * and the offset after it, if it succeeds.
-    */
-  def diagnose[A, B](p: P[A, B])(a: A, source: String): (Expected, Option[(B, Int)])
-
-  /** Runs `p` on semantic input `a` at the start of `source`: its result and the offset after it, if it succeeds. */
-  def run[A, B](p: P[A, B])(a: A, source: String): Option[(B, Int)] = {
-    diagnose(p)(a, source)._2
-  }
-
-  extension [B](p: P[Unit, B]) {
-
-    /** Runs `p` on a prefix of `source`, reporting what was expected where it failed furthest if it fails. */
-    def parse(source: String): Try[(result: B, offset: Int)] = {
-      run(p)((), source) match {
-        case Some((result, offset)) => scala.util.Success((result = result, offset = offset))
-        case scala.None             => scala.util.Failure(ParseError(diagnose(p)((), source)._1))
-      }
-    }
-
-    /** Runs `p` on the whole of `source`. */
-    def parseAll(source: String): Try[(result: B, offset: Int)] = {
-      run(p)((), source) match {
-        case Some((result, offset)) if offset == source.length =>
-          scala.util.Success((result = result, offset = offset))
-        case Some((_, offset)) =>
-          scala.util.Failure(ParseError(diagnose(p)((), source)._1.join(Expected.at(offset, "end of input"))))
-        case scala.None => scala.util.Failure(ParseError(diagnose(p)((), source)._1))
-      }
-    }
-  }
 
   // ==== Sequencing: the promonad ====
 
@@ -622,21 +590,5 @@ abstract class ParserAlgebra(
     def atLeastOnceDefinition[A, B](p: P[A, B])(using P[A, Vector[B]] is Observable): Boolean = {
       atLeastOnce(p) =?= atLeast(p, 1)
     }
-  }
-}
-
-/** A parse failure, reported as what was expected where it failed furthest.
-  *
-  * A parse can fail without expecting anything, for instance at a failure or at a negation whose parser succeeded,
-  * since those are silent. Its diagnostics are then ⊥, and it is reported as a failure at the start.
-  */
-final case class ParseError(expected: Expected) extends Exception with scala.util.control.NoStackTrace {
-
-  /** The furthest position at which something failed, or the start if nothing was expected. */
-  def offset: Int = expected.position.max(0)
-
-  override def getMessage: String = {
-    if expected.expectations.isEmpty then s"no parse at position $offset"
-    else s"expected ${expected.describe} at position $offset"
   }
 }

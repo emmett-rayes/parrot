@@ -58,12 +58,15 @@ class ReferenceParser
       else (Expected.bottom, Some((in.source.substring(in.offset, end).nn, Input(in.source, end))))
   }
 
-  def diagnose[A, B](
-    p: A -> Input -> (Expected, Option[(B, Input)])
-  )(a: A, source: String): (Expected, Option[(B, Int)]) = {
-    val (expected, result) = p(a)(Input(source, 0))
-    (expected, result.map((b, in) => (b, in.offset)))
+  /** Running parsers: the reference is the specification, so a parser means itself. */
+  object Semantics extends parser.Semantics(this) {
+
+    def denote[A, B](p: A -> Input -> (Expected, Option[(B, Input)])): A -> Input -> (Expected, Option[(B, Input)]) = {
+      p
+    }
   }
+
+  export Semantics.{diagnose, run, parse, parseAll}
 }
 
 object ReferenceParser {

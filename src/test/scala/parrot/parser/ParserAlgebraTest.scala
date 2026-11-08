@@ -7,14 +7,15 @@ import org.scalacheck.Gen
 import Sample.given
 
 /** The equations of parsing expression grammars, on random grammars, for an interpreter. */
-abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) extends LawSuite("PEG", name) {
+abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) extends LawSuite("PEG", name) {
+  export semantics.algebra
   import algebra.*
   import algebra.ParserLaws.*
 
   private lazy val parsers: Gen[P[Int, Int]]                = Grammars.terms.map(Grammars.interpret(algebra))
-  private lazy val observe: Gen[P[Int, Int] is Observable]  = ParserGen.exact[Int, Int](algebra)
-  private lazy val semantic: Gen[P[Int, Int] is Observable] = ParserGen.observe[Int, Int](algebra)
-  private lazy val order: Gen[P[Int, Int] is Preorder]      = ParserGen.order[Int, Int](algebra)
+  private lazy val observe: Gen[P[Int, Int] is Observable]  = ParserGen.exact[Int, Int](semantics)
+  private lazy val semantic: Gen[P[Int, Int] is Observable] = ParserGen.observe[Int, Int](semantics)
+  private lazy val order: Gen[P[Int, Int] is Preorder]      = ParserGen.order[Int, Int](semantics)
 
   /** A parser and one that reports at least as much: where *p* fails, it also runs *q* and fails. */
   private lazy val refined: Gen[(P[Int, Int], P[Int, Int])] = {
@@ -46,21 +47,21 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
   }
 
   law("zipIdentity") {
-    forAll(ParserGen.exact[(Int, Int), (Int, Int)](algebra)) { o =>
+    forAll(ParserGen.exact[(Int, Int), (Int, Int)](semantics)) { o =>
       given (P[(Int, Int), (Int, Int)] is Observable) = o
       zipIdentity[Int, Int]
     }
   }
 
   law("zipDefinition") {
-    forAll(ParserGen.exact[(Int, Int), (Int, Int)](algebra), parsers, parsers) { (o, p, q) =>
+    forAll(ParserGen.exact[(Int, Int), (Int, Int)](semantics), parsers, parsers) { (o, p, q) =>
       given (P[(Int, Int), (Int, Int)] is Observable) = o
       zipDefinition(p, q)
     }
   }
 
   law("branchDefinition") {
-    forAll(ParserGen.exact[Either[Int, Int], Either[Int, Int]](algebra), parsers, parsers) { (o, p, q) =>
+    forAll(ParserGen.exact[Either[Int, Int], Either[Int, Int]](semantics), parsers, parsers) { (o, p, q) =>
       given (P[Either[Int, Int], Either[Int, Int]] is Observable) = o
       branchDefinition(p, q)
     }
@@ -102,7 +103,7 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
   }
 
   law("attemptDefinition") {
-    forAll(ParserGen.exact[Int, Either[Int, Int]](algebra), parsers) { (o, p) =>
+    forAll(ParserGen.exact[Int, Either[Int, Int]](semantics), parsers) { (o, p) =>
       given (P[Int, Either[Int, Int]] is Observable) = o
       attemptDefinition(p)
     }
@@ -179,14 +180,14 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
   }
 
   law("repeatedUnfolding", "parsers that consume") {
-    forAll(ParserGen.exact[Int, Vector[Int]](algebra), consuming) { (o, p) =>
+    forAll(ParserGen.exact[Int, Vector[Int]](semantics), consuming) { (o, p) =>
       given (P[Int, Vector[Int]] is Observable) = o
       repeatedUnfolding(p)
     }
   }
 
   law("atLeastOnceDefinition") {
-    forAll(ParserGen.exact[Int, Vector[Int]](algebra), parsers) { (o, p) =>
+    forAll(ParserGen.exact[Int, Vector[Int]](semantics), parsers) { (o, p) =>
       given (P[Int, Vector[Int]] is Observable) = o
       atLeastOnceDefinition(p)
     }
@@ -214,7 +215,7 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
   }
 
   law("zipMonotone") {
-    forAll(ParserGen.order[(Int, Int), (Int, Int)](algebra), refined, refined) { case (o, (p, p2), (q, q2)) =>
+    forAll(ParserGen.order[(Int, Int), (Int, Int)](semantics), refined, refined) { case (o, (p, p2), (q, q2)) =>
       given (P[(Int, Int), (Int, Int)] is Preorder) = o
       zipMonotone(p, p2, q, q2)
     }
@@ -242,27 +243,28 @@ abstract class ParserLawSpec(name: String, tracked val algebra: ParserAlgebra) e
   }
 }
 
-class ReferenceParserLawTest extends ParserLawSpec("ReferenceParser", Interpreters.reference)
+class ReferenceParserLawTest extends ParserLawSpec("ReferenceParser", Interpreters.reference.Semantics)
 
-class StrictParserLawTest extends ParserLawSpec("StrictParser", Interpreters.strict)
+class StrictParserLawTest extends ParserLawSpec("StrictParser", Interpreters.strict.Semantics)
 
-/** The core invariant: on every grammar, the optimizing interpreter does what the reference does. */
+/** The core invariant: on every grammar and at every position, the optimizing interpreter does what the reference does.
+  */
 class AgreementTest extends LawSuite("Agreement", "StrictParser") {
   import Interpreters.{reference, strict}
 
   law("results, offsets and diagnostics of ReferenceParser", "random grammars") {
-    forAll(Grammars.terms, Grammars.sources, Gen.choose(-5, 5)) { (term, source, n) =>
-      val expected = reference.diagnose(Grammars.interpret(reference)(term))(n, source)
-      val actual   = strict.diagnose(Grammars.interpret(strict)(term))(n, source)
+    forAll(Grammars.terms, Grammars.inputs, Gen.choose(-5, 5)) { (term, in, n) =>
+      val expected = reference.diagnose(Grammars.interpret(reference)(term))(n, in.source, in.offset)
+      val actual   = strict.diagnose(Grammars.interpret(strict)(term))(n, in.source, in.offset)
       Eq.Tuple2IsEq(using Expected.ExpectedIsEq, Eq.OptionIsEq(using Eq.Tuple2IsEq(using Eq.IntIsEq, Eq.IntIsEq)))
         .equal(expected, actual)
     }
   }
 
   law("results and offsets without diagnostics", "random grammars") {
-    forAll(Grammars.terms, Grammars.sources, Gen.choose(-5, 5)) { (term, source, n) =>
-      val expected = reference.run(Grammars.interpret(reference)(term))(n, source)
-      val actual   = strict.run(Grammars.interpret(strict)(term))(n, source)
+    forAll(Grammars.terms, Grammars.inputs, Gen.choose(-5, 5)) { (term, in, n) =>
+      val expected = reference.run(Grammars.interpret(reference)(term))(n, in.source, in.offset)
+      val actual   = strict.run(Grammars.interpret(strict)(term))(n, in.source, in.offset)
       Eq.OptionIsEq(using Eq.Tuple2IsEq(using Eq.IntIsEq, Eq.IntIsEq)).equal(expected, actual)
     }
   }

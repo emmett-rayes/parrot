@@ -84,7 +84,7 @@ class ReferenceIsPreorderTest
       ParserGen.arrow[Int, Int](Interpreters.reference),
       ParserGen.variant[Int, Int](Interpreters.reference),
       ParserGen.refine[Int, Int](Interpreters.reference),
-      ParserGen.oracles[Int, Int](Interpreters.reference),
+      ParserGen.oracles[Int, Int](Interpreters.reference.Semantics),
     )
 
 // ==== StrictParser ====
@@ -163,7 +163,7 @@ class StrictIsPreorderTest
       ParserGen.arrow[Int, Int](Interpreters.strict),
       ParserGen.variant[Int, Int](Interpreters.strict),
       ParserGen.refine[Int, Int](Interpreters.strict),
-      ParserGen.oracles[Int, Int](Interpreters.strict),
+      ParserGen.oracles[Int, Int](Interpreters.strict.Semantics),
     )
 
 class FnsIsObservableTest extends ObservableSpec(FnsFixture)

@@ -3594,7 +3594,7 @@ A parser `P[A, B]` consumes a prefix of the input while turning a **semantic inp
 | `loops` | guarded iteration | 19 | `iterate`, and derived from it `*` (repeated), `+` (atLeastOnce), `times`, `atLeast`, `separatedBy` |
 | `knots` | guarded recursion at the types of parsers | 19 | `recursive` |
 
-An interpreter chooses the structures and implements five primitives: `lift`, which includes Scala functions among the pure functions `-->`; `literal` and `regex`, which read the input; `rule`, which names a parser for error messages; and `diagnose`, which runs a parser. Every other combinator is defined once, in `ParserAlgebra`, from the structures. For instance:
+An interpreter chooses the structures and implements four primitives: `lift`, which includes Scala functions among the pure functions `-->`; `literal` and `regex`, which read the input; and `rule`, which names a parser for error messages. Every other combinator is defined once, in `ParserAlgebra`, from the structures. Running a parser is not among them: an interpreter also has a `Semantics`, which gives each parser its meaning and runs it. For instance:
 
 - `p && q` = Δ ⨾ (p ** q): run both on the same semantic input, by duplicating it and running them side by side;
 - `p *> q` = (p && q) ⨾ π₂: keep the right result;

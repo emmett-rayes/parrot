@@ -93,7 +93,7 @@ object Grammars {
   val terms: Gen[Term] = {
     val leaf: Gen[Term] = Gen.oneOf(
       Gen.oneOf("a", "b", "ab", "(", "").map(Lit(_)),
-      Gen.oneOf("a+", "[ab]", "b*", "\\(").map(Re(_)),
+      Gen.oneOf("a+", "[ab]", "b*", "\\(", "^a", "(?<=a)b").map(Re(_)),
       Gen.choose(-3, 3).map(Arith(_)),
       Gen.const(Fail),
     )
@@ -128,6 +128,11 @@ object Grammars {
   val sources: Gen[String] = {
     Gen.choose(0, 6).flatMap(n => Gen.listOfN(n, Gen.oneOf('a', 'b', '(', ')')).map(_.mkString))
   }
+
+  /** Positions in sources: what remains to be read is a sample of [[sources]], after a prefix that is also one. */
+  val inputs: Gen[ReferenceParser.Input] = {
+    Gen.zip(sources, sources).map((prefix, rest) => ReferenceParser.Input(prefix + rest, prefix.length))
+  }
 }
 
 /** The interpreters under test, as stable values. */
@@ -153,7 +158,7 @@ object FnsFixture extends CategoryFixture("Fn", Fns) {
 }
 
 /** Generated parsers of an interpreter: a random grammar between random pure functions, observed by running on sample
-  * semantic inputs and sources.
+  * semantic inputs at sample positions in sources.
   */
 object ParserGen {
 
@@ -167,30 +172,34 @@ object ParserGen {
     } yield pure(lift(in)) >> Grammars.interpret(alg)(term) >> pure(lift(out))
   }
 
-  /** Sample semantic inputs and sources, at which parsers are observed. */
-  private def points[X: Sample]: Gen[List[(X, String)]] = {
-    Gen.listOfN(6, Gen.zip(X.gen, Grammars.sources))
+  /** Sample semantic inputs and positions in sources, at which parsers are observed. */
+  private def points[X: Sample]: Gen[List[(X, ReferenceParser.Input)]] = {
+    Gen.listOfN(6, Gen.zip(X.gen, Grammars.inputs))
   }
 
   /** Observations of parsers *X* → *Y* including diagnostics: what they report, their results and offsets. */
-  def exact[X: Sample, Y: Sample](alg: ParserAlgebra): Gen[alg.P[X, Y] is Observable] = {
-    points[X].map(points => exactAt[X, Y](alg)(points))
+  def exact[X: Sample, Y: Sample](semantics: Semantics): Gen[semantics.algebra.P[X, Y] is Observable] = {
+    points[X].map(points => exactAt[X, Y](semantics)(points))
   }
 
   /** The order of parsers *X* → *Y*: the same results and offsets, and at least as much diagnostics. */
-  def order[X: Sample, Y: Sample](alg: ParserAlgebra): Gen[alg.P[X, Y] is Preorder] = {
-    points[X].map(points => orderAt[X, Y](alg)(points))
+  def order[X: Sample, Y: Sample](semantics: Semantics): Gen[semantics.algebra.P[X, Y] is Preorder] = {
+    points[X].map(points => orderAt[X, Y](semantics)(points))
   }
 
   /** [[exact]] and [[order]] at the same sample points, for the laws that relate them. */
-  def oracles[X: Sample, Y: Sample](alg: ParserAlgebra): Gen[(alg.P[X, Y] is Observable, alg.P[X, Y] is Preorder)] = {
-    points[X].map(points => (exactAt[X, Y](alg)(points), orderAt[X, Y](alg)(points)))
+  def oracles[X: Sample, Y: Sample](
+    semantics: Semantics
+  ): Gen[(semantics.algebra.P[X, Y] is Observable, semantics.algebra.P[X, Y] is Preorder)] = {
+    points[X].map(points => (exactAt[X, Y](semantics)(points), orderAt[X, Y](semantics)(points)))
   }
 
   /** [[exact]] at the given sample points. */
-  private def exactAt[X, Y: Sample](alg: ParserAlgebra)(points: List[(X, String)]): alg.P[X, Y] is Observable = {
-    Observable.through[alg.P[X, Y], (Expected, Option[(Y, Int)])](points.map((x, source) =>
-      p => alg.diagnose(p)(x, source)
+  private def exactAt[X, Y: Sample](semantics: Semantics)(
+    points: List[(X, ReferenceParser.Input)]
+  ): semantics.algebra.P[X, Y] is Observable = {
+    Observable.through[semantics.algebra.P[X, Y], (Expected, Option[(Y, Int)])](points.map((x, in) =>
+      p => semantics.diagnose(p)(x, in.source, in.offset)
     ))(
       using
       Observable.EqIsObservable(
@@ -200,7 +209,9 @@ object ParserGen {
   }
 
   /** [[order]] at the given sample points. */
-  private def orderAt[X, Y: Sample](alg: ParserAlgebra)(points: List[(X, String)]): alg.P[X, Y] is Preorder = {
+  private def orderAt[X, Y: Sample](semantics: Semantics)(
+    points: List[(X, ReferenceParser.Input)]
+  ): semantics.algebra.P[X, Y] is Preorder = {
     val outcomes: (Expected, Option[(Y, Int)]) is Preorder = new Preorder {
       type Self = (Expected, Option[(Y, Int)])
 
@@ -209,8 +220,8 @@ object ParserGen {
         Eq.OptionIsEq(using Eq.Tuple2IsEq(using Y.eq, Eq.IntIsEq)).equal(a._2, b._2)
       }
     }
-    Preorder.through[alg.P[X, Y], (Expected, Option[(Y, Int)])](points.map((x, source) =>
-      p => alg.diagnose(p)(x, source)
+    Preorder.through[semantics.algebra.P[X, Y], (Expected, Option[(Y, Int)])](points.map((x, in) =>
+      p => semantics.diagnose(p)(x, in.source, in.offset)
     ))(
       using outcomes
     )
@@ -239,10 +250,13 @@ object ParserGen {
     )
   }
 
-  /** Observations of parsers *X* → *Y*: their results and offsets at sample semantic inputs and sources. */
-  def observe[X: Sample, Y: Sample](alg: ParserAlgebra): Gen[alg.P[X, Y] is Observable] = {
+  /** Observations of parsers *X* → *Y*: their results and offsets at sample semantic inputs and positions in sources.
+    */
+  def observe[X: Sample, Y: Sample](semantics: Semantics): Gen[semantics.algebra.P[X, Y] is Observable] = {
     points[X].map { points =>
-      Observable.through[alg.P[X, Y], Option[(Y, Int)]](points.map((x, source) => p => alg.run(p)(x, source)))(
+      Observable.through[semantics.algebra.P[X, Y], Option[(Y, Int)]](points.map((x, in) =>
+        p => semantics.run(p)(x, in.source, in.offset)
+      ))(
         using Observable.EqIsObservable(using Eq.OptionIsEq(using Eq.Tuple2IsEq(using Y.eq, Eq.IntIsEq)))
       )
     }
@@ -258,7 +272,9 @@ object ReferenceFixture extends PromonadFixture("ReferenceParser", Interpreters.
   def variant[X: Sample, Y: Sample](p: P[X, Y]): P[X, Y] =
     Interpreters.reference.orElse(p, Interpreters.reference.failure)
 
-  def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable] = ParserGen.observe[X, Y](Interpreters.reference)
+  def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable] = {
+    ParserGen.observe[X, Y](Interpreters.reference.Semantics)
+  }
 }
 
 object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict.sequencing) {
@@ -269,7 +285,9 @@ object StrictFixture extends PromonadFixture("StrictParser", Interpreters.strict
 
   def variant[X: Sample, Y: Sample](p: P[X, Y]): P[X, Y] = Interpreters.strict.rule(p, "variant")
 
-  def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable] = ParserGen.observe[X, Y](Interpreters.strict)
+  def observe[X: Sample, Y: Sample]: Gen[P[X, Y] is Observable] = {
+    ParserGen.observe[X, Y](Interpreters.strict.Semantics)
+  }
 }
 
 /** [[ReferenceFixture]], observed with diagnostics and varied by an identity that reports nothing. */
@@ -281,7 +299,9 @@ object ReferenceDiagnosticsFixture
 
   def variant[X: Sample, Y: Sample](p: X --> Y): X --> Y = ParserGen.variant(Interpreters.reference)(p)
 
-  def observe[X: Sample, Y: Sample]: Gen[(X --> Y) is Observable] = ParserGen.exact[X, Y](Interpreters.reference)
+  def observe[X: Sample, Y: Sample]: Gen[(X --> Y) is Observable] = {
+    ParserGen.exact[X, Y](Interpreters.reference.Semantics)
+  }
 }
 
 /** [[StrictFixture]], observed with diagnostics and varied by an identity that reports nothing. */
@@ -293,7 +313,9 @@ object StrictDiagnosticsFixture
 
   def variant[X: Sample, Y: Sample](p: X --> Y): X --> Y = ParserGen.variant(Interpreters.strict)(p)
 
-  def observe[X: Sample, Y: Sample]: Gen[(X --> Y) is Observable] = ParserGen.exact[X, Y](Interpreters.strict)
+  def observe[X: Sample, Y: Sample]: Gen[(X --> Y) is Observable] = {
+    ParserGen.exact[X, Y](Interpreters.strict.Semantics)
+  }
 }
 
 /** The fixtures of the interpreters.

@@ -61,17 +61,25 @@ class StrictParser
     Scanner.compile(expected).fold(Pattern(expected))(Scan(expected, _))
   }
 
-  def diagnose[A, B](p: Node[A, B])(a: A, source: String): (Expected, Option[(B, Int)]) = {
-    val state = new State(source, diagnostics = true)
-    val out   = p.run(a, state)
-    (state.reported, out.fold(scala.None)(b => Some((b, state.offset))))
+  /** Running parsers: with diagnostics they mean what the reference says, and [[run]] skips the diagnostics. */
+  object Semantics extends parser.Semantics(this) {
+    import ReferenceParser.Input
+
+    def denote[A, B](p: Node[A, B]): A -> Input -> (Expected, Option[(B, Input)]) = {
+      a => in =>
+        val state = new State(in.source, diagnostics = true, in.offset)
+        val out   = p.run(a, state)
+        (state.reported, out.fold(scala.None)(b => Some((b, Input(in.source, state.offset)))))
+    }
+
+    override def run[A, B](p: Node[A, B])(a: A, source: String, offset: Int = 0): Option[(B, Int)] = {
+      val state = new State(source, diagnostics = false, offset)
+      val out   = p.run(a, state)
+      out.fold(scala.None)(b => Some((b, state.offset)))
+    }
   }
 
-  override def run[A, B](p: Node[A, B])(a: A, source: String): Option[(B, Int)] = {
-    val state = new State(source, diagnostics = false)
-    val out   = p.run(a, state)
-    out.fold(scala.None)(b => Some((b, state.offset)))
-  }
+  export Semantics.{diagnose, run, parse, parseAll}
 
   override def repeated[A, B](p: Node[A, B]): Node[A, Vector[B]] = {
     Repeat(p, 0, Int.MaxValue, scala.None)
@@ -150,8 +158,7 @@ object StrictParser {
     * Without diagnostics, nothing is recorded and choices dispatch on the next character. With diagnostics, choices try
     * every alternative in order and failures are recorded exactly as [[ReferenceParser]] reports them.
     */
-  final private[StrictParser] class State(val source: String, val diagnostics: Boolean) {
-    var offset: Int                        = 0
+  final private[StrictParser] class State(val source: String, val diagnostics: Boolean, var offset: Int) {
     private var failedAt: Int              = -1
     private var expected: Set[Expectation] = Set.empty
 

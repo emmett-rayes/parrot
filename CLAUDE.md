@@ -15,7 +15,8 @@ the point of the project is to build the structures from scratch.
 - `parrot.category`: categorical structures (categories, functors, limits, promonads, premonoidal and monoidal
   structures, strength, restriction, traces, Conway and Elgot operators, recursion, monads and transformers), each with
   its laws as executable code.
-- `parrot.parser`: `ParserAlgebra`, the PEG combinators as a bundle of those structures, and two interpreters:
+- `parrot.parser`: `ParserAlgebra`, the PEG combinators as a bundle of those structures; `Semantics`, which gives the
+  parsers of an algebra their meaning and runs them; and two interpreters:
   `ReferenceParser`, the executable specification built only from library structures (slow and not stack-safe, so
   JSON tests parse on a 1 GiB-stack thread, `JsonFixtures.onDeepStack`; never optimize it at the expense of clarity),
   and `StrictParser`, an optimizing interpreter over a normalized AST (`Node`) of reified pure functions (`Fn`).
@@ -151,11 +152,12 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
 - A parser `P[A, B]` consumes a prefix of the input while turning a semantic input `A` into a result `B`.
   `ParserAlgebra(sequencing, products, coproducts, zipping, branching, choice, loops, knots)`: every combinator is an
   operation of one of these (`|>` is restriction override, i.e. PEG ordered choice). Loops and recursion are
-  **guarded**: a step or call that makes no progress fails. Interpreters implement only `lift`, `literal`, `regex`,
-  `rule` and `diagnose`.
+  **guarded**: a step or call that makes no progress fails. Interpreters implement only `lift`, `literal`, `regex`
+  and `rule`, and `denote` in the `Semantics` they nest.
 - **Core invariant:** `StrictParser` behaves exactly like `ReferenceParser` (results, offsets **and diagnostics**) on
   every grammar without left recursion, which `StrictParser` additionally solves by seed growing. `AgreementTest`
-  checks it on random `Grammars.terms`, the JSON tests on the corpora, and both interpreters run the same law specs.
+  checks it on random `Grammars.terms` at random positions, the JSON tests on the corpora, and both interpreters run
+  the same law specs.
 - Diagnostics (`Expected`) are a join-semilattice written on success and failure; lookahead, negation, `failure` and
   guard failures are silent, which is why some `ParserLaws` are inequations.
 - `StrictParser` run paths: no allocation beyond results, no boxing, `@tailrec` loops, no per-call closures. Functions
@@ -170,8 +172,9 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   instances lose their `Bar` test classes.
 - **Combinator:** derive it in `ParserAlgebra` if possible, add a `Grammars.Term` case if it extends what grammars can
   express, add laws to `ParserLaws`, and test both interpreters.
-- **Interpreter:** extend `ParserAlgebra(…)` with structures of the types its parameters require, implement the five
-  primitives, and register it in `Interpreters` (in `Grammars.scala`), the law and structure specs, `AgreementTest` and
+- **Interpreter:** extend `ParserAlgebra(…)` with structures of the types its parameters require, implement the four
+  primitives, nest an `object Semantics extends parser.Semantics(this)` with `denote`, export its `diagnose`, `run`,
+  `parse` and `parseAll`, and register it in `Interpreters` (in `Grammars.scala`), the law and structure specs, `AgreementTest` and
   `JsonGrammarTest`.
 - **Grammar:** take a `ParserAlgebra` and `import algebra.*`; use `lift` for pure functions, `recursive` for
   self-reference (the call must follow consumed input), `recursive[(P[…], P[…])]` for mutual recursion and

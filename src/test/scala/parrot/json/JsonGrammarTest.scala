@@ -2,7 +2,7 @@ package parrot
 package json
 
 import org.scalatest.funsuite.AnyFunSuite
-import parser.{ReferenceParser, StrictParser}
+import parser.{ReferenceParser, Semantics, StrictParser}
 
 /** Tests for [[JsonGrammar]] on both [[ReferenceParser]] and [[StrictParser]]. */
 class JsonGrammarTest extends AnyFunSuite {
@@ -11,19 +11,19 @@ class JsonGrammarTest extends AnyFunSuite {
 
   private val referenceParser = ReferenceParser()
   private val strictParser    = StrictParser()
-  private val reference       = JsonGrammar(referenceParser)
-  private val strict          = JsonGrammar(strictParser)
 
-  tests("ReferenceParser", reference)
+  tests("ReferenceParser", referenceParser.Semantics)
 
-  tests("StrictParser", strict)
+  tests("StrictParser", strictParser.Semantics)
 
-  /** Registers the tests of `grammar`, which run its parsers on a prefix of the input and return their result and the
-    * remaining input.
+  /** Registers the tests of the grammar on the algebra of `semantics`, which run its parsers on a prefix of the input
+    * and return their result and the remaining input.
     */
-  private def tests(interpreter: String, grammar: JsonGrammar): Unit = {
+  private def tests(interpreter: String, semantics: Semantics): Unit = {
+    val grammar = JsonGrammar(semantics.algebra)
+
     extension [B](self: grammar.algebra.P[Unit, B]) def on(input: String): Option[(B, String)] = {
-      grammar.algebra.parse(self)(input).toOption.map((result, offset) => (result, input.slice(offset, input.length)))
+      semantics.parse(self)(input).toOption.map((result, offset) => (result, input.slice(offset, input.length)))
     }
 
     def accepts[B](p: grammar.algebra.P[Unit, B], input: String): Boolean = p.on(input).exists(_._2.isEmpty)
