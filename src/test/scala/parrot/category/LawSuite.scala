@@ -21,6 +21,11 @@ abstract class LawSuite(structure: String, instance: String) extends AnyFunSuite
   /** The number of generated cases per law. */
   protected val cases: Int = 200
 
+  /** The number of generated cases per counterexample. A search stops at its first witness, so a witness that exists
+    * costs only the cases before it, however rare it is.
+    */
+  protected val searchCases: Int = 2000
+
   private val rows = ListBuffer.empty[LawStatus.Row]
 
   /** What the laws of this suite are about: `instance`, as an instance of `structure`. */
@@ -48,7 +53,7 @@ abstract class LawSuite(structure: String, instance: String) extends AnyFunSuite
     search: => Prop
   ): Unit = {
     test(s"${subject.instance} is not ${subject.structure}: $name fails") {
-      val result = Test.check(Test.Parameters.default.withMinSuccessfulTests(cases), search)
+      val result = Test.check(Test.Parameters.default.withMinSuccessfulTests(searchCases), search)
       val found  = !result.passed
       val status = if found then "Fails (counterexample)" else "Not refuted"
       record(LawStatus.Row(subject.structure, name, subject.instance, status, note))
