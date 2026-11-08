@@ -6,7 +6,6 @@ import category.*
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.matching.Regex
-import scala.util.{Try, Failure as TryFailure, Success as TrySuccess}
 
 import category.Category.Type
 
@@ -73,15 +72,6 @@ class StrictParser
     val out   = p.run(a, state)
     out.fold(scala.None)(b => Some((b, state.offset)))
   }
-
-  extension [B](p: Node[Unit, B])
-    /** Parses without diagnostics, then, only if the parse fails, again with them. */
-    override def parse(source: String): Try[(result: B, offset: Int)] = {
-      run(p)((), source) match {
-        case Some((result, offset)) => TrySuccess((result = result, offset = offset))
-        case scala.None             => TryFailure(ParseError(diagnose(p)((), source)._1))
-      }
-    }
 
   override def repeated[A, B](p: Node[A, B]): Node[A, Vector[B]] = {
     Repeat(p, 0, Int.MaxValue, scala.None)

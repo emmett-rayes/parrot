@@ -89,21 +89,21 @@ abstract class ParserAlgebra(
   extension [B](p: P[Unit, B])
     /** Runs `p` on a prefix of `source`, reporting what was expected where it failed furthest if it fails. */
     def parse(source: String): Try[(result: B, offset: Int)] = {
-      diagnose(p)((), source) match {
-        case (_, Some((result, offset))) => scala.util.Success((result = result, offset = offset))
-        case (expected, scala.None)      => scala.util.Failure(ParseError(expected))
+      run(p)((), source) match {
+        case Some((result, offset)) => scala.util.Success((result = result, offset = offset))
+        case scala.None             => scala.util.Failure(ParseError(diagnose(p)((), source)._1))
       }
     }
 
   extension [B](p: P[Unit, B])
     /** Runs `p` on the whole of `source`. */
     def parseAll(source: String): Try[(result: B, offset: Int)] = {
-      diagnose(p)((), source) match {
-        case (_, Some((result, offset))) if offset == source.length =>
+      run(p)((), source) match {
+        case Some((result, offset)) if offset == source.length =>
           scala.util.Success((result = result, offset = offset))
-        case (expected, Some((_, offset))) =>
-          scala.util.Failure(ParseError(expected.join(Expected.at(offset, "end of input"))))
-        case (expected, scala.None) => scala.util.Failure(ParseError(expected))
+        case Some((_, offset)) =>
+          scala.util.Failure(ParseError(diagnose(p)((), source)._1.join(Expected.at(offset, "end of input"))))
+        case scala.None => scala.util.Failure(ParseError(diagnose(p)((), source)._1))
       }
     }
 

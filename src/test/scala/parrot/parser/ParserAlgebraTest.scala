@@ -259,4 +259,33 @@ class AgreementTest extends LawSuite("Agreement", "StrictParser") {
       Eq.OptionIsEq(using Eq.Tuple2IsEq(using Eq.IntIsEq, Eq.IntIsEq)).equal(expected, actual)
     }
   }
+
+  law("parse and parseAll of ReferenceParser", "random grammars") {
+    forAll(Grammars.terms, Grammars.sources, Gen.choose(-5, 5)) { (term, source, n) =>
+      val slow     = AgreementTest.closed(reference)(term, n)
+      val fast     = AgreementTest.closed(strict)(term, n)
+      val outcomes = Eq.EitherIsEq(using Eq.StringIsEq, Eq.Tuple2IsEq(using Eq.IntIsEq, Eq.IntIsEq))
+      outcomes.equal(
+        AgreementTest.outcome(reference.parse(slow)(source)),
+        AgreementTest.outcome(strict.parse(fast)(source)),
+      ) && outcomes.equal(
+        AgreementTest.outcome(reference.parseAll(slow)(source)),
+        AgreementTest.outcome(strict.parseAll(fast)(source)),
+      )
+    }
+  }
+}
+
+object AgreementTest {
+
+  /** The parser denoted by `term` in `alg`, at the semantic input `n`. */
+  def closed(alg: ParserAlgebra)(term: Term, n: Int): alg.P[Unit, Int] = {
+    import alg.*
+    Grammars.interpret(alg)(term).mapInput(lift((_: Unit) => n))
+  }
+
+  /** What a parse returns, as comparable data: the message of its error, or its result and offset. */
+  def outcome(parsed: scala.util.Try[(result: Int, offset: Int)]): Either[String, (Int, Int)] = {
+    parsed.fold(error => Left(error.getMessage.nn), success => Right((success.result, success.offset)))
+  }
 }
