@@ -95,6 +95,25 @@ class StrictParserTest extends AnyFunSuite {
     assert(expr.parse("x").isFailure)
   }
 
+  test("left recursion nested in left recursion: precedence and left association, through parentheses") {
+    val expr = recursive[Unit, String] { expr =>
+      val atom = regex("[0-9]+".r) |> expr.between(literal("("), literal(")"))
+      val term = recursive[Unit, String] { term =>
+        (term <* literal("*") && atom).map(lift((l, r) => s"($l*$r)")) |> atom
+      }
+      (expr <* literal("+") && term).map(lift((l, r) => s"($l+$r)"))
+        |> (expr <* literal("-") && term).map(lift((l, r) => s"($l-$r)"))
+        |> term
+    }
+    val _ = assert(result(expr.parseAll("1")) == TrySuccess("1"))
+    val _ = assert(result(expr.parseAll("1-2-3")) == TrySuccess("((1-2)-3)"))
+    val _ = assert(result(expr.parseAll("1*2*3")) == TrySuccess("((1*2)*3)"))
+    val _ = assert(result(expr.parseAll("1+2*3-4")) == TrySuccess("((1+(2*3))-4)"))
+    val _ = assert(result(expr.parseAll("1-(2-3)")) == TrySuccess("(1-(2-3))"))
+    val _ = assert(result(expr.parseAll("(1+2)*(3-4)*5")) == TrySuccess("(((1+2)*(3-4))*5)"))
+    assert(expr.parseAll("1-").isFailure)
+  }
+
   test("non-left recursion") {
     val parens = recursive[Unit, String](rec =>
       rec.between(literal("("), literal(")")).map(lift(inner => s"[$inner]")) |> literal("x")

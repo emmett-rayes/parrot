@@ -6,6 +6,23 @@ import org.scalacheck.Gen
 
 import Sample.given
 
+/** A grammar in which what a parser consumes depends on an earlier result: a length, then that many characters. */
+final class LengthPrefixed(tracked val algebra: ParserAlgebra) extends caps.Pure {
+  import algebra.*
+
+  private type State = (BigInt, String)
+
+  private val length    = regex("[0-9]+".r).map(lift[String, BigInt](BigInt(_)))
+  private val char      = regex("[a-z]".r).mapInput(lift[State, Unit](_ => ()))
+  private val start     = lift[BigInt, State]((_, ""))
+  private val countdown = lift[State, Either[String, State]]((n, s) => if n > 0 then Right((n - 1, s)) else Left(s))
+  private val append    = lift[(State, String), State] { case ((n, s), c) => (n, s + c) }
+  private val step      = pure(countdown) >> (success[String] ++ (success[State] && char).map(append))
+
+  /** The characters of a length-prefixed string. */
+  val string: P[Unit, String] = length.map(start) >> step.iterate
+}
+
 /** The equations of parsing expression grammars, on random grammars, for an interpreter. */
 abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) extends LawSuite("PEG", name) {
   export semantics.algebra
@@ -240,6 +257,16 @@ abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) ext
       given (P[Int, Int] is Observable) = o
       ((p |> q) >> h) =?= ((p >> h) |> (q >> h))
     }
+  }
+
+  test(s"$name: what a parser consumes can depend on an earlier result") {
+    val string = LengthPrefixed(semantics.algebra).string
+
+    val _ = assert(semantics.run(string)((), "3abc") == Some(("abc", 4)))
+    val _ = assert(semantics.run(string)((), "2abc") == Some(("ab", 3)))
+    val _ = assert(semantics.run(string)((), "0abc") == Some(("", 1)))
+    val _ = assert(semantics.run(string)((), "10abcdefghij") == Some(("abcdefghij", 12)))
+    assert(semantics.run(string)((), "3ab").isEmpty)
   }
 }
 
