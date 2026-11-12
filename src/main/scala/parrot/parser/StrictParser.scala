@@ -462,7 +462,8 @@ object StrictParser {
       }
     }
 
-    /** Monoidal product: runs `p` on the left input and `q` on the right input, pairing their results. */
+    /** The left-to-right tensor *p* ⋉ *q*: runs `p` on the left input, then `q` on the right input, pairing their results.
+      */
     final case class Zip[A, B, C, D](p: Node[A, B], q: Node[C, D]) extends Node[(A, C), (B, D)] {
       def run(ac: (A, C), s: State): Out[(B, D)] = {
         for {

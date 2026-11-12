@@ -33,14 +33,18 @@ abstract class FreydSpec(
     }
   }
 
-  law("multiply") {
-    val observations = observe[T1 * T4, T3 * T4]
-    val ps           = arrow[T1, T2]
-    val qs           = arrow[T2, T3]
+  also("BinoidalFunctor") {
+    import premonoidal.tensor.BinoidalFunctorLaws.lmapComposition
 
-    forAll(observations, ps, qs) { (observe, p, q) =>
-      given (((T1 * T4) --> (T3 * T4)) is Observable) = observe
-      multiply[T1, T2, T3, T4](p, q)
+    law("lmapComposition", "of the tensor: the right strength respects composition") {
+      val observations = observe[T1 * T4, T3 * T4]
+      val ps           = arrow[T1, T2]
+      val qs           = arrow[T2, T3]
+
+      forAll(observations, ps, qs) { (observe, p, q) =>
+        given (((T1 * T4) --> (T3 * T4)) is Observable) = observe
+        lmapComposition[T1, T2, T3, T4](p, q)
+      }
     }
   }
 

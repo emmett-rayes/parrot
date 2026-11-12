@@ -22,7 +22,10 @@ abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesi
     */
   def fix[A: Obj, X: Obj](p: (A * X) --> X): A --> X
 
-  /** Laws that any `Conway` operator must satisfy. */
+  /** Laws that any `Conway` operator must satisfy.
+    *
+    * With [[uniformity]] among them, these are the laws of a uniform Conway operator.
+    */
   object ConwayLaws {
     private given TensorIsObj: [A: Obj, B: Obj] => ((A * B) is Obj) = monoidal.tensor.objects[A, B]
 

@@ -4,7 +4,7 @@ package category
 /** Equality on data types.
   *
   * Represents equality of values of a data type, where
-  *   - = is a decidable equivalence relation that holds if and only if the values are equal.
+  *   - = is a decidable equivalence relation: reflexive, symmetric and transitive ([[EqLaws]])
   */
 trait Eq extends caps.Pure {
   type Self

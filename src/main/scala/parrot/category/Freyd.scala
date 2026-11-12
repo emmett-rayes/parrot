@@ -14,6 +14,11 @@ import scala.annotation.targetName
   *   - *p* ⋊ *q* = *τ*′(*p*) ∘ *τ*(*q*) runs *q*, then *p*
   *
   * **K** is a symmetric premonoidal category. Pure morphisms in **C** interchange with arrows in **K**.
+  *
+  * Over a cartesian **C** this is the Freyd category of Power and Robinson. Over any symmetric monoidal **C**,
+  * coproducts included, it is the centred premonoidal category of Benton and Hyland, with the functor of the pure
+  * arrows as its centre. That the right strength respects composition, *τ*′(*q* ∘ *p*) = *τ*′(*q*) ∘ *τ*′(*p*), is the
+  * law `lmapComposition` of its tensor, a [[BinoidalFunctor]].
   */
 open class Freyd(tracked val strong: StrongPromonad)
     extends Premonoidal(
@@ -90,14 +95,6 @@ open class Freyd(tracked val strong: StrongPromonad)
       */
     def unit[A: Obj, B: Obj, C: Obj](f: A ==> B)(using ((A * C) --> (B * C)) is Observable): Boolean = {
       first[A, B, C](profunctor.unit(f)) =?= profunctor.unit(f *** profunctor.category.identity[C])
-    }
-
-    /** *τ*′(*q* ∘ *p*) = *τ*′(*q*) ∘ *τ*′(*p*)
-      */
-    def multiply[A: Obj, B1: Obj, B2: Obj, C: Obj](p: A --> B1, q: B1 --> B2)(
-      using ((A * C) --> (B2 * C)) is Observable
-    ): Boolean = {
-      first[A, B2, C](p >>> q) =?= (first[A, B1, C](p) >>> first[B1, B2, C](q))
     }
 
     /** *p* ⋉ *q* = *τ*(*q*) ∘ *τ*′(*p*)
