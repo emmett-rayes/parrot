@@ -207,9 +207,9 @@ object Partial extends Category {
   }
 
   /** Pairs on 𝒫: a symmetric monoidal structure, but not a product. *π*₁ ∘ ⟨*f*,*g*⟩ diverges where *g* does, so it
-    * equals *f* only where *g* terminates: the pairs of 𝒫 are its restriction products.
+    * equals *f* only where *g* terminates: the pairs of 𝒫 are its restriction products ([[RestrictionProducts]]).
     */
-  object Product extends Symmetric(Partial, Object[Unit], Tuple2IsBifunctor) {
+  object Pairs extends Symmetric(Partial, Object[Unit], Tuple2IsBifunctor) {
     def braid[A: Type, B: Type]: (A, B) ~> (B, A) = {
       (a, b) => (b, a)
     }
@@ -231,8 +231,8 @@ object Partial extends Category {
       * @note Unlike in a cartesian category, programs need not preserve it: one that does not terminate cannot be
       *   deleted, *p* ⨾ ! ≠ !. By Fox's theorem, this is exactly why the pairs of 𝒫 are not products.
       */
-    def comonoid[X: Type]: Comonoid.In[Product.type] { type Self = X } = {
-      new Comonoid(Product) {
+    def comonoid[X: Type]: Comonoid.In[Pairs.type] { type Self = X } = {
+      new Comonoid(Pairs) {
         type Self = X
 
         def evidence: X is Type = Type.TIsType
@@ -241,6 +241,25 @@ object Partial extends Category {
 
         def comultiply: X ~> (X, X) = x => (x, x)
       }
+    }
+  }
+
+  /** The restriction products of 𝒫: its pairs ([[Pairs]]), with the restriction of [[Domains]], where
+    *   - *π*₁(*a*,*b*) = *a* and *π*₂(*a*,*b*) = *b*
+    *   - ⟨*f*,*g*⟩(*x*) = (*f*(*x*),*g*(*x*)) runs *f*, then *g*
+    */
+  object RestrictionProducts extends category.RestrictionProducts(Domains, Pairs) {
+
+    def fst[A: Type, B: Type]: (A, B) ~> A = {
+      _._1
+    }
+
+    def snd[A: Type, B: Type]: (A, B) ~> B = {
+      _._2
+    }
+
+    def pair[X: Type, A: Type, B: Type](f: X ~> A, g: X ~> B): X ~> (A, B) = {
+      x => (f(x), g(x))
     }
   }
 
@@ -253,7 +272,7 @@ object Partial extends Category {
   }
 
   /** Programs run side by side on pairs: the first component first. */
-  object Parallel extends Bistrong.Hom(Programs, Product)
+  object Parallel extends Bistrong.Hom(Programs, Pairs)
 
   /** Programs run on one side of a tagged union. */
   object Choice extends Bistrong.Hom(Programs, Coproduct)

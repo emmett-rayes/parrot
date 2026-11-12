@@ -51,4 +51,4 @@ abstract class ComonoidSpec(
 
 class TotalProductComonoidTest extends ComonoidSpec("Int, by Δ and ! in 𝒮", Total.Products.comonoid[Int])
 class PartialProductComonoidTest
-    extends ComonoidSpec("Int, by copying and deleting in 𝒫", Partial.Product.comonoid[Int])
+    extends ComonoidSpec("Int, by copying and deleting in 𝒫", Partial.Pairs.comonoid[Int])

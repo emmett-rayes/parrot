@@ -35,6 +35,7 @@ Category (Op, Product, Iso, Object, Empty, Discrete2)                          �
    ├─ on ─ Cocone ─ refines ─ Colimit ⇄ Initial (of the empty diagram), Coproduct (of a pair)    duals
    │                          └─ Colimits.InCategory ─ refines ─ Colimits.DiscreteInCategory ─ induces ─ Coproducts
    ├─ on ─ Restriction ─ refines ─ Classical
+   │       └─ on ─ RestrictionProducts (+ Symmetric)
    └─ BinoidalFunctor ─ refines ─ Bifunctor (Op) ─ is a ─ Functor out of Category.Product
       ├─ on ─ Premonoidal ─ refines ─ SymmetricPremonoidal (a trait) ─ on ─ Traced
       │       └─ refines ─ Monoidal ─ refines ─ Symmetric (Op, + the trait) ─ refines ─ Cartesian ⇄ Cocartesian
@@ -75,7 +76,7 @@ Each item needs only those before it:
 9. `Monoid`, `CommutativeMonoid`, `Semilattice`, `Comonoid`, then `Preorder`
 10. `Promonad`
 11. `Strong`, `Bistrong`, `StrongPromonad`, `Freyd`, `ClosedFreyd`
-12. `Restriction`, `Classical`
+12. `Restriction`, `Classical`, `RestrictionProducts`
 13. `GuardedIteration`, `Elgot`, `Conway`, `Traced`, `GuardedRecursion`, `Recursion`
 14. `Monad` (with `Identity`), `Kleisli` (with `Kleisli.ClosedFreydOf`)
 15. `Monad.Restriction`, `Monad.Classical`, `Monad.GuardedIteration` (with `Kleisli.RestrictionOf`,

@@ -279,6 +279,10 @@ Each structure sits at the lowest level where its laws can be stated.
   structures, which is what both interpreters provide. The bridges to traces and Conway operators stay on `Elgot`:
   the formula of `Traced.OfElgot` on a guarded iteration is not a trace, since yanking feeds back without progress,
   which is a counterexample test.
+- **Restriction products are on a restriction structure and a symmetric monoidal one,**
+  `RestrictionProducts(restriction, monoidal)`, after Cockett and Lack: total projections and a pairing that is
+  defined where both components are. The pairs of 𝒫 are its model (`Partial.RestrictionProducts` on `Partial.Pairs`),
+  and they are not a `Cartesian` structure; where every morphism is total the two notions agree.
 - **Restriction is on a category.** `Restriction(category)` has R1–R4; `Classical(category)` adds the restriction zero,
   complements and override ⊳ with the axioms of Lemay and Nester, which make PEG ordered choice a theorem rather than
   an invention. Postcomposition does not distribute over ⊳; precomposition does. Override is the primitive, and on
@@ -527,8 +531,6 @@ On purpose:
 Not attempted, each for its cost:
 - **codata, productivity and the delay monad,** which need non-termination as data, a model the library keeps out of
   𝒮 (§2);
-- **restriction products as a class:** a restriction structure and a symmetric monoidal one with a pairing, of which
-  the pairs of 𝒫 are the model;
 - **useful fixed points over products in a strict language,** which do not exist: the only solution of the equation
   diverges;
 - **packrat memoization and error recovery,** which are interpreters, not structures: each is a `ParserAlgebra` of

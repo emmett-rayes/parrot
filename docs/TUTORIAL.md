@@ -2768,14 +2768,14 @@ The library has a hierarchy of monoidal structures, each a refinement of the pre
 | Class | Adds | Instances |
 | --- | --- | --- |
 | `Monoidal(category, unit, tensor)` | a unit object `I`, given by an object `unit` of `category` (`category.Object`), a `tensor`, an endobifunctor on `category`, isomorphisms α, λ, ρ; laws: naturality, pentagon, triangle | — |
-| `Symmetric(category, unit, tensor)` | a braiding σ : A ⊗ B → B ⊗ A with σ ∘ σ = id, from the trait `SymmetricPremonoidal`; laws: naturality in each component, centrality, involution, hexagon | `Partial.Product` |
+| `Symmetric(category, unit, tensor)` | a braiding σ : A ⊗ B → B ⊗ A with σ ∘ σ = id, from the trait `SymmetricPremonoidal`; laws: naturality in each component, centrality, involution, hexagon | `Partial.Pairs` |
 | `Cartesian(category, unit, tensor)` | the unit is a `Terminal` object, with `discard`, and the tensor is `Products`, a `Product` of every two objects with `fst`, `snd` and `pair` (`&&&`); the isomorphisms are derived | `Total.Products` |
 | `Cocartesian(category, unit, tensor)` | the unit is an `Initial` object, with `absurd`, and the tensor is `Coproducts`, a `Coproduct` of every two objects with `inl`, `inr` and `copair` (`|||`); the isomorphisms are derived | `Total.Coproducts`, `Partial.Coproduct` |
 | `Closed(M)` | exponentials for a monoidal `M`: `eval`, `curry`, and the internal hom as a profunctor, `internalHom` | `Total.Exponentials` |
 
 `Cartesian` and `Cocartesian` are refinements of `Symmetric`, because being a product is a property of a tensor: it says that the tensor of two objects has the universal property of section 14.1. `Cartesian` refines its parameters as well: its unit is a `Terminal` object, an object with `discard`, and its tensor is a `Products` structure, a bifunctor with the product X × Y of every two objects as a `Product`, an object with projections and pairing (`product[X, Y]`), whose tensor of arrows is the one the universal property gives, f × g = ⟨f ∘ π₁, g ∘ π₂⟩ (law `bimapIsPairing`); `Cartesian` names the projections and pairing of those products `fst`, `snd` and `pair`. So the universal properties are stated once, in `Terminal` and `Products`, and `Cartesian` only derives the associator, unitors and braiding from the projections; its laws check that an instance that overrides them still agrees. `Total.Products` is `Cartesian(Total, Total.UnitIsTerminal, Total.Tuple2IsProducts)`. `Cocartesian` is the dual: its unit is an `Initial` object, an object with `absurd`, its tensor is a `Coproducts` structure, a `Coproduct` of every two objects whose tensor of arrows is f + g = [ι₁ ∘ f, ι₂ ∘ g] (law `bimapIsCopairing`), and it derives the same isomorphisms from the injections. `Total.Coproducts` is `Cocartesian(Total, Total.NothingIsInitial, Total.EitherIsCoproducts)`. `Closed`, on the other hand, is structure *on* a monoidal category, so it takes one as a parameter.
 
-`Partial.Product` is the example of a monoidal structure that is not cartesian. Its tensor of arrows, from section 12.3, runs both arrows. Its unitors and associator are the obvious reshufflings of tuples, and its laws are **[Tested]** on total programs; for programs that do not terminate they hold by the argument of chapter 18.
+`Partial.Pairs` is the example of a monoidal structure that is not cartesian. Its tensor of arrows, from section 12.3, runs both arrows. Its unitors and associator are the obvious reshufflings of tuples, and its laws are **[Tested]** on total programs; for programs that do not terminate they hold by the argument of chapter 18.
 
 ### 14.6 Universal constructions in your own categories
 
@@ -2894,7 +2894,7 @@ object Concatenation extends Monoid(Total.Products):
 
 A monoid is an object with more structure, as a terminal object is, so `Monoid` extends `Category.Object` (section 11.4): an instance gives the object M as `Self`, with the `evidence` that it is an object of 𝒦. The laws of `Concatenation` are **[Tested]**. In other monoidal categories, monoid objects are other things: in endofunctors with composition as tensor, they are monads (section 15.4).
 
-**Semilattices.** Some monoids have two extra properties: the order of the arguments does not matter, μ ∘ σ = μ (**commutativity**), and combining a value with itself changes nothing, μ ∘ Δ = id (**idempotence**). The second law uses the diagonal Δ = ⟨id, id⟩, so it only makes sense when the tensor is a product. A commutative, idempotent monoid in a cartesian category is a **semilattice**, and in the library `Semilattice(M)` refines `Monoid(M)` for a `Cartesian` structure `M`.
+**Semilattices.** Some monoids have two extra properties: the order of the arguments does not matter, μ ∘ σ = μ (**commutativity**), and combining a value with itself changes nothing, μ ∘ Δ = id (**idempotence**). The second law uses the diagonal Δ = ⟨id, id⟩, so it only makes sense when the tensor is a product. A commutative, idempotent monoid in a cartesian category is a **semilattice**, and in the library `Semilattice(M)` refines `CommutativeMonoid(M)` for a `Cartesian` structure `M`.
 
 Here is the connection with section 14.7. Given a semilattice, define a ≤ b to mean a · b = b. The monoid laws make this a preorder, and in it a · b is the join of a and b and the unit is the least element. Conversely, a join-semilattice gives a semilattice with the join as multiplication and ⊥ as unit. **[Standard: from memory]**
 
@@ -2906,7 +2906,7 @@ The two properties are independent, and the library has a class for each step. A
 
 Strings under concatenation are a monoid but not a semilattice: `"ab"` is not `"ba"`, and `"aa"` is not `"a"`. The tests record both failures as counterexamples. Positions under `max`, from section 14.7, are a semilattice, as are booleans under `||` and sets under union.
 
-**Comonoids.** Reversing the arrows of Definition 15.3 gives a **comonoid**: an object C with a counit ε : C → I and a comultiplication δ : C → C ⊗ C, satisfying the mirrored laws. A comonoid is something that can be deleted and copied. In a cartesian category every object is a comonoid in exactly one way, with ! and Δ, which the library offers as `Total.Products.comonoid[A]`. This characterizes cartesian categories: a symmetric monoidal category is cartesian exactly when every object has a commutative comonoid structure that every arrow preserves and that is compatible with ⊗ and I, i.e. the comonoid of A ⊗ B is built from those of A and B and the comonoid of I is trivial **[Standard: Fox 1976, from memory]**. Pairs in 𝒫 show what the second condition adds. Copying and deleting are total programs, so every type is a comonoid for the pairs of 𝒫 (`Partial.Product.comonoid[A]`), but a program that does not terminate cannot be deleted: running it and discarding its result is not the same as discarding its argument. So the pairs of 𝒫 are not products, as section 14.3 found by another route, and chapter 17 meets the same distinction as effects that can or cannot be copied and discarded. The comonoid laws of both instances are **[Tested]**.
+**Comonoids.** Reversing the arrows of Definition 15.3 gives a **comonoid**: an object C with a counit ε : C → I and a comultiplication δ : C → C ⊗ C, satisfying the mirrored laws. A comonoid is something that can be deleted and copied. In a cartesian category every object is a comonoid in exactly one way, with ! and Δ, which the library offers as `Total.Products.comonoid[A]`. This characterizes cartesian categories: a symmetric monoidal category is cartesian exactly when every object has a commutative comonoid structure that every arrow preserves and that is compatible with ⊗ and I, i.e. the comonoid of A ⊗ B is built from those of A and B and the comonoid of I is trivial **[Standard: Fox 1976, from memory]**. Pairs in 𝒫 show what the second condition adds. Copying and deleting are total programs, so every type is a comonoid for the pairs of 𝒫 (`Partial.Pairs.comonoid[A]`), but a program that does not terminate cannot be deleted: running it and discarding its result is not the same as discarding its argument. So the pairs of 𝒫 are not products, as section 14.3 found by another route, and chapter 17 meets the same distinction as effects that can or cannot be copied and discarded. The comonoid laws of both instances are **[Tested]**.
 
 ### 15.4 A monad is a monoid in the category of endofunctors
 
@@ -3282,7 +3282,7 @@ the first component of a pair is f, restricted to where g is defined. This is th
 
 **𝒫 has no products at all.** That pairs are not products leaves open whether some other type is. In the category of sets and partial functions, the product of A and B exists and is not the set of pairs: it is A + B + A × B, and ⟨f, g⟩(x) is the pair where both f and g are defined, the left value where only f is, and the right value where only g is. No type plays this role in 𝒫. Suppose P were a product of `Unit` with `Unit` in 𝒫, with projections π₁ and π₂, and let f, g : X → `Unit` be any two programs. Where f terminates, π₁ ∘ ⟨f, g⟩ = f terminates, so ⟨f, g⟩ terminates; likewise where g does. Where both diverge, ⟨f, g⟩ diverges too: otherwise P would have a point on which both projections diverge, and for X = `Unit` that point and the program that never terminates would be two different arrows into P with the same projections, against uniqueness. So ⟨f, g⟩ terminates exactly where f or g does. A program with that behavior must run f and g side by side, since whichever it runs first may be the one that diverges. Sequential programs cannot do that: this "parallel convergence" is the standard example of a function that is computable but not definable in a sequential language **[Proved, given that programs under the contract of section 2.3 are sequential; Standard for PCF: Plotkin 1977, from memory]**. Lazy pairs, pairs of unevaluated components, come close and fail on the same point: a pair of two diverging components is a value, and a program can tell it from divergence.
 
-The library does not state restriction products as a class; `Partial.Product` is the symmetric monoidal structure underneath them.
+The library states them as `RestrictionProducts(restriction, monoidal)`: a restriction structure and a symmetric monoidal structure on its category, with projections and a pairing, and the laws π₁ ∘ ⟨f, g⟩ = f ∘ ḡ, π₂ ∘ ⟨f, g⟩ = g ∘ f̄, ⟨f, g⟩‾ = f̄ ∘ ḡ, totality of the projections, and ⟨π₁ ∘ h, π₂ ∘ h⟩ = h. `Partial.RestrictionProducts` is the instance of 𝒫, on its pairs, `Partial.Pairs`, and its restriction, `Partial.Domains`. Since a test cannot observe divergence, the tests also check a model in which the failure can be seen: functions that may fail, the Kleisli arrows of `Option`, whose pairs satisfy the laws and visibly fail the law of a product, π₁ ∘ ⟨f, g⟩ = f, where g fails **[Tested]** **[Tested: counterexample]**.
 
 ### 18.4 Decisions: classical restriction categories
 
@@ -3833,7 +3833,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Yoneda lemma for endofunctors on 𝒮 | yes | yes | yes | `toYoneda`, `fromYoneda` | [Proved, given A1, A2] | 13 |
 | Equivalence of categories | yes | yes | yes | examples | [Proved] for the examples | 13 |
 | Terminal, initial, products, coproducts, exponentials | yes | yes | yes | `Total.Products`, `Total.Coproducts`, `Total.Exponentials` | [Proved]; laws [Tested] | 14 |
-| Products in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Product` | [Proved] for pairs; for every other type, [Proved] given sequentiality (section 18.3) | 14, 18 |
+| Products in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Pairs` | [Proved] for pairs; for every other type, [Proved] given sequentiality (section 18.3) | 14, 18 |
 | Monoidal, symmetric, cartesian, cocartesian, closed structure | yes | yes | yes | `Monoidal` … `Closed` | [Tested] | 14 |
 | Joins; semilattices | yes | yes | yes | `Semilattice` | [Tested] | 14, 15 |
 | Equalizers, pullbacks, all limits | yes | by abstraction | yes | `Total.LimitOf`, for lawful cones | [Convention]; representing types [Open] | 6 |
@@ -3854,7 +3854,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Strength; Freyd categories | yes | yes | yes | `Strong`, `Bistrong`, `Freyd` | [Tested]; interchange [Tested: counterexample] | 17 |
 | Restriction categories | yes | yes | yes | `Restriction`; `Partial.Domains`, `Kleisli.OptionDomains` | [Tested] | 18 |
 | Classical restriction, override | yes | for observable failure only | yes | `Classical` | [Tested]; 𝒫 not classical [Proved] | 18 |
-| Restriction products | yes | in 𝒫 | not stated | `Partial.Product` underneath | [Standard] | 18 |
+| Restriction products | yes | in 𝒫 | yes | `RestrictionProducts`; `Partial.RestrictionProducts` on `Partial.Pairs` | [Tested] | 18 |
 | Traces | yes | on coproducts; on products only by duality | yes | `Traced` and its bridges | [Tested]; guarded yanking [Tested: counterexample] | 19 |
 | Conway and Elgot operators | yes | iteration in 𝒫; guarded in 𝒮 | yes | `Conway`, `Elgot` and their bridges | [Tested] | 19 |
 | Parser combinators as structure | — | yes | yes | `ParserAlgebra`, two interpreters | [Tested] | 20 |
@@ -4264,7 +4264,7 @@ Comonoids were first removed as well, and then restored: they are the dual of mo
 
 ### Not attempted
 
-Some structures appear in the literature on effects and parsing and are absent on purpose: a general theory of codata and productivity (section 16.7), restriction products as a class (section 18.3), useful fixed points over products in a strict language (section 19.4), packrat memoization, and error recovery. Each has a cost, which `docs/DESIGN.md` names in its section on what the library leaves out.
+Some structures appear in the literature on effects and parsing and are absent on purpose: a general theory of codata and productivity (section 16.7), useful fixed points over products in a strict language (section 19.4), packrat memoization, and error recovery. Each has a cost, which `docs/DESIGN.md` names in its section on what the library leaves out.
 
 ---
 
@@ -4291,7 +4291,7 @@ Each concept is introduced where a problem needs it. This index lists, for each,
 | Encoding: tracked bases, bundles, evidence | 11 | duplication and missing "has a" in Parts I–II | a functor between two categories |
 | Bifunctors, profunctors | 12 | pairs and `Either` map on both sides; `A -> B` is contravariant in A | `dimap` on functions |
 | Natural transformations, Yoneda, equivalence | 13 | polymorphic functions and their uniformity | `headOption`; `toYoneda` |
-| Universal constructions; monoidal structures | 14 | universal properties in 𝒮 need code; pairs in 𝒫 are not products | `Total.Products`; `Partial.Product` |
+| Universal constructions; monoidal structures | 14 | universal properties in 𝒮 need code; pairs in 𝒫 are not products | `Total.Products`; `Partial.Pairs` |
 | Joins as coproducts in a preorder | 14 | combining reports of the furthest failure | positions under `max` |
 | Monads, transformers, monoid and comonoid objects, adjunctions | 15 | making effects visible; "a monad is a monoid" made precise; why pairs in 𝒫 are not products | `Option`; `StateT` from currying; copying and deleting |
 | Semilattices | 15 | a monoid that is also an order | sets under union; positions under `max` |
