@@ -75,6 +75,118 @@ object Kleisli {
     }
   }
 
+  /** The initial object of the arrows of a Kleisli promonad over a category with an initial object 0, where
+    *   - ¡ = *η* ∘ ¡: the unique arrow out of 0 is pure
+    */
+  open class InitialOf(tracked val promonad: Kleisli, tracked val initial: Initial.Of[promonad.category.type])
+      extends Initial(promonad.arrows) {
+    import promonad.category.Obj
+
+    type Self = initial.I
+
+    private given IIsObj: (initial.I is Obj) = initial.evidence
+
+    def evidence: initial.I is Obj = {
+      initial.evidence
+    }
+
+    def absurd[A: Obj]: promonad.P[initial.I, A] = {
+      promonad.unit(initial.absurd[A])
+    }
+  }
+
+  /** The coproduct of two objects in the arrows of a Kleisli promonad, from their coproduct *S* in its category,
+    * where
+    *   - the injections are the pure arrows *η* ∘ *ι*₁ and *η* ∘ *ι*₂
+    *   - the copairing of *f*: *A*₁ → *M*[*X*] and *g*: *A*₂ → *M*[*X*] is their copairing [*f*,*g*] at *M*[*X*]: it runs
+    *     the arrow of the side it is given
+    */
+  final class CoproductOf(tracked val promonad: Kleisli, tracked val coproduct: Coproduct.Of[promonad.category.type])
+      extends Coproduct(
+        promonad.arrows,
+        promonad.arrows.Object[coproduct.A1](using coproduct.left.evidence),
+        promonad.arrows.Object[coproduct.A2](using coproduct.right.evidence),
+      ) {
+    import promonad.category.Obj
+    import promonad.P
+
+    type Self = coproduct.S
+
+    private given A1IsObj: (coproduct.A1 is Obj) = coproduct.left.evidence
+    private given A2IsObj: (coproduct.A2 is Obj) = coproduct.right.evidence
+    private given SIsObj: (coproduct.S is Obj)   = coproduct.evidence
+
+    def evidence: coproduct.S is Obj = {
+      coproduct.evidence
+    }
+
+    def inl: P[coproduct.A1, coproduct.S] = {
+      promonad.unit(coproduct.inl)
+    }
+
+    def inr: P[coproduct.A2, coproduct.S] = {
+      promonad.unit(coproduct.inr)
+    }
+
+    def copair[X: Obj](f: P[coproduct.A1, X], g: P[coproduct.A2, X]): P[coproduct.S, X] = {
+      coproduct.copair[promonad.monad.M[X]](f, g)(using promonad.monad.objects[X])
+    }
+  }
+
+  /** The binary coproducts of the arrows of a Kleisli promonad over a category with binary coproducts: the coproducts
+    * of its category, each as a [[CoproductOf]].
+    */
+  open class CoproductsOf(
+    tracked val promonad: Kleisli,
+    tracked val coproducts: Coproducts.On[promonad.category.type],
+  ) extends Coproducts(promonad.arrows) {
+    import category.Object
+    import promonad.category.Obj
+
+    type Self = coproducts.F
+
+    def objects[A: Obj, B: Obj]: coproducts.F[A, B] is Obj = {
+      coproducts.objects[A, B]
+    }
+
+    def coproduct[X: Obj, Y: Obj]
+      : F[X, Y] is Coproduct.Of[category.type] { val left: X is Object; val right: Y is Object } = {
+      CoproductOf(promonad, coproducts.coproduct[X, Y])
+    }
+  }
+
+  /** The cocartesian structure of the arrows of a Kleisli promonad over a cocartesian category, where
+    *   - the initial object and the coproducts are those of the category, with pure injections
+    *   - [*f*,*g*] runs the arrow of the side it is given
+    *
+    * So the Kleisli category of a monad has the coproducts of its base, and its Freyd category over coproducts is
+    * monoidal: of two arrows side by side only one runs, and interchange holds.
+    */
+  open class CocartesianOf(
+    tracked val promonad: Kleisli,
+    tracked val coproducts: Cocartesian.On[promonad.category.type],
+  ) extends Cocartesian(
+        promonad.arrows,
+        InitialOf(promonad, coproducts.unit),
+        CoproductsOf(promonad, coproducts.tensor),
+      ) {
+    import promonad.category.Obj
+    import promonad.P
+
+    /** Laws of the cocartesian structure of Kleisli arrows, besides those of [[Cocartesian]]. */
+    object CocartesianOfLaws {
+
+      /** *τ*(*p*) = *C* + *p*
+        *
+        * The strength over coproducts ([[CoproductStrength]]) is the coproduct of arrows, so the tensor of the Freyd
+        * category over coproducts is a bifunctor.
+        */
+      def strengthIsCoproduct[A: Obj, B: Obj, C: Obj](p: P[A, B])(using P[C + A, C + B] is Observable): Boolean = {
+        CoproductStrength(promonad, coproducts).left[A, B, C](p) =?= tensor.rmap[A, B, C](p)
+      }
+    }
+  }
+
   /** The restriction structure on the arrows of a Kleisli promonad over a restriction monad, where
     *   - *p̄*(*a*) = *M*(*x* ↦ *a*)(*p*(*a*)‾): run the test of *p*, then return the input
     */
@@ -174,6 +286,9 @@ object Kleisli {
 
   /** Functions that may fail, run on one side of a tagged union. */
   object OptionCoproduct extends CoproductStrength(OptionKleisli, Total.Coproducts)
+
+  /** Functions that may fail have the coproducts of 𝒮: tagged unions. */
+  object OptionCoproducts extends CocartesianOf(OptionKleisli, Total.Coproducts)
 
   /** Functions that may fail: a classical restriction category, with failure as zero and ordered choice as override. */
   object OptionDomains extends ClassicalOf(OptionKleisli, Monad.Classical.OptionIsClassical)

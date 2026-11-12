@@ -29,6 +29,8 @@ Category (Op, Product, Iso, Object, Empty, Discrete2)                          �
    │                                         ├─ on ─ Monad.GuardedIteration
    │                                         ├─ transformers: OptionT, StateT, WriterT (+ Monoid)
    │                                         │  └─ StateT (+ Measure) ─ induces ─ StateT.Loops, StateT.Knots
+   │                                         ├─ Kleisli (+ Cocartesian) ─ induces ─ Kleisli.CocartesianOf, a Cocartesian
+   │                                         │  on its arrows (with InitialOf, CoproductsOf, CoproductOf)
    │                                         └─ Identity; over it, Option (OptionT), State (StateT), Writer (WriterT)
    ├─ on ─ Cone ─ refines ─ Limit ⇄ Terminal (of the empty diagram), Product (of a pair)
    │                        └─ Limits.InCategory ─ refines ─ Limits.DiscreteInCategory ─ induces ─ Products (of shape 2)
@@ -78,7 +80,7 @@ Each item needs only those before it:
 11. `Strong`, `Bistrong`, `StrongPromonad`, `Freyd`, `ClosedFreyd`
 12. `Restriction`, `Classical`, `RestrictionProducts`
 13. `GuardedIteration`, `Elgot`, `Conway`, `Traced`, `GuardedRecursion`, `Recursion`
-14. `Monad` (with `Identity`), `Kleisli` (with `Kleisli.ClosedFreydOf`)
+14. `Monad` (with `Identity`), `Kleisli` (with `Kleisli.ClosedFreydOf` and `Kleisli.CocartesianOf`)
 15. `Monad.Restriction`, `Monad.Classical`, `Monad.GuardedIteration` (with `Kleisli.RestrictionOf`,
     `Kleisli.ClassicalOf`, `Kleisli.GuardedIterationOf`); `OptionT`, `StateT`, `WriterT`; `Option`, `State`, `Writer`;
     `Measure`, `StateT.Loops`, `StateT.Knots`

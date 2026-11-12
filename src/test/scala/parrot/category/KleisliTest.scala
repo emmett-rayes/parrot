@@ -40,3 +40,43 @@ class OptionKleisliIsClassicalOfTest
 
 class StringStateIsClassicalOfTest
     extends ClassicalOfSpec("Kleisli[State[String, Option]]", StringStateDomains, StringStateKleisli.pure)
+
+/** The laws of [[Kleisli.CocartesianOf]]: those of [[Cocartesian]], and the strength over coproducts as a coproduct of
+  * arrows.
+  */
+abstract class CocartesianOfSpec(
+  tracked override val premonoidal: Kleisli.CocartesianOf { val promonad: Kleisli.Of[Monad.On[Total.type]] },
+  structure: String = "CocartesianOf",
+)(using
+  category: CategoryFixture.For[premonoidal.category.type],
+  typename: TypeName[premonoidal.type],
+  types: SampleTypes,
+  tensor: [X, Y] => (Sample[X], Sample[Y]) ?-> Sample[premonoidal.Tensor[X, Y]],
+  unit: Sample[premonoidal.I],
+) extends CocartesianSpec(premonoidal, structure) {
+  import types.{T1, T2, T3, given}
+  import category.*
+  import premonoidal.+
+  import premonoidal.promonad.P
+  import premonoidal.CocartesianOfLaws.*
+
+  private given TensorSample: [X: Sample, Y: Sample] => Sample[premonoidal.Tensor[X, Y]] = tensor[X, Y]
+
+  also("CocartesianOf") {
+    law("strengthIsCoproduct") {
+      val observations = observe[T3 + T1, T3 + T2]
+      val ps           = arrow[T1, T2]
+
+      forAll(observations, ps) { (observe, p) =>
+        given (P[T3 + T1, T3 + T2] is Observable) = observe
+        strengthIsCoproduct[T1, T2, T3](p)
+      }
+    }
+  }
+}
+
+/** Functions that write a log have the coproducts of 𝒮, although their effects do not commute. */
+object StringWriterCoproducts extends Kleisli.CocartesianOf(StringWriterKleisli, Total.Coproducts)
+
+class OptionKleisliIsCocartesianOfTest       extends CocartesianOfSpec(Kleisli.OptionCoproducts)
+class StringWriterKleisliIsCocartesianOfTest extends CocartesianOfSpec(StringWriterCoproducts)

@@ -279,6 +279,10 @@ Each structure sits at the lowest level where its laws can be stated.
   structures, which is what both interpreters provide. The bridges to traces and Conway operators stay on `Elgot`:
   the formula of `Traced.OfElgot` on a guarded iteration is not a trace, since yanking feeds back without progress,
   which is a counterexample test.
+- **A Kleisli category has the coproducts of its base,** `Kleisli.CocartesianOf(promonad, coproducts)`: pure
+  injections, and a copairing that runs the arrow of the side it is given. It is why the Freyd category over
+  coproducts is monoidal for every monad, and its law `strengthIsCoproduct` identifies `Kleisli.CoproductStrength`
+  with the coproduct of arrows.
 - **Restriction products are on a restriction structure and a symmetric monoidal one,**
   `RestrictionProducts(restriction, monoidal)`, after Cockett and Lack: total projections and a pairing that is
   defined where both components are. The pairs of 𝒫 are its model (`Partial.RestrictionProducts` on `Partial.Pairs`),

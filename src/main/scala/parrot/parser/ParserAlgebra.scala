@@ -121,7 +121,11 @@ abstract class ParserAlgebra(
     branched.leftToRight(p, q)
   }
 
-  /** Runs *p* on a left semantic input or *q* on a right one, into a common result: [*p*,*q*]. */
+  /** Runs *p* on a left semantic input or *q* on a right one, into a common result: [*p*,*q*].
+    *
+    * @note Where parsers are the arrows of a Kleisli promonad, this is the copairing of their coproducts
+    *   ([[category.Kleisli.CocartesianOf]]).
+    */
   def merge[A, B, C](p: P[A, C], q: P[B, C]): P[Either[A, B], C] = {
     map(branch(p, q), coproducts.codiagonal[C])
   }
