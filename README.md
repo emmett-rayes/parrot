@@ -18,15 +18,16 @@ final class Arithmetic(tracked val algebra: ParserAlgebra) {
   val number: P[Unit, BigInt] = {
     (regex("[0-9]+".r) <* spaces).map(lift[String, BigInt](BigInt(_))).rule("number")
   }
-  val expression: P[Unit, BigInt] = recursive[Unit, BigInt] { expression =>
-    val atom    = number |> expression.between(token("("), token(")"))
-    val product = recursive[Unit, BigInt] { product =>
-      (product <* token("*") && atom).map(multiply) |> atom
+  val (expression, product, atom) = {
+    recursive[(P[Unit, BigInt], P[Unit, BigInt], P[Unit, BigInt])] { (expression, product, atom) =>
+      (
+        ((expression <* token("+") && product).map(add)
+          |> (expression <* token("-") && product).map(subtract)
+          |> product).rule("expression"),
+        (product <* token("*") && atom).map(multiply) |> atom,
+        number |> expression.between(token("("), token(")")),
+      )
     }
-    val sum = (expression <* token("+") && product).map(add)
-      |> (expression <* token("-") && product).map(subtract)
-      |> product
-    sum.rule("expression")
   }
 }
 

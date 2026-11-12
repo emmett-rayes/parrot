@@ -103,12 +103,12 @@ Function types are written `A -> B`. Under capture checking this is the type of 
 
 ### How to read this document
 
-Each concept chapter has four parts, matching the four goals above:
+Each concept chapter follows the same line, matching the four goals above:
 
-- **the idea**, introduced first with sets and functions;
-- **why programmers care**;
+- **the idea**, introduced first with sets and functions, together with where a programmer meets it;
 - **the Scala 3 encoding**;
-- **what the theory guarantees**, and where the guarantee stops.
+- **what the theory guarantees**, and where the guarantee stops;
+- **Set and Scala**, a closing comparison of the two.
 
 Chapters end with a comparison between Set and Scala and with their own references.
 
@@ -685,6 +685,8 @@ object Partial:
 val search: BigInt ~> BigInt = Partial(n => fix[BigInt, BigInt](rec => k => if k * k >= n then k else rec(k + 1))(0))
 ```
 
+The library's `Partial` has this shape, with one difference of names: its functor 𝒮 → 𝒫 is `Partial.fromTotal`, so that including a total function reads differently from wrapping a program that may not terminate, `Partial(p)`.
+
 `search` finds the least k with k² ≥ n by counting up, which terminates for every n; but nothing checked that, so it is written as a program of 𝒫. Turning it into an arrow of 𝒮 requires `Partial.assumeTotal(search)`, and that call is the promise. Searching the code for `assumeTotal` finds every place where the promise is made; that is the sense in which the library makes concession 3 explicit.
 
 Two axes are now separate. `->` versus `=>` is purity, C1, and the compiler checks it. 𝒮 versus 𝒫 is totality, C2, and the programmer asserts it. Both categories contain only pure programs; functions of type `A => B`, which may have effects, are arrows of neither.
@@ -837,6 +839,8 @@ object Observable:
   def function[A, B: Observable](points: List[A]): (A -> B) is Observable =
     through[A -> B, B](points.map(a => (f: A -> B) => f(a)))
 ```
+
+The library has the same pieces under other names: the two laws of an isomorphism are `IsoLaws`, beside `Category.Iso`, and `Observable.function` is `Observable.total`, beside `Observable.partial` for the programs of 𝒫.
 
 Three facts make `Observable` the right tool, and one fact limits it.
 
@@ -2574,7 +2578,7 @@ A predicate `A -> Boolean` can be pulled back along a function `f: B -> A` to a 
 
 Function types do both at once. A function `A1 -> A2` can be pre-composed with `f: B1 -> A1` and post-composed with `g: A2 -> B2`, giving `B1 -> B2`. The first argument is contravariant and the second covariant. Such a functor is a **profunctor**.
 
-**Definition 12.2 (profunctor).** A profunctor P, valued in 𝒱, is a bifunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒱. Its action on arrows is written P(f, g), for f : B₁ → A₁ of 𝒦₁ and g : A₂ → B₂ of 𝒦₂, and maps P(A₁, A₂) to P(B₁, B₂). A profunctor on a category 𝒦, a bifunctor P : 𝒦ᵒᵖ × 𝒦 → 𝒱, is an **endoprofunctor**.
+**Definition 12.2 (profunctor).** A profunctor P, valued in 𝒱, is a bifunctor P : 𝒞₁ᵒᵖ × 𝒞₂ → 𝒱. Its action on arrows is written P(f, g), for f : B₁ → A₁ of 𝒞₁ and g : A₂ → B₂ of 𝒞₂, and maps P(A₁, A₂) to P(B₁, B₂). A profunctor on a category 𝒞, a bifunctor P : 𝒞ᵒᵖ × 𝒞 → 𝒱, is an **endoprofunctor**.
 
 The library's `Profunctor(domain, codomain, base)` is exactly `Bifunctor(domain.op, codomain, base)`, with a method `dimap` that spells out the variance, and its `Endoprofunctor(category, base)` is `Profunctor(category, category, base)`. The most important example is the **hom profunctor** of a category, an endoprofunctor whose value at (A, B) is the type of arrows A → B and whose action pre- and post-composes. For 𝒮 it is `Total.Functions`:
 
@@ -2861,7 +2865,7 @@ C1 excluded effects from the arrows of 𝒮, but it did not exclude effects from
 
 ### 15.2 Monads and their Kleisli categories
 
-**Definition 15.1 (monad).** A **monad** on a category 𝒦 is an endofunctor M : 𝒦 → 𝒦 together with arrows η_A : A → M(A), the **unit**, and μ_A : M(M(A)) → M(A), the **multiplication**, both natural in A, such that
+**Definition 15.1 (monad).** A **monad** on a category 𝒞 is an endofunctor M : 𝒞 → 𝒞 together with arrows η_A : A → M(A), the **unit**, and μ_A : M(M(A)) → M(A), the **multiplication**, both natural in A, such that
 
 - μ ∘ η_M = id (left unit),
 - μ ∘ M(η) = id (right unit),
@@ -2881,11 +2885,11 @@ val half: Int -> Option[Int]      = n => if n % 2 == 0 then Some(n / 2) else Non
 val quarter: Option[Int] -> Option[Int] = O.bind(half) andThen O.bind(half)
 ```
 
-`O.bind(half)` is what Scala's `flatMap(half)` does, as a function of the computation. Every monad gives a category with the same objects as 𝒦, its **Kleisli category**, whose arrows A → B are arrows A → M(B) of 𝒦, with η as identity and g\* ∘ f as composition. It generalizes `OptionKleisli` of section 3.5. In the library it is `Kleisli(M)`, a promonad (chapter 17), whose category of arrows is `Kleisli(M).arrows`.
+`O.bind(half)` is what Scala's `flatMap(half)` does, as a function of the computation. Every monad gives a category with the same objects as 𝒞, its **Kleisli category**, whose arrows A → B are arrows A → M(B) of 𝒞, with η as identity and g\* ∘ f as composition. It generalizes `OptionKleisli` of section 3.5. In the library it is `Kleisli(M)`, a promonad (chapter 17), whose category of arrows is `Kleisli(M).arrows`.
 
 **Proposition 15.2.** The monad laws hold exactly when the Kleisli category laws hold. **[Proved, sketch]** In terms of the extension, the left identity law of the Kleisli category is η\* = id, its right identity law is f\* ∘ η = f, and its associativity is g\* ∘ f\* = (g\* ∘ f)\*. Each follows from the monad laws and the naturality of η and μ, and conversely the three give back the monad laws with M(f) = (η ∘ f)\* and μ = id\*.
 
-So a monad is a way of building a new category of effectful arrows on top of 𝒦. The library has the monads that parsers need, built from three **transformers**, each of which adds one effect to a monad that already exists:
+So a monad is a way of building a new category of effectful arrows on top of 𝒞. The library has the monads that parsers need, built from three **transformers**, each of which adds one effect to a monad that already exists:
 
 | Monad | `M[A]` | Effect | In the library |
 | --- | --- | --- | --- |
@@ -2905,7 +2909,7 @@ The laws also justify the rewriting of `for`-comprehensions. `for { x <- m; y <-
 
 Section 1.2 defined a monoid as a set with an associative operation and a unit. The definition uses sets, pairs and elements, so it is a definition in Set. Chapter 14 showed what replaces pairs in a general category, a monoidal structure, and that replaces the definition too.
 
-**Definition 15.3 (monoid object).** A **monoid** in a monoidal category (𝒦, ⊗, I) is an object M with arrows η : I → M, the unit, and μ : M ⊗ M → M, the multiplication, such that μ ∘ (η ⊗ id) = λ, μ ∘ (id ⊗ η) = ρ and μ ∘ (μ ⊗ id) = μ ∘ (id ⊗ μ) ∘ α.
+**Definition 15.3 (monoid object).** A **monoid** in a monoidal category (𝒞, ⊗, I) is an object M with arrows η : I → M, the unit, and μ : M ⊗ M → M, the multiplication, such that μ ∘ (η ⊗ id) = λ, μ ∘ (id ⊗ η) = ρ and μ ∘ (μ ⊗ id) = μ ∘ (id ⊗ μ) ∘ α.
 
 In 𝒮 with pairs, η picks out an element and μ is a binary operation, so a monoid object is an ordinary monoid whose operations are programs:
 
@@ -2917,7 +2921,7 @@ object Concatenation extends Monoid(Total.Products):
   def multiply: ((String, String)) -> String = (a, b) => a + b
 ```
 
-A monoid is an object with more structure, as a terminal object is, so `Monoid` extends `Category.Object` (section 11.4): an instance gives the object M as `Self`, with the `evidence` that it is an object of 𝒦. The laws of `Concatenation` are **[Tested]**. In other monoidal categories, monoid objects are other things: in endofunctors with composition as tensor, they are monads (section 15.4).
+A monoid is an object with more structure, as a terminal object is, so `Monoid` extends `Category.Object` (section 11.4): an instance gives the object M as `Self`, with the `evidence` that it is an object of 𝒞. The laws of `Concatenation` are **[Tested]**. In other monoidal categories, monoid objects are other things: in endofunctors with composition as tensor, they are monads (section 15.4).
 
 **Semilattices.** Some monoids have two extra properties: the order of the arguments does not matter, μ ∘ σ = μ (**commutativity**), and combining a value with itself changes nothing, μ ∘ Δ = id (**idempotence**). The second law uses the diagonal Δ = ⟨id, id⟩, so it only makes sense when the tensor is a product. A commutative, idempotent monoid in a cartesian category is a **semilattice**, and in the library `Semilattice(M)` refines `CommutativeMonoid(M)` for a `Cartesian` structure `M`.
 
@@ -2973,6 +2977,10 @@ In category theory this is an adjunction between Set and the category of monoids
 A lawful monad gives a lawful Kleisli category, so every theorem about categories applies to effectful arrows: the generic algorithm of section 3.9 runs for any monad, for instance. The rewriting of `for`-comprehensions is sound. And effects are modeled purely: a state computation is a pure function of the state, so C1 is respected.
 
 The guarantee stops where the laws stop. A "monad" whose `bind` breaks associativity, which happens with some effect-tracking types in the wild, gives no category, and refactoring its `for`-comprehensions can change behavior.
+
+### 15.8 Set and Scala
+
+In Set, a monad is an endofunctor on sets with two natural families of functions, and naturality has to be proved. In 𝒮, a monad is a type constructor with two polymorphic programs; they are natural for free (chapter 9), the library still states their naturality as a law, and the monad laws are equations between programs that tests can refute. Monoid objects show the same difference: in Set a monoid is a set with an operation, and "a monad is a monoid in the category of endofunctors" is a statement about a functor category, which in Scala exists as a category only because polymorphic function types exist (section 13.2). And in Set every monad comes from an adjunction that can be written down; in Scala the adjunctions of section 15.5 are pairs of programs whose triangle laws hold by the same equality ≐ as everything else, and the library does not yet state them as a structure.
 
 ### References for chapter 15
 
@@ -3030,7 +3038,7 @@ val eval: Expr -> BigInt = fold[BigInt] {
 
 `fold(alg)` is the unique homomorphism from the initial algebra `(Fix[ExprF], Fix(_))` to the algebra `(BigInt, alg)`.
 
-**Proposition 16.2.** For a strictly positive pattern functor, `fold(alg)` terminates on every total value, and it is the only function `h` with `h(Fix(e))` ≐ `alg(e.map(h))` for all `e`. **[Proved]**
+**Proposition 16.2.** For a strictly positive pattern functor, `fold(alg)` terminates on every total value, and it is the only function `h` with `h(Fix(e))` ≐ `alg(e.map(h))` for all `e`. **[Proved, sketch]**
 
 *Proof sketch.* A total value of `Fix[F]` is a finite tree, because it was built by finitely many constructor applications. `fold` recurses on the immediate subtrees, so it terminates. If `h` satisfies the equation, then h and `fold(alg)` agree on every tree by induction on its height, and Definition 2.5 makes them equal. ∎
 
@@ -3145,18 +3153,18 @@ There are two common ways to represent effectful arrows in Scala.
 - **As functions with an effectful result**: `A -> Option[B]`, `A -> (W, B)`, `A -> S -> Option[(B, S)]`. These are the Kleisli categories of chapter 15.
 - **As data**: a syntax tree that describes what an arrow does, interpreted later. The optimizing parser of chapter 20 represents a parser as a tree of nodes, `Literal("a")`, `Seq(p, q)`, `Choice(...)`, so that it can analyze and rewrite the tree before running it.
 
-Both kinds have the same two operations. They contain the pure functions: a function `f: A -> B` is an arrow that does nothing but apply f, `a => Some(f(a))` in the first case, a node `Pure(f)` in the second. And they compose. A data representation is not a Kleisli category of any monad (there is no `M[B]` whose values are syntax trees from A), so what structure do the two share? The answer is a category that sits on top of a category 𝒦 of pure functions, together with a way to include 𝒦 in it.
+Both kinds have the same two operations. They contain the pure functions: a function `f: A -> B` is an arrow that does nothing but apply f, `a => Some(f(a))` in the first case, a node `Pure(f)` in the second. And they compose. A data representation is not a Kleisli category of any monad (there is no `M[B]` whose values are syntax trees from A), so what structure do the two share? The answer is a category that sits on top of a category 𝒞 of pure functions, together with a way to include 𝒞 in it.
 
 ### 17.2 Promonads
 
-**Definition 17.1 (promonad).** A **promonad** on a category 𝒦 is a profunctor P on 𝒦 (Definition 12.2), valued in 𝒮, with
+**Definition 17.1 (promonad).** A **promonad** on a category 𝒞 is a profunctor P on 𝒞 (Definition 12.2), valued in 𝒮, with
 
-- a **unit**, an arrow 𝒦(A, B) → P(A, B) for all A and B, which includes the pure arrows, and
+- a **unit**, an arrow 𝒞(A, B) → P(A, B) for all A and B, which includes the pure arrows, and
 - a **multiplication**, an arrow P(B, C) × P(A, B) → P(A, C), which composes,
 
 such that the multiplication is associative and has the units of identities as identities, and the unit preserves composition.
 
-A promonad is a monoid in the category of profunctors on 𝒦, in the sense of Definition 15.3, with composition of profunctors as tensor **[Standard: from memory]**. That is why it is called a *pro*monad. Equivalently, and more concretely, a promonad is a category with the same objects as 𝒦 together with a functor from 𝒦 into it that is the identity on objects: its arrows A → B are the elements of P(A, B), its composition is the multiplication, and the functor is the unit **[Standard: from memory]**. The profunctor action of P is then determined: pre- and post-composing with pure arrows is multiplying by their units.
+A promonad is a monoid in the category of profunctors on 𝒞, in the sense of Definition 15.3, with composition of profunctors as tensor **[Standard: from memory]**. That is why it is called a *pro*monad. Equivalently, and more concretely, a promonad is a category with the same objects as 𝒞 together with a functor from 𝒞 into it that is the identity on objects: its arrows A → B are the elements of P(A, B), its composition is the multiplication, and the functor is the unit **[Standard: from memory]**. The profunctor action of P is then determined: pre- and post-composing with pure arrows is multiplying by their units.
 
 The library's `Promonad(category)` has `unit` and `multiply`, the composition `andThen` in diagrammatic and `compose` in mathematical order, written infix `>>>` and `<<<` as in a category, and `arrows`, the category of its arrows. Its laws are the category laws of `arrows` and the functor laws of `unit`, **[Tested]** for every instance.
 
@@ -3177,17 +3185,17 @@ Three kinds of promonad appear in this document.
 
 | Promonad | P(A, B) | Example |
 | --- | --- | --- |
-| the hom promonad of 𝒦 | 𝒦(A, B) itself | `Total.Functions`, `Partial.Programs` |
-| the Kleisli promonad of a monad M on 𝒦 | 𝒦(A, M(B)) | `Kleisli(M)`, such as `Kleisli.OptionKleisli` |
+| the hom promonad of 𝒞 | 𝒞(A, B) itself | `Total.Functions`, `Partial.Programs` |
+| the Kleisli promonad of a monad M on 𝒞 | 𝒞(A, M(B)) | `Kleisli(M)`, such as `Kleisli.OptionKleisli` |
 | a representation as data | syntax trees from A to B | the nodes of the optimizing parser, over reified pure functions (chapter 20) |
 
 ### 17.3 Running arrows side by side: strength
 
 Pure functions can be run side by side on pairs: given f : A → B and g : C → D, the tensor f × g : (A, C) → (B, D) applies f on the left and g on the right (chapter 14). Effectful arrows need the same: a parser for a key and a parser for a value give a parser for a pair. But a promonad alone cannot do it. Its arrows compose; nothing lets an arrow A → B act on a pair whose other component it does not know.
 
-The missing ingredient is the ability to carry a value along unchanged while an arrow runs. The value need not be an object of 𝒦 itself: it is enough that a monoidal category acts on 𝒦, so that a context C and an object A combine into an object C ⊘ A. A **left module** over a monoidal category (ℳ, ⊗, I), also called a left **actegory**, is a category 𝒦 with a bifunctor ⊘ : ℳ × 𝒦 → 𝒦, the **action**, and natural isomorphisms λ : I ⊘ A ≅ A and α : (X ⊗ Y) ⊘ A ≅ X ⊘ (Y ⊘ A) that satisfy the triangle and the pentagon of section 14.5. Every monoidal category is a left module over itself, with ⊘ = ⊗. In the library, a left module is a `Module`, and the self-action is `Module.OfMonoidal`.
+The missing ingredient is the ability to carry a value along unchanged while an arrow runs. The value need not be an object of 𝒞 itself: it is enough that a monoidal category acts on 𝒞, so that a context C and an object A combine into an object C ⊘ A. A **left module** over a monoidal category (ℳ, ⊗, I), also called a left **actegory**, is a category 𝒞 with a bifunctor ⊘ : ℳ × 𝒞 → 𝒞, the **action**, and natural isomorphisms λ : I ⊘ A ≅ A and α : (X ⊗ Y) ⊘ A ≅ X ⊘ (Y ⊘ A) that satisfy the triangle and the pentagon of section 14.5. Every monoidal category is a left module over itself, with ⊘ = ⊗. In the library, a left module is a `Module`, and the self-action is `Module.OfMonoidal`.
 
-**Definition 17.2 (strength).** A **strength** on a profunctor P : 𝒦₁ᵒᵖ × 𝒦₂ → 𝒱, over left modules ⊘₁ on 𝒦₁ and ⊘₂ on 𝒦₂ of the same monoidal category ℳ, is a family of arrows of 𝒱
+**Definition 17.2 (strength).** A **strength** on a profunctor P : 𝒞₁ᵒᵖ × 𝒞₂ → 𝒱, over left modules ⊘₁ on 𝒞₁ and ⊘₂ on 𝒞₂ of the same monoidal category ℳ, is a family of arrows of 𝒱
 
 τ : P(A, B) → P(C ⊘₁ A, C ⊘₂ B),
 
@@ -4141,7 +4149,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Endofunctor.** A functor from a category to itself; in the library, `Endofunctor(K)`. Section 12.2.
 
-**Endoprofunctor.** A profunctor 𝒦ᵒᵖ × 𝒦 → 𝒱 on a single category; in the library, `Endoprofunctor(K, V)`. Definition 12.2.
+**Endoprofunctor.** A profunctor 𝒞ᵒᵖ × 𝒞 → 𝒱 on a single category; in the library, `Endoprofunctor(category, base)`. Definition 12.2.
 
 **Enriched category (𝒱-category).** A category whose homs are objects of 𝒱 and whose identities and composition are arrows of 𝒱. Definition 4.1.
 
@@ -4189,7 +4197,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Law status table.** The table `docs/law-status.md`, regenerated by every test run, that records each law and instance as tested or refuted. Section 22.4.
 
-**Left module (left actegory).** A category 𝒦 with an action ⊘ : ℳ × 𝒦 → 𝒦 of a monoidal category ℳ, unital and associative up to coherent isomorphism; every monoidal category acts on itself. In the library, `Module`. Section 17.3.
+**Left module (left actegory).** A category 𝒞 with an action ⊘ : ℳ × 𝒞 → 𝒞 of a monoidal category ℳ, unital and associative up to coherent isomorphism; every monoidal category acts on itself. In the library, `Module`. Section 17.3.
 
 **Left recursion.** A rule that calls itself before consuming input; guarded recursion fails the call, and `StrictParser` extends it by seed growing. Section 20.8.
 
