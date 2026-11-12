@@ -67,6 +67,11 @@ abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) ext
     Gen.zip(parsers, parsers).map((p, q) => (p, p |> (q >> failure[Int, Int])))
   }
   private lazy val steps: Gen[P[Int, Either[Int, Int]]]   = Grammars.terms.map(Grammars.step(algebra))
+
+  /** A guarded step and one that reports at least as much: where the step fails, it also runs *q* and fails. */
+  private lazy val refinedSteps: Gen[(P[Int, Either[Int, Int]], P[Int, Either[Int, Int]])] = {
+    Gen.zip(steps, parsers).map((p, q) => (p, p |> (q >> failure[Int, Either[Int, Int]])))
+  }
   private lazy val rules: Gen[P[Int, Int] -> P[Int, Int]] = Grammars.terms.map(Grammars.nest(algebra))
   private lazy val consuming: Gen[P[Int, Int]]            = parsers.map(p => Grammars.consume(algebra)("a") >> p)
 
@@ -347,6 +352,42 @@ abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) ext
     forAll(ParserGen.order[(Int, Int), (Int, Int)](semantics), refined, refined) { case (o, (p, p2), (q, q2)) =>
       given (P[(Int, Int), (Int, Int)] is Preorder) = o
       zipMonotone(p, p2, q, q2)
+    }
+  }
+
+  law("branchMonotone") {
+    forAll(ParserGen.order[Either[Int, Int], Either[Int, Int]](semantics), refined, refined) {
+      case (o, (p, p2), (q, q2)) =>
+        given (P[Either[Int, Int], Either[Int, Int]] is Preorder) = o
+        branchMonotone(p, p2, q, q2)
+    }
+  }
+
+  law("iterateMonotone", "guarded steps") {
+    forAll(order, refinedSteps) { case (o, (p, p2)) =>
+      given (P[Int, Int] is Preorder) = o
+      iterateMonotone(p, p2)
+    }
+  }
+
+  law("attemptMonotone") {
+    forAll(ParserGen.order[Int, Either[Int, Int]](semantics), refined) { case (o, (p, p2)) =>
+      given (P[Int, Either[Int, Int]] is Preorder) = o
+      attemptMonotone(p, p2)
+    }
+  }
+
+  law("lookaheadMonotone") {
+    forAll(order, refined) { case (o, (p, p2)) =>
+      given (P[Int, Int] is Preorder) = o
+      lookaheadMonotone(p, p2)
+    }
+  }
+
+  law("notMonotone") {
+    forAll(order, refined) { case (o, (p, p2)) =>
+      given (P[Int, Int] is Preorder) = o
+      notMonotone(p, p2)
     }
   }
 

@@ -635,6 +635,48 @@ abstract class ParserAlgebra(
       (p ** q) ?< (p2 ** q2)
     }
 
+    /** If *p* ⊑ *p*′ and *q* ⊑ *q*′, then *p* + *q* ⊑ *p*′ + *q*′.
+      *
+      * @note The premise is not checked: *p*′ and *q*′ must be built to report more than *p* and *q*.
+      */
+    def branchMonotone[A, B, C, D](p: P[A, B], p2: P[A, B], q: P[C, D], q2: P[C, D])(
+      using P[Either[A, C], Either[B, D]] is Preorder
+    ): Boolean = {
+      (p ++ q) ?< (p2 ++ q2)
+    }
+
+    /** If *p* ⊑ *p*′, then *p*† ⊑ *p*′†.
+      *
+      * @note The premise is not checked: *p*′ must be built to report more than *p*.
+      */
+    def iterateMonotone[A, B](p: P[A, Either[B, A]], p2: P[A, Either[B, A]])(using P[A, B] is Preorder): Boolean = {
+      p.iterate ?< p2.iterate
+    }
+
+    /** If *p* ⊑ *p*′, then *attempt*(*p*) ⊑ *attempt*(*p*′).
+      *
+      * @note The premise is not checked: *p*′ must be built to report more than *p*.
+      */
+    def attemptMonotone[A, B](p: P[A, B], p2: P[A, B])(using P[A, Either[B, A]] is Preorder): Boolean = {
+      p.attempt ?< p2.attempt
+    }
+
+    /** If *p* ⊑ *p*′, then *p̄* ⊑ *p*′‾: both are silent, and they succeed on the same inputs.
+      *
+      * @note The premise is not checked: *p*′ must be built to report more than *p*.
+      */
+    def lookaheadMonotone[A, B](p: P[A, B], p2: P[A, B])(using P[A, A] is Preorder): Boolean = {
+      ~p ?< ~p2
+    }
+
+    /** If *p* ⊑ *p*′, then *p̄*ᶜ ⊑ *p*′‾ᶜ: both are silent, and they succeed on the same inputs.
+      *
+      * @note The premise is not checked: *p*′ must be built to report more than *p*.
+      */
+    def notMonotone[A, B](p: P[A, B], p2: P[A, B])(using P[A, A] is Preorder): Boolean = {
+      !p ?< !p2
+    }
+
     /** If *p* ⊑ *p*′, then *rule*(*p*,*l*) ⊑ *rule*(*p*′,*l*).
       *
       * @note The premise is not checked: *p*′ must be built to report more than *p*.
