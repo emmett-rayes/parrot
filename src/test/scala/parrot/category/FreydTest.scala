@@ -48,6 +48,17 @@ abstract class FreydSpec(
     }
   }
 
+  law("pureIsCentral", "a consequence") {
+    val observations = observe[T1 * T3, T2 * T4]
+    val fs           = category.arrow[T1, T2]
+    val qs           = arrow[T3, T4]
+
+    forAll(observations, fs, qs) { (observe, f, q) =>
+      given (((T1 * T3) --> (T2 * T4)) is Observable) = observe
+      Consequences.pureIsCentral[T1, T2, T3, T4](f, q)
+    }
+  }
+
   law("leftToRightIsStrengths") {
     val observations = observe[T1 * T4, T2 * T3]
     val ps           = arrow[T1, T2]

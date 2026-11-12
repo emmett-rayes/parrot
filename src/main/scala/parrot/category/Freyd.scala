@@ -112,6 +112,21 @@ open class Freyd(tracked val strong: StrongPromonad)
     ): Boolean = {
       (p *<* q) =?= (second[C, D, A](q) >>> first[A, B, D](p))
     }
+
+    /** Laws that follow from the others: theorems, checked as tests. */
+    object Consequences {
+
+      /** *η*(*f*) ⋉ *q* = *η*(*f*) ⋊ *q*
+        *
+        * A pure arrow is central: it interchanges with every arrow *q*. It follows from [[unit]] and the dinaturality
+        * of the strength.
+        */
+      def pureIsCentral[A: Obj, B: Obj, C: Obj, D: Obj](f: A ==> B, q: C --> D)(
+        using ((A * C) --> (B * D)) is Observable
+      ): Boolean = {
+        (profunctor.unit(f) *>* q) =?= (profunctor.unit(f) *<* q)
+      }
+    }
   }
 }
 

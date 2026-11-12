@@ -133,7 +133,8 @@ warning-free.
     (`Monad.Classical`: those of the Kleisli structure it induces). Laws return `Boolean` and compare with an
     `Observable` (`=?=`), never `Eq` on functions; inequations use a `Preorder` (`?<`). Congruence laws take variants
     equal by construction (`f2`). A law that holds only under a premise states it in a `@note`; where the premise
-    depends on the instance, the note says so.
+    depends on the instance, the note says so. A law that follows from the others goes in a nested
+    `object Consequences` of the laws object, so that axioms and theorems stay apart; it has a spec entry like any law.
 13. **Refinements go through the base's alias.** A class has one base, the parameter that the first sentence of its
     doc relates it to, usually the first (`Module` is over its `monoidal`), and one alias that refines it, named by that
     preposition: `Endofunctor.On[C]`, `Limit.Of[D]`, `Monoid.In[V]`, `Cone.Over[D]`, `Cocone.Under[D]` and `Into`

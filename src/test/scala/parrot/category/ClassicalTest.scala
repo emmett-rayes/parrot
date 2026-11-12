@@ -173,6 +173,18 @@ abstract class ClassicalSpec(
       }
     }
 
+    law("overrideCommutes", "a consequence, for two restrictions of one arrow") {
+      val observations = observe[T1, T2]
+      val ps           = arrow[T1, T3]
+      val qs           = arrow[T1, T3]
+      val hs           = arrow[T1, T2]
+
+      forAll(observations, ps, qs, hs) { (observe, p, q, h) =>
+        given ((T1 --> T2) is Observable) = observe
+        Consequences.overrideCommutes(restriction.restrict(p) >>> h, restriction.restrict(q) >>> h)
+      }
+    }
+
     counterexample("overridePostcomposition", "h ∘ (f ⊳ g) = (h ∘ f) ⊳ (h ∘ g) fails: ⊳ commits") {
       val observations = observe[T1, T3]
       val fs           = arrow[T1, T2]

@@ -148,6 +148,21 @@ abstract class Classical(tracked override val category: Category) extends Restri
     ): Boolean = {
       (orElse(f, g) =?= orElse(f2, g2)) && (complement(f) =?= complement(f2))
     }
+
+    /** Laws that follow from the others: theorems, checked as tests. */
+    object Consequences {
+
+      /** *f* ⊳ *g* = *g* ⊳ *f*
+        *
+        * Override is commutative on compatible morphisms, where it is their join (Lemay–Nester).
+        *
+        * @note Holds for compatible *f* and *g*, which agree where both are defined: *g* ∘ *f̄* = *f* ∘ *ḡ*. The premise
+        *   is not checked: *f* and *g* must be built to be compatible.
+        */
+      def overrideCommutes[A: Obj, B: Obj](f: A --> B, g: A --> B)(using (A --> B) is Observable): Boolean = {
+        orElse(f, g) =?= orElse(g, f)
+      }
+    }
   }
 }
 
