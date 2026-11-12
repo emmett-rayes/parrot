@@ -13,7 +13,7 @@ package category
   * @note A trait with [[Premonoidal]] as its self-type, mixed into the premonoidal classes that are symmetric:
   *   [[Symmetric]] and [[Freyd]].
   */
-trait SymmetricPremonoidal extends Premonoidal {
+trait SymmetricPremonoidal extends caps.Pure { this: Premonoidal =>
   import category.{Iso, Obj, -->, <->, >>>}
 
   /** The braiding *σ*: *A* ⊗ *B* → *B* ⊗ *A*.

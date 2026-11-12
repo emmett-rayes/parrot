@@ -146,3 +146,10 @@ class PartialComputationsCoproductIsFreydTest
     forAll(interchange)(holds => holds)
   }
 }
+
+/** A class below [[Freyd]] that mixes the symmetry in again: the mixin has [[Premonoidal]] as its self-type and
+  * restates none of its parameters, so it applies wherever the class is.
+  */
+class MixedAgain(tracked override val strong: StrongPromonad) extends Freyd(strong), SymmetricPremonoidal
+
+class MixedAgainIsFreydTest extends FreydSpec("Option on Product (mixed in again)", MixedAgain(Kleisli.OptionProduct))

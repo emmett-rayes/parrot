@@ -10,7 +10,7 @@ package category
   * category, the pure morphisms are the arrows *η*(*f*) of its base. Pure morphisms are central, i.e. they interchange
   * with every morphism, but a central morphism need not be pure.
   */
-abstract class Traced(tracked val premonoidal: SymmetricPremonoidal) extends caps.Pure {
+abstract class Traced(tracked val premonoidal: Premonoidal & SymmetricPremonoidal) extends caps.Pure {
   import premonoidal.{I, `*`, associator, braid, lmap, rightUnitor, rmap}
   import premonoidal.category.{Obj, identity, -->, >>>}
 
@@ -126,7 +126,7 @@ abstract class Traced(tracked val premonoidal: SymmetricPremonoidal) extends cap
 object Traced {
 
   /** The trace structures on a symmetric premonoidal category **C**. */
-  type On[C <: SymmetricPremonoidal] = Traced { val premonoidal: C }
+  type On[C <: Premonoidal & SymmetricPremonoidal] = Traced { val premonoidal: C }
 
   /** The trace of an iteration *E*, on its Freyd category: *tr*(*p*) = (*η*(*id* + *ι*₂) ∘ *p*)† ∘ *η*(*ι*₁), a loop
     * that starts on the left.
