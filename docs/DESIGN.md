@@ -337,7 +337,7 @@ Rejected:
   bifunctoriality;
 - naming the primitive strength `first`: with a left action it runs an arrow on the *second* component;
 - `Bistrong` over two arbitrary left modules: a left module has no right action, so it would need right modules or
-  bimodules, which have no client;
+  bimodules, whose only model here is the self-action of a symmetric monoidal category, which `Bistrong` takes;
 - the law that the two strengths commute as an axiom of `Bistrong`: it follows from `braiding`, the laws of `Strong`
   and the coherence of **M**, and it does not determine an overridden *τ*′;
 - `Bistrong` constraining the profunctor towards the monoidal structure
@@ -466,7 +466,9 @@ Rejected:
   succeed without consuming input. The nullability of `Info` is not that property, since a lookahead has the first
   set of its parser and never consumes. The analysis errs towards "may", which only keeps a guard.
 
-Rejected, until an interpreter needs other semantic types: abstract semantic types and mixin traits for the algebra.
+Rejected: abstract semantic types for the algebra, since the unit, the products, the coproducts and the initial
+object of 𝒮 are determined up to isomorphism, so another choice is an isomorphic copy at the cost of a type member in
+every structure of the bundle; and mixin traits for the algebra, since combinations are bundles (§3).
 
 Rejected for the postfix operators: the bare `p?`, which needs `scala.language.postfixOps` in every grammar and takes
 what follows as its argument, so `p? >> q` does not parse; and `p * n` for `times` beside `p.*`, since where `P` is a
@@ -504,13 +506,24 @@ On purpose:
 - **restriction on 𝒮,** where every arrow is total and restriction is the identity; it lives on 𝒫 (`Partial.Domains`);
 - **ordered choice as enrichment over additive monoids,** which it is not: choice distributes on one side only (§4);
 - **an `Eq` derived from `CanEqual`** (§5);
-- **a hierarchy of enriched categories, functors and promonads** parallel to the ordinary one, until an enriched module
-  has a client (§4);
+- **a hierarchy of enriched categories, functors and promonads** parallel to the ordinary one, which doubles every
+  structure: the two enrichments the library has, a semantic equality and a preorder on homs, are stated directly
+  (§4, §5);
 - **examples as library instances** (isomorphisms of particular types, monoids nothing uses), which belong in tests.
 
-Not attempted, each until it has a client: codata and productivity, restriction products as a class, useful fixed
-points over products in a strict language, packrat memoization, error recovery, right modules and bimodules, module
-morphisms, mixed optics, general iterated enrichment, the delay monad.
+Not attempted, each for its cost:
+- **codata, productivity and the delay monad,** which need non-termination as data, a model the library keeps out of
+  𝒮 (§2);
+- **restriction products as a class:** a restriction structure and a symmetric monoidal one with a pairing, of which
+  the pairs of 𝒫 are the model;
+- **useful fixed points over products in a strict language,** which do not exist: the only solution of the equation
+  diverges;
+- **packrat memoization and error recovery,** which are interpreters, not structures: each is a `ParserAlgebra` of
+  its own, with its own agreement to check;
+- **right modules and bimodules,** whose only model here is the self-action of a symmetric monoidal category;
+- **module morphisms and mixed optics,** which need natural transformations between actions, and so a functor
+  category;
+- **general iterated enrichment,** which needs a category of categories.
 
 ## 8. Tooling
 
