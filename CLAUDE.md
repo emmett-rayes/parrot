@@ -29,10 +29,12 @@ everything from the repository root (test fixtures resolve paths from it).
 
 ```sh
 sbt --client Test/compile
-sbt --client testFull                  # whole suite (~1600 tests, under a minute); regenerates docs/law-status.md
+sbt --client testFull                  # whole suite (~1750 tests, under a minute); regenerates docs/law-status.md
 sbt --client "testOnly parrot.parser.*"
 sbt --client "Test/runMain parrot.json.JsonBenchmark nativejson-benchmark"     # [--reference] measures both
 python3 docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.10.0/parrot/classes   # after compiling
+python3 docs/check-laws.py             # after testFull: every law has a row in docs/law-status.md
+python3 docs/check-names.py            # every `Name.member` the documents mention is declared in the code
 pants check <file>                     # fast single-file type-check; also: pants test <test-file>
 ```
 
@@ -47,8 +49,10 @@ pants check <file>                     # fast single-file type-check; also: pant
   `src/test/resources/json`.
 
 **Before finishing a change:** `testFull` passes with no warnings. After touching `StrictParser`, `Scanner`, `CharSet`
-or `Fn`, run the JSON benchmark (JSON_checker 34/34, ≈ 110 MiB/s). After changing the tutorial, or library code it
-uses, run the snippet checker. After adding or renaming a structure, or changing its parameters or what it extends,
+or `Fn`, run the JSON benchmark (JSON_checker 34/34, ≈ 110 MiB/s). After changing the tutorial, its exercises, the
+README or library code they use, run the snippet checker, which compiles all three and checks the preface's compiler
+options against `build.sbt`. After adding a law, run `docs/check-laws.py`; after renaming or removing anything the
+documents name, run `docs/check-names.py`. After adding or renaming a structure, or changing its parameters or what it extends,
 update `docs/CONCEPTS.md`.
 
 ## Compiler flags and their idioms

@@ -30,7 +30,8 @@ Units are compiled in the order in which their first block appears, into one out
 classpath of every later unit, so a chapter can import an earlier one: `import tutorial.ch03.Snippets.*`.
 Language imports (`import language...`) are moved before the object, after the package clauses. Every unit is compiled
 by Scala CLI (`scala` on the PATH) with the Scala version of the library, SCALA_VERSION, whatever `scalac` the system
-has. The flags are read from `scalac-flags.txt` next to this script. Warnings are not failures.
+has. The flags are read from `scalac-flags.txt` next to this script: each must be a compiler option of `build.sbt`, and
+the preface of the tutorial must list exactly them, or the checker stops before compiling. Warnings are not failures.
 
 Exits with status 1 if a compiled block fails or a `fails` block compiles.
 """
@@ -216,6 +217,22 @@ def check(path, root, library, args, flags, out):
     return failures, checked, len(order), expected_failures, sketches
 
 
+def check_flags(flags, tutorial):
+    """The flags of the checker must be flags of the build, and the preface of the tutorial must list exactly them."""
+    problems = []
+    build = set(re.findall(r'^\s*"(-[^"]+)",', open(os.path.join(ROOT, "build.sbt"), encoding="utf-8").read(), re.M))
+    for flag in flags:
+        if flag not in build:
+            problems.append(f"scalac-flags.txt: {flag} is not a compiler option of build.sbt")
+    text = open(tutorial, encoding="utf-8").read()
+    listed = re.search(r"with the following compiler options:\n\n```\n(.*?)\n```", text, re.S)
+    if not listed:
+        problems.append("TUTORIAL.md: the preface does not list the compiler options")
+    elif sorted(listed.group(1).split()) != sorted(flags):
+        problems.append("TUTORIAL.md: the compiler options of the preface are not those of scalac-flags.txt")
+    return problems
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--document", action="append", default=[], help="a document to check; may be repeated")
@@ -232,6 +249,9 @@ def main():
         os.path.join(HERE, "exercises", "SOLUTIONS.md"),
         os.path.join(ROOT, "README.md"),
     ]
+    problems = check_flags(flags, tutorial)
+    if problems:
+        sys.exit("\n".join(problems))
     out = args.keep or tempfile.mkdtemp(prefix="snippets-")
     os.makedirs(out, exist_ok=True)
 
