@@ -50,3 +50,10 @@ by importing it, as in `import tutorial.ch03.Categories.*`. Language imports (`i
 the object, after the package clauses. The checker only compiles; it does not run the code.
 
 Parts I and II are self-contained. Parts III and IV use the library through `library` blocks.
+
+## Other documents
+
+Run without `--document`, the checker also compiles the solutions of the tutorial's exercises,
+`docs/tutorial/exercises/SOLUTIONS.md`, and the code blocks of the repository's `README.md`. Their units are in
+packages named after the file (`solutions`, `readme`) and are always compiled against the library. A block of the
+README that is a fragment of a grammar, not a compilation unit, is marked `sketch`.

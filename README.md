@@ -140,7 +140,7 @@ h >> (p |> q)  =  (h >> p) |> (h >> q)
 
 Here is a witness of the second line, in a grammar like `Arithmetic`:
 
-```scala
+```scala sketch
 val (a, ab, c) = (literal("a"), literal("ab"), literal("c"))
 
 val factored    = (a |> ab) *> c

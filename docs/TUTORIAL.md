@@ -2598,6 +2598,12 @@ A lawful functor preserves every equation between composites. In particular, `ma
 
 In Set, a functor can send each object anywhere and act on arrows by any function that respects composition. In Scala, a functor's object map is a type constructor and its arrow map is a program, which makes every Scala functor an 𝒮-functor and gives it free theorems. Functors of two arguments and functors that reverse arrows need no new ideas, only the opposite category and a second argument.
 
+### Exercises for chapter 12
+
+These exercises are checked by the law tests of chapter 22. The answer to each is an instance, and the laws mark it: write the test class the exercise names beside the specs of the library and run it. Solutions are in `docs/tutorial/exercises/SOLUTIONS.md`, compiled by the snippet checker.
+
+1. Make `List` an `Endofunctor(Total)` and check it with `class ListIsFunctorTest extends FunctorSpec("List", …)`. Then break it, by reversing the list in `map`, and read the name of the law that fails. Why does the other law still pass on some lists?
+
 ### References for chapter 12
 
 **Cited from memory, not consulted**
@@ -2982,6 +2988,13 @@ The guarantee stops where the laws stop. A "monad" whose `bind` breaks associati
 
 In Set, a monad is an endofunctor on sets with two natural families of functions, and naturality has to be proved. In 𝒮, a monad is a type constructor with two polymorphic programs; they are natural for free (chapter 9), the library still states their naturality as a law, and the monad laws are equations between programs that tests can refute. Monoid objects show the same difference: in Set a monoid is a set with an operation, and "a monad is a monoid in the category of endofunctors" is a statement about a functor category, which in Scala exists as a category only because polymorphic function types exist (section 13.2). And in Set every monad comes from an adjunction that can be written down; in Scala the adjunctions of section 15.5 are pairs of programs whose triangle laws hold by the same equality ≐ as everything else, and the library does not yet state them as a structure.
 
+### Exercises for chapter 15
+
+These exercises are checked by the law tests of chapter 22. The answer to each is an instance, and the laws mark it: write the test class the exercise names beside the specs of the library and run it. Solutions are in `docs/tutorial/exercises/SOLUTIONS.md`, compiled by the snippet checker.
+
+1. Write the exception transformer `EitherT[E]`, computations of a monad that may fail with an error of type E, in the shape of `OptionT`: an endofunctor M[E + −] and a monad on it. Check `EitherT[String](Monad.Identity)` with `MonadSpec`.
+2. Positions under `max` with −1 for "no position" are a `Semilattice`. Write it and check it with `SemilatticeSpec`; which law does a generator of all integers refute, and what does that say about the instance? Then claim that strings under concatenation are a semilattice, and find your two failures in `docs/law-status.md`.
+
 ### References for chapter 15
 
 **Cited from memory, not consulted**
@@ -3260,6 +3273,12 @@ Any construction written once for a Freyd category, such as running two parsers 
 
 In Set, there is only one way to run two functions side by side, and the order never matters. Effects change this. The categorical structure that remains, a promonad with a strength, is still small: two operations and a handful of laws, and it describes Kleisli arrows and syntax trees alike. What it does not promise is an order-independent tensor, which is exactly the information a programmer must keep in mind when effects are involved.
 
+### Exercises for chapter 17
+
+This exercise is checked by the law tests of chapter 22. The answer to each is an instance, and the laws mark it: write the test class the exercise names beside the specs of the library and run it. Solutions are in `docs/tutorial/exercises/SOLUTIONS.md`, compiled by the snippet checker.
+
+1. Build the writer of a commutative monoid that is not idempotent, such as integers under addition (a `CommutativeMonoid`), its Kleisli promonad, its strength over products and its Freyd category. Show with `FreydSpec` that `interchange` passes, and say which sentence of section 17.5 you have tested. What do you expect of `Consequences.pureIsCentral` for the string logger, for which `interchange` fails?
+
 ### References for chapter 17
 
 **Cited from memory, not consulted**
@@ -3396,6 +3415,12 @@ For a lawful classical restriction category: lookahead (restriction) can be move
 ### 18.9 Set and Scala
 
 In the category of sets and partial functions, every restriction category operation exists: domains, complements, joins, override. In Scala, partiality comes in two kinds. 𝒫's non-termination gives a restriction category whose total part is 𝒮, but complements would decide halting, so it is not classical. `Option`'s failure gives a classical restriction category, and with it ordered choice as a theorem rather than an invention. With effects besides failure, no restriction keeps every law exact: failure does not commute with output, so the tests either lose the output or break the laws of commuting tests and complements.
+
+### Exercises for chapter 18
+
+This exercise is checked by the law tests of chapter 22. The answer to each is an instance, and the laws mark it: write the test class the exercise names beside the specs of the library and run it. Solutions are in `docs/tutorial/exercises/SOLUTIONS.md`, compiled by the snippet checker.
+
+1. For computations that output a number, combined by `max`, and may fail (`OptionT` over a `Writer`), take the restriction that keeps the output of what it tests (`OptionT.ClassicalOf`). Before running `RestrictionSpec`, predict which of R1 to R4 fail, from the argument of section 18.7.
 
 ### References for chapter 18
 
@@ -3602,6 +3627,12 @@ For a lawful iteration operator, the loop refactorings of section 19.3 are sound
 ### 19.10 Set and Scala
 
 In the category of sets and partial functions, every step has an iteration, the least fixed point, and the product row is full as well, through the order on partial functions. In Scala, strictness empties the product row except by duality, non-termination places unguarded iteration and recursion in 𝒫, and in 𝒮 there remain guarded iteration and recursion, total by construction and lawful where the program makes progress.
+
+### Exercises for chapter 19
+
+This exercise is checked by the law tests of chapter 22. The answer to each is an instance, and the laws mark it: write the test class the exercise names beside the specs of the library and run it. Solutions are in `docs/tutorial/exercises/SOLUTIONS.md`, compiled by the snippet checker.
+
+1. Write the trace of 𝒫 over tagged unions by hand, as a loop that enters on the left and runs until it exits on the left: a `Traced` on `Freyd(Partial.Choice)`. Check it with `TracedSpec`, and compare it with `Partial.Feedback`, which is derived from the while loop by `Traced.OfElgot`. Which law would fail if the loop restarted from the entry instead of continuing on the feedback wire?
 
 ### References for chapter 19
 
@@ -3817,6 +3848,12 @@ A grammar written against `ParserAlgebra` behaves the same on every lawful inter
 ### 20.12 Set and Scala
 
 In the category of sets and relations, a grammar denotes a language, and choice is union. Parsing expression grammars are different: their choice is ordered, so a grammar denotes a partial function from inputs to results, and choice is the override of chapter 18. In Scala, the library writes that semantics as a Kleisli category of a monad built from three transformers, adds diagnostics as a semilattice writer with silent tests, and obtains every combinator from a structure whose laws are checked. The optimizing interpreter is the same semantics as data, rewritten by its own laws.
+
+### Exercises for chapter 20
+
+This exercise is checked on both interpreters. The answer to each is an instance, and the laws mark it: write the test class the exercise names beside the specs of the library and run it. Solutions are in `docs/tutorial/exercises/SOLUTIONS.md`, compiled by the snippet checker.
+
+1. Define a combinator for items separated by a separator with an optional separator at the end, from `separatedBy` and `optional`, in a class that takes a `ParserAlgebra`. State its definitional law as a function returning `Boolean`, as `ParserLaws` does, and run it on `ReferenceParser` and on `StrictParser` with observations that include diagnostics. Would the law still be an equation if the trailing separator were tested with a lookahead?
 
 ### References for chapter 20
 

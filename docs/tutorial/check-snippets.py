@@ -2,7 +2,13 @@
 """Compiles the Scala code blocks of the tutorial, so that every snippet is checked by the compiler.
 
 Usage:
-    docs/tutorial/check-snippets.py [--document FILE] [--classpath CP] [--only ch02,ch03,...] [--keep DIR] [--verbose]
+    docs/tutorial/check-snippets.py [--document FILE]... [--classpath CP] [--only ch02,ch03,...] [--keep DIR]
+                                    [--verbose]
+
+Without `--document`, the tutorial is checked, then the solutions of its exercises (`exercises/SOLUTIONS.md`) and the
+README of the repository. The units of the tutorial are in the package `tutorial`. Every other document has a package
+named after its file (`solutions`, `readme`), may import the units of the documents before it, and is compiled against
+the library whether its blocks say `library` or not.
 
 Conventions (see docs/tutorial/README.md):
     ```scala                 compiled; all such blocks of a chapter form one unit, `object Snippets`
@@ -119,7 +125,7 @@ def parse(path):
     return blocks
 
 
-def render(chapter, unit_name, blocks):
+def render(root, chapter, unit_name, blocks):
     """Returns the source of one compilation unit and, per source line, the document line it comes from."""
     header, body, origins_header, origins_body = [], [], [], []
     for b in blocks:
@@ -134,7 +140,7 @@ def render(chapter, unit_name, blocks):
                 origins_body.append(b.line + 1 + offset)
         body.append("")
         origins_body.append(None)
-    pkg = ["package tutorial", f"package {chapter}", ""]
+    pkg = [f"package {root}", f"package {chapter}", ""]
     source = pkg + header + [""] + [f"object {unit_name} {{"] + body + ["}"]
     origins = [None] * len(pkg) + origins_header + [None] + [None] + origins_body + [None]
     return "\n".join(source) + "\n", origins
@@ -164,19 +170,11 @@ def compile_unit(source, origins, out, classpath, flags, document):
         return result.returncode == 0, output
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--document", default=os.path.join(ROOT, "docs", "TUTORIAL.md"))
-    parser.add_argument("--classpath", default="", help="classpath of the compiled library, for `library` units")
-    parser.add_argument("--only", default="", help="comma-separated chapters to check, e.g. ch02,ch03,appa")
-    parser.add_argument("--keep", default="", help="directory for the compiled snippets (default: a temporary one)")
-    parser.add_argument("--verbose", action="store_true", help="print why each `fails` block fails")
-    args = parser.parse_args()
-
-    flags = open(os.path.join(HERE, "scalac-flags.txt"), encoding="utf-8").read().split()
-    document = os.path.relpath(args.document, os.getcwd())
+def check(path, root, library, args, flags, out):
+    """Compiles the blocks of the document at `path` into `out`; returns its failures and its counts."""
+    document = os.path.relpath(path, os.getcwd())
     only = set(filter(None, args.only.split(",")))
-    blocks = [b for b in parse(args.document) if not only or b.chapter in only]
+    blocks = [b for b in parse(path) if not only or b.chapter in only]
 
     units, order = {}, []
     for b in blocks:
@@ -188,18 +186,16 @@ def main():
             order.append(key)
         units[key].blocks.append(b)
 
-    out = args.keep or tempfile.mkdtemp(prefix="snippets-")
-    os.makedirs(out, exist_ok=True)
     failures, checked, expected_failures, sketches = [], 0, 0, sum(1 for b in blocks if b.sketch)
 
     for key in order:
         unit = units[key]
-        classpath = os.pathsep.join(filter(None, [out, args.classpath if unit.library else ""]))
+        classpath = os.pathsep.join(filter(None, [out, args.classpath if unit.library or library else ""]))
         compiled = [b for b in unit.blocks if not b.fails]
-        source, origins = render(unit.chapter, unit.name, compiled)
+        source, origins = render(root, unit.chapter, unit.name, compiled)
         ok, output = compile_unit(source, origins, out, classpath, flags, document)
         checked += len(compiled)
-        print(f"{unit.chapter} {unit.name}: {len(compiled)} block(s) {'ok' if ok else 'FAILED'}")
+        print(f"{root} {unit.chapter} {unit.name}: {len(compiled)} block(s) {'ok' if ok else 'FAILED'}")
         if not ok:
             failures.append((unit, output))
         for i, b in enumerate(unit.blocks):
@@ -208,20 +204,50 @@ def main():
             expected_failures += 1
             prefix = [p for p in unit.blocks[:i] if not p.fails]
             with tempfile.TemporaryDirectory() as scratch:
-                source, origins = render(unit.chapter, unit.name, prefix + [b])
+                source, origins = render(root, unit.chapter, unit.name, prefix + [b])
                 ok, output = compile_unit(source, origins, scratch, classpath, flags, document)
             if ok:
                 failures.append((unit, f"{document}:{b.line}: block marked `fails` compiles\n"))
-                print(f"{unit.chapter} {unit.name}: `fails` block at line {b.line} COMPILES")
+                print(f"{root} {unit.chapter} {unit.name}: `fails` block at line {b.line} COMPILES")
             else:
-                print(f"{unit.chapter} {unit.name}: `fails` block at line {b.line} fails as expected")
+                print(f"{root} {unit.chapter} {unit.name}: `fails` block at line {b.line} fails as expected")
                 if args.verbose:
                     print("    " + "\n    ".join(line for line in output.splitlines() if line.strip()))
+    return failures, checked, len(order), expected_failures, sketches
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--document", action="append", default=[], help="a document to check; may be repeated")
+    parser.add_argument("--classpath", default="", help="classpath of the compiled library, for `library` units")
+    parser.add_argument("--only", default="", help="comma-separated chapters to check, e.g. ch02,ch03,appa")
+    parser.add_argument("--keep", default="", help="directory for the compiled snippets (default: a temporary one)")
+    parser.add_argument("--verbose", action="store_true", help="print why each `fails` block fails")
+    args = parser.parse_args()
+
+    flags = open(os.path.join(HERE, "scalac-flags.txt"), encoding="utf-8").read().split()
+    tutorial = os.path.join(ROOT, "docs", "TUTORIAL.md")
+    documents = args.document or [
+        tutorial,
+        os.path.join(HERE, "exercises", "SOLUTIONS.md"),
+        os.path.join(ROOT, "README.md"),
+    ]
+    out = args.keep or tempfile.mkdtemp(prefix="snippets-")
+    os.makedirs(out, exist_ok=True)
+
+    failures, checked, units, expected_failures, sketches = [], 0, 0, 0, 0
+    for path in documents:
+        is_tutorial = os.path.abspath(path) == tutorial
+        root = "tutorial" if is_tutorial else re.sub(r"\W", "", os.path.splitext(os.path.basename(path))[0]).lower()
+        result = check(path, root, not is_tutorial, args, flags, out)
+        failures += result[0]
+        checked, units = checked + result[1], units + result[2]
+        expected_failures, sketches = expected_failures + result[3], sketches + result[4]
 
     for unit, output in failures:
         print(f"\n==== {unit.chapter} {unit.name} ====\n{output}")
     print(
-        f"\nSummary: {checked} compiled block(s) in {len(order)} unit(s), {expected_failures} `fails` block(s), "
+        f"\nSummary: {checked} compiled block(s) in {units} unit(s), {expected_failures} `fails` block(s), "
         f"{sketches} sketch(es) skipped, {len(failures)} failure(s)."
     )
     sys.exit(1 if failures else 0)
