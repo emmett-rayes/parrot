@@ -29,7 +29,7 @@ everything from the repository root (test fixtures resolve paths from it).
 
 ```sh
 sbt --client Test/compile
-sbt --client testFull                  # whole suite (~750 tests, under a minute); regenerates docs/law-status.md
+sbt --client testFull                  # whole suite (~1600 tests, under a minute); regenerates docs/law-status.md
 sbt --client "testOnly parrot.parser.*"
 sbt --client "Test/runMain parrot.json.JsonBenchmark nativejson-benchmark"     # [--reference] measures both
 python3 docs/tutorial/check-snippets.py --classpath target/out/jvm/scala-3.10.0/parrot/classes   # after compiling
@@ -100,8 +100,9 @@ warning-free.
    (`private given IIsObj: (I is Obj) = unit.evidence`), and the only public givens are type class instances next to
    their type class.
 6. **Instances are `object`s** nested in what they belong to (`Total.Products`, `Partial.Loops`); generic constructions
-   are `open class`es (`Kleisli(monad)`, `StateT[S](monad)`). Instances name evidence explicitly (`Type.TIsType`), never
-   `summon`: a class-level forwarding given would recurse.
+   are `open class`es (`Kleisli(monad)`, `StateT[S](monad)`). Instances name evidence explicitly (`Type.TIsType`), and
+   never `summon` where a class-level given forwards the evidence, which would recurse; a `summon` of a context bound
+   in scope is fine (`Category.Object`).
 7. **Operators are syntax:** each symbolic extension is `final`, passes its arguments in order to a named method
    (`f >>> g` is `andThen(f, g)`) and is documented `Infix extension for [[andThen]].`; an infix type alias is
    documented `Infix alias for [[Hom]].` One operator per operation: `>>>`/`<<<`, `***`, `&&&`/`|||`, `+++`,
@@ -117,7 +118,9 @@ warning-free.
    override with a faster implementation, and a law equates it with its definition (`diagonalIsPairing`);
    redefinitions are `override` without `final`. A member forwarded unchanged from a parameter is an
    `export` (no scaladoc); one that renames it or changes its meaning is a `final def` with its own doc
-   (`ParserAlgebra.pure` is `sequencing.unit(f)`). Eta-reduce aliases (`type Self = Tuple2`).
+   (`ParserAlgebra.pure` is `sequencing.unit(f)`, `Monad.M` is `functor.F`). Every overridable derived operation has a
+   law named `<operation>Is<Definition>` or `<operation>Definition`; a member that only forwards is `final`.
+   Eta-reduce aliases (`type Self = Tuple2`).
 10. **Monads are structure on their functor** (`Monad(functor: Endofunctor)`, primitives `unit` and `flatten`). Refine
     through the functor, `Monad.On[Total.type]`, not `Monad { val category: Total.type }`, or the singleton chain
     breaks. Plain monads are transformers over `Monad.Identity`.
@@ -125,9 +128,11 @@ warning-free.
     structures (restriction, loops, feedback, knots). Include a total `f` with `Partial.fromTotal(f)`, not `Partial(f)`;
     `Partial.assumeTotal` is the library's single totality promise. Total iteration and recursion are guarded by a
     `Measure` (`StateT.GuardedIteration`, `StateT.GuardedRecursion`).
-12. **Laws:** every structure has `object <Name>Laws` returning `Boolean` and comparing with an `Observable` (`=?=`),
-    never `Eq` on functions; inequations use a `Preorder` (`?<`). Congruence laws take variants equal by construction
-    (`f2`); conditional laws state their premise in a `@note`.
+12. **Laws:** every structure has `object <Name>Laws`, or its doc names the structure whose laws are its laws
+    (`Monad.Classical`: those of the Kleisli structure it induces). Laws return `Boolean` and compare with an
+    `Observable` (`=?=`), never `Eq` on functions; inequations use a `Preorder` (`?<`). Congruence laws take variants
+    equal by construction (`f2`). A law that holds only under a premise states it in a `@note`; where the premise
+    depends on the instance, the note says so.
 13. **Refinements go through the base's alias.** A class has one base, the parameter that the first sentence of its
     doc relates it to, usually the first (`Module` is over its `monoidal`), and one alias that refines it, named by that
     preposition: `Endofunctor.On[C]`, `Limit.Of[D]`, `Monoid.In[V]`, `Cone.Over[D]`, `Cocone.Under[D]` and `Into`
@@ -186,7 +191,7 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
 - Files start with two package clauses, `package parrot` then `package category`. scalafmt 3.11.3 (`.scalafmt.conf`,
   max 120 columns) has no CLI here: touch only the lines you change; files with given syntax scalafmt cannot parse are
   formatted by hand.
-- Method bodies and `match`es in braces; `if … then … else`; aligned `=`, `:` and `=>` in consecutive declarations
+- Method bodies and `match`es in braces, except a one-line body that only forwards; `if … then … else`; aligned `=`, `:` and `=>` in consecutive declarations
   and cases; trailing commas in multi-line lists; braces in imports only around several selectors
   (`import category.-->`, `import category.{Obj, -->}`).
 - **Every extension method has its own `extension` header**, without braces, so that the header binds only what its
@@ -255,7 +260,8 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   (`limit(functor)`, `Product.apply(limits, factor1, factor2)`, and `Products.product[X, Y]`, since `A` is a member of
   every `Object`). `Limits.OfDiagram` relies on it: in `InCategory { type D >: T[category.type] }`, `category` is the
   refined structure's own.
-- **Anonymous subclasses lose the parent's tracked refinement**: use a named class (`Bistrong.Op`).
+- **Anonymous subclasses lose the parent's tracked refinement** where the type is inferred: use a named class
+  (`Bistrong.Op`). With an expected refined type they keep it (`Category.Object`, `Cartesian.comonoid`).
 - **A mixin takes its class as self-type, not as parent.** A trait that extends a class restates the class's
   parameters at their declared types, so in a subclass of `Freyd`, which passes `strong.profunctor.arrows` to
   `Premonoidal`, it fails with "value category in class Premonoidal is not a legal implementation of `category`"; a
