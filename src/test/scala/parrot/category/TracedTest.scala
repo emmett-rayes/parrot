@@ -70,7 +70,7 @@ abstract class TracedSpec(
 
     forAll(observations, ps) { (observe, p) =>
       given (P[T1, T2] is Observable) = observe
-      sliding[T1, T2, Int, Int](p, profunctor.unit(shrink))
+      sliding(profunctor.pure)[T1, T2, Int, Int](p, shrink)
     }
   }
 
@@ -96,26 +96,26 @@ abstract class TracedSpec(
 
   law("superposing") {
     val observations = observe[T3 * T1, T4 * T2]
-    val gs           = category.arrow[T3, T4]
+    val gs           = arrow[T3, T4]
     val ps           = loop[T1, T2]
 
     forAll(observations, gs, ps) { (observe, g, p) =>
       given (P[T3 * T1, T4 * T2] is Observable) = observe
-      superposing(profunctor.unit(g), p)
+      superposing(g, p)
     }
   }
 
   if guarded then counterexample("yanking", "the braiding feeds back without progress")(yankingHolds)
   else law("yanking")(yankingHolds)
 
-  law("centrality") {
+  law("centrality", "a consequence, for the traces of pure arrows") {
     val observations = observe[T1 * T3, T2 * T4]
     val fs           = pureLoop[T1, T2]
     val qs           = arrow[T3, T4]
 
     forAll(observations, fs, qs) { (observe, f, q) =>
       given (P[T1 * T3, T2 * T4] is Observable) = observe
-      centrality[T1, T2, T3, T4, Int](profunctor.unit(f), q)
+      Consequences.centrality[T1, T2, T3, T4, Int](profunctor.unit(f), q)
     }
   }
 

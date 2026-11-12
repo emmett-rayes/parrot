@@ -210,7 +210,7 @@ Each structure sits at the lowest level where its laws can be stated.
 | Row | Over products | Over coproducts | Level |
 | --- | --- | --- | --- |
 | strength | `Bistrong` (⊗ = ×) | `Bistrong` (⊗ = +), also called choice | `Strong`: a profunctor over left modules (a Tambara module); `Bistrong`: over a symmetric **C** acting on itself |
-| trace | `Traced` (×) | `Traced` (+) | a symmetric premonoidal category: sliding and superposing need pure morphisms |
+| trace | `Traced` (×) | `Traced` (+) | a symmetric premonoidal category: sliding needs pure morphisms |
 | fixed point | `Conway` | `Elgot`, which is `Conway` on *P*ᵒᵖ | a bistrong promonad |
 
 - **Strength over left modules.** `Strong(profunctor, monoidal, module1, module2)` is a profunctor *P*: **C₁**ᵒᵖ ×
@@ -242,11 +242,17 @@ Each structure sits at the lowest level where its laws can be stated.
   the strength, a `StrongPromonad` (`Bistrong.On[Promonad]`), whose profunctor is the promonad, as `Elgot` and
   `Conway` do: the structures on a bistrong promonad share one parameter type.
 - **Traces are on a symmetric premonoidal category,** `Traced(premonoidal)`, after Benton and Hyland, and their laws
-  are stated in it, with its whiskerings, unitors, associator and braiding. Sliding and superposing hold for pure
-  morphisms, the arrows *η*(*f*) of a Freyd category: these are central, but a central morphism need not be pure, and
-  the laws are not required for it. The laws state the premise in a note, and the specs meet it with pure arrows; the
-  trace of a central morphism is central (`centrality`). In a monoidal category every morphism is pure, so a traced
-  symmetric monoidal category is a special case.
+  are stated in it, with its whiskerings, unitors, associator and braiding. The cited notion is a trace on a
+  *centred* symmetric premonoidal category *J*: **M** → **C**, with a chosen category **M** of pure morphisms;
+  `Traced` is on **C**, and the law that speaks of the centre, sliding, takes *J* as an argument
+  (`sliding(centre)`), as `Restriction.pureTotal(functor)` does: the pure morphisms of a Freyd category are the
+  arrows *η*(*f*), `Promonad.pure`. These are central, but a central morphism need not be pure, and sliding is not
+  required for it. Superposing holds for every morphism beside the loop, since it runs before the loop: it follows
+  from the axiom, which has no such morphism, by the naturality of the associator and tightening. The axiom of centre
+  preservation, that the trace of a pure morphism is pure, says that a morphism is in the image of *J*, which no law
+  that returns a `Boolean` states; the laws check its consequence, that the trace of a central morphism is central
+  (`TracedLaws.Consequences.centrality`). In a monoidal category *J* is the identity, so a traced symmetric monoidal
+  category is a special case.
 - **Fixed points are on a bistrong promonad,** whose base provides Δ and ∇ (`Conway` and `Elgot`). The bridges build
   the trace on the Freyd category of the strength (`Traced.OfElgot`, `Traced.OfConway`) and take back a trace on a
   Freyd category (`Elgot.OfTraced`, `Conway.OfTraced`). The product row has no useful total instance in a strict
@@ -351,8 +357,8 @@ Rejected:
   monoidal category, and the structures on a bistrong promonad share one parameter type;
 - traces on a bistrong promonad: the laws then state the structure of the Freyd category through the operations of
   its base (*η*(*id* ⊗ *h*), *η*(*α*)), and a traced symmetric monoidal category is not an instance;
-- traces on a Freyd category: sliding and superposing would take pure arrows without a premise, but *η* returns into
-  the laws, and a traced symmetric monoidal category is again not an instance;
+- traces on a Freyd category: sliding would take a pure arrow without the functor of the centre as an argument, but
+  *η* returns into every law, and a traced symmetric monoidal category is again not an instance;
 - separate duals over products and coproducts, where one `Bistrong.Op(strong)` serves both, and **M**ᵒᵖ as a
   parameter of it, of which only the category and the carrier of the tensor could be checked;
 - solving mutual recursion only one arrow at a time (Bekić): it is the default of `fixFamily`, which needs only `fix`,

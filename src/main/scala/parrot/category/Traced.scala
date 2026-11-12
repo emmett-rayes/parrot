@@ -6,9 +6,14 @@ package category
   * Represents a trace (Benton–Hyland), where
   *   - *tr*: **C**(*A* ⊗ *U*,*B* ⊗ *U*) → **C**(*A*,*B*) feeds the *U* output back into the *U* input
   *
-  * Sliding and superposing hold for pure morphisms. In a monoidal category, all morphisms are pure. In a Freyd
-  * category, the pure morphisms are the arrows *η*(*f*) of its base. Pure morphisms are central, i.e. they interchange
-  * with every morphism, but a central morphism need not be pure.
+  * The notion is a trace on a centred symmetric premonoidal category *J*: **M** → **C**, with a chosen category **M**
+  * of pure morphisms, which are central, i.e. they interchange with every morphism. The structure is on **C**, and
+  * the law that speaks of pure morphisms, sliding, takes *J* as an argument. In a monoidal category, *J* is the
+  * identity functor. In a Freyd category, it is the functor of the pure arrows *η*(*f*) of its base.
+  *
+  * @note The axiom of centre preservation, that the trace of a pure morphism is pure, says that a morphism is in the
+  *   image of *J*, which a law that returns a `Boolean` cannot state. The laws check its consequence instead: the
+  *   trace of a central morphism is central ([[TracedLaws.Consequences.centrality]]).
   */
 abstract class Traced(tracked val premonoidal: Premonoidal & SymmetricPremonoidal) extends caps.Pure {
   import premonoidal.{I, `*`, associator, braid, lmap, rightUnitor, rmap}
@@ -37,18 +42,28 @@ abstract class Traced(tracked val premonoidal: Premonoidal & SymmetricPremonoida
       trace(lmap[A0, A1, U](f) >>> p >>> lmap[B1, B0, U](g)) =?= (f >>> trace(p) >>> g)
     }
 
-    /** *tr*ⱽ((*B* ⊘ *h*) ∘ *p*) = *tr*ᵁ(*p* ∘ (*A* ⊘ *h*)) for pure *h*: *U* → *V*
+    /** *tr*ⱽ((*B* ⊘ *J*(*h*)) ∘ *p*) = *tr*ᵁ(*p* ∘ (*A* ⊘ *J*(*h*))) for *h*: *U* → *V* in **M**
       *
-      * A pure map on the feedback wire can slide around the loop.
+      * A pure map on the feedback wire can slide around the loop. The functor *J*: **M** → **C** picks out the pure
+      * morphisms, such as [[Promonad.pure]] of a Freyd category.
       *
-      * @note The premise is not checked: *h* must be pure, such as an arrow *η*(*f*) of a Freyd category. Being central
-      *   is not enough.
+      * @note Not every functor into **C** will do: the law is for the functors into the centre. Being central is not
+      *   enough for the morphism that slides.
       */
-    def sliding[A: Obj, B: Obj, U: Obj, V: Obj](
-      p: (A * V) --> (B * U),
-      h: U --> V,
+    def sliding(centre: Functor.Into[premonoidal.category.type])[
+      A: Obj,
+      B: Obj,
+      U: centre.source.Obj,
+      V: centre.source.Obj,
+    ](
+      p: (A * centre.F[V]) --> (B * centre.F[U]),
+      h: centre.source.Hom[U, V],
     )(using (A --> B) is Observable): Boolean = {
-      trace[A, B, V](p >>> rmap[U, V, B](h)) =?= trace[A, B, U](rmap[U, V, A](h) >>> p)
+      given JUIsObj: (centre.F[U] is Obj) = centre.objects[U]
+      given JVIsObj: (centre.F[V] is Obj) = centre.objects[V]
+      val pure                            = centre.map(h)
+      trace[A, B, centre.F[V]](p >>> rmap[centre.F[U], centre.F[V], B](pure)) =?=
+        trace[A, B, centre.F[U]](rmap[centre.F[U], centre.F[V], A](pure) >>> p)
     }
 
     /** *tr*ᴵ(*p*) = *ρ* ∘ *p* ∘ *ρ*⁻¹
@@ -72,12 +87,14 @@ abstract class Traced(tracked val premonoidal: Premonoidal & SymmetricPremonoida
       trace[A, B, U * V](p) =?= trace[A, B, U](trace[A * U, B * U, V](inner))
     }
 
-    /** *tr*(*α*⁻¹ ∘ (*D* ⊘ *p*) ∘ (*g* ⦸ (*A* ⊗ *U*)) ∘ *α*) = (*D* ⊘ *tr*(*p*)) ∘ (*g* ⦸ *A*) for pure *g*
+    /** *tr*(*α*⁻¹ ∘ (*D* ⊘ *p*) ∘ (*g* ⦸ (*A* ⊗ *U*)) ∘ *α*) = (*D* ⊘ *tr*(*p*)) ∘ (*g* ⦸ *A*)
       *
-      * A wire that does not take part in the loop can be drawn beside it.
+      * A wire that does not take part in the loop can be drawn beside it, and so can what happens on that wire before
+      * the loop.
       *
-      * @note The premise is not checked: *g*: *C* → *D* must be pure, such as an arrow *η*(*f*) of a Freyd category.
-      *   Being central is not enough.
+      * @note The law holds for every *g*: *C* → *D*, since *g* runs before the loop. The naturality of the associator
+      *   in its first component moves *g* out of the associator, [[tightening]] moves it out of the trace, and what
+      *   remains is the case *g* = *id*, which is the axiom of Benton and Hyland.
       */
     def superposing[A: Obj, B: Obj, C: Obj, D: Obj, U: Obj](
       g: C --> D,
@@ -96,21 +113,6 @@ abstract class Traced(tracked val premonoidal: Premonoidal & SymmetricPremonoida
       trace[U, U, U](braid[U, U]) =?= identity[U]
     }
 
-    /** (*B* ⊘ *q*) ∘ (*tr*(*f*) ⦸ *C*) = (*tr*(*f*) ⦸ *D*) ∘ (*A* ⊘ *q*) for central *f*
-      *
-      * The trace of a central morphism is central: it interchanges with every morphism *q*.
-      *
-      * @note The premise is not checked: *f* must be central, such as a pure arrow of a Freyd category. The law states
-      *   that *c* = *tr*(*f*) interchanges with *q* on its right. On its left it follows by the naturality of the
-      *   braiding in each component: *C* ⊘ *c* = *σ* ∘ (*c* ⦸ *C*) ∘ *σ*.
-      */
-    def centrality[A: Obj, B: Obj, C: Obj, D: Obj, U: Obj](f: (A * U) --> (B * U), q: C --> D)(
-      using (A * C --> B * D) is Observable
-    ): Boolean = {
-      val c = trace[A, B, U](f)
-      (lmap[A, B, C](c) >>> rmap[C, D, B](q)) =?= (rmap[C, D, A](q) >>> lmap[A, B, D](c))
-    }
-
     /** If *p* = *p*′, then *tr*(*p*) = *tr*(*p*′).
       *
       * @note The premise is not checked: *p*′ must be equal to *p* by construction.
@@ -119,6 +121,26 @@ abstract class Traced(tracked val premonoidal: Premonoidal & SymmetricPremonoida
       using (A --> B) is Observable
     ): Boolean = {
       trace(p) =?= trace(p2)
+    }
+
+    /** Laws that follow from the others: theorems, checked as tests. */
+    object Consequences {
+
+      /** (*B* ⊘ *q*) ∘ (*tr*(*f*) ⦸ *C*) = (*tr*(*f*) ⦸ *D*) ∘ (*A* ⊘ *q*)
+        *
+        * The trace of a central morphism is central: it interchanges with every morphism *q*. This is Proposition 3.3
+        * of Benton and Hyland, a consequence of the other laws.
+        *
+        * @note Holds for a central *f*, such as a pure arrow of a Freyd category. The premise is not checked. The law
+        *   states that *c* = *tr*(*f*) interchanges with *q* on its right. On its left it follows by the naturality of
+        *   the braiding in each component: *C* ⊘ *c* = *σ* ∘ (*c* ⦸ *C*) ∘ *σ*.
+        */
+      def centrality[A: Obj, B: Obj, C: Obj, D: Obj, U: Obj](f: (A * U) --> (B * U), q: C --> D)(
+        using (A * C --> B * D) is Observable
+      ): Boolean = {
+        val c = trace[A, B, U](f)
+        (lmap[A, B, C](c) >>> rmap[C, D, B](q)) =?= (rmap[C, D, A](q) >>> lmap[A, B, D](c))
+      }
     }
   }
 }
