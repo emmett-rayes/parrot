@@ -3054,7 +3054,7 @@ So the library splits recursion in two:
 
 A recognizer for balanced parentheses calls itself, but only after it has consumed an opening parenthesis. Every recursive call therefore sees a shorter input, and since lengths cannot decrease forever, the recognizer terminates on every input. The same argument works for any recursion whose calls come after progress in some measure that cannot decrease forever. Such recursion is called **guarded**.
 
-The library makes the argument into a construction. A recognizer reads a remaining input and may fail, so it is a Kleisli arrow of the state monad over `Option` (chapter 15), with strings as states. A `Measure` says how big a state is. `StateT.GuardedRecursion` then ties a knot that is total: a recursive call fails, instead of recursing, unless the measure has decreased since the enclosing call began.
+The library makes the argument into a construction. A recognizer reads a remaining input and may fail, so it is a Kleisli arrow of the state monad over `Option` (chapter 15), with strings as states. A `Measure` says how big a state is. `StateT.Knots` then ties a knot that is total: a recursive call fails, instead of recursing, unless the measure has decreased since the enclosing call began.
 
 ```scala library
 given StringIsMeasure: String is Measure:
@@ -3062,7 +3062,7 @@ given StringIsMeasure: String is Measure:
 
 object Remaining  extends StateT[String](Monad.OptionIsMonad)
 object Recognizer extends Kleisli(Remaining)
-object Guarded    extends StateT.GuardedRecursion(Recognizer, Monad.Classical.OptionIsClassical)
+object Guarded    extends StateT.Knots(Recognizer, Monad.Classical.OptionIsClassical)
 
 type R = Unit -> String -> Option[(Unit, String)]
 
@@ -3077,7 +3077,7 @@ val balanced: R = Guarded.fix[Unit, Unit](rec => alt(seq(char('('), seq(rec, seq
 val accepted: Option[(Unit, String)] = balanced(())("(()())")
 ```
 
-`balanced` runs on every input and stops: each recursive call follows a parenthesis. A grammar that calls itself *first*, as in `rec => alt(seq(rec, char('(')), empty)`, is **left-recursive**: its first call happens at the same position as the enclosing one. Under `GuardedRecursion` that call fails, and only the other alternative remains; under `Partial.Knots` it would loop forever. Chapter 19 states the laws: the guarded fixed point satisfies `fix(f) = f(fix(f))` exactly when `f` is guarded, and the tests exhibit a left-recursive `f` for which it does not **[Tested]**. Guarded iteration works the same way: a loop step that continues without decreasing the measure fails.
+`balanced` runs on every input and stops: each recursive call follows a parenthesis. A grammar that calls itself *first*, as in `rec => alt(seq(rec, char('(')), empty)`, is **left-recursive**: its first call happens at the same position as the enclosing one. Under `StateT.Knots` that call fails, and only the other alternative remains; under `Partial.Knots` it would loop forever. Chapter 19 states the laws: the guarded fixed point satisfies `fix(f) = f(fix(f))` exactly when `f` is guarded, and the tests exhibit a left-recursive `f` for which it does not **[Tested]**. Guarded iteration works the same way: a loop step that continues without decreasing the measure fails.
 
 Guardedness is a semantic property. Nothing checks that a function is guarded before it runs. What the construction guarantees is weaker and still useful: the result is always total, and it is the intended fixed point whenever the function is guarded.
 
@@ -3367,7 +3367,7 @@ In the category of sets and partial functions, every restriction category operat
 
 ### 19.1 The idea
 
-Chapter 16 found loops and recursion in two places: unguarded in 𝒫 (`Partial.Loops`, `Partial.Knots`), and guarded for recognizers that consume input (`StateT.GuardedRecursion`). Both were presented as operations on particular categories. This chapter asks what they have in common, so that a parser library can state "a grammar may loop and recurse" once, as structure, and every interpreter can supply it in its own way.
+Chapter 16 found loops and recursion in two places: unguarded in 𝒫 (`Partial.Loops`, `Partial.Knots`), and guarded for recognizers that consume input (`StateT.Knots`). Both were presented as operations on particular categories. This chapter asks what they have in common, so that a parser library can state "a grammar may loop and recurse" once, as structure, and every interpreter can supply it in its own way.
 
 There turn out to be three related structures, and each comes in two versions, one for products and one for coproducts. They form a grid:
 
@@ -3495,14 +3495,18 @@ In a cartesian closed category, recursion at function types and Conway operators
 
 Section 16.5 showed that 𝒮 cannot have an iteration operator defined on all steps: running a loop that never stops would be a total program of type `Unit` → `Nothing`. What it can have is iteration that is correct for steps that make **progress**. Goncharov, Schröder and their coauthors developed **guarded** iteration and **guarded traces** in general: the operator is defined only on, or required to satisfy its laws only on, steps that are guarded in a sense the category specifies **[Standard: Goncharov, Schröder, Rauch and Piróg 2017; Goncharov and Schröder 2018, from memory]**.
 
-The library's guarded operators are a simple form of this idea. For state transformers whose state has a `Measure`, `StateT.GuardedIteration` runs a step while it continues, and fails as soon as a continuing step does not decrease the measure. Every run stops, and for **guarded** steps, which always decrease the measure when they continue, the result is the iteration of the step.
+**Definition 19.4 (guarded iteration and recursion).** A **guarded iteration operator** is an operator p ↦ p† that is defined for every step and satisfies the laws of Definition 19.2 for the **guarded** steps, a class of steps that the category specifies. A **guarded recursion operator** is, in the same way, a `fix` that is defined for every function on arrows and satisfies fix(f) = f(fix(f)) for the guarded ones. An Elgot operator, and the recursion of section 19.6, are the special cases in which every argument is guarded.
+
+The library states both as structures, `GuardedIteration(strong)` and `GuardedRecursion(promonad)`, with the laws of Definition 19.2 and of section 19.6, each with its premise. `Elgot` extends `GuardedIteration` and `Recursion` extends `GuardedRecursion`: they add no operation and no law, they drop the premise. So `Partial.Loops` is an `Elgot`, and the operators below are a `GuardedIteration` and a `GuardedRecursion` and nothing more. The parser algebra of chapter 20 asks for the guarded structures.
+
+The library's guarded operators are a simple form of the idea. For state transformers whose state has a `Measure`, `StateT.Loops` runs a step while it continues, and fails as soon as a continuing step does not decrease the measure. Every run stops, and for **guarded** steps, which always decrease the measure when they continue, the result is the iteration of the step.
 
 ```scala library
 given StringIsMeasure: String is Measure:
   def measure(s: String): Int = s.length
 
 object Remaining extends StateT[String](Monad.OptionIsMonad)
-object Steps     extends StateT.GuardedIteration(Remaining, Monad.Classical.OptionIsClassical)
+object Steps     extends StateT.Loops(Remaining, Monad.Classical.OptionIsClassical)
 
 type Step = Unit -> String -> Option[(Either[Unit, Unit], String)]
 
@@ -3517,11 +3521,11 @@ val stopped: Option[(Unit, String)] = Steps.iterate[Unit, Unit](stuck)(())("x") 
 
 The laws then come in two parts.
 
-- For guarded steps, all Elgot laws hold **[Tested]**, and so do the trace laws of the feedback derived from it, `Traced.OfElgot`, on loops whose continuing steps consume input.
-- For unguarded steps, the fixed-point law fails, since the loop stops where unrolling it would continue. The tests record this as a counterexample **[Tested: counterexample]**.
-- **Yanking fails** for the guarded trace, for every input. Yanking feeds the braiding back into itself, and the braiding passes a value to the feedback wire without consuming anything: it is the simplest unguarded loop. So tr(σ) fails instead of being the identity **[Tested: counterexample]**. The guarded trace satisfies all other trace laws on guarded arguments.
+- For guarded steps, all laws of `GuardedIteration` hold **[Tested]**, and so do the trace laws of the feedback derived from it by the formula of `Traced.OfElgot`, on loops whose continuing steps consume input.
+- For unguarded steps, the fixed-point law fails, since the loop stops where unrolling it would continue. So the operator is not an `Elgot` operator, and the tests record this as a counterexample **[Tested: counterexample]**.
+- **Yanking fails** for the guarded trace, for every input. Yanking feeds the braiding back into itself, and the braiding passes a value to the feedback wire without consuming anything: it is the simplest unguarded loop. So tr(σ) fails instead of being the identity **[Tested: counterexample]**. The guarded trace satisfies all other trace laws on guarded arguments, but it is not a trace, which is why `Traced.OfElgot` takes an `Elgot` and the tests build the guarded feedback themselves.
 
-`StateT.GuardedRecursion`, from section 16.6, is the same idea for `Recursion`. A recursive call that comes after the measure has decreased runs, one that does not fails. Its law fix(f) = f(fix(f)) holds for guarded f **[Tested]** and fails for left-recursive f **[Tested: counterexample]**.
+`StateT.Knots`, from section 16.6, is the same idea for recursion, a `GuardedRecursion`. A recursive call that comes after the measure has decreased runs, one that does not fails. Its law fix(f) = f(fix(f)) holds for guarded f **[Tested]** and fails for left-recursive f, so it is not a `Recursion` **[Tested: counterexample]**.
 
 ### 19.8 The grid in the library
 
@@ -3530,8 +3534,8 @@ The laws then come in two parts.
 | **×**, in 𝒫 | `Partial.Parallel` | via duality only: `Traced.OfConway` on 𝒫ᵒᵖ (tests) | via duality only: `Conway.OfElgot(Partial.Loops)` (tests) |
 | **×**, Kleisli | `Kleisli.ProductStrength` | — | — |
 | **+**, in 𝒫 | `Partial.Choice` | `Partial.Feedback` | `Partial.Loops` |
-| **+**, guarded state | `Kleisli.CoproductStrength` | `Traced.OfElgot` of guarded loops (tests) | `StateT.GuardedIteration`, via `Kleisli.ElgotOf` |
-| arrow types | | | `Partial.Knots`; guarded: `StateT.GuardedRecursion` |
+| **+**, guarded state | `Kleisli.CoproductStrength` | not a trace: yanking fails (tests) | `StateT.Loops`, via `Kleisli.GuardedIterationOf`: a `GuardedIteration` |
+| arrow types | | | `Partial.Knots`, a `Recursion`; guarded: `StateT.Knots`, a `GuardedRecursion` |
 
 The bridges between columns and rows, all generic:
 
@@ -3665,8 +3669,8 @@ Reading the monad from the outside in: a parser reads and advances the input (st
 | promonad | `Kleisli(State)` |
 | strengths | `Kleisli.ProductStrength`, `Kleisli.CoproductStrength` |
 | choice | `Kleisli.ClassicalOf`, of `StateT.ClassicalOf`, of a classical structure on outcomes with silent tests |
-| loops | `Kleisli.ElgotOf` of `StateT.GuardedIteration`, measured by the length of the remaining input |
-| recursion | `StateT.GuardedRecursion`, measured the same way |
+| loops | `Kleisli.GuardedIterationOf` of `StateT.Loops`, measured by the length of the remaining input |
+| recursion | `StateT.Knots`, measured the same way |
 
 The only parser-specific code is the four primitives and the silent tests of the classical structure on outcomes, about fifty lines. Backtracking, for instance, is not implemented anywhere: it is what `StateT.ClassicalOf` does with ordered choice, running the second alternative from the state the first one started with. The reference interpreter is slow and not stack-safe on deeply nested input, and that is acceptable, because its job is to be the specification.
 
@@ -3837,7 +3841,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Free monoid adjunction | yes | as ordinary categories | partly | `foldMap` | [Proved] | 15 |
 | Initial algebras | yes | for strictly positive functors | yes | data types, `Fix`, `fold` | [Proved, given C2, A1] | 16 |
 | Loops and recursion for all arguments | yes, partial functions | collapses 𝒮 | in 𝒫 | `Partial.Loops`, `Partial.Knots` | [Proved]; laws [Tested] | 16, 19 |
-| Guarded loops and recursion | — | yes | yes | `StateT.GuardedIteration`, `StateT.GuardedRecursion` | [Tested] for guarded arguments | 16, 19 |
+| Guarded loops and recursion | — | yes | yes | `GuardedIteration`, `GuardedRecursion`; `StateT.Loops`, `StateT.Knots` | [Tested] for guarded arguments | 16, 19 |
 | Final coalgebras, codata | yes | outside the model | `LazyList` | — | [Open] | 16 |
 | Polymorphic types as ends, free theorems | no counterpart in the same form | yes | yes | polymorphic functions | [Assumed: A2] | 9 |
 | Categories of type constructors | yes | yes | yes, one class per kind | `Category1` | [Proved] | 10 |
@@ -4294,6 +4298,7 @@ Each concept is introduced where a problem needs it. This index lists, for each,
 | Classical restriction, override, attempt | 18 | ordered choice as a theorem; decidable failure versus divergence | `half \|> odd`; 𝒫 is not classical |
 | Silent tests | 18, 20 | effects other than failure break some restriction laws | lookahead that reports nothing |
 | Traces, Conway and Elgot operators, the grid | 19 | iterating and recursing effectful arrows; refactoring loops | `Partial.Feedback`; guarded `skipSpace` |
+| Guarded iteration and recursion as structures | 19 | operators that are total in 𝒮 satisfy the laws only for arguments that make progress | `StateT.Loops`; `skipSpace` and `stuck` |
 | Duality of iteration and recursion | 19 | the product row of the grid in a strict language | `Conway.OfElgot(Partial.Loops)` |
 | Parser algebra as a bundle | 20 | one grammar, several interpreters, combinators with laws | nested lists of numbers |
 | Diagnostics: lexicographic semilattice, tagging, ⊑ | 20 | error reports must respect the laws of choice and lookahead | `expected "," or "]" at position 7` |

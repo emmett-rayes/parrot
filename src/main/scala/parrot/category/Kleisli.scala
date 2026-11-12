@@ -129,17 +129,17 @@ object Kleisli {
     }
   }
 
-  /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */
-  open class ElgotOf(
+  /** The guarded iteration of a Kleisli promonad over a monad with guarded iteration: *p*† = *p*†′. */
+  open class GuardedIterationOf(
     tracked override val strong: Bistrong.On[Kleisli.Of[Monad.On[Total.type]]] {
       val monoidal: Total.Coproducts.type
     },
-    tracked val elgot: Monad.Elgot.On[strong.profunctor.monad.type],
-  ) extends Elgot(strong) {
+    tracked val iteration: Monad.GuardedIteration.On[strong.profunctor.monad.type],
+  ) extends GuardedIteration(strong) {
     import strong.profunctor.monad.M
 
     def iterate[A: Type, X: Type](p: X -> M[Either[A, X]]): X -> M[A] = {
-      elgot.iterate(p)
+      iteration.iterate(p)
     }
   }
 

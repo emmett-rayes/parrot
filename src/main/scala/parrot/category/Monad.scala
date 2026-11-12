@@ -167,23 +167,23 @@ object Monad {
     object OptionIsClassical extends OptionT.ClassicalOf(OptionIsMonad)
   }
 
-  /** An iteration operator on a monad on 𝒮.
+  /** A guarded iteration operator on a monad on 𝒮.
     *
     * Represents a monad *M* with
     *   - *f*†: *X* → *M*[*A*] for *f*: *X* → *M*[*A* + *X*], which runs *f* until it returns an *A*
     *
-    * In 𝒮 an iteration operator is guarded: it must stop on its own (see [[StateT.GuardedIteration]]). The laws are
-    * those of the Kleisli iteration it induces, [[Kleisli.ElgotOf]].
+    * In 𝒮 an iteration operator must stop on its own, so it is guarded (see [[StateT.Loops]]). The laws are those of
+    * the guarded iteration of Kleisli arrows it induces, [[Kleisli.GuardedIterationOf]].
     */
-  abstract class Elgot(tracked val monad: On[Total.type]) extends caps.Pure {
+  abstract class GuardedIteration(tracked val monad: On[Total.type]) extends caps.Pure {
 
     /** The iteration *f*† of *f*. */
     def iterate[A, X](f: X -> monad.M[Either[A, X]]): X -> monad.M[A]
   }
 
-  object Elgot {
+  object GuardedIteration {
 
-    /** The iteration operators on a monad *M* on 𝒮. */
-    type On[M <: Monad] = Elgot { val monad: M }
+    /** The guarded iteration operators on a monad *M* on 𝒮. */
+    type On[M <: Monad] = GuardedIteration { val monad: M }
   }
 }

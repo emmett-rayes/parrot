@@ -50,8 +50,8 @@ class ReferenceBranchingIsFreydTest
   }
 }
 
-class ReferenceLoopsIsElgotTest
-    extends ElgotSpec("ReferenceParser (guarded)", Interpreters.reference.loops) {
+class ReferenceLoopsIsGuardedIterationTest
+    extends GuardedIterationSpec("ReferenceParser", Interpreters.reference.loops) {
   import promonad.promonad.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.reference)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.reference)
@@ -59,17 +59,19 @@ class ReferenceLoopsIsElgotTest
   def bijection: (Int -> Int, Int -> Int)                        = (x => -x, x => -x)
 }
 
-class ReferenceKnotsIsRecursionTest
-    extends RecursionSpec("ReferenceParser (guarded)", Interpreters.reference.knots) {
+class ReferenceKnotsIsGuardedRecursionTest
+    extends GuardedRecursionSpec("ReferenceParser", Interpreters.reference.knots) {
   import promonad.promonad.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.reference)
 
-  counterexample("fixedPoint", "for left-recursive rules: the call fails") {
-    val observations = promonad.observe[Int, Int]
+  also("Recursion") {
+    counterexample("fixedPoint", "for left-recursive rules: the call fails") {
+      val observations = promonad.observe[Int, Int]
 
-    forAll(observations, Grammars.terms) { (o, term) =>
-      given (P[Int, Int] is Observable) = o
-      recursion.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.reference)(term))
+      forAll(observations, Grammars.terms) { (o, term) =>
+        given (P[Int, Int] is Observable) = o
+        recursion.GuardedRecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.reference)(term))
+      }
     }
   }
 }
@@ -130,7 +132,8 @@ class StrictBranchingIsFreydTest
   }
 }
 
-class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpreters.strict.loops) {
+class StrictLoopsIsGuardedIterationTest
+    extends GuardedIterationSpec("StrictParser", Interpreters.strict.loops) {
   import promonad.promonad.P
   def step[A: Sample]: Gen[P[Int, Either[A, Int]]]               = ParserSteps.step[A](Interpreters.strict)
   def step2[A: Sample]: Gen[P[Int, Either[Either[A, Int], Int]]] = ParserSteps.step2[A](Interpreters.strict)
@@ -138,17 +141,19 @@ class StrictLoopsIsElgotTest extends ElgotSpec("StrictParser (guarded)", Interpr
   def bijection: (Fn[Int, Int], Fn[Int, Int])                    = (Fn.lift(x => -x), Fn.lift(x => -x))
 }
 
-class StrictKnotsIsRecursionTest
-    extends RecursionSpec("StrictParser (guarded)", Interpreters.strict.knots) {
+class StrictKnotsIsGuardedRecursionTest
+    extends GuardedRecursionSpec("StrictParser", Interpreters.strict.knots) {
   import promonad.promonad.P
   def guarded[B: Sample]: Gen[P[Int, B] -> P[Int, B]] = ParserSteps.rules[B](Interpreters.strict)
 
-  counterexample("fixedPoint", "for left-recursive rules: seed growing") {
-    val observations = promonad.observe[Int, Int]
+  also("Recursion") {
+    counterexample("fixedPoint", "for left-recursive rules: seed growing") {
+      val observations = promonad.observe[Int, Int]
 
-    forAll(observations, Grammars.terms) { (o, term) =>
-      given (P[Int, Int] is Observable) = o
-      recursion.RecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.strict)(term))
+      forAll(observations, Grammars.terms) { (o, term) =>
+        given (P[Int, Int] is Observable) = o
+        recursion.GuardedRecursionLaws.fixedPoint(ParserSteps.leftRecursive(Interpreters.strict)(term))
+      }
     }
   }
 }

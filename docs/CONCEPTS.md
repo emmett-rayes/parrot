@@ -26,9 +26,9 @@ Eq ─ induces ─ Observable ─ counterpart ─ Preorder                      
 Category (Op, Product, Iso, Object, Empty, Discrete2)                          𝒮 = Total, 𝒫 = Partial
 └─ on ─ Functor ─ is a ─ Endofunctor ─ on ─ Monad ─ induces ─ Kleisli (a Promonad)
    │                                         ├─ on ─ Monad.Restriction ─ refines ─ Monad.Classical
-   │                                         ├─ on ─ Monad.Elgot
+   │                                         ├─ on ─ Monad.GuardedIteration
    │                                         ├─ transformers: OptionT, StateT, WriterT (+ Monoid)
-   │                                         │  └─ StateT (+ Measure) ─ induces ─ GuardedIteration, GuardedRecursion
+   │                                         │  └─ StateT (+ Measure) ─ induces ─ StateT.Loops, StateT.Knots
    │                                         └─ Identity; over it, Option (OptionT), State (StateT), Writer (WriterT)
    ├─ on ─ Cone ─ refines ─ Limit ⇄ Terminal (of the empty diagram), Product (of a pair)
    │                        └─ Limits.InCategory ─ refines ─ Limits.DiscreteInCategory ─ induces ─ Products (of shape 2)
@@ -50,8 +50,9 @@ Category (Op, Product, Iso, Object, Empty, Discrete2)                          �
             ├─ on ─ Bistrong (Op, Hom), a StrongPromonad
             │       ├─ on ─ Freyd (Tensor, a BinoidalFunctor) ─ refines ─ Premonoidal on Arrows, + SymmetricPremonoidal
             │       ├─ on ─ ClosedFreyd (Kleisli exponentials)
-            │       └─ on ─ Conway (+ Cartesian), Elgot (+ Cocartesian) ⇄ Traced on Freyd   bridges and duals
-            └─ on ─ Recursion
+            │       ├─ on ─ GuardedIteration (+ Cocartesian) ─ refines ─ Elgot
+            │       └─ on ─ Conway (+ Cartesian), Elgot ⇄ Traced on Freyd                     bridges and duals
+            └─ on ─ GuardedRecursion ─ refines ─ Recursion
 ```
 
 The concepts form three branches that meet in the parser: **tensors** (monoidal structure and the monoids in it),
@@ -74,11 +75,11 @@ Each item needs only those before it:
 10. `Promonad`
 11. `Strong`, `Bistrong`, `StrongPromonad`, `Freyd`, `ClosedFreyd`
 12. `Restriction`, `Classical`
-13. `Elgot`, `Conway`, `Traced`, `Recursion`
+13. `GuardedIteration`, `Elgot`, `Conway`, `Traced`, `GuardedRecursion`, `Recursion`
 14. `Monad` (with `Identity`), `Kleisli` (with `Kleisli.ClosedFreydOf`)
-15. `Monad.Restriction`, `Monad.Classical`, `Monad.Elgot` (with `Kleisli.RestrictionOf`, `Kleisli.ClassicalOf`,
-    `Kleisli.ElgotOf`); `OptionT`, `StateT`, `WriterT`; `Option`, `State`, `Writer`; `Measure`,
-    `StateT.GuardedIteration`, `StateT.GuardedRecursion`
+15. `Monad.Restriction`, `Monad.Classical`, `Monad.GuardedIteration` (with `Kleisli.RestrictionOf`,
+    `Kleisli.ClassicalOf`, `Kleisli.GuardedIterationOf`); `OptionT`, `StateT`, `WriterT`; `Option`, `State`, `Writer`;
+    `Measure`, `StateT.Loops`, `StateT.Knots`
 
 `Total` and `Partial` are categories in item 3; their instances of later structures belong to the item of the
 structure.

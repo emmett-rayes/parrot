@@ -44,8 +44,8 @@ abstract class ParserAlgebra(
   tracked val zipping: Bistrong.On[sequencing.type] { val monoidal: products.type },
   tracked val branching: Bistrong.On[sequencing.type] { val monoidal: coproducts.type },
   tracked val choice: Classical.On[sequencing.arrows.type],
-  tracked val loops: Elgot.On[branching.type],
-  tracked val knots: Recursion.On[sequencing.type],
+  tracked val loops: GuardedIteration.On[branching.type],
+  tracked val knots: GuardedRecursion.On[sequencing.type],
 ) extends caps.Pure {
   import sequencing.category.>>>
 

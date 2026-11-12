@@ -871,7 +871,7 @@ object StrictParser {
   }
 
   /** Guarded iteration: `Loop`. */
-  object Loops extends Elgot(Branching) {
+  object Loops extends GuardedIteration(Branching) {
 
     def iterate[A: Type, X: Type](p: Node[X, Either[A, X]]): Node[X, A] = {
       Loop(p)
@@ -879,7 +879,7 @@ object StrictParser {
   }
 
   /** Guarded recursion, with left recursion solved by seed growing: `Rec`. */
-  object Knots extends Recursion(Nodes) {
+  object Knots extends GuardedRecursion(Nodes) {
 
     def fix[A: Type, B: Type](f: Node[A, B] -> Node[A, B]): Node[A, B] = {
       val knot = Rec(f)

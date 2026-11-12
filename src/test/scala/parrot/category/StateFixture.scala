@@ -26,13 +26,13 @@ object StringStateDomains extends Kleisli.ClassicalOf(StringStateKleisli, String
 object StringStateChoice extends Kleisli.CoproductStrength(StringStateKleisli, Total.Coproducts)
 
 /** Guarded loops over [[StringState]]. */
-object StringStateIteration extends StateT.GuardedIteration(StringState, Monad.Classical.OptionIsClassical)
+object StringStateIteration extends StateT.Loops(StringState, Monad.Classical.OptionIsClassical)
 
 /** The guarded iteration of [[StringStateKleisli]]. */
-object StringStateLoops extends Kleisli.ElgotOf(StringStateChoice, StringStateIteration)
+object StringStateLoops extends Kleisli.GuardedIterationOf(StringStateChoice, StringStateIteration)
 
 /** Guarded recursion for [[StringStateKleisli]]. */
-object StringStateRecursion extends StateT.GuardedRecursion(StringStateKleisli, Monad.Classical.OptionIsClassical)
+object StringStateRecursion extends StateT.Knots(StringStateKleisli, Monad.Classical.OptionIsClassical)
 
 object StringStateFixture extends PromonadFixture("Kleisli[State[String, Option]]", StringStateKleisli) {
   val category: TotalFixture.type = TotalFixture

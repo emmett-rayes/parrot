@@ -150,8 +150,28 @@ class PartialFeedbackIsTracedTest extends TracedSpec("Partial (feedback)", Parti
 
 // ==== Guarded state ====
 
+/** The formula of [[Traced.OfElgot]] on a guarded iteration: *tr*(*p*) = (*η*(*id* + *ι*₂) ∘ *p*)† ∘ *η*(*ι*₁).
+  *
+  * It is not a trace: the braiding feeds back without progress, so yanking fails. The other laws hold for loops that
+  * make progress.
+  */
+open class GuardedFeedback(tracked val iteration: GuardedIteration) extends Traced(Freyd(iteration.strong)) {
+  import premonoidal.strong.{monoidal, profunctor}
+  import monoidal.{+, +++}
+  import profunctor.>>>
+  import profunctor.arrows.-->
+  import profunctor.category.{Obj, identity}
+
+  private given TensorIsObj: [A: Obj, B: Obj] => ((A + B) is Obj) = monoidal.tensor.objects[A, B]
+
+  def trace[A: Obj, B: Obj, U: Obj](p: (A + U) --> (B + U)): (A --> B) = {
+    val step = p >>> profunctor.unit(identity[B] +++ monoidal.inr[A, U])
+    profunctor.unit(monoidal.inl[A, U]) >>> iteration.iterate[B, A + U](step)
+  }
+}
+
 /** Feedback over [[StringStateLoops]]: guarded loops on *A* + *U*. */
-object StringStateFeedback extends Traced.OfElgot(StringStateLoops)
+object StringStateFeedback extends GuardedFeedback(StringStateLoops)
 
 class StringStateFeedbackIsTracedTest
     extends TracedSpec("Kleisli[State[String, Option]] (guarded feedback)", StringStateFeedback) {

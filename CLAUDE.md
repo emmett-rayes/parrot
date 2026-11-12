@@ -127,7 +127,8 @@ warning-free.
 11. **Totality:** 𝒮 (`Total`) has total pure functions; 𝒫 (`Partial`, opaque `A ~> B`) may diverge and has the unguarded
     structures (restriction, loops, feedback, knots). Include a total `f` with `Partial.fromTotal(f)`, not `Partial(f)`;
     `Partial.assumeTotal` is the library's single totality promise. Total iteration and recursion are guarded by a
-    `Measure` (`StateT.GuardedIteration`, `StateT.GuardedRecursion`).
+    `Measure` (`StateT.Loops`, `StateT.Knots`), and they are models of `GuardedIteration` and `GuardedRecursion`, whose
+    laws hold for guarded arguments; `Elgot` and `Recursion` refine these to the case where every argument is guarded.
 12. **Laws:** every structure has `object <Name>Laws`, or its doc names the structure whose laws are its laws
     (`Monad.Classical`: those of the Kleisli structure it induces). Laws return `Boolean` and compare with an
     `Observable` (`=?=`), never `Eq` on functions; inequations use a `Preorder` (`?<`). Congruence laws take variants
@@ -157,7 +158,8 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
 - A parser `P[A, B]` consumes a prefix of the input while turning a semantic input `A` into a result `B`.
   `ParserAlgebra(sequencing, products, coproducts, zipping, branching, choice, loops, knots)`: every combinator is an
   operation of one of these (`|>` is restriction override, i.e. PEG ordered choice). Loops and recursion are
-  **guarded**: a step or call that makes no progress fails. Interpreters implement only `lift`, `literal`, `regex`
+  **guarded** (`loops: GuardedIteration.On[…]`, `knots: GuardedRecursion.On[…]`): a step or call that makes no
+  progress fails. Interpreters implement only `lift`, `literal`, `regex`
   and `rule`, and `denote` in the `Semantics` they nest.
 - **Core invariant:** `StrictParser` behaves exactly like `ReferenceParser` (results, offsets **and diagnostics**) on
   every grammar without left recursion, which `StrictParser` additionally solves by seed growing. `AgreementTest`

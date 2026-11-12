@@ -121,7 +121,7 @@ Rejected:
   presentation, so that `Monad` and `Monoid` have the same shape, with `bind` derived. Monads are refined through their
   functor (`Monad.On[Total.type]`), since only that keeps the chain of singleton types that path-dependent code needs.
   The structures on a monad whose laws are those of the Kleisli structures they induce (`Monad.Restriction`,
-  `Monad.Classical`, `Monad.Elgot`) live in its companion. Plain monads are transformers over the identity
+  `Monad.Classical`, `Monad.GuardedIteration`) live in its companion. Plain monads are transformers over the identity
   (`Monad.OptionIsMonad` is `OptionT(Monad.Identity)`), so that each effect is defined once.
 - **Names follow the mathematics:** short carrier aliases (`Hom`/`-->`, `F`, `P`, `M`, `C`), role names for the arrows
   of other categories (`->>`, `==>`, `~~>` and the opposites `<--` and `<==`, read from right to left) beside the
@@ -269,9 +269,16 @@ Each structure sits at the lowest level where its laws can be stated.
   and overridden by the instances with one knot per arrow. A guarded family has one guard per arrow: a call fails
   only where the same arrow is entered again without progress, which is left recursion, so a rule may begin with a
   call of another rule.
-- **Guarded iteration and recursion** (`StateT.GuardedIteration`, `StateT.GuardedRecursion`) are total by construction
-  and lawful on guarded arguments, after Goncharov and Schröder; yanking fails for the guarded trace, which is a
-  counterexample test.
+- **Guardedness is structure.** `GuardedIteration(strong)` and `GuardedRecursion(promonad)` are operators defined
+  for every argument whose laws hold for the guarded ones, after Goncharov, Schröder, Rauch and Piróg; what "guarded"
+  means belongs to the instance, so each law states the premise in a note. `Elgot` and `Recursion` refine them to
+  the case in which every argument is guarded, and their laws are those of the guarded structures without the
+  premise. The two are independent axes with models: the loops and knots of 𝒫 are an `Elgot` and a `Recursion`, and
+  the operators of a state transformer with a measure (`StateT.Loops`, `StateT.Knots`), total by construction, are
+  models of the guarded structures only, as the counterexample tests show. The parser bundle asks for the guarded
+  structures, which is what both interpreters provide. The bridges to traces and Conway operators stay on `Elgot`:
+  the formula of `Traced.OfElgot` on a guarded iteration is not a trace, since yanking feeds back without progress,
+  which is a counterexample test.
 - **Restriction is on a category.** `Restriction(category)` has R1–R4; `Classical(category)` adds the restriction zero,
   complements and override ⊳ with the axioms of Lemay and Nester, which make PEG ordered choice a theorem rather than
   an invention. Postcomposition does not distribute over ⊳; precomposition does. Override is the primitive, and on

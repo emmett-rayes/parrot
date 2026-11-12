@@ -140,11 +140,11 @@ object ReferenceParser {
   object Branching extends Kleisli.CoproductStrength(Arrows, Total.Coproducts)
 
   /** Loops over [[State]] guarded by consumed input; a step without progress fails silently. */
-  object Iteration extends StateT.GuardedIteration(State, Silent)
+  object Iteration extends StateT.Loops(State, Silent)
 
   /** Guarded iteration of parsers. */
-  object Loops extends Kleisli.ElgotOf(Branching, Iteration)
+  object Loops extends Kleisli.GuardedIterationOf(Branching, Iteration)
 
   /** Guarded recursion of parsers; a call without progress fails silently. */
-  object Knots extends StateT.GuardedRecursion(Arrows, Silent)
+  object Knots extends StateT.Knots(Arrows, Silent)
 }

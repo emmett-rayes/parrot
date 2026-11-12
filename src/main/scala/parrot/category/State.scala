@@ -91,13 +91,13 @@ object StateT {
     *     the state
     *
     * Every run stops, since the measure cannot decrease forever. For guarded *f*, whose steps returning *X* always
-    * decrease the measure, *f*† is the iteration of *f* and satisfies the laws of [[Elgot]].
+    * decrease the measure, *f*† is the iteration of *f* and satisfies the laws of guarded iteration ([[category.GuardedIteration]]).
     */
-  open class GuardedIteration[S](
+  open class Loops[S](
     tracked val transformer: StateT[S],
     tracked val classical: Monad.Classical.On[transformer.monad.type],
   )(using size: S is Measure)
-      extends Monad.Elgot(transformer) {
+      extends Monad.GuardedIteration(transformer) {
     import transformer.monad.M
 
     def iterate[A, X](f: X -> S -> M[(Either[A, X], S)]): X -> S -> M[(A, S)] = {
@@ -122,11 +122,11 @@ object StateT {
     * call fails only where the same arrow is entered again without progress since its enclosing call, and an arrow may
     * begin with a call of another.
     */
-  open class GuardedRecursion[S](
+  open class Knots[S](
     tracked override val promonad: Kleisli.Of[StateT[S]],
     tracked val classical: Monad.Classical.On[promonad.monad.monad.type],
   )(using size: S is Measure)
-      extends Recursion(promonad) {
+      extends GuardedRecursion(promonad) {
     import promonad.monad.monad.M
 
     def fix[A: Type, B: Type](f: (A -> S -> M[(B, S)]) -> (A -> S -> M[(B, S)]))
