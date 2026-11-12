@@ -14,7 +14,10 @@ import Category.Type
   * tensor.
   */
 abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
-  export functor.{F as M, category, map, objects}
+  export functor.{category, map, objects}
+
+  /** The carrier *M* of the monad: the carrier of its endofunctor. */
+  final type M = functor.F
 
   import category.{Obj, -->, >>>}
 
