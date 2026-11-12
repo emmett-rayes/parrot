@@ -2834,7 +2834,7 @@ def below(a: Int, b: Int): Boolean = join(a, b) == b
 | terminal, initial | yes | `Unit`, `Nothing` | `Nothing` is initial and terminal, a zero object: every program into it diverges (`Partial.NothingIsTerminal`); `Unit` is not terminal, since `_ => loop()` is a second arrow into it |
 | products | yes | tuples | not products; tuples form a symmetric monoidal structure (restriction products, chapter 18) |
 | coproducts | yes | `Either` | `Either` |
-| exponentials | yes | function types | not in the sense of section 14.1 |
+| exponentials | yes | function types | not in the sense of section 14.1; Kleisli exponentials instead, the types of programs `A ~> B`, with currying into 𝒮 (section 17.4) |
 | equalizers, pullbacks | yes | by abstraction, `Total.LimitOf` (section 14.6); no representing type in general (chapter 6) | — |
 | coequalizers, pushouts | yes | by abstraction, `Total.ColimitOf` (section 14.6); no representing type in general (chapter 7) | — |
 | subobject classifier | yes | no; `Boolean` classifies decidable subsets only | no |
@@ -3224,9 +3224,15 @@ import OptionFreyd.*>*
 val both: ((String, Int)) -> Option[(Int, Int)] = parse *>* positive
 ```
 
-**Premonoidal, not monoidal.** For pure functions, it does not matter whether the left or the right component is processed first: f ⊗ g = (f ⊗ id) then (id ⊗ g) = (id ⊗ g) then (f ⊗ id). This is the **interchange** law, and it says that ⊗ is a bifunctor. For effectful arrows it can fail, because the two orders run the effects in different orders. A logger whose log is a string shows it: if p logs `"a"` and q logs `"b"`, then `p *>* q` logs `"ab"`, and `p *<* q` logs `"ba"`. A category with a tensor that is a bifunctor only in each argument separately is called **premonoidal**, and Freyd categories are premonoidal **[Standard: Power and Robinson, from memory]**. That is why the two operators look like a tensor without being one. In the library, such a tensor is a `BinoidalFunctor`, with `lmap` for an arrow on the left argument and `rmap` for one on the right, but no `bimap`, and `Premonoidal` is the structure on it, whose unitors and associator are central. A `Bifunctor` is a binoidal functor and a `Monoidal` structure a premonoidal one, and the tensor of `Freyd` has the two strengths as its `lmap` and `rmap`. Symmetry is independent of all this: the trait `SymmetricPremonoidal` adds a braiding to a premonoidal category, and both a `Freyd` category, whose braiding is η(σ), and a `Symmetric` monoidal category mix it in. The library's tests record the failure of interchange as a counterexample, for the string logger and for parsers, which consume input in order **[Tested: counterexample]**.
+**Premonoidal, not monoidal.** For pure functions, it does not matter whether the left or the right component is processed first: f ⊗ g = (f ⊗ id) then (id ⊗ g) = (id ⊗ g) then (f ⊗ id). This is the **interchange** law, and it says that ⊗ is a bifunctor. For effectful arrows it can fail, because the two orders run the effects in different orders. A logger whose log is a string shows it: if p logs `"a"` and q logs `"b"`, then `p *>* q` logs `"ab"`, and `p *<* q` logs `"ba"`. A category with a tensor that is a bifunctor only in each argument separately is called **premonoidal**, and Freyd categories are premonoidal **[Standard: Power and Robinson, from memory]**. That is why the two operators look like a tensor without being one. 
+
+**Definition 17.4 (binoidal functor, premonoidal category).** A **binoidal functor** ⊗ : 𝒞 × 𝒞 → 𝒞 is a functor in each argument separately: for every object C, both − ⊗ C and C ⊗ − are functors, and they agree on objects. It sends an arrow f to f ⊗ C and to C ⊗ f, and it need not send a pair of arrows to anything, because the two ways of combining f ⊗ id and id ⊗ g may differ. A **premonoidal category** is a category with a binoidal functor, a unit object, and unitors and an associator that are natural in each argument and **central**: they interchange with every arrow. A bifunctor is a binoidal functor for which the two ways always agree, and a monoidal category is a premonoidal one in which every arrow is central.
+
+In the library, such a tensor is a `BinoidalFunctor`, with `lmap` for an arrow on the left argument and `rmap` for one on the right, but no `bimap`, and `Premonoidal` is the structure on it, whose unitors and associator are central. A `Bifunctor` is a binoidal functor and a `Monoidal` structure a premonoidal one, and the tensor of `Freyd` has the two strengths as its `lmap` and `rmap`. Symmetry is independent of all this: the trait `SymmetricPremonoidal` adds a braiding to a premonoidal category, and both a `Freyd` category, whose braiding is η(σ), and a `Symmetric` monoidal category mix it in. The library's tests record the failure of interchange as a counterexample, for the string logger and for parsers, which consume input in order **[Tested: counterexample]**.
 
 What does survive is interchange with *pure* arrows. A pure arrow has no effect to order, so it interchanges with every arrow: unit(f) ⋉ q = unit(f) ⋊ q. Arrows with this property are called **central**. Centrality of the pure arrows is not another law: the first law of Definition 17.3 turns first(unit(f)) into unit(f ⊗ id), and the dinaturality of the strength moves a pure arrow on the context from one side of second(q) to the other **[Proved]**.
+
+**Kleisli exponentials.** Section 14.8 found that 𝒫 has no function types in the sense of section 14.1: its pairs are not products, so there is no product for an exponential to be adjoint to. There is a weaker notion that fits effects exactly. **Definition 17.5 (closed Freyd category).** A Freyd category over 𝒞 is **closed** if for all objects A and B there is an object A ⇒ B of 𝒞, the **Kleisli exponential**, with an evaluation arrow ev : P((A ⇒ B) ⊗ A, B) and, for every arrow p : P(X ⊗ A, B), a *pure* arrow Λ(p) : X → (A ⇒ B) of 𝒞, such that currying is a bijection P(X ⊗ A, B) ≅ 𝒞(X, A ⇒ B) **[Standard: Power and Thielecke 1999, from memory]**. The exponential is the type of effectful arrows, and currying is pure: building a closure has no effect, and the effect happens when the closure is applied. The library's `ClosedFreyd(strong)` is this structure on a bistrong promonad, with `Exp[A, B]`, `eval` and `curry`, and laws for the two directions of the bijection. `Partial.Exponentials` is the instance of 𝒫 over 𝒮, where A ⇒ B is the type of programs `A ~> B`, and `Kleisli.ClosedFreydOf` gives one for every monad M on 𝒮, where A ⇒ B is `A -> M[B]` **[Tested]**. Over a hom promonad, where every arrow is pure, a closed Freyd category is a closed monoidal category, the `Closed` of section 14.5.
 
 ### 17.5 Writer effects: when effects commute or can be copied
 
@@ -3295,6 +3301,8 @@ import parrot.category.*
 val half: Int -> Option[Int]        = n => Option.when(n % 2 == 0)(n / 2)
 val halfDomain: Int -> Option[Int]  = Kleisli.OptionDomains.restrict(half)    // Some(n) for even n, None otherwise
 ```
+
+One more law connects restriction with purity: a pure arrow is total. "Pure" is not a notion of a restriction category, so the law takes the pure arrows as an argument: `pureTotal(functor)` is stated for a functor J into the category and says that J(f)‾ = id for every arrow f of its source. For a Kleisli category, J is the functor of the pure arrows of the promonad, `Promonad.Pure`, which is the identity on objects and sends f to η(f) (the member `pure` of every promonad); for 𝒫 it is the inclusion of 𝒮, `Partial.Inclusion`. The trace law of sliding takes its pure arrows in the same way (section 19.2).
 
 The laws R1 to R4, and the law that pure arrows are total, are **[Tested]** for both instances, and for the parsers of chapter 20. In 𝒫 the tests can only observe terminating programs; for the others the laws follow from the definition by the same calculation.
 
@@ -3683,7 +3691,7 @@ val failed  = strict.parse(fast.tree)("[1, [2 3]]")
 val same    = reference.parse(slow.tree)("[1, [2 3]]")
 ```
 
-Both failures carry the same message, `expected "," (in tree in tree) or "]" (in tree in tree) at position 7`: after `2 ` the parser expected a comma or a closing bracket, inside two nested trees. Section 20.6 explains where that message comes from.
+Both failures carry the same message, `expected "," (in tree in tree) or "]" (in tree in tree) at position 7`: after `2 ` the parser expected a comma or a closing bracket, inside two nested trees. Section 20.7 explains where that message comes from.
 
 The recursive call `rec` comes after an opening bracket. That makes the recursion **guarded** (section 16.6): every recursive call sees less input than the call that encloses it, so the parser terminates on every input.
 
@@ -3693,7 +3701,7 @@ The reference interpreter is meant to be obviously right, and it gets there by b
 
 `P[A, B]` = `A -> Input -> (Expected, Option[(B, Input)])` = `Kleisli(StateT[Input](OptionT(Writer(Expected.Furthest))))`.
 
-Reading the monad from the outside in: a parser reads and advances the input (state), produces diagnostics whether it succeeds or not (a writer of `Expected`, section 20.6), and may fail (the failure transformer, placed between the two so that diagnostics survive failure). Every structure comes from a generic construction of the library:
+Reading the monad from the outside in: a parser reads and advances the input (state), produces diagnostics whether it succeeds or not (a writer of `Expected`, section 20.7), and may fail (the failure transformer, placed between the two so that diagnostics survive failure). Every structure comes from a generic construction of the library:
 
 | Structure | Construction |
 | --- | --- |
@@ -3705,7 +3713,13 @@ Reading the monad from the outside in: a parser reads and advances the input (st
 
 The only parser-specific code is the four primitives and the silent tests of the classical structure on outcomes, about fifty lines. Backtracking, for instance, is not implemented anywhere: it is what `StateT.ClassicalOf` does with ordered choice, running the second alternative from the state the first one started with. The reference interpreter is slow and not stack-safe on deeply nested input, and that is acceptable, because its job is to be the specification.
 
-### 20.5 Laws in two tiers
+### 20.5 Semantics: what a parser means, and how it runs
+
+`ParserAlgebra` has no operation that runs a parser, on purpose: a grammar takes only the algebra, so it can build parsers and cannot run them, and an algebra can have parsers that are not functions at all, such as the syntax trees of section 20.8. What the parsers of an algebra mean is a separate structure on it, `Semantics(algebra)`. Its one primitive, `denote`, sends a parser P(A, B) of the algebra to its meaning, which is a parser of the reference interpreter: a function from a semantic input and a position in a source to diagnostics and, on success, a result and a new position. Everything else is derived from it: `diagnose` runs the meaning at a position and returns the diagnostics with the result, `run` drops the diagnostics, and `parse` and `parseAll` run a parser that takes no semantic input on a whole source and turn a failure into an error message.
+
+Each interpreter nests one `Semantics` and exports its operations. For the reference interpreter a parser means itself, so `denote` is the identity. For the optimizing interpreter `denote` is the semantic function of its syntax trees, and it overrides `run` with its fast path; the law `runDefinition` of `SemanticsLaws` says that the override returns what the derived `run` returns **[Tested]**. The laws of section 20.6 and the agreement of section 20.9 are stated through a `Semantics`: two parsers are equal when their meanings are, at every semantic input and every position. Positions matter, and not only the start of a source: a regular expression sees the input before its position, so `regex("^b".r)` and `literal("b")` agree at the start of every source and differ after any parser that has consumed input.
+
+### 20.6 Laws in two tiers
 
 `ParserLaws` collects the laws of the structures, stated for parsers in the vocabulary of parsing expression grammars **[Standard: Ford 2004, from memory, for the PEG equations]**. Each law holds for both interpreters **[Tested]**. They come in two tiers.
 
@@ -3732,7 +3746,7 @@ The only parser-specific code is the four primitives and the silent tests of the
 
 Section 18.7 explained why these three cannot be equations: lookahead is silent, and `p >> failure` reports what p expected before the failure. The tests also record what does *not* hold: choice does not distribute over what comes after it, `p ** q` depends on the order in which p and q consume input, and the guarded fixed-point law fails for left-recursive rules **[Tested: counterexample]**.
 
-### 20.6 Diagnostics
+### 20.7 Diagnostics
 
 **What a parse reports.** When a parse fails, the useful question is how far it got and what it would have accepted there. A parse therefore reports an `Expected(position, expectations)`: the furthest position at which something failed, and the set of things that were expected there. Each expectation is a label, such as `"]"` or `number`, together with its **context**, the names of the rules that enclosed it.
 
@@ -3748,7 +3762,7 @@ The laws force most of this. The choice monoid needs an associative combination 
 
 **Parsers are enriched over preorders.** For each A and B, ⊑ is a preorder on the parsers `P[A, B]`. Section 4.3 showed that a preorder is a category enriched over truth values, so each hom of parsers is itself a small category. And every combinator preserves ⊑: if p ⊑ p′ and q ⊑ q′, then `p >> q` ⊑ `p′ >> q′`, and likewise for `|>`, `**` and `rule` **[Tested]**. Monotone composition is exactly what makes the category of parsers a category enriched over **Pre**, the category of preorders and monotone maps, with the product of preorders as tensor (Definition 4.1). Forgetting the preorders gives back the underlying category (Definition 4.5), the parsers the library runs. Here enrichment is not decoration: it is how the law table can say "these two parsers are the same, except that one gives better error messages", and how a test can check that no combinator makes error messages worse.
 
-### 20.7 The optimizing interpreter
+### 20.8 The optimizing interpreter
 
 `StrictParser` represents a parser as a syntax tree of `Node`s over reified pure functions `Fn` (chapter 17's "promonad as data"). It implements the structures with **smart constructors**: functions that build a node and rewrite it towards a normal form on the way. Each rewrite is a law read from left to right.
 
@@ -3776,23 +3790,23 @@ A choice then precomputes, for each character, the alternatives whose summary al
 
 **Left recursion, an extension.** A left-recursive rule, such as `expr ::= expr "+" "1" | "1"`, calls itself without consuming input. Under guarded recursion that call fails, so the reference interpreter parses only the base case. `StrictParser` goes further: it detects the call, lets it fail once to obtain a **seed**, then reruns the rule with the seed as the call's result, and repeats while the parse grows **[Standard: Warth, Douglass and Millstein 2008, from memory]**. On `1+1+1` it returns `((1+1)+1)`. This is an extension beyond the specification, and documented as one: the guarded fixed-point law fails for left-recursive rules in both interpreters, in different ways, and the tests record both counterexamples **[Tested: counterexample]**.
 
-### 20.8 Agreement
+### 20.9 Agreement
 
 The core invariant of the library is that `StrictParser` agrees with `ReferenceParser` on every grammar without left recursion: the same results, the same consumed input, and the same diagnostics. Three kinds of test check it.
 
-- The laws of section 20.5, for both interpreters.
+- The laws of section 20.6, for both interpreters.
 - A random-grammar test: a small language of grammar terms, covering every combinator and families of mutually recursive rules, is interpreted in both algebras, and the outcomes are compared on random sources and semantic inputs **[Tested]**. A second generator adds unguarded recursion, such as a rule that calls itself after a lookahead, and left-recursive families; there the two interpreters differ by design, and the test checks that the optimizing interpreter returns on every input **[Tested]**.
 - The JSON grammar of the library, written once against `ParserAlgebra`, run on both interpreters over the JSON test suites in the repository.
 
-### 20.9 Performance
+### 20.10 Performance
 
 The categorical structure costs nothing at run time in the optimizing interpreter: the structures are used at construction time, and what runs is a tree of specialized nodes over a mutable state, without intermediate tuples or `Either`s. On the development machine, at the time of writing, `StrictParser` parses the three documents of the nativejson-benchmark at about 110 MiB/s, and validates all 34 documents of its JSON_checker suite correctly. The reference interpreter is far slower, which does not matter for a specification.
 
-### 20.10 What the theory guarantees
+### 20.11 What the theory guarantees
 
 A grammar written against `ParserAlgebra` behaves the same on every lawful interpreter, up to diagnostics where the laws are inequations. Refactoring a grammar by a law, such as factoring a common prefix out of a choice (distributivity) or reassociating a sequence, does not change what it parses. The optimizing interpreter's rewrites are laws, so they cannot change behavior either; what can go wrong is an analysis that is not a law, and the tests check those indirectly. There are two: `Info`, the first characters of a parser, which drives choice dispatch, and `Info.mayConsumeNothing`, whether a parser may succeed without consuming, which decides where a recursive call needs its guard. They are different properties: a lookahead has the first characters of its parser and consumes nothing. Guarded loops and recursion terminate on every input. The guarantee stops at left recursion, which the reference rejects and the optimizing interpreter extends, and at the order of effects: parsers consume input, so they never commute.
 
-### 20.11 Set and Scala
+### 20.12 Set and Scala
 
 In the category of sets and relations, a grammar denotes a language, and choice is union. Parsing expression grammars are different: their choice is ordered, so a grammar denotes a partial function from inputs to results, and choice is the override of chapter 18. In Scala, the library writes that semantics as a Kleisli category of a monad built from three transformers, adds diagnostics as a semilattice writer with silent tests, and obtains every combinator from a structure whose laws are checked. The optimizing interpreter is the same semantics as data, rewritten by its own laws.
 
@@ -3956,7 +3970,7 @@ Section 3.10 introduced the pattern: a law is a method that returns `Boolean`, t
 - **Congruence by construction.** Agreement on samples is not a congruence: two functions that agree at the sample points can be told apart once composed with a third. So congruence laws, "equal arrows give equal results", take a **variant** of an arrow, an arrow equal to it by construction but represented differently, never an arrow that merely agrees on samples.
 - **Conditional laws by targeted generators.** A law with a premise, such as uniformity of iteration or the guarded fixed-point law, gets a generator that produces only arguments satisfying the premise, so that no generated case is wasted.
 
-Laws that hold only up to diagnostics are checked with a `Preorder` instead of an `Observable` (section 20.5). Laws that do *not* hold are kept too: a **counterexample** test searches for a witness, and it fails if it finds none. A counterexample test records what the library's structures are not, such as premonoidal tensors that are not monoidal, which is as much part of the specification as what they are.
+Laws that hold only up to diagnostics are checked with a `Preorder` instead of an `Observable` (section 20.6). Laws that do *not* hold are kept too: a **counterexample** test searches for a witness, and it fails if it finds none. A counterexample test records what the library's structures are not, such as premonoidal tensors that are not monoidal, which is as much part of the specification as what they are.
 
 ### 22.4 The law status table
 
@@ -4055,7 +4069,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 - **Objects of the model.** Only the types of the model count as objects, although type parameters range over all Scala types.
 - **Strict positivity.** Recursive types used with `Fix` and `fold` are strictly positive (chapter 16).
 - **Guardedness.** Loops and recursive definitions whose laws are relied on make progress before they continue or recurse (sections 16.6 and 19.7). Termination does not depend on it; the laws do.
-- **Lifted functions.** Functions given to a parser algebra's `lift` are total and pure; the optimizing interpreter may compose, move or duplicate them (section 20.7).
+- **Lifted functions.** Functions given to a parser algebra's `lift` are total and pure; the optimizing interpreter may compose, move or duplicate them (section 20.8).
 - **Test functions.** The tests use ScalaCheck's generated functions as pure functions; ScalaCheck is not compiled with capture checking, so nothing checks it (section 22.2).
 - **Invariants of abstractions.** The exported operations of an opaque type used as a subset or quotient preserve its invariant or equivalence (sections 6.5 and 7.6).
 - **Coherence of equality.** A type has at most one `Eq` in its implicit scope, its semantic equality; a coarser equality gets a new type (section 7.4).
@@ -4117,9 +4131,9 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Data type.** A type built from primitive types with tuples, `Option`, `Either`, `List` and structurally compared case classes and enums, with no functions or abstract types inside. Section 2.2.
 
-**Diagnostics.** What a parse reports: the furthest position at which something failed and what was expected there, a join-semilattice produced as a writer effect. Section 20.6.
+**Diagnostics.** What a parse reports: the furthest position at which something failed and what was expected there, a join-semilattice produced as a writer effect. Section 20.7.
 
-**Dispatch.** Choosing the alternatives of a choice to try from the next character, using a static first-set and nullability summary. Section 20.7.
+**Dispatch.** Choosing the alternatives of a choice to try from the next character, using a static first-set and nullability summary. Section 20.8.
 
 **Elgot operator (iteration operator).** An operation sending a step X → A + X to an arrow X → A that runs it until it stops, with its laws. Definition 19.2.
 
@@ -4177,7 +4191,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 **Left module (left actegory).** A category 𝒦 with an action ⊘ : ℳ × 𝒦 → 𝒦 of a monoidal category ℳ, unital and associative up to coherent isomorphism; every monoidal category acts on itself. In the library, `Module`. Section 17.3.
 
-**Left recursion.** A rule that calls itself before consuming input; guarded recursion fails the call, and `StrictParser` extends it by seed growing. Section 20.7.
+**Left recursion.** A rule that calls itself before consuming input; guarded recursion fails the call, and `StrictParser` extends it by seed growing. Section 20.8.
 
 **Locally small.** Having a set of arrows between any two objects; the same as Set-enriched. Section 1.5.
 
@@ -4282,7 +4296,7 @@ An earlier version of the library had more structures than the current one. Some
 | --- | --- | --- |
 | Ordered choice as enrichment over additive monoids | Choice distributes over composition on one side only, so it is not a monoid structure on homs compatible with composition. It is the override of a classical restriction category (chapter 18). | Never. |
 | Multiplicative monoids | They were monoids under another name: "multiplicative" describes an instance, such as numbers under multiplication, not a structure with laws of its own. | Never: write the instance as a `Monoid`. |
-| A second, enriched hierarchy of categories, functors and promonads, with bridges to the ordinary one | Two parallel hierarchies doubled the code. The library has one level: categories with a semantic equality on their homs, which is enrichment over setoids stated directly (section 7.4), and parsers with a preorder on their homs (section 20.6). | A construction needs homs in a base other than setoids or preorders. |
+| A second, enriched hierarchy of categories, functors and promonads, with bridges to the ordinary one | Two parallel hierarchies doubled the code. The library has one level: categories with a semantic equality on their homs, which is enrichment over setoids stated directly (section 7.4), and parsers with a preorder on their homs (section 20.7). | A construction needs homs in a base other than setoids or preorders. |
 | Mixin traits for the parser algebra | Combinations of structures are bundles, not inheritance (section 11.3). | Never. |
 | Abstract semantic types in the parser algebra | They are the unit, the products, the coproducts and the initial object of 𝒮, which are determined up to isomorphism: `Unit`, `Tuple2`, `Either`, `Nothing`. Another choice would be an isomorphic copy. | Never. |
 
@@ -4316,21 +4330,28 @@ Each concept is introduced where a problem needs it. This index lists, for each,
 | One kind per class | 10 | categories of type constructors | `Category1` |
 | Encoding: tracked bases, bundles, evidence | 11 | duplication and missing "has a" in Parts I–II | a functor between two categories |
 | Bifunctors, profunctors | 12 | pairs and `Either` map on both sides; `A -> B` is contravariant in A | `dimap` on functions |
+| Natural transformations as a structure | 13, 15 | naturality between functors on any categories | `Natural`; the unit of a monad |
 | Natural transformations, Yoneda, equivalence | 13 | polymorphic functions and their uniformity | `headOption`; `toYoneda` |
+| Diagrams, cones, limits and colimits | 14 | the terminal object, products and equalizers are one notion; every limit of 𝒮 by abstraction | the product as the limit of a pair; `Total.LimitOf` |
 | Universal constructions; monoidal structures | 14 | universal properties in 𝒮 need code; pairs in 𝒫 are not products | `Total.Products`; `Partial.Pairs` |
 | Joins as coproducts in a preorder | 14 | combining reports of the furthest failure | positions under `max` |
 | Monads, transformers, monoid and comonoid objects, adjunctions | 15 | making effects visible; "a monad is a monoid" made precise; why pairs in 𝒫 are not products | `Option`; `StateT` from currying; copying and deleting |
+| Commutative monoids | 15 | commutativity without idempotence | integers under addition |
 | Semilattices | 15 | a monoid that is also an order | sets under union; positions under `max` |
 | Folds, iteration, recursion, guardedness | 16 | recursion beyond structural recursion; why recursion cannot be total in general | `gcd` by iteration; a balanced-parentheses recognizer |
 | Promonads | 17 | Kleisli categories and syntax trees both contain the pure functions | `Kleisli.OptionKleisli`; `StrictParser`'s nodes |
 | Left modules, strength, bistrong profunctors, Freyd categories, premonoidal tensors | 17 | running effectful arrows side by side | a logger with a non-commutative log |
+| Binoidal functors; Kleisli exponentials, closed Freyd categories | 17 | a tensor that is a functor in each argument only; function types for effectful arrows | `Freyd.Tensor`; `Partial.Exponentials` |
+| Coproducts of a Kleisli category | 17 | why effects commute over tagged unions | `Kleisli.CocartesianOf` |
 | Commuting and copyable effects | 17 | when interchange holds and when running twice is running once | writers of commutative and idempotent monoids |
+| Pure arrows as a functor | 18, 19 | laws about pure arrows in structures that do not know purity | `pureTotal(functor)`; `sliding(centre)` |
 | Restriction categories; restriction products | 18 | where an arrow is defined, asked inside the category | `Option` Kleisli; 𝒫 |
 | Classical restriction, override, attempt | 18 | ordered choice as a theorem; decidable failure versus divergence | `half \|> odd`; 𝒫 is not classical |
 | Silent tests | 18, 20 | effects other than failure break some restriction laws | lookahead that reports nothing |
 | Traces, Conway and Elgot operators, the grid | 19 | iterating and recursing effectful arrows; refactoring loops | `Partial.Feedback`; guarded `skipSpace` |
 | Guarded iteration and recursion as structures | 19 | operators that are total in 𝒮 satisfy the laws only for arguments that make progress | `StateT.Loops`; `skipSpace` and `stuck` |
 | Duality of iteration and recursion | 19 | the product row of the grid in a strict language | `Conway.OfElgot(Partial.Loops)` |
+| Semantics of an algebra | 20 | a grammar builds parsers and cannot run them; equality of parsers | `denote`, `run`, `parse` |
 | Parser algebra as a bundle | 20 | one grammar, several interpreters, combinators with laws | nested lists of numbers |
 | Diagnostics: lexicographic semilattice, tagging, ⊑ | 20 | error reports must respect the laws of choice and lookahead | `expected "," or "]" at position 7` |
 | Parsers enriched over preorders | 20 | stating "the same parser, with better error messages" | monotonicity laws |
