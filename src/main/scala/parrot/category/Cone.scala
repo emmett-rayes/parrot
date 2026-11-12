@@ -6,6 +6,8 @@ package category
   * Represents a cone (*X*, *ψ*), where
   *   - *X* is the apex, an object of **C**
   *   - *ψ*_*A*: *X* → *D*[*A*] is the leg at an object *A* of **J**
+  *
+  * @see docs/TUTORIAL.md §14.6
   */
 abstract class Cone(tracked val diagram: Functor, tracked val apex: diagram.target.Object) extends caps.Pure {
   import diagram.{F as D, map}

@@ -7,6 +7,8 @@ package category
   *
   * It has no laws of its own: naturality of *σ* in each component and the interchange law of the tensor make *σ*
   * natural in both components at once.
+  *
+  * @see docs/TUTORIAL.md §14.5
   */
 abstract class Symmetric(
   tracked override val category: Category,

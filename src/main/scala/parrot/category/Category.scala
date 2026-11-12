@@ -13,6 +13,7 @@ import scala.annotation.targetName
   *
   * @note Identity and composition are single polymorphic programs, so the category is uniform. Equality of morphisms is
   *   observational equality, which the laws check through an [[Observable]] instance.
+  * @see docs/TUTORIAL.md §3.3
   */
 abstract class Category extends caps.Pure {
   type Self[_, _]

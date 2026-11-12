@@ -11,6 +11,8 @@ package category
   * Some functions on arrows are guarded: they call their argument only after progress. What progress is belongs to the
   * instance, such as consuming input. The operators are defined for every function, and their laws hold for the
   * guarded ones. A [[Recursion]] structure is the case in which every function is guarded.
+  *
+  * @see docs/TUTORIAL.md §19.7
   */
 abstract class GuardedRecursion(tracked val promonad: Promonad) extends caps.Pure {
   import promonad.arrows.-->

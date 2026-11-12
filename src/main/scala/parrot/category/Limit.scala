@@ -5,6 +5,8 @@ package category
   *
   * Represents a limit (*X*, *ψ*), i.e. a cone over *D*, where
   *   - ⟨*φ*⟩: *Y* → *X* is the factorization of a cone (*Y*, *φ*) over *D*
+  *
+  * @see docs/TUTORIAL.md §14.6
   */
 abstract class Limit(tracked override val diagram: Functor, tracked override val apex: diagram.target.Object)
     extends Cone(diagram, apex) {

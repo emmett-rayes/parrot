@@ -5,6 +5,8 @@ package category
   *
   * Represents a colimit (*X*, *ψ*), i.e. a cocone under *D*, where
   *   - [*φ*]: *X* → *Y* is the factorization of a cocone (*Y*, *φ*) under *D*
+  *
+  * @see docs/TUTORIAL.md §14.6
   */
 abstract class Colimit(tracked override val diagram: Functor, tracked override val apex: diagram.target.Object)
     extends Cocone(diagram, apex) {

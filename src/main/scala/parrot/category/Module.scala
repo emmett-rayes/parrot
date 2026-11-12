@@ -7,6 +7,8 @@ package category
   *   - ⊘: **M** × **C** → **C** is the action bifunctor
   *   - *λ*: *I* ⊘ *A* ≅ *A* is the action left unitor
   *   - *α*: (*X* ⊗ *Y*) ⊘ *A* ≅ *X* ⊘ (*Y* ⊘ *A*) is the action associator
+  *
+  * @see docs/TUTORIAL.md §17.3
   */
 abstract class Module(
   tracked val monoidal: Monoidal,

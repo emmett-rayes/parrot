@@ -30,6 +30,8 @@ import category.Category.Type
   * This interpreter agrees with [[ReferenceParser]] on every grammar, with one extension: where a recursive parser
   * calls itself with the same semantic input at the same position, the reference fails the call, while this interpreter
   * supports left recursion by seed growing.
+  *
+  * @see docs/TUTORIAL.md §20.8
   */
 class StrictParser
     extends ParserAlgebra(

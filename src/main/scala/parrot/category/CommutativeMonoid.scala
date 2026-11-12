@@ -8,6 +8,8 @@ package category
   *
   * Commutativity needs only the braiding. A [[Semilattice]] is a commutative monoid that is also idempotent, which
   * needs a diagonal.
+  *
+  * @see docs/TUTORIAL.md §15.3
   */
 abstract class CommutativeMonoid(tracked override val monoidal: Symmetric) extends Monoid(monoidal) {
   import monoidal.`*`

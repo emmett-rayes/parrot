@@ -7,6 +7,8 @@ package category
   *   - *F*[*A*₁,*A*₂] is the object part
   *   - *F*₁(*f*): *F*[*A*,*C*] → *F*[*B*,*C*] is the morphism part in the first argument
   *   - *F*₂(*g*): *F*[*C*,*A*] → *F*[*C*,*B*] is the morphism part in the second argument
+  *
+  * @see docs/TUTORIAL.md §17.4
   */
 abstract class BinoidalFunctor(
   tracked val source1: Category,

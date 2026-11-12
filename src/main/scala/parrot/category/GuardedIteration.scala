@@ -9,6 +9,8 @@ package category
   * Some steps are guarded: they make progress whenever they continue. What progress is belongs to the instance, such
   * as consuming input. The operator is defined for every step, and its laws hold for the guarded ones. An [[Elgot]]
   * operator is the case in which every step is guarded.
+  *
+  * @see docs/TUTORIAL.md §19.7
   */
 abstract class GuardedIteration(tracked val strong: StrongPromonad { val monoidal: Cocartesian }) extends caps.Pure {
   import strong.{monoidal, profunctor}

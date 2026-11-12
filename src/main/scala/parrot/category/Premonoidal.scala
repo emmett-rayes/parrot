@@ -17,6 +17,8 @@ package category
   *
   * The unitors and the associator are central, and natural in each component separately. A monoidal category is a
   * premonoidal category whose morphisms are all central.
+  *
+  * @see docs/TUTORIAL.md §17.4
   */
 abstract class Premonoidal(
   tracked val category: Category,

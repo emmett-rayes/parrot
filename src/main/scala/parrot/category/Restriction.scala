@@ -8,6 +8,8 @@ import scala.annotation.targetName
   * Represents a restriction category (Cockett–Lack), where
   *   - *f̄*: *A* → *A* is the restriction of *f*: *A* → *B*
   *   - *f* is total when *f̄* = *id*
+  *
+  * @see docs/TUTORIAL.md §18.2
   */
 abstract class Restriction(tracked val category: Category) extends caps.Pure {
   import category.{Obj, identity, -->, >>>}

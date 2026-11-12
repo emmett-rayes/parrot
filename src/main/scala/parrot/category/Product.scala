@@ -6,6 +6,8 @@ package category
   * Represents a product *P* = *A*₁ × *A*₂, where
   *   - *π*₁: *P* → *A*₁ and *π*₂: *P* → *A*₂ are the projections
   *   - ⟨*f*,*g*⟩: *X* → *P* is the pairing of *f*: *X* → *A*₁ and *g*: *X* → *A*₂
+  *
+  * @see docs/TUTORIAL.md §14.1
   */
 abstract class Product(
   tracked override val category: Category,

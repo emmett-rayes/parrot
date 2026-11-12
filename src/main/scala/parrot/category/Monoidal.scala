@@ -5,6 +5,8 @@ package category
   *
   * Represents a monoidal category (**C**, ⊗, *I*), where
   *   - ⊗: **C** × **C** → **C** is the tensor bifunctor
+  *
+  * @see docs/TUTORIAL.md §14.5
   */
 abstract class Monoidal(
   tracked override val category: Category,

@@ -10,6 +10,8 @@ package category
   *
   * Currying is a bijection *P*(*X* ⊗ *A*,*B*) ≅ **C**(*X*,*A* ⇒ *B*): a curried arrow is pure, and runs only when it is
   * evaluated. Over a hom promonad, this is a [[Closed]] structure.
+  *
+  * @see docs/TUTORIAL.md §17.4
   */
 abstract class ClosedFreyd(tracked val strong: StrongPromonad) extends caps.Pure {
   import strong.monoidal.{`*`, ***}

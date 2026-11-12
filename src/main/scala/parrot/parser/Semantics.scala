@@ -20,6 +20,7 @@ import scala.util.Try
   * @note Parsers are told apart at every position, not only at the start of a source: a regular expression sees the
   *   input before its position, so `regex("^b".r)` and `literal("b")` do the same at the start of every source and
   *   differ after any other parser that consumes input.
+  * @see docs/TUTORIAL.md §20.5
   */
 abstract class Semantics(tracked val algebra: ParserAlgebra) extends caps.Pure {
   import algebra.P

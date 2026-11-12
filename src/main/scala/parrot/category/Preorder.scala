@@ -5,6 +5,8 @@ package category
   *
   * Represents a test of order (called below), where
   *   - ⊑ is a decidable preorder that fails only if some observation orders the two values apart
+  *
+  * @see docs/TUTORIAL.md §14.7
   */
 trait Preorder extends caps.Pure {
   type Self

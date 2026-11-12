@@ -14,6 +14,8 @@ import scala.util.matching.Regex
   *
   * This interpreter is slow and not stack-safe on deep nesting. It is meant to be obviously right and serves as the
   * specification against which other interpreters are checked.
+  *
+  * @see docs/TUTORIAL.md §20.4
   */
 class ReferenceParser
     extends ParserAlgebra(

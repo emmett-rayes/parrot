@@ -14,6 +14,7 @@ package category
   * @note The axiom of centre preservation, that the trace of a pure morphism is pure, says that a morphism is in the
   *   image of *J*, which a law that returns a `Boolean` cannot state. The laws check its consequence instead: the
   *   trace of a central morphism is central ([[TracedLaws.Consequences.centrality]]).
+  * @see docs/TUTORIAL.md §19.2
   */
 abstract class Traced(tracked val premonoidal: Premonoidal & SymmetricPremonoidal) extends caps.Pure {
   import premonoidal.{I, `*`, associator, braid, lmap, rightUnitor, rmap}

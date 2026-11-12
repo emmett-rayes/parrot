@@ -7,6 +7,8 @@ package category
   *   - *α*_*A*: *F*[*A*] → *G*[*A*] is the component at an object *A* of **C**
   *
   * The components commute with the morphisms of **C**.
+  *
+  * @see docs/TUTORIAL.md §13.2
   */
 abstract class Natural(
   tracked val functor1: Functor,

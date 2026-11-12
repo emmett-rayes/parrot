@@ -6,6 +6,8 @@ package category
   * Represents a coproduct *S* = *A*₁ + *A*₂, where
   *   - *ι*₁: *A*₁ → *S* and *ι*₂: *A*₂ → *S* are the injections
   *   - [*f*,*g*]: *S* → *X* is the copairing of *f*: *A*₁ → *X* and *g*: *A*₂ → *X*
+  *
+  * @see docs/TUTORIAL.md §14.1
   */
 abstract class Coproduct(
   tracked override val category: Category,

@@ -7,6 +7,8 @@ package category
   *   - ⊘₁: **M** × **C₁** → **C₁** is the left action of **M** on **C₁**
   *   - ⊘₂: **M** × **C₂** → **C₂** is the left action of **M** on **C₂**
   *   - *τ*: *P*(*A*,*B*) → *P*(*C* ⊘₁ *A*,*C* ⊘₂ *B*) is the left strength
+  *
+  * @see docs/TUTORIAL.md §17.3
   */
 abstract class Strong(
   tracked val profunctor: Profunctor,

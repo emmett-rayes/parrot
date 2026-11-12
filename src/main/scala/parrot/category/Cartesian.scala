@@ -15,6 +15,8 @@ import scala.annotation.targetName
   *
   * In a cartesian category, the tensor is the categorical product and the unit is a terminal object. The unitors, the
   * associator and the braiding are derived from the projections and pairing.
+  *
+  * @see docs/TUTORIAL.md §14.5
   */
 abstract class Cartesian(
   tracked override val category: Category,

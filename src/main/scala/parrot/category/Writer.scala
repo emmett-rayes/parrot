@@ -9,6 +9,8 @@ import Category.Type
   *   - *T*[*A*] = *M*[*W* × *A*]: the effects of *M*, then an output and a result ([[WriterT.FunctorOf]])
   *   - *η*(*a*) = *η*′(*ε*,*a*): no output
   *   - *μ* runs the outer computation, then the inner one, and combines their outputs in order
+  *
+  * @see docs/TUTORIAL.md §15.2
   */
 open class WriterT(
   tracked val monoid: Monoid.In[Total.Products.type],

@@ -15,6 +15,8 @@ import scala.annotation.targetName
   *
   * In a cocartesian category, the tensor is the categorical coproduct and the unit is an initial object. The unitors,
   * the associator and the braiding are derived from the injections and copairing.
+  *
+  * @see docs/TUTORIAL.md §14.5
   */
 abstract class Cocartesian(
   tracked override val category: Category,

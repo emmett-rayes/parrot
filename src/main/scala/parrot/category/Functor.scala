@@ -6,6 +6,8 @@ package category
   * Represents a functor *F*, where
   *   - *F*[*A*] is the object part
   *   - *F*(*f*): *F*[*A*] → *F*[*B*] is the morphism part
+  *
+  * @see docs/TUTORIAL.md §12.2
   */
 abstract class Functor(tracked val source: Category, tracked val target: Category) extends caps.Pure {
   import source.-->

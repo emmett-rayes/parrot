@@ -18,6 +18,7 @@ package category
   *
   * @note Agreement on samples is not a congruence: composites of agreeing functions can disagree. Congruence laws
   *   therefore take values that are assumed to be equal by construction, rather than values that agree on samples.
+  * @see docs/TUTORIAL.md §3.3
   */
 trait Observable extends caps.Pure {
   type Self

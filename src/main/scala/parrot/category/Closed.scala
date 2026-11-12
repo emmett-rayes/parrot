@@ -7,6 +7,8 @@ package category
   *   - *A* ⇒ *B*, also written as the exponential *B*ᴬ, is the internal hom object of *A* and *B*
   *   - *ev*: (*A* ⇒ *B*) ⊗ *A* → *B* is evaluation
   *   - Λ(*f*): *X* → (*A* ⇒ *B*) is the curried form of *f*: *X* ⊗ *A* → *B*
+  *
+  * @see docs/TUTORIAL.md §14.5
   */
 abstract class Closed(tracked val monoidal: Monoidal) extends caps.Pure {
   import monoidal.{`*`, ***}

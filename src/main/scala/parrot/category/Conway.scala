@@ -8,6 +8,8 @@ package category
   *
   * Conway operators are equivalent to traces for products. See [[Traced.OfConway]]. Conway operators are dual to Elgot
   * iteration. See [[Elgot]].
+  *
+  * @see docs/TUTORIAL.md §19.4
   */
 abstract class Conway(tracked val strong: StrongPromonad { val monoidal: Cartesian }) extends caps.Pure {
   import strong.{monoidal, profunctor}

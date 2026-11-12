@@ -5,6 +5,8 @@ package category
   *
   * Represents a terminal object *I*, where
   *   - !: *A* → *I* is the unique morphism from an object *A*
+  *
+  * @see docs/TUTORIAL.md §14.1
   */
 abstract class Terminal(tracked override val category: Category) extends Category.Object(category) {
   import category.{Obj, -->}

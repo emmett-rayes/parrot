@@ -10,6 +10,7 @@ package category
   *   - *τ*′: *P*(*A*,*B*) → *P*(*A* ⊗ *C*,*B* ⊗ *C*) is the right strength
   *
   * @note The action is ⊗ itself because a right strength needs a right action, which a left module does not have.
+  * @see docs/TUTORIAL.md §17.3
   */
 abstract class Bistrong(
   tracked override val profunctor: Profunctor { val codomain: domain.type },

@@ -6,6 +6,8 @@ package category
   * Represents a bifunctor *F*, where
   *   - *F*[*A*₁,*A*₂] is the object part
   *   - *F*(*f*,*g*): *F*[*A*₁,*A*₂] → *F*[*B*₁,*B*₂] is the morphism part
+  *
+  * @see docs/TUTORIAL.md §12.3
   */
 abstract class Bifunctor(
   tracked override val source1: Category,

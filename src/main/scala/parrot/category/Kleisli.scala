@@ -9,6 +9,8 @@ import Category.Type
   *   - *P*(*A*,*B*) = **C**(*A*,*M*[*B*])
   *   - *unit*(*f*) = *η* ∘ *f* embeds the pure morphisms
   *   - *multiply*(*g*,*f*) = *g*∘ *f* runs *f*, then *g* on its result
+  *
+  * @see docs/TUTORIAL.md §15.2
   */
 open class Kleisli(tracked val monad: Monad) extends Promonad(monad.category) {
   import monad.category.{Obj, -->}

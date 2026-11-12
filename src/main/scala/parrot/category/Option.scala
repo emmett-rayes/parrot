@@ -9,6 +9,8 @@ import Category.Type
   *   - *T*[*A*] = *M*[1 + *A*]: the effects of *M*, then a result or none ([[OptionT.FunctorOf]])
   *   - *η*(*a*) = *η*′(*Some*(*a*))
   *   - *μ* runs the inner computation of a result and keeps a failure, with the effects of *M* in both cases
+  *
+  * @see docs/TUTORIAL.md §15.2
   */
 open class OptionT(tracked val monad: Monad.On[Total.type]) extends Monad(OptionT.FunctorOf(monad)) {
 

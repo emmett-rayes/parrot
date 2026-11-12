@@ -5,6 +5,8 @@ package category
   *
   * Represents equality of values of a data type, where
   *   - = is a decidable equivalence relation: reflexive, symmetric and transitive ([[EqLaws]])
+  *
+  * @see docs/TUTORIAL.md §2.2
   */
 trait Eq extends caps.Pure {
   type Self

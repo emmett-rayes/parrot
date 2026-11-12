@@ -9,6 +9,8 @@ package category
   *
   * A projection of a pairing is a component only where the other component is defined. Where every morphism is
   * total, restriction products are products.
+  *
+  * @see docs/TUTORIAL.md §18.3
   */
 abstract class RestrictionProducts(
   tracked val restriction: Restriction,

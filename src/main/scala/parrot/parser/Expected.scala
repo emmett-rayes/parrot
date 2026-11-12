@@ -24,6 +24,8 @@ final case class Expectation(label: String, context: List[String]) derives CanEq
   * over a parser before it, which then runs twice, only if *x* ⊔ *y* ⊔ *x* = *x* ⊔ *y*, so in particular ⊔ is
   * idempotent. Commutativity is a choice: it makes the report independent of the order in which alternatives were
   * tried.
+  *
+  * @see docs/TUTORIAL.md §20.7
   */
 final case class Expected(position: Int, expectations: Set[Expectation]) derives CanEqual {
 

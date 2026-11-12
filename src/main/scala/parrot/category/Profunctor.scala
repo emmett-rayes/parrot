@@ -9,6 +9,8 @@ package category
   *
   * A profunctor *P*: **C₁**ᵒᵖ × **C₂** → **V** is a bifunctor **C₁**ᵒᵖ × **C₂** → **V** that is contravariant in its
   * first argument and covariant in its second argument. See [[Bifunctor]].
+  *
+  * @see docs/TUTORIAL.md §12.4
   */
 abstract class Profunctor(tracked val domain: Category, tracked val codomain: Category, tracked val base: Category)
     extends Bifunctor(domain.op, codomain, base) {

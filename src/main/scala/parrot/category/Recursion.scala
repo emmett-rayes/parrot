@@ -10,6 +10,8 @@ package category
   *
   * It is a [[GuardedRecursion]] in which every function is guarded, and its laws are the laws of
   * [[GuardedRecursion]], without their premise.
+  *
+  * @see docs/TUTORIAL.md §19.6
   */
 abstract class Recursion(tracked override val promonad: Promonad) extends GuardedRecursion(promonad)
 

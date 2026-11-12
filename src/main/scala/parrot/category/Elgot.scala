@@ -9,6 +9,8 @@ package category
   * It is a [[GuardedIteration]] in which every step is guarded, and its laws are the laws of [[GuardedIteration]],
   * without their premise. Elgot operators are equivalent to traces for coproducts. See [[Traced.OfElgot]]. Elgot
   * operators are dual to Conway fixed points. See [[Conway]].
+  *
+  * @see docs/TUTORIAL.md §19.3
   */
 abstract class Elgot(tracked override val strong: StrongPromonad { val monoidal: Cocartesian })
     extends GuardedIteration(strong)

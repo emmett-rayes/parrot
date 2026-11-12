@@ -10,6 +10,8 @@ import Category.Type
   * Represents a promonad (*P*, *η*, *μ*), where
   *   - *η*: **C**(*A*,*B*) → *P*(*A*,*B*), the unit
   *   - *μ*: *P*(*B*,*C*) × *P*(*A*,*B*) → *P*(*A*,*C*), the multiplication
+  *
+  * @see docs/TUTORIAL.md §17.2
   */
 abstract class Promonad(tracked override val category: Category) extends Endoprofunctor(category, Total) {
   import category.{Obj, --> as ==>}

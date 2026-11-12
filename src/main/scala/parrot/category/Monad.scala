@@ -12,6 +12,8 @@ import Category.Type
   *
   * The unit and multiplication are the unit and multiplication of a monoid, with composition of endofunctors as the
   * tensor.
+  *
+  * @see docs/TUTORIAL.md §15.2
   */
 abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
   export functor.{category, map, objects}

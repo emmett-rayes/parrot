@@ -19,6 +19,8 @@ import scala.annotation.targetName
   * coproducts included, it is the centred premonoidal category of Benton and Hyland, with the functor of the pure
   * arrows as its centre. That the right strength respects composition, *τ*′(*q* ∘ *p*) = *τ*′(*q*) ∘ *τ*′(*p*), is the
   * law `lmapComposition` of its tensor, a [[BinoidalFunctor]].
+  *
+  * @see docs/TUTORIAL.md §17.4
   */
 open class Freyd(tracked val strong: StrongPromonad)
     extends Premonoidal(

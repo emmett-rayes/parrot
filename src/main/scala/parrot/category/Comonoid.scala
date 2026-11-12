@@ -7,6 +7,8 @@ package category
   *   - *C* is an object of **V**
   *   - *ε*: *C* → *I* is the counit
   *   - *δ*: *C* → *C* ⊗ *C* is the comultiplication
+  *
+  * @see docs/TUTORIAL.md §15.3
   */
 abstract class Comonoid(tracked val monoidal: Monoidal) extends Category.Object(monoidal.category) {
   import monoidal.{I, `*`, ***}

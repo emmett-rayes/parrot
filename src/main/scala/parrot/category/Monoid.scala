@@ -7,6 +7,8 @@ package category
   *   - *M* is an object of **V**
   *   - *η*: *I* → *M* is the unit
   *   - *μ*: *M* ⊗ *M* → *M* is the multiplication
+  *
+  * @see docs/TUTORIAL.md §15.3
   */
 abstract class Monoid(tracked val monoidal: Monoidal) extends Category.Object(monoidal.category) {
   import monoidal.{I, `*`, ***}

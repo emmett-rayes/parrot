@@ -5,6 +5,8 @@ package category
   *
   * Represents an initial object *I*, where
   *   - ¡: *I* → *A* is the unique morphism to an object *A*
+  *
+  * @see docs/TUTORIAL.md §14.1
   */
 abstract class Initial(tracked override val category: Category) extends Category.Object(category) {
   import category.{Obj, -->}

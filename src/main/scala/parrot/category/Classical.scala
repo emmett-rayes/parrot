@@ -12,6 +12,8 @@ import scala.annotation.targetName
   *
   * In a classical restriction category, definedness is decidable. The override operator is unique, and on compatible
   * morphisms *f* and *g* it is their join *f* ∨ *g*.
+  *
+  * @see docs/TUTORIAL.md §18.4
   */
 abstract class Classical(tracked override val category: Category) extends Restriction(category) {
   import category.{Obj, -->, >>>}

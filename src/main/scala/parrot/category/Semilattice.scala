@@ -8,6 +8,8 @@ package category
   *   - ⊔ is idempotent, besides being commutative
   *
   * The induced preorder *a* ⊑ *b* ⇔ *a* ⊔ *b* = *b* has ⊔ as join and the unit ⊥ as least element.
+  *
+  * @see docs/TUTORIAL.md §15.3
   */
 abstract class Semilattice(tracked override val monoidal: Cartesian) extends CommutativeMonoid(monoidal) {
   import monoidal.`*`

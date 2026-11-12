@@ -23,6 +23,8 @@ trait Measure extends Type {
   *   - *η*(*a*) = *s* ↦ *η*′(*a*,*s*)
   *   - *μ*(*m*) = *s* ↦ (((*n*,*s*′) ↦ *n*(*s*′))\*′)(*m*(*s*)): run the outer computation, then the inner one from the
   *     state it left
+  *
+  * @see docs/TUTORIAL.md §15.2
   */
 open class StateT[S](tracked val monad: Monad.On[Total.type]) extends Monad(StateT.FunctorOf[S](monad)) {
 

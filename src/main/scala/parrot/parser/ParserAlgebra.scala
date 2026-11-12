@@ -31,6 +31,7 @@ import category.Category.Type
   *
   * @note Diagnostics are a writer effect, produced on success and on failure. Lookahead and negation are silent with
   *   respect to diagnostics. See [[Expected]].
+  * @see docs/TUTORIAL.md §20.2
   */
 
 abstract class ParserAlgebra(
