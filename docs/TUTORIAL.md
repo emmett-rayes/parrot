@@ -2631,7 +2631,17 @@ Functors are maps between categories. Natural transformations are maps between f
 
 G(f) ∘ α_a = α_b ∘ F(f).
 
-The equation is the **naturality square**: transforming and then mapping gives the same result as mapping and then transforming. With natural transformations as arrows, the functors from 𝒞 to 𝒟 form a category, the **functor category**, written [𝒞, 𝒟].
+```
+            α_a
+   F(a) ──────────▶ G(a)
+     │                │
+F(f) │                │ G(f)
+     ▼                ▼
+   F(b) ──────────▶ G(b)
+            α_b
+```
+
+The equation is the **naturality square** above, which commutes: transforming and then mapping gives the same result as mapping and then transforming. With natural transformations as arrows, the functors from 𝒞 to 𝒟 form a category, the **functor category**, written [𝒞, 𝒟].
 
 ### 13.2 In Scala
 
@@ -2732,6 +2742,18 @@ Many types are characterized not by what their values look like but by how arrow
 - A **product** of objects A and B is an object A × B with arrows π₁ : A × B → A and π₂ : A × B → B such that for every pair of arrows f : X → A and g : X → B there is exactly one arrow ⟨f, g⟩ : X → A × B with π₁ ∘ ⟨f, g⟩ = f and π₂ ∘ ⟨f, g⟩ = g.
 - A **coproduct** A + B is the same with all arrows reversed: injections ι₁ : A → A + B and ι₂ : B → A + B, and for every f : A → X and g : B → X exactly one [f, g] : A + B → X with [f, g] ∘ ι₁ = f and [f, g] ∘ ι₂ = g.
 - In a category with products, an **exponential** of B by A is an object A ⇒ B with an arrow ev : (A ⇒ B) × A → B such that every arrow h : X × A → B is ev ∘ (Λh × id) for exactly one arrow Λh : X → (A ⇒ B).
+
+The product, as a diagram: every pair of arrows out of X factors through A × B, in exactly one way, and both triangles commute.
+
+```
+                 X
+               ╱ │ ╲
+            f ╱  │  ╲ g
+             ╱   │⟨f, g⟩
+            ▼    ▼    ▼
+           A ◀─ A × B ─▶ B
+              π₁       π₂
+```
 
 A category with a terminal object, all products and all exponentials is **cartesian closed**. With an initial object and coproducts as well, it is **bicartesian closed**.
 
@@ -3222,6 +3244,15 @@ The missing ingredient is the ability to carry a value along unchanged while an 
 
 natural in A and B, dinatural in C, and compatible with the unitors and the associators of the actions. For a promonad, 𝒱 is 𝒮, so τ is a function from arrows to arrows.
 
+As a picture, with inputs on the left and outputs on the right, an arrow is a box on a wire, and its strength is the same box with a second wire passing beside it untouched:
+
+```
+                              C ───────────── C
+A ───[ p ]─── B        A ───[ p ]─── B
+
+      p                      τ(p)
+```
+
 The laws say that τ commutes with pre- and post-composition (naturality), that it does not depend on how C is presented (dinaturality), that carrying the unit along does nothing (unitality), and that carrying C ⊗ D along is carrying D, then C (associativity). A profunctor with a strength is also called a **Tambara module** **[Standard: Pastro and Street, from memory]**. Because the context sits on the left, τ is a **left strength**, as is the strength X × M(A) → M(X × A) of a monad **[Standard: Moggi 1991, from memory]**.
 
 When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′ = P(σ, σ) ∘ τ. A profunctor with a left and a right strength that commute, τ′ ∘ τ = P(α, α⁻¹) ∘ τ ∘ τ′, is **bistrong**, and here the two always commute **[Proved]**. Write τ_C for τ with the context C. On the right-hand side, naturality moves τ_C past P(σ, σ), and associativity merges τ_C ∘ τ_D into τ with the context C ⊗ D. On the left-hand side, associativity gives τ with the context D ⊗ C, which dinaturality at σ : C ⊗ D → D ⊗ C turns into P(σ ⊗ id, σ ⊗ id) after τ with the context C ⊗ D, since σ ∘ σ = id. Both sides are now P(φ, ψ) after τ with the context C ⊗ D, for isomorphisms φ : (C ⊗ A) ⊗ D → (C ⊗ D) ⊗ A and ψ : (C ⊗ D) ⊗ B → (C ⊗ B) ⊗ D built from α and σ that move every factor to the same place, and two such isomorphisms are equal by the coherence theorem for symmetric monoidal categories **[Standard: Mac Lane 1998, from memory]**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
@@ -3252,6 +3283,17 @@ import OptionFreyd.*>*
 
 val both: ((String, Int)) -> Option[(Int, Int)] = parse *>* positive
 ```
+
+The two orders, as pictures. Time runs from left to right, so the box further left runs first, and its effect happens first:
+
+```
+A ───[ p ]─────────── B          A ───────────[ p ]─── B
+C ───────────[ q ]─── D          C ───[ q ]─────────── D
+
+       p ⋉ q                            p ⋊ q
+```
+
+In a monoidal category the two pictures are the same arrow, and boxes may slide past each other. In a premonoidal category they are different arrows, and only a central box may slide.
 
 **Premonoidal, not monoidal.** For pure functions, it does not matter whether the left or the right component is processed first: f ⊗ g = (f ⊗ id) then (id ⊗ g) = (id ⊗ g) then (f ⊗ id). This is the **interchange** law, and it says that ⊗ is a bifunctor. For effectful arrows it can fail, because the two orders run the effects in different orders. A logger whose log is a string shows it: if p logs `"a"` and q logs `"b"`, then `p *>* q` logs `"ab"`, and `p *<* q` logs `"ba"`. A category with a tensor that is a bifunctor only in each argument separately is called **premonoidal**, and Freyd categories are premonoidal **[Standard: Power and Robinson, from memory]**. That is why the two operators look like a tensor without being one. 
 
@@ -3474,6 +3516,35 @@ satisfying, in diagrammatic order (each law is a picture of wires that can be de
 - **superposing**: tr(α ⨾ first(g) ⨾ second(p) ⨾ α⁻¹) = first(g) ⨾ second(tr(p)) for g : C → D: a wire that does not take part in the loop can be drawn beside it, with whatever happens on it before the loop;
 - **yanking**: tr(σ) = id: feeding one strand of a braid back into the other gives a straight wire;
 - **centrality**: first(tr(f)) ⨾ second(q) = second(q) ⨾ first(tr(f)) for central f: the trace of a central arrow interchanges with every arrow q, so it is central.
+
+As pictures, with the feedback wire drawn as a loop from the lower output back to the lower input:
+
+```
+          ┌──────────┐
+A ────────┤          ├──────── B          the trace tr(p): the U output of p
+     ┌────┤    p     ├────┐               is connected to its U input
+     │ U  └──────────┘  U │
+     └────────◀───────────┘
+
+tightening: boxes on the upper wire, before and after p, may be drawn inside or outside the loop
+
+A ─[ f ]──┤ p ├──[ g ]─ B     =     A ─[ f ]─ ( ┤ p ├ with its loop ) ─[ g ]─ B
+      └──────◀──────┘
+
+sliding: a pure box on the feedback wire may be pushed around the loop, from after p to before p
+
+──┤ p ├──────          ──────┤ p ├──
+  └─◀─[ h ]─┘     =      └─[ h ]─◀─┘
+
+yanking: the loop through a crossing is a straight wire
+
+U ───╲ ╱─── U
+      ╳           =     U ─────────── U
+  ┌──╱ ╲──┐
+  └───◀───┘
+```
+
+Vanishing says that a loop on the unit wire can be erased and that a loop on two wires is two loops; superposing says that a wire drawn beside the whole picture, with a box before the loop, does not take part in it.
 
 **[Standard: Joyal, Street and Verity 1996, from memory]** introduced traced monoidal categories. With effects, the tensor is only premonoidal (section 17.4): there is no tensor g ⊗ p of two arrows, only `first` and `second`, which run one arrow beside a wire, and the laws above are written with them. Benton and Hyland define the trace on a *centred* symmetric premonoidal category, one with a chosen category of pure arrows, which are central; sliding is restricted to pure arrows, and their further axiom, centre preservation, says that the trace of a pure arrow is pure **[Standard: Benton and Hyland 2003, from memory]**. Superposing needs no such restriction. Their axiom is the case g = id; the law with g follows, because g runs before the loop: the naturality of the associator moves g out of it, and tightening moves g out of the trace **[Proved]**. Centrality is not an axiom either, but their proposition 3.3 **[Standard]**.
 
@@ -3747,6 +3818,20 @@ The recursive call `rec` comes after an opening bracket. That makes the recursio
 The reference interpreter is meant to be obviously right, and it gets there by building nothing new. A parser is a Kleisli arrow of a monad assembled from the transformers of chapter 15:
 
 `P[A, B]` = `A -> Input -> (Expected, Option[(B, Input)])` = `Kleisli(StateT[Input](OptionT(Writer(Expected.Furthest))))`.
+
+As nested boxes, each transformer wrapping the monad inside it:
+
+```
+┌─ StateT[Input] ───────────────────────────────────────────┐
+│  reads the position, returns the position after the parse │
+│  ┌─ OptionT ───────────────────────────────────────────┐  │
+│  │  a result, or a failure                             │  │
+│  │  ┌─ Writer(Expected.Furthest) ───────────────────┐  │  │
+│  │  │  what was expected at the furthest failure    │  │  │
+│  │  └───────────────────────────────────────────────┘  │  │
+│  └─────────────────────────────────────────────────────┘  │
+└───────────────────────────────────────────────────────────┘
+```
 
 Reading the monad from the outside in: a parser reads and advances the input (state), produces diagnostics whether it succeeds or not (a writer of `Expected`, section 20.7), and may fail (the failure transformer, placed between the two so that diagnostics survive failure). Every structure comes from a generic construction of the library:
 
