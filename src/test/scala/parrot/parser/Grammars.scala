@@ -8,6 +8,10 @@ import Sample.given
 
 /** A grammar from semantic input `Int` to result `Int`, independent of interpreters: random grammars are generated once
   * and run on every interpreter.
+  *
+  * A [[Term.Family]] is a tuple of mutually recursive rules, of which the first is the grammar, and a [[Term.Call]]
+  * is a call of a rule of the innermost enclosing family, which fails outside one. In an [[Term.Unguarded]] rule, the
+  * recursive call follows a prefix that consumes nothing.
   */
 enum Term derives CanEqual {
   case Lit(text: String)
@@ -27,6 +31,16 @@ enum Term derives CanEqual {
   case Loop(p: Term)
   case Nest(p: Term, open: String, close: String)
   case Named(label: String, p: Term)
+  case Zipped(p: Term, q: Term)
+  case Branched(p: Term, q: Term)
+  case Tagged(p: Term, q: Term)
+  case Opt(p: Term, seed: Int)
+  case Many1(p: Term)
+  case Between(p: Term, open: Term, close: Term)
+  case Pre(p: Term, seed: Int)
+  case Call(rule: Int)
+  case Family(rules: Vector[Term])
+  case Unguarded(p: Term, prefix: Term)
 }
 
 object Grammars {
@@ -42,32 +56,62 @@ object Grammars {
       (p.mapInput(lift((_: Int) => ())) && success[Int]).map(lift((s, n) => n + s.length))
     }
 
-    def go(t: Term): P[Int, Int] = {
-      t match {
-        case Lit(s)        => text(literal(s))
-        case Re(r)         => text(regex(r.r))
-        case Arith(k)      => arith(n => n * 3 + k)
-        case Fail          => failure[Int, Int]
-        case Then(p, q)    => go(p) >> go(q)
-        case Alt(p, q)     => go(p) |> go(q)
-        case Look(p)       => ~go(p)
-        case Neg(p)        => !go(p)
-        case Both(p, q)    => (go(p) && go(q)).map(lift((x, y) => x * 31 + y))
-        case Try(p, k)     => go(p).attempt >> (arith(_ + k) || arith(n => -n))
-        case Many(p)       => go(p).repeated.map(lift(_.sum))
-        case Exactly(p, n) => go(p).times(n).map(lift(_.sum))
-        case AtLeast(p, n) => go(p).atLeast(n).map(lift(_.sum))
-        case SepBy(p, sep) => go(p).separatedBy(go(sep)).map(lift(_.sum))
-        case Loop(p)       =>
-          val step = (go(p) && success[Int]).map(lift((x, n) => if n > 0 then Right((n - 1) % 4) else Left(x)))
-          (step |> pure(lift[Int, Either[Int, Int]](Left(_)))).iterate
-        case Nest(p, open, close) =>
-          recursive[Int, Int](rec => go(p) |> (text(literal(open)) *> rec <* text(literal(close))))
-        case Named(label, p) => go(p).rule(label)
+    def within(family: Vector[P[Int, Int]]): Term -> P[Int, Int] = {
+      def go(t: Term): P[Int, Int] = {
+        t match {
+          case Lit(s)        => text(literal(s))
+          case Re(r)         => text(regex(r.r))
+          case Arith(k)      => arith(n => n * 3 + k)
+          case Fail          => failure[Int, Int]
+          case Then(p, q)    => go(p) >> go(q)
+          case Alt(p, q)     => go(p) |> go(q)
+          case Look(p)       => ~go(p)
+          case Neg(p)        => !go(p)
+          case Both(p, q)    => (go(p) && go(q)).map(lift((x, y) => x * 31 + y))
+          case Try(p, k)     => go(p).attempt >> (arith(_ + k) || arith(n => -n))
+          case Many(p)       => go(p).repeated.map(lift(_.sum))
+          case Exactly(p, n) => go(p).times(n).map(lift(_.sum))
+          case AtLeast(p, n) => go(p).atLeast(n).map(lift(_.sum))
+          case SepBy(p, sep) => go(p).separatedBy(go(sep)).map(lift(_.sum))
+          case Loop(p)       =>
+            val step = (go(p) && success[Int]).map(lift((x, n) => if n > 0 then Right((n - 1) % 4) else Left(x)))
+            (step |> pure(lift[Int, Either[Int, Int]](Left(_)))).iterate
+          case Nest(p, open, close) =>
+            recursive[Int, Int](rec => go(p) |> (text(literal(open)) *> rec <* text(literal(close))))
+          case Named(label, p) => go(p).rule(label)
+          case Zipped(p, q)    =>
+            (go(p) ** go(q)).mapInput(lift((n: Int) => (n, n + 1))).map(lift((x, y) => x * 31 + y))
+          case Branched(p, q) =>
+            (go(p) ++ go(q))
+              .mapInput(lift[Int, Either[Int, Int]](n => if n % 2 == 0 then Left(n) else Right(n)))
+              .map(lift(_.fold(x => x, y => -y)))
+          case Tagged(p, q)           => (go(p) +> go(q)).map(lift(_.fold(x => x * 2, y => y * 2 + 1)))
+          case Opt(p, k)              => go(p).optional.map(lift(_.fold(x => x + k, n => -n)))
+          case Many1(p)               => go(p).atLeastOnce.map(lift(_.sum))
+          case Between(p, open, close) => go(p).between(go(open), go(close))
+          case Pre(p, k)              => go(p).mapInput(lift((n: Int) => n * 2 + k))
+          case Call(i)                => if family.isDefinedAt(i) then family(i) else failure[Int, Int]
+          case Family(rules)          =>
+            rules match {
+              case Vector(r0, r1) =>
+                recursive[(P[Int, Int], P[Int, Int])] { (p0, p1) =>
+                  val rule = within(Vector(p0, p1))
+                  (rule(r0), rule(r1))
+                }._1
+              case Vector(r0, r1, r2) =>
+                recursive[(P[Int, Int], P[Int, Int], P[Int, Int])] { (p0, p1, p2) =>
+                  val rule = within(Vector(p0, p1, p2))
+                  (rule(r0), rule(r1), rule(r2))
+                }._1
+              case _ => failure[Int, Int]
+            }
+          case Unguarded(p, prefix) => recursive[Int, Int](rec => (go(prefix) >> rec) |> go(p))
+        }
       }
+      go
     }
 
-    go(term)
+    within(Vector.empty)(term)
   }
 
   /** A parser that consumes `text` and adds its length to the semantic input. */
@@ -89,20 +133,50 @@ object Grammars {
     rec => interpret(alg)(term) |> (consume(alg)("(") *> rec <* consume(alg)(")"))
   }
 
-  /** Random grammars, guarded where the language requires it: recursion always consumes its opening text. */
-  val terms: Gen[Term] = {
-    val leaf: Gen[Term] = Gen.oneOf(
-      Gen.oneOf("a", "b", "ab", "(", "").map(Lit(_)),
-      Gen.oneOf("a+", "[ab]", "b*", "\\(", "^a", "(?<=a)b").map(Re(_)),
-      Gen.choose(-3, 3).map(Arith(_)),
-      Gen.const(Fail),
+  /** The rules that a generated term may call: `leading` anywhere, and `guarded` after a non-empty literal. */
+  private final case class Calls(leading: Vector[Int], guarded: Vector[Int])
+
+  /** Random grammars of the given depth.
+    *
+    * With `layered`, rule *i* of a family begins with a call of rule *j* only for *j* > *i*, and calls any rule after
+    * a non-empty literal, so a family has no left recursion. Without it, a rule calls any rule anywhere, and a
+    * recursive rule may call itself after a prefix that consumes nothing.
+    */
+  private def node(depth: Int, calls: Calls, layered: Boolean): Gen[Term] = {
+    val call: List[(Int, Gen[Term])] = {
+      if calls.leading.isEmpty then Nil else List(3 -> Gen.oneOf(calls.leading).map(Call(_)))
+    }
+    val leaf: Gen[Term] = Gen.frequency(
+      (List[(Int, Gen[Term])](
+        2 -> Gen.oneOf("a", "b", "ab", "(", "").map(Lit(_)),
+        2 -> Gen.oneOf("a+", "[ab]", "b*", "\\(", "^a", "(?<=a)b").map(Re(_)),
+        2 -> Gen.choose(-3, 3).map(Arith(_)),
+        2 -> Gen.const(Fail),
+      ) ++ call)*
     )
 
-    def node(depth: Int): Gen[Term] = {
-      if depth <= 0 then leaf
-      else {
-        val sub = node(depth - 1)
-        Gen.frequency(
+    if depth <= 0 then leaf
+    else {
+      val sub                      = node(depth - 1, calls, layered)
+      val silent: Gen[Term]        = Gen.oneOf(sub.map(Look(_)), sub.map(Neg(_)), Gen.const(Lit("")), Gen.const(Arith(1)))
+      val after: Gen[Term]         = node(depth - 1, Calls(calls.guarded, calls.guarded), layered)
+      def family(n: Int): Gen[Term] = {
+        val all = Vector.range(0, n)
+        Gen
+          .sequence[Vector[Term], Term](all.map { i =>
+            node(depth - 1, Calls(if layered then all.drop(i + 1) else all, all), layered)
+          })
+          .map(Family(_))
+      }
+      val guarded: List[(Int, Gen[Term])] = {
+        if calls.guarded.isEmpty then Nil
+        else List(3 -> Gen.zip(Gen.oneOf("a", "b", "("), after).map((s, q) => Then(Lit(s), q)))
+      }
+      val unguarded: List[(Int, Gen[Term])] = {
+        if layered then Nil else List(2 -> Gen.zip(sub, silent).map(Unguarded(_, _)))
+      }
+      Gen.frequency(
+        (List[(Int, Gen[Term])](
           3 -> leaf,
           2 -> Gen.zip(sub, sub).map(Then(_, _)),
           2 -> Gen.zip(sub, sub).map(Alt(_, _)),
@@ -117,11 +191,32 @@ object Grammars {
           1 -> sub.map(Loop(_)),
           1 -> Gen.zip(sub, Gen.oneOf("(", "a"), Gen.oneOf(")", "b")).map(Nest(_, _, _)),
           1 -> Gen.zip(Gen.oneOf("x", "y"), sub).map(Named(_, _)),
-        )
-      }
+          1 -> Gen.zip(sub, sub).map(Zipped(_, _)),
+          1 -> Gen.zip(sub, sub).map(Branched(_, _)),
+          1 -> Gen.zip(sub, sub).map(Tagged(_, _)),
+          1 -> Gen.zip(sub, Gen.choose(-3, 3)).map(Opt(_, _)),
+          1 -> sub.map(Many1(_)),
+          1 -> Gen.zip(sub, sub, sub).map(Between(_, _, _)),
+          1 -> Gen.zip(sub, Gen.choose(-3, 3)).map(Pre(_, _)),
+          2 -> Gen.choose(2, 3).flatMap(family),
+        ) ++ guarded ++ unguarded)*
+      )
     }
+  }
 
-    Gen.choose(0, 3).flatMap(node)
+  /** Random grammars without left recursion: a recursive rule consumes its opening text before it calls itself, and
+    * the families of rules are layered, i.e. rule *i* begins with a call of rule *j* only for *j* > *i*, and calls any
+    * rule after a non-empty literal.
+    */
+  val terms: Gen[Term] = {
+    Gen.choose(0, 3).flatMap(node(_, Calls(Vector.empty, Vector.empty), layered = true))
+  }
+
+  /** Random grammars with unguarded recursion: [[terms]], rules that call themselves after a prefix that consumes
+    * nothing, and families in which every rule may begin with a call of every rule.
+    */
+  val unguardedTerms: Gen[Term] = {
+    Gen.choose(0, 3).flatMap(node(_, Calls(Vector.empty, Vector.empty), layered = false))
   }
 
   /** Short sources over the alphabet of the generated grammars. */
