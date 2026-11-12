@@ -3744,7 +3744,7 @@ A choice then precomputes, for each character, the alternatives whose summary al
 The core invariant of the library is that `StrictParser` agrees with `ReferenceParser` on every grammar without left recursion: the same results, the same consumed input, and the same diagnostics. Three kinds of test check it.
 
 - The laws of section 20.5, for both interpreters.
-- A random-grammar test: a small language of grammar terms, covering every combinator, is interpreted in both algebras, and the outcomes are compared on random sources and semantic inputs **[Tested]**. During development, a longer run over 100,000 grammars, each on 20 sources and 6 semantic inputs, found no disagreement.
+- A random-grammar test: a small language of grammar terms, covering every combinator and families of mutually recursive rules, is interpreted in both algebras, and the outcomes are compared on random sources and semantic inputs **[Tested]**. A second generator adds unguarded recursion, such as a rule that calls itself after a lookahead, and left-recursive families; there the two interpreters differ by design, and the test checks that the optimizing interpreter returns on every input **[Tested]**.
 - The JSON grammar of the library, written once against `ParserAlgebra`, run on both interpreters over the JSON test suites in the repository.
 
 ### 20.9 Performance

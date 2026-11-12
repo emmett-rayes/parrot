@@ -458,9 +458,10 @@ Rejected:
   sentinel (`StrictParser.Out`, the option monad without its box), read through inline eliminators that leave no
   closures. `Option` results double the allocation of the JSON benchmark and cost a tenth of its throughput.
 - **Agreement is the core invariant:** both interpreters give the same results, offsets and diagnostics on every
-  grammar without left recursion and at every position, checked by random grammars, the law specifications and the JSON grammar.
-  `StrictParser` supports left recursion by seed growing, an extension beyond the specification, where the reference
-  fails the left-recursive call.
+  grammar without left recursion and at every position, checked by random grammars, the law specifications and the
+  JSON grammar. The random grammars include families of rules that begin with calls of each other. `StrictParser`
+  supports left recursion by seed growing, an extension beyond the specification, where the reference fails the
+  left-recursive call; on random grammars with unguarded recursion the tests check only that it returns.
 - **Whether a recursive call may be left-recursive is its own analysis,** `Info.mayConsumeNothing`: a parser may
   succeed without consuming input. The nullability of `Info` is not that property, since a lookahead has the first
   set of its parser and never consumes. The analysis errs towards "may", which only keeps a guard.

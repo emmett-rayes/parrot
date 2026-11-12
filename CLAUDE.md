@@ -156,8 +156,8 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   and `rule`, and `denote` in the `Semantics` they nest.
 - **Core invariant:** `StrictParser` behaves exactly like `ReferenceParser` (results, offsets **and diagnostics**) on
   every grammar without left recursion, which `StrictParser` additionally solves by seed growing. `AgreementTest`
-  checks it on random `Grammars.terms` at random positions, the JSON tests on the corpora, and both interpreters run
-  the same law specs.
+  checks it on random `Grammars.terms` at random positions (and that `StrictParser` returns on
+  `Grammars.unguardedTerms`), the JSON tests on the corpora, and both interpreters run the same law specs.
 - Diagnostics (`Expected`) are a join-semilattice written on success and failure; lookahead, negation, `failure` and
   guard failures are silent, which is why some `ParserLaws` are inequations.
 - `StrictParser` run paths: no allocation beyond results, no boxing, `@tailrec` loops, no per-call closures. Functions
