@@ -5,11 +5,11 @@ package category
   *
   * Represents a commutative monoid (*M*, ⊥, ⊔), where
   *   - ⊥ is the unit
-  *   - ⊔ is commutative and idempotent
+  *   - ⊔ is idempotent, besides being commutative
   *
   * The induced preorder *a* ⊑ *b* ⇔ *a* ⊔ *b* = *b* has ⊔ as join and the unit ⊥ as least element.
   */
-abstract class Semilattice(tracked override val monoidal: Cartesian) extends Monoid(monoidal) {
+abstract class Semilattice(tracked override val monoidal: Cartesian) extends CommutativeMonoid(monoidal) {
   import monoidal.`*`
   import monoidal.category.{Obj, identity, -->, >>>}
 
@@ -18,11 +18,6 @@ abstract class Semilattice(tracked override val monoidal: Cartesian) extends Mon
 
   /** Laws that any `Semilattice` must satisfy. */
   object SemilatticeLaws {
-
-    /** ⊔ ∘ *σ* = ⊔ */
-    def commutativity(using ((M * M) --> M) is Observable): Boolean = {
-      (monoidal.braid[M, M] >>> multiply) =?= multiply
-    }
 
     /** ⊔ ∘ Δ = *id* */
     def idempotence(using (M --> M) is Observable): Boolean = {

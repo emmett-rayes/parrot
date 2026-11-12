@@ -40,7 +40,8 @@ Category (Op, Product, Iso, Object, Empty, Discrete2)                          �
       │       └─ refines ─ Monoidal ─ refines ─ Symmetric (Op, + the trait) ─ refines ─ Cartesian ⇄ Cocartesian
       │                    ├─ on ─ Module (OfMonoidal)
       │                    ├─ on ─ Closed (InternalHom, an Endoprofunctor)
-      │                    └─ on ─ Monoid ⇄ Comonoid (dual); Semilattice (on Cartesian) ─ induces ─ Preorder
+      │                    └─ on ─ Monoid ⇄ Comonoid (dual); Monoid ─ refines ─ CommutativeMonoid (on Symmetric)
+      │                            ─ refines ─ Semilattice (on Cartesian) ─ induces ─ Preorder
       ├─ is a ─ Endobifunctor (Op) ─ refines ─ Products, Coproducts
       └─ Profunctor ─ is a ─ Bifunctor out of C₁ᵒᵖ × C₂
          ├─ on ─ Strong (+ Monoidal, Module) ─ refines ─ Bistrong (+ Symmetric, acting on itself)
@@ -71,7 +72,7 @@ Each item needs only those before it:
 6. `Premonoidal`, `SymmetricPremonoidal`, `Monoidal`, `Symmetric`, `Module`
 7. `Cartesian`, `Cocartesian`
 8. `Profunctor`, `Endoprofunctor`, `Closed`
-9. `Monoid`, `Semilattice`, `Comonoid`, then `Preorder`
+9. `Monoid`, `CommutativeMonoid`, `Semilattice`, `Comonoid`, then `Preorder`
 10. `Promonad`
 11. `Strong`, `Bistrong`, `StrongPromonad`, `Freyd`, `ClosedFreyd`
 12. `Restriction`, `Classical`

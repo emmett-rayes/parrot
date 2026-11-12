@@ -9,19 +9,9 @@ abstract class SemilatticeSpec(
   name: String,
   tracked override val monoid: Semilattice.In[Total.Products.type],
 )(using S: Sample[monoid.M])
-    extends MonoidSpec(name, monoid, "Semilattice") {
+    extends CommutativeMonoidSpec(name, monoid, "Semilattice") {
   import monoid.M
-  import monoid.monoidal.`*`
   import monoid.SemilatticeLaws.*
-
-  law("commutativity") {
-    val observations = TotalFixture.observe[M * M, M]
-
-    forAll(observations) { observe =>
-      given (((M * M) -> M) is Observable) = observe
-      commutativity
-    }
-  }
 
   law("idempotence") {
     val observations = TotalFixture.observe[M, M]
@@ -80,12 +70,14 @@ class IntMaxIsSemilatticeTest    extends SemilatticeSpec("Int maximum", IntMax)
 class StringConcatIsNotSemilatticeTest extends LawSuite("Semilattice", "String concatenation") {
   import ConcatClaimedSemilattice.SemilatticeLaws.*
 
-  counterexample("commutativity") {
-    val observations = TotalFixture.observe[(String, String), String]
+  also("CommutativeMonoid") {
+    counterexample("commutativity") {
+      val observations = TotalFixture.observe[(String, String), String]
 
-    forAll(observations) { observe =>
-      given ((((String, String)) -> String) is Observable) = observe
-      commutativity
+      forAll(observations) { observe =>
+        given ((((String, String)) -> String) is Observable) = observe
+        ConcatClaimedSemilattice.CommutativeMonoidLaws.commutativity
+      }
     }
   }
 

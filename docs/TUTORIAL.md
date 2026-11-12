@@ -2902,6 +2902,8 @@ Here is the connection with section 14.7. Given a semilattice, define a ≤ b to
 
 Two descriptions of one structure are useful because each makes different things easy. The monoid view says how to combine reports. The preorder view says when one report carries at least the information of another. Chapter 20 uses both. Maps that preserve the structure agree too: a monoid homomorphism between semilattices is a monotone map that preserves joins, a coproduct-preserving functor between the preorders.
 
+The two properties are independent, and the library has a class for each step. A **commutative monoid**, `CommutativeMonoid(monoidal)`, needs only the braiding, so it lives in any symmetric monoidal category; integers under addition are one, and they are not idempotent **[Tested]**. `Semilattice` extends it over a cartesian category and adds idempotence. Section 17.5 meets the first property alone: a writer's effects commute exactly when its monoid is commutative.
+
 Strings under concatenation are a monoid but not a semilattice: `"ab"` is not `"ba"`, and `"aa"` is not `"a"`. The tests record both failures as counterexamples. Positions under `max`, from section 14.7, are a semilattice, as are booleans under `||` and sets under union.
 
 **Comonoids.** Reversing the arrows of Definition 15.3 gives a **comonoid**: an object C with a counit ε : C → I and a comultiplication δ : C → C ⊗ C, satisfying the mirrored laws. A comonoid is something that can be deleted and copied. In a cartesian category every object is a comonoid in exactly one way, with ! and Δ, which the library offers as `Total.Products.comonoid[A]`. This characterizes cartesian categories: a symmetric monoidal category is cartesian exactly when every object has a commutative comonoid structure that every arrow preserves and that is compatible with ⊗ and I, i.e. the comonoid of A ⊗ B is built from those of A and B and the comonoid of I is trivial **[Standard: Fox 1976, from memory]**. Pairs in 𝒫 show what the second condition adds. Copying and deleting are total programs, so every type is a comonoid for the pairs of 𝒫 (`Partial.Product.comonoid[A]`), but a program that does not terminate cannot be deleted: running it and discarding its result is not the same as discarding its argument. So the pairs of 𝒫 are not products, as section 14.3 found by another route, and chapter 17 meets the same distinction as effects that can or cannot be copied and discarded. The comonoid laws of both instances are **[Tested]**.
@@ -3839,7 +3841,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Quotient types | yes | no type former | by setoids, canonical forms, abstraction | `sameElements`, `FinSet` | per workaround | 7 |
 | Subobject classifier | yes | no | no | `Boolean` classifies decidable subsets | — | 14 |
 | Monads and transformers | yes | yes | yes | `Monad`, `Writer`, `OptionT`, `StateT` | [Tested] | 15 |
-| Monoid and comonoid objects | yes | yes | yes, for kind \* | `Monoid`, `Semilattice`, `Comonoid` | [Tested] | 15 |
+| Monoid and comonoid objects | yes | yes | yes, for kind \* | `Monoid`, `CommutativeMonoid`, `Semilattice`, `Comonoid` | [Tested] | 15 |
 | Currying adjunction | yes | yes | yes | `curry`, `uncurry` | [Proved] | 15 |
 | Free monoid adjunction | yes | as ordinary categories | partly | `foldMap` | [Proved] | 15 |
 | Initial algebras | yes | for strictly positive functors | yes | data types, `Fix`, `fold` | [Proved, given C2, A1] | 16 |
