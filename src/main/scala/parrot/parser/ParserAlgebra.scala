@@ -582,19 +582,26 @@ abstract class ParserAlgebra(
       (~p |> !p) =?= success[A]
     }
 
-    /** *p*† = *p* ⨾ [*id*,*p*†], for a guarded *p*.
+    /** *p*† = *p* ⨾ [*id*,*p*†]
+      *
+      * @note Holds for a guarded *p*, whose steps consume input whenever they continue. The premise is not checked.
       */
     def loopUnfolding[A, B](p: P[A, Either[B, A]])(using P[A, B] is Observable): Boolean = {
       p.iterate =?= (p >> (success[B] || p.iterate))
     }
 
-    /** *fix*(*f*) = *f*(*fix*(*f*)), for a guarded *f*.
+    /** *fix*(*f*) = *f*(*fix*(*f*))
+      *
+      * @note Holds for a guarded *f*, which calls its argument only after consuming input. The premise is not
+      *   checked.
       */
     def recursionUnfolding[A, B](f: P[A, B] -> P[A, B])(using P[A, B] is Observable): Boolean = {
       recursive(f) =?= f(recursive(f))
     }
 
-    /** *rule*(*p*,*l*) ≡ *p*: rules change diagnostics only. Observed without diagnostics.
+    /** *rule*(*p*,*l*) = *p*: rules change diagnostics only.
+      *
+      * @note Holds for results and offsets: the observation must not include diagnostics.
       */
     def ruleTransparent[A, B](p: P[A, B], label: String)(using P[A, B] is Observable): Boolean = {
       p.rule(label) =?= p
@@ -610,25 +617,36 @@ abstract class ParserAlgebra(
       (p >> q) ?< (p2 >> q2)
     }
 
-    /** If *p* ⊑ *p*′ and *q* ⊑ *q*′, then *p* ⊳ *q* ⊑ *p*′ ⊳ *q*′. */
+    /** If *p* ⊑ *p*′ and *q* ⊑ *q*′, then *p* ⊳ *q* ⊑ *p*′ ⊳ *q*′.
+      *
+      * @note The premise is not checked: *p*′ and *q*′ must be built to report more than *p* and *q*.
+      */
     def orElseMonotone[A, B](p: P[A, B], p2: P[A, B], q: P[A, B], q2: P[A, B])(using P[A, B] is Preorder): Boolean = {
       (p |> q) ?< (p2 |> q2)
     }
 
-    /** If *p* ⊑ *p*′ and *q* ⊑ *q*′, then *p* ⋉ *q* ⊑ *p*′ ⋉ *q*′. */
+    /** If *p* ⊑ *p*′ and *q* ⊑ *q*′, then *p* ⋉ *q* ⊑ *p*′ ⋉ *q*′.
+      *
+      * @note The premise is not checked: *p*′ and *q*′ must be built to report more than *p* and *q*.
+      */
     def zipMonotone[A, B, C, D](p: P[A, B], p2: P[A, B], q: P[C, D], q2: P[C, D])(
       using P[(A, C), (B, D)] is Preorder
     ): Boolean = {
       (p ** q) ?< (p2 ** q2)
     }
 
-    /** If *p* ⊑ *p*′, then *rule*(*p*,*l*) ⊑ *rule*(*p*′,*l*). */
+    /** If *p* ⊑ *p*′, then *rule*(*p*,*l*) ⊑ *rule*(*p*′,*l*).
+      *
+      * @note The premise is not checked: *p*′ must be built to report more than *p*.
+      */
     def ruleMonotone[A, B](p: P[A, B], p2: P[A, B], label: String)(using P[A, B] is Preorder): Boolean = {
       p.rule(label) ?< p2.rule(label)
     }
 
-    /** *p*\* = (⟨*p*,*p*\*⟩ ⨾ *unit*(*cons*)) ⊳ *unit*(*empty*), for a *p* that consumes when it succeeds: *cons*
-      * prepends a result to the collection, and *empty* is the empty collection.
+    /** *p*\* = (⟨*p*,*p*\*⟩ ⨾ *unit*(*cons*)) ⊳ *unit*(*empty*), where *cons* prepends a result to the collection and
+      * *empty* is the empty collection.
+      *
+      * @note Holds for a *p* that consumes input whenever it succeeds. The premise is not checked.
       */
     def repeatedUnfolding[A, B](p: P[A, B])(using P[A, Vector[B]] is Observable): Boolean = {
       val cons  = lift[(B, Vector[B]), Vector[B]]((b, bs) => b +: bs)
