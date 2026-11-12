@@ -13,8 +13,8 @@ class ReferenceIsCategoryTest extends CategorySpec(Interpreters.reference.sequen
 
 class ReferenceIsPromonadTest extends PromonadSpec(Interpreters.reference.sequencing)
 
-class ReferenceIsClassicalTest
-    extends ClassicalSpec("ReferenceParser", Interpreters.reference.choice, Interpreters.reference.sequencing.pure)
+class ReferenceIsClassicalOfTest
+    extends ClassicalOfSpec("ReferenceParser", ReferenceParser.Choice, Interpreters.reference.sequencing.pure)
 
 class ReferenceZippingIsBistrongTest
     extends BistrongSpec("ReferenceParser (zipping)", Interpreters.reference.zipping)

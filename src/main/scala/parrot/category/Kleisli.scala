@@ -113,6 +113,20 @@ object Kleisli {
     def orElse[A: Type, B: Type](p: A -> M[B], q: A -> M[B]): A -> M[B] = {
       a => classical.orElse(p(a), q(a))
     }
+
+    /** Laws of the classical monad that its Kleisli arrows state, besides those of [[Classical]]. */
+    object ClassicalOfLaws {
+
+      /** *attempt*(*p*(*a*)) = *M*(*Some*)(*p*(*a*)) ⊳′ *η*(*None*)
+        */
+      def attemptDefinition[A: Type, B: Type](p: A -> M[B])(using (A -> M[Option[B]]) is Observable): Boolean = {
+        val attempted: A -> M[Option[B]] = a => classical.attempt(p(a))
+        val defined: A -> M[Option[B]]   = { a =>
+          classical.orElse(promonad.monad.map[B, Option[B]](b => Some(b))(p(a)), promonad.monad.unit[Option[B]](None))
+        }
+        attempted =?= defined
+      }
+    }
   }
 
   /** The iteration of a Kleisli promonad over an Elgot monad: *p*† = *p*†′. */

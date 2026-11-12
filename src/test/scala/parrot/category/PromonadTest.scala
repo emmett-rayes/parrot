@@ -49,6 +49,16 @@ abstract class PromonadSpec(tracked val promonad: Promonad.On[Category { type Ob
     }
   }
 
+  law("bimapDefinition") {
+    val fs = category.arrow[T4, T1]
+    val gs = category.arrow[T2, T3]
+
+    forAll(onArrows[T1, T2, T4, T3], fs, gs) { (observe, f, g) =>
+      given ((P[T1, T2] -> P[T4, T3]) is Observable) = observe
+      bimapDefinition[T1, T2, T4, T3](f, g)
+    }
+  }
+
   also("Profunctor") {
     import promonad.BifunctorLaws.*
 

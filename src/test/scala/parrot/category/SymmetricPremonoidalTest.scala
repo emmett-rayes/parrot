@@ -17,7 +17,7 @@ abstract class SymmetricPremonoidalSpec(
   import types.{T1, T2, T3, T4, given}
   import category.*
   import premonoidal.category.-->
-  import premonoidal.`*`
+  import premonoidal.{I, `*`}
   import premonoidal.SymmetricPremonoidalLaws.*
 
   private given TensorSample: [X: Sample, Y: Sample] => Sample[premonoidal.Tensor[X, Y]] = tensor[X, Y]
@@ -52,6 +52,17 @@ abstract class SymmetricPremonoidalSpec(
         given O1: ((((T1 * T2) * T3) --> ((T2 * T1) * T4)) is Observable) = observe1
         given O2: (((T3 * (T1 * T2)) --> (T4 * (T2 * T1))) is Observable) = observe2
         braidCentrality[T1, T2, T3, T4](g)
+      }
+    }
+
+    law("rightUnitorIsBraidedLeftUnitor") {
+      val observations1 = observe[T1 * I, T1]
+      val observations2 = observe[T1, T1 * I]
+
+      forAll(observations1, observations2) { (observe1, observe2) =>
+        given O1: (((T1 * I) --> T1) is Observable) = observe1
+        given O2: ((T1 --> (T1 * I)) is Observable) = observe2
+        rightUnitorIsBraidedLeftUnitor[T1]
       }
     }
 

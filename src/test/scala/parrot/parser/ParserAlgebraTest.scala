@@ -112,6 +112,62 @@ abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) ext
     }
   }
 
+  law("mapDefinition") {
+    forAll(observe, parsers, Sample.function[Int, Int]) { (o, p, g) =>
+      given (P[Int, Int] is Observable) = o
+      mapDefinition(p, lift(g))
+    }
+  }
+
+  law("mapInputDefinition") {
+    forAll(observe, parsers, Sample.function[Int, Int]) { (o, p, f) =>
+      given (P[Int, Int] is Observable) = o
+      mapInputDefinition(p, lift(f))
+    }
+  }
+
+  law("mergeDefinition") {
+    forAll(ParserGen.exact[Either[Int, Int], Int](semantics), parsers, parsers) { (o, p, q) =>
+      given (P[Either[Int, Int], Int] is Observable) = o
+      mergeDefinition(p, q)
+    }
+  }
+
+  law("orDefinition") {
+    forAll(ParserGen.exact[Int, Either[Int, Int]](semantics), parsers, parsers) { (o, p, q) =>
+      given (P[Int, Either[Int, Int]] is Observable) = o
+      orDefinition(p, q)
+    }
+  }
+
+  law("pairDefinition") {
+    forAll(ParserGen.exact[Int, (Int, Int)](semantics), parsers, parsers) { (o, p, q) =>
+      given (P[Int, (Int, Int)] is Observable) = o
+      pairDefinition(p, q)
+    }
+  }
+
+  law("skipThenDefinition") {
+    forAll(observe, parsers, parsers) { (o, p, q) =>
+      given (P[Int, Int] is Observable) = o
+      skipThenDefinition(p, q)
+    }
+  }
+
+  law("thenSkipDefinition") {
+    forAll(observe, parsers, parsers) { (o, p, q) =>
+      given (P[Int, Int] is Observable) = o
+      thenSkipDefinition(p, q)
+    }
+  }
+
+  law("betweenDefinition") {
+    forAll(observe, parsers, parsers, parsers) { (o, p, open, close) =>
+      given (P[Int, Int] is Observable) = o
+      betweenDefinition(p, open, close)
+    }
+  }
+
   law("leftZero") {
     forAll(observe, parsers) { (o, p) =>
       given (P[Int, Int] is Observable) = o
@@ -235,6 +291,34 @@ abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) ext
     forAll(ParserGen.exact[Int, Vector[Int]](semantics), parsers) { (o, p) =>
       given (P[Int, Vector[Int]] is Observable) = o
       atLeastOnceDefinition(p)
+    }
+  }
+
+  law("repeatedDefinition") {
+    forAll(ParserGen.exact[Int, Vector[Int]](semantics), parsers) { (o, p) =>
+      given (P[Int, Vector[Int]] is Observable) = o
+      repeatedDefinition(p)
+    }
+  }
+
+  law("timesDefinition") {
+    forAll(ParserGen.exact[Int, Vector[Int]](semantics), parsers, Gen.choose(0, 3)) { (o, p, n) =>
+      given (P[Int, Vector[Int]] is Observable) = o
+      timesDefinition(p, n)
+    }
+  }
+
+  law("atLeastDefinition") {
+    forAll(ParserGen.exact[Int, Vector[Int]](semantics), parsers, Gen.choose(0, 3)) { (o, p, n) =>
+      given (P[Int, Vector[Int]] is Observable) = o
+      atLeastDefinition(p, n)
+    }
+  }
+
+  law("separatedByDefinition") {
+    forAll(ParserGen.exact[Int, Vector[Int]](semantics), parsers, parsers) { (o, p, separator) =>
+      given (P[Int, Vector[Int]] is Observable) = o
+      separatedByDefinition(p, separator)
     }
   }
 

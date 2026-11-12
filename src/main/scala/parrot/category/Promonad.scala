@@ -99,6 +99,14 @@ abstract class Promonad(tracked override val category: Category) extends Endopro
     def identityIsUnit[A: Obj](using P[A, A] is Observable): Boolean = {
       identity[A] =?= unit(category.identity[A])
     }
+
+    /** *P*(*f*,*g*)(*p*) = *η*(*g*) ∘ *p* ∘ *η*(*f*)
+      */
+    def bimapDefinition[A1: Obj, A2: Obj, B1: Obj, B2: Obj](f: A1 <== B1, g: A2 ==> B2)(
+      using (P[A1, A2] -> P[B1, B2]) is Observable
+    ): Boolean = {
+      bimap[A1, A2, B1, B2](f, g) =?= ((p: P[A1, A2]) => multiply(unit(g), multiply(p, unit[B1, A1](f))))
+    }
   }
 }
 

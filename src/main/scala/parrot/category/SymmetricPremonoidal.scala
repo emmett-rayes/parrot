@@ -67,6 +67,17 @@ trait SymmetricPremonoidal extends caps.Pure { this: Premonoidal =>
       interchangeLeft(braid[A, B], g) && interchangeRight(braid[A, B], g)
     }
 
+    /** *ρ* = *λ* ∘ *σ* and *ρ*⁻¹ = *σ* ∘ *λ*⁻¹
+      */
+    def rightUnitorIsBraidedLeftUnitor[A: Obj](
+      using
+      ((A * I) --> A) is Observable,
+      (A --> (A * I)) is Observable,
+    ): Boolean = {
+      (rightUnitor[A].to =?= (braid[A, I] >>> leftUnitor[A].to)) &&
+      (rightUnitor[A].from =?= (leftUnitor[A].from >>> braid[I, A]))
+    }
+
     /** *σ* ∘ *σ* = *id*
       */
     def involution[A: Obj, B: Obj](using ((A * B) --> (A * B)) is Observable): Boolean = {

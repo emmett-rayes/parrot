@@ -89,7 +89,7 @@ abstract class ParserAlgebra(
   }
 
   /** Runs *p*, then *q* on the remaining input with the result of *p* as its semantic input: *p* ⨾ *q*. */
-  def andThen[A, B, C](p: P[A, B], q: P[B, C]): P[A, C] = {
+  final def andThen[A, B, C](p: P[A, B], q: P[B, C]): P[A, C] = {
     sequencing.arrows.andThen(p, q)
   }
 
@@ -172,14 +172,14 @@ abstract class ParserAlgebra(
   /** Runs *p* repeatedly, feeding each right result back as the next semantic input, until it yields a left result:
     * *p*†. A step that yields a right result without consuming input fails the whole loop.
     */
-  def iterate[A, B](p: P[A, Either[B, A]]): P[A, B] = {
+  final def iterate[A, B](p: P[A, Either[B, A]]): P[A, B] = {
     loops.iterate[B, A](p)
   }
 
   /** The parser *fix*(*f*) defined recursively by *f*, which receives the parser being defined. A recursive call that
     * is not preceded by consumed input fails.
     */
-  def recursive[A, B](f: P[A, B] -> P[A, B]): P[A, B] = {
+  final def recursive[A, B](f: P[A, B] -> P[A, B]): P[A, B] = {
     knots.fix(f)
   }
 
@@ -452,6 +452,56 @@ abstract class ParserAlgebra(
       (p ++ q) =?= branched.leftToRight(p, q)
     }
 
+    /** *map*(*p*,*g*) = *p* ⨾ *unit*(*g*)
+      */
+    def mapDefinition[A, B, C](p: P[A, B], g: B --> C)(using P[A, C] is Observable): Boolean = {
+      map(p, g) =?= andThen(p, pure(g))
+    }
+
+    /** *mapInput*(*p*,*f*) = *unit*(*f*) ⨾ *p*
+      */
+    def mapInputDefinition[A, B, C](p: P[A, B], f: C --> A)(using P[C, B] is Observable): Boolean = {
+      mapInput(p, f) =?= andThen(pure(f), p)
+    }
+
+    /** [*p*,*q*] = (*p* + *q*) ⨾ *unit*(∇)
+      */
+    def mergeDefinition[A, B, C](p: P[A, C], q: P[B, C])(using P[Either[A, B], C] is Observable): Boolean = {
+      merge(p, q) =?= map(branch(p, q), coproducts.codiagonal[C])
+    }
+
+    /** *or*(*p*,*q*) = (*p* ⨾ *ι*₁) ⊳ (*q* ⨾ *ι*₂)
+      */
+    def orDefinition[A, B, C](p: P[A, B], q: P[A, C])(using P[A, Either[B, C]] is Observable): Boolean = {
+      or(p, q) =?= orElse(map(p, coproducts.inl[B, C]), map(q, coproducts.inr[B, C]))
+    }
+
+    /** ⟨*p*,*q*⟩ = *unit*(Δ) ⨾ (*p* ⋉ *q*)
+      */
+    def pairDefinition[A, B, C](p: P[A, B], q: P[A, C])(using P[A, (B, C)] is Observable): Boolean = {
+      pair(p, q) =?= mapInput(zip(p, q), products.diagonal[A])
+    }
+
+    /** *skipThen*(*p*,*q*) = ⟨*p*,*q*⟩ ⨾ *unit*(*π*₂)
+      */
+    def skipThenDefinition[A, B, C](p: P[A, B], q: P[A, C])(using P[A, C] is Observable): Boolean = {
+      skipThen(p, q) =?= map(pair(p, q), products.snd[B, C])
+    }
+
+    /** *thenSkip*(*p*,*q*) = ⟨*p*,*q*⟩ ⨾ *unit*(*π*₁)
+      */
+    def thenSkipDefinition[A, B, C](p: P[A, B], q: P[A, C])(using P[A, B] is Observable): Boolean = {
+      thenSkip(p, q) =?= map(pair(p, q), products.fst[B, C])
+    }
+
+    /** *between*(*p*,*open*,*close*) = *thenSkip*(*skipThen*(*open*,*p*),*close*)
+      */
+    def betweenDefinition[A, B, C, D](p: P[A, B], open: P[A, C], close: P[A, D])(
+      using P[A, B] is Observable
+    ): Boolean = {
+      between(p, open, close) =?= thenSkip(skipThen(open, p), close)
+    }
+
     /** 0 ⨾ *p* = 0: nothing runs after a failure. */
     def leftZero[A, B, C](p: P[B, C])(using P[A, C] is Observable): Boolean = {
       (failure[A, B] >> p) =?= failure[A, C]
@@ -589,6 +639,33 @@ abstract class ParserAlgebra(
     /** *p*⁺ = *atLeast*(*p*,1) */
     def atLeastOnceDefinition[A, B](p: P[A, B])(using P[A, Vector[B]] is Observable): Boolean = {
       atLeastOnce(p) =?= atLeast(p, 1)
+    }
+
+    /** *p*\* = the loop that runs *p* until it fails, from the empty collection
+      *
+      * The loop is the iteration of (*step*(*p*) ⨾ *ι*₂) ⊳ (*π*₂ ⨾ *ι*₁), where *step*(*p*) runs *p* on the semantic
+      * input and appends its result to the collection.
+      */
+    def repeatedDefinition[A, B](p: P[A, B])(using P[A, Vector[B]] is Observable): Boolean = {
+      repeated(p) =?= repeat(start[A, B], p)
+    }
+
+    /** *times*(*p*,*n*) = *step*(*p*)ⁿ ⨾ *unit*(*π*₂), from the empty collection
+      */
+    def timesDefinition[A, B](p: P[A, B], n: Int)(using P[A, Vector[B]] is Observable): Boolean = {
+      times(p, n) =?= map(unrolled(p, n), products.snd[A, Vector[B]])
+    }
+
+    /** *atLeast*(*p*,*n*) = the loop that runs *p* until it fails, from *step*(*p*)ⁿ
+      */
+    def atLeastDefinition[A, B](p: P[A, B], n: Int)(using P[A, Vector[B]] is Observable): Boolean = {
+      atLeast(p, n) =?= repeat(unrolled(p, n), p)
+    }
+
+    /** *separatedBy*(*p*,*s*) = the loop that runs *skipThen*(*s*,*p*) until it fails, from *step*(*p*)
+      */
+    def separatedByDefinition[A, B, C](p: P[A, B], separator: P[A, C])(using P[A, Vector[B]] is Observable): Boolean = {
+      separatedBy(p, separator) =?= repeat(unrolled(p, 1), skipThen(separator, p))
     }
   }
 }
