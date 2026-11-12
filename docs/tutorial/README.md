@@ -49,4 +49,4 @@ appears, into one output directory that is on the classpath of every later unit:
 by importing it, as in `import tutorial.ch03.Categories.*`. Language imports (`import language...`) are moved before
 the object, after the package clauses. The checker only compiles; it does not run the code.
 
-Parts I and II are self-contained. Parts III to V use the library through `library` blocks.
+Parts I and II are self-contained. Parts III and IV use the library through `library` blocks.

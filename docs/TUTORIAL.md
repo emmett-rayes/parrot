@@ -92,7 +92,7 @@ All code is written in Scala 3.10.0 with the following compiler options:
 
 ```
 -source:future -preview -language:experimental.modularity -language:experimental.pureFunctions
--language:experimental.captureChecking -language:strictEquality -Yexplicit-nulls
+-language:experimental.captureChecking -language:strictEquality -Yexplicit-nulls -feature -deprecation
 ```
 
 Type classes use the syntax of Scala 3's modularity proposal [Scala type classes, checked]. A type class is a trait or an abstract class with an abstract type member `Self`, not a class with a type parameter. Instances are given with the infix type `is`, as in `given Int is Eq`, and `Int is Eq` stands for the class with `Self` set to `Int`. A context bound such as `[A: Eq]` makes the evidence available under the name of the type parameter, so a method of the instance is written `A.equal`. Where `Self` would be an uninformative name, a type class adds an alias, as in `final type --> = Self`. Data types such as case classes and enums keep ordinary type parameters. The library uses abstract classes for its categorical structures, which take parameters, and traits for type classes without parameters, such as `Eq`, for reasons chapter 11 explains; the code here does the same.
@@ -2405,7 +2405,7 @@ The library's `Functor`, `Bifunctor`, `Profunctor`, `Monoidal`, `Strong` and eve
 
 Problem 2 asks when a structure should be found by its carrier, the way `given Int is Eq` is found by `Int`, and when it should be named. The library's rule:
 
-- **A structure with its own carrier has a `Self`**, and instances can be found by carrier: `Category` (its arrows), `Functor` (its object map), `Monad`, `Monoid`, `Eq`, `Observable`.
+- **A structure with its own carrier has a `Self`**, and instances can be found by carrier: `Category` (its arrows), `Functor` (its object map), `Monoid`, `Eq`, `Observable`.
 - **A structure on something else has no `Self`** and is always named: `Monoidal`, `Strong`, `Restriction`, `Traced`. 𝒮 carries two monoidal structures, and they are the objects `Total.Products` and `Total.Coproducts`:
 
 ```scala library
@@ -2417,7 +2417,7 @@ val mirror: Either[Int, String] -> Either[String, Int] = Total.Coproducts.braid[
 
 Both are called `braid`, both act on 𝒮, and nothing about the carrier tells them apart; the name does.
 
-Combinations of structures are not expressed by inheritance either. A class that extended both a product structure and a coproduct structure would inherit two members called `Tensor`, two called `I` and two called `braid`, which is wrong even where the compiler accepts it. Instead, a combination is a **bundle**: a class that takes the structures as `tracked` parameters and offers their operations, possibly with laws that connect them. The library has one, `ParserAlgebra` (chapter 20), which combines everything a parser is made of. A structure that is another with more operations does extend it: a Freyd category (chapter 17) is a category of arrows with a strength, so `Freyd` extends the category of arrows of a promonad and takes the strength as a parameter.
+Combinations of structures are not expressed by inheritance either. A class that extended both a product structure and a coproduct structure would inherit two members called `Tensor`, two called `I` and two called `braid`, which is wrong even where the compiler accepts it. Instead, a combination is a **bundle**: a class that takes the structures as `tracked` parameters and offers their operations, possibly with laws that connect them. The library has one, `ParserAlgebra` (chapter 20), which combines everything a parser is made of. A structure that is another with more operations does extend it: a Freyd category (chapter 17) is a premonoidal structure on the category of arrows of a promonad, so `Freyd` extends `Premonoidal` on that category and takes the strength as its parameter.
 
 ### 11.4 Evidence, and how it is found
 
@@ -3169,7 +3169,7 @@ The laws say that τ commutes with pre- and post-composition (naturality), that 
 
 When ℳ is symmetric and acts on itself, the context can also be carried on the right. The **right strength** τ′ : P(A, B) → P(A ⊗ C, B ⊗ C) comes from the left one by braiding, τ′ = P(σ, σ) ∘ τ. A profunctor with a left and a right strength that commute, τ′ ∘ τ = P(α, α⁻¹) ∘ τ ∘ τ′, is **bistrong**, and here the two always commute **[Proved]**. Write τ_C for τ with the context C. On the right-hand side, naturality moves τ_C past P(σ, σ), and associativity merges τ_C ∘ τ_D into τ with the context C ⊗ D. On the left-hand side, associativity gives τ with the context D ⊗ C, which dinaturality at σ : C ⊗ D → D ⊗ C turns into P(σ ⊗ id, σ ⊗ id) after τ with the context C ⊗ D, since σ ∘ σ = id. Both sides are now P(φ, ψ) after τ with the context C ⊗ D, for isomorphisms φ : (C ⊗ A) ⊗ D → (C ⊗ D) ⊗ A and ψ : (C ⊗ D) ⊗ B → (C ⊗ B) ⊗ D built from α and σ that move every factor to the same place, and two such isomorphisms are equal by the coherence theorem for symmetric monoidal categories **[Standard: Mac Lane 1998, from memory]**. This needs the action to be ⊗ itself: a left module only has C ⊘ A, and nothing of the form A ⊘ C.
 
-The library's `Strong(P, M, L1, L2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Bistrong(P, M)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(σ, σ) ∘ τ unless an instance overrides it with something more direct, and its law `braiding` checks that an override agrees. The same class covers two very different strengths.
+The library's `Strong(profunctor, monoidal, module1, module2)` takes the profunctor, the monoidal category and two modules over it, and its operation `left` is τ, an arrow of 𝒱 for each A, B and C. `Bistrong(profunctor, monoidal)` takes a symmetric monoidal structure acting on itself and adds `right`, τ′, which is P(σ, σ) ∘ τ unless an instance overrides it with something more direct, and its law `braiding` checks that an override agrees. The same class covers two very different strengths.
 
 - **Over products**, τ′ runs an arrow on the left component of a pair and τ on the right one. For a Kleisli promonad on 𝒮, every monad has one: `left(p)((c, a))` runs `p(a)` and pairs `c` with its result (`Kleisli.ProductStrength`).
 - **Over coproducts**, τ′ runs an arrow on the left case of an `Either` and passes the right case through untouched, and τ the other way round. It carries no value into the effect, so every monad on any category with coproducts has one, τ(p) = [η ∘ ι₁, M(ι₂) ∘ p] (`Kleisli.CoproductStrength`). Functional programmers call this structure **choice**. Their `left` is τ′: it names the case of the sum that an arrow runs on, not the side of the action.
@@ -3277,7 +3277,7 @@ Section 2.5 noted that pairs misbehave in the presence of divergence: `(1, loop(
 
 the first component of a pair is f, restricted to where g is defined. This is the defining equation of a **restriction product**, the form products take in a restriction category **[Standard: Cockett and Lack, Restriction categories III, from memory]**. Pairs in 𝒫 are not products (section 14.3), but they are restriction products, and with that weaker law, the reasoning about tuples that chapter 14 did in 𝒮 transfers to 𝒫 with explicit restrictions.
 
-The library does not state restriction products as a class; `Partial.Product` is the symmetric monoidal structure underneath them. Nothing in the library needs more, so they are not implemented.
+The library does not state restriction products as a class; `Partial.Product` is the symmetric monoidal structure underneath them.
 
 ### 18.4 Decisions: classical restriction categories
 
@@ -3666,7 +3666,7 @@ Reading the monad from the outside in: a parser reads and advances the input (st
 | loops | `Kleisli.ElgotOf` of `StateT.GuardedIteration`, measured by the length of the remaining input |
 | recursion | `StateT.GuardedRecursion`, measured the same way |
 
-The only parser-specific code is the five primitives, about fifty lines. Backtracking, for instance, is not implemented anywhere: it is what `StateT.ClassicalOf` does with ordered choice, running the second alternative from the state the first one started with. The reference interpreter is slow and not stack-safe on deeply nested input, and that is acceptable, because its job is to be the specification.
+The only parser-specific code is the four primitives and the silent tests of the classical structure on outcomes, about fifty lines. Backtracking, for instance, is not implemented anywhere: it is what `StateT.ClassicalOf` does with ordered choice, running the second alternative from the state the first one started with. The reference interpreter is slow and not stack-safe on deeply nested input, and that is acceptable, because its job is to be the specification.
 
 ### 20.5 Laws in two tiers
 
@@ -3896,7 +3896,7 @@ All results are cited in the chapters listed in the table.
 
 ### 22.2 The library's set-up
 
-The library is built with sbt. The library and its tests are compiled with the flags of the preface plus capture checking, so that `A -> B` is the type of pure functions in every signature. The tests draw functions from ScalaCheck, which is not compiled with capture checking, and use them as pure functions; capture checking trusts code it has not checked, so that is a promise **[Convention]**. Warnings are not errors, but the build has none, and the coding rules of the repository exist to keep it that way.
+The library is built with sbt. The library and its tests are compiled with the flags of the preface and further warning flags (`build.sbt`), so that `A -> B` is the type of pure functions in every signature. The tests draw functions from ScalaCheck, which is not compiled with capture checking, and use them as pure functions; capture checking trusts code it has not checked, so that is a promise **[Convention]**. Warnings are not errors, but the build has none, and the coding rules of the repository exist to keep it that way.
 
 ```sh
 sbt --client compile                 # the library
@@ -4228,7 +4228,7 @@ Extensionality, the principle that functions agreeing on every argument are equa
 
 ## Appendix D. What the library leaves out
 
-An earlier version of the library had more structures than the current one. Some were removed because they were wrong: they claimed laws that their code could not satisfy. Others were removed because nothing used them. This appendix lists the removals that a reader of the literature, or of the earlier version, might look for. The repository's design rationale, `docs/DESIGN.md`, has the complete list, and the git tag `pre-prune` marks the last version that contains them all.
+An earlier version of the library had more structures than the current one. Some were removed because they were wrong: they claimed laws that their code could not satisfy. Others were removed because another structure already said what they said. This appendix lists the removals that a reader of the literature, or of the earlier version, might look for. The git tag `pre-prune` marks the last version that contains them all.
 
 ### Removed because they were wrong
 
@@ -4236,24 +4236,24 @@ An earlier version of the library had more structures than the current one. Some
 | --- | --- | --- |
 | Total fixed points and iteration on Scala functions | Each diverged on some input while claiming to be an arrow of the total category 𝒮. Proposition 14.3 shows that 𝒮 cannot have a fixed point for every arrow without collapsing. | Unguarded loops and recursion on 𝒫 (`Partial.Loops`, `Partial.Knots`); guarded ones in 𝒮 (chapters 16 and 19). |
 | Lazy pairs as a cartesian structure | Isomorphic to ordinary pairs in 𝒮, and not a product in 𝒫, where a program can tell a diverging pair from its components. They existed only to tie the knots above. | None needed. A lazy semantics would be a separate project. |
-| Strength defined as `p *** id` on a monoidal category | Every one of its laws followed from bifunctoriality, so it said nothing. Strength is structure on a profunctor over left modules (Definition 17.2). | `Strong(P, L1, L2)` and `Bistrong(P, M)`. |
+| Strength defined as `p *** id` on a monoidal category | Every one of its laws followed from bifunctoriality, so it said nothing. Strength is structure on a profunctor over left modules (Definition 17.2). | `Strong(profunctor, monoidal, module1, module2)` and `Bistrong(profunctor, monoidal)`. |
 | Restriction on Scala functions, `a => { p(a); a }` | In 𝒮 every arrow is total, so this is the identity. | `Partial.Domains`, on 𝒫, where it means something (chapter 18). |
 
-### Removed because nothing used them
+### Removed because another structure says the same
 
 | Construct | Why | Bring it back when |
 | --- | --- | --- |
 | Ordered choice as enrichment over additive monoids | Choice distributes over composition on one side only, so it is not a monoid structure on homs compatible with composition. It is the override of a classical restriction category (chapter 18). | Never. |
-| Multiplicative monoids | No client. | A client appears. |
-| A second, enriched hierarchy of categories, functors and promonads, with bridges to the ordinary one | Two parallel hierarchies doubled the code. The library has one level: categories with a semantic equality on their homs, which is enrichment over setoids stated directly (section 7.4), and parsers with a preorder on their homs (section 20.6). | An enriched module gets a client. |
+| Multiplicative monoids | They were monoids under another name: "multiplicative" describes an instance, such as numbers under multiplication, not a structure with laws of its own. | Never: write the instance as a `Monoid`. |
+| A second, enriched hierarchy of categories, functors and promonads, with bridges to the ordinary one | Two parallel hierarchies doubled the code. The library has one level: categories with a semantic equality on their homs, which is enrichment over setoids stated directly (section 7.4), and parsers with a preorder on their homs (section 20.6). | A construction needs homs in a base other than setoids or preorders. |
 | Mixin traits for the parser algebra | Combinations of structures are bundles, not inheritance (section 11.3). | Never. |
-| Abstract semantic types in the parser algebra | Every interpreter made the same choice: `Unit`, `Tuple2`, `Either`, `Nothing`, `Vector`. | An interpreter needs different ones. |
+| Abstract semantic types in the parser algebra | They are the unit, the products, the coproducts and the initial object of 𝒮, which are determined up to isomorphism: `Unit`, `Tuple2`, `Either`, `Nothing`. Another choice would be an isomorphic copy. | Never. |
 
-Comonoids were first removed for the same reason, and then restored: they are the dual of monoids, and they explain, by Fox's theorem, why the pairs of 𝒫 are not products (section 15.3).
+Comonoids were first removed as well, and then restored: they are the dual of monoids, and they explain, by Fox's theorem, why the pairs of 𝒫 are not products (section 15.3).
 
 ### Not attempted
 
-Some structures appear in the literature on effects and parsing and are absent on purpose: a general theory of codata and productivity (section 16.7), restriction products as a class (section 18.3), useful fixed points over products in a strict language (section 19.4), packrat memoization, and error recovery. Each would need a client before it earns a place.
+Some structures appear in the literature on effects and parsing and are absent on purpose: a general theory of codata and productivity (section 16.7), restriction products as a class (section 18.3), useful fixed points over products in a strict language (section 19.4), packrat memoization, and error recovery. Each has a cost, which `docs/DESIGN.md` names in its section on what the library leaves out.
 
 ---
 
