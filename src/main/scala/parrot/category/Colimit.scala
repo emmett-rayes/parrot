@@ -35,6 +35,17 @@ abstract class Colimit(tracked override val diagram: Functor, tracked override v
     def uniqueness[Y: C.Obj](h: X ==> Y)(using (X ==> Y) is Observable): Boolean = {
       factor(induced(h)) =?= h
     }
+
+    /** If *φ* = *φ*′, then [*φ*] = [*φ*′].
+      *
+      * @note The premise is not checked: the legs of *φ*′ must be equal to the legs of *φ* by construction.
+      */
+    def factorCongruence(
+      cocone: Cocone.Under[diagram.type],
+      cocone2: Cocone.Under[diagram.type] { val apex: cocone.apex.type },
+    )(using (X ==> cocone.X) is Observable): Boolean = {
+      factor(cocone) =?= factor(cocone2)
+    }
   }
 }
 

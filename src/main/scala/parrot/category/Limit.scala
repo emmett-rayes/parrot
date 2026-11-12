@@ -35,6 +35,16 @@ abstract class Limit(tracked override val diagram: Functor, tracked override val
     def uniqueness[Y: C.Obj](h: Y ==> X)(using (Y ==> X) is Observable): Boolean = {
       factor(induced(h)) =?= h
     }
+
+    /** If *φ* = *φ*′, then ⟨*φ*⟩ = ⟨*φ*′⟩.
+      *
+      * @note The premise is not checked: the legs of *φ*′ must be equal to the legs of *φ* by construction.
+      */
+    def factorCongruence(cone: Cone.Over[diagram.type], cone2: Cone.Over[diagram.type] { val apex: cone.apex.type })(
+      using (cone.X ==> X) is Observable
+    ): Boolean = {
+      factor(cone) =?= factor(cone2)
+    }
   }
 }
 
