@@ -97,4 +97,23 @@ class StringStateRecursionIsRecursionTest
       StringStateRecursion.RecursionLaws.fixedPoint(leftRecursive)
     }
   }
+
+  counterexample("fixFamilyIsBekic", "for left-recursive families") {
+    val observations = StringStateFixture.observe[Int, String]
+    val bases        = StringStateFixture.arrow[Int, String]
+
+    forAll(observations, bases) { (observe, base) =>
+      given ((Int -> String -> Option[(String, String)]) is Observable) = observe
+      val leftRecursive
+        : (Int -> Int -> String -> Option[(String, String)]) -> Int -> Int -> String -> Option[(String, String)] = {
+        rec =>
+          i =>
+            x =>
+              s =>
+                if i == 0 then rec(1)(x)(s)
+                else rec(0)(x)(s).map((b, s2) => (b + "!", s2)).orElse(base(x)(s))
+      }
+      StringStateRecursion.RecursionLaws.fixFamilyIsBekic(2)(leftRecursive)
+    }
+  }
 }

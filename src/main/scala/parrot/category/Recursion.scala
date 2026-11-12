@@ -70,6 +70,12 @@ abstract class Recursion(tracked val promonad: Promonad) extends caps.Pure {
     /** *fixFamily*(*n*,*f*)ᵢ = *bekic*(*n*,*f*)ᵢ for 0 ≤ *i* < *n*
       *
       * Solving a family at once agrees with solving it one arrow at a time.
+      *
+      * @note Where recursion is guarded, this holds for a family without left recursion, in which no arrow is entered
+      *   again without progress since its enclosing call: no guard fails on either side, so both sides unfold *f*. A
+      *   left-recursive family separates them. For *f*(*p*)₀ = *p*₁ and *f*(*p*)₁ = (*p*₀ ⨾ *s*) ⊳ *b*, the family
+      *   fails the call of *p*₁ from *p*₀ from *p*₁, so *p*₁ = *b*; the nested fixed points tie a new knot at every
+      *   call of *p*₁ from *p*₀, so there *p*₀ = *b* and *p*₁ = (*b* ⨾ *s*) ⊳ *b*.
       */
     def fixFamilyIsBekic[A: Obj, B: Obj](n: Int)(f: (Int -> (A --> B)) -> Int -> (A --> B))(
       using (A --> B) is Observable

@@ -315,7 +315,7 @@ class AgreementTest extends LawSuite("Agreement", "StrictParser") {
     }
   }
 
-  awaited("results, offsets and diagnostics of ReferenceParser", "random grammars") {
+  law("results, offsets and diagnostics of ReferenceParser", "random grammars") {
     forAll(Grammars.terms, Grammars.inputs, Gen.choose(-5, 5)) { (term, in, n) =>
       val expected = reference.diagnose(Grammars.interpret(reference)(term))(n, in.source, in.offset)
       val actual   = strict.diagnose(Grammars.interpret(strict)(term))(n, in.source, in.offset)
@@ -324,7 +324,7 @@ class AgreementTest extends LawSuite("Agreement", "StrictParser") {
     }
   }
 
-  awaited("results and offsets without diagnostics", "random grammars") {
+  law("results and offsets without diagnostics", "random grammars") {
     forAll(Grammars.terms, Grammars.inputs, Gen.choose(-5, 5)) { (term, in, n) =>
       val expected = reference.run(Grammars.interpret(reference)(term))(n, in.source, in.offset)
       val actual   = strict.run(Grammars.interpret(strict)(term))(n, in.source, in.offset)
@@ -338,7 +338,7 @@ class AgreementTest extends LawSuite("Agreement", "StrictParser") {
     }
   }
 
-  awaited("parse and parseAll of ReferenceParser", "random grammars") {
+  law("parse and parseAll of ReferenceParser", "random grammars") {
     forAll(Grammars.terms, Grammars.sources, Gen.choose(-5, 5)) { (term, source, n) =>
       val slow     = AgreementTest.closed(reference)(term, n)
       val fast     = AgreementTest.closed(strict)(term, n)
@@ -353,14 +353,12 @@ class AgreementTest extends LawSuite("Agreement", "StrictParser") {
     }
   }
   test("a rule of a family may begin with a call of another rule, on both interpreters") {
-    pendingUntilFixed {
-      for semantics <- List[Semantics](reference.Semantics, strict.Semantics) do {
-        val expression = Arithmetic(semantics.algebra).expression
+    for semantics <- List[Semantics](reference.Semantics, strict.Semantics) do {
+      val expression = Arithmetic(semantics.algebra).expression
 
-        val _ = assert(semantics.run(expression)((), "1+2*3") == Some((7, 5)))
-        val _ = assert(semantics.run(expression)((), "(1+2)*3") == Some((9, 7)))
-        assert(semantics.run(expression)((), "2*(3+4)*5+1") == Some((71, 11)))
-      }
+      val _ = assert(semantics.run(expression)((), "1+2*3") == Some((7, 5)))
+      val _ = assert(semantics.run(expression)((), "(1+2)*3") == Some((9, 7)))
+      assert(semantics.run(expression)((), "2*(3+4)*5+1") == Some((71, 11)))
     }
   }
 

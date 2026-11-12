@@ -118,8 +118,9 @@ object StateT {
     *
     * Every run stops, since the nesting of calls is bounded by the measure. For guarded *f*, which call their argument
     * only after decreasing the measure, *fix*(*f*) = *f*(*fix*(*f*)). A left-recursive *f* calls its argument without
-    * progress, so that call fails: its other alternatives still run. The arrows of a family share the bound, so a call
-    * of any of them must follow progress since the enclosing call of any other.
+    * progress, so that call fails: its other alternatives still run. Each arrow of a family has its own bound, so a
+    * call fails only where the same arrow is entered again without progress since its enclosing call, and an arrow may
+    * begin with a call of another.
     */
   open class GuardedRecursion[S](
     tracked override val promonad: Kleisli.Of[StateT[S]],
@@ -141,12 +142,12 @@ object StateT {
     override def fixFamily[A: Type, B: Type](@unused n: Int)(
       f: (Int -> A -> S -> M[(B, S)]) -> Int -> A -> S -> M[(B, S)]
     ): Int -> A -> S -> M[(B, S)] = {
-      def knots(bound: Int): Int -> A -> S -> M[(B, S)] = {
+      def knots(bounds: Int -> Int): Int -> A -> S -> M[(B, S)] = {
         i => a => s =>
           val m = size.measure(s)
-          if m < bound then f(knots(m))(i)(a)(s) else classical.zero
+          if m < bounds(i) then f(knots(j => if j == i then m else bounds(j)))(i)(a)(s) else classical.zero
       }
-      knots(Int.MaxValue)
+      knots(_ => Int.MaxValue)
     }
   }
 }
