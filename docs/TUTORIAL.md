@@ -570,6 +570,7 @@ One definition answers both questions. It works by induction on types, and it de
 
 - at a data type: s and t both terminate, and their results are equal by `===`;
 - at a tuple type `(A, B)`: s and t both terminate, and their first components are related at A and their second components at B;
+- at a sum type `Either[A, B]`: s and t both terminate, with the same constructor, and their payloads are related at A if it is `Left` and at B if it is `Right`; likewise at `Option[A]` and `List[A]`, constructor by constructor, with the elements related at A;
 - at a function type `A -> B`: s and t both terminate, and s(a) ≐ t(a′) at B whenever a ≐ a′ at A.
 
 An expression t of type A is **total** if t ≐ t. A function is total, in particular, when it sends total arguments to total results; what it does with a non-terminating argument is not asked, since under strict evaluation such an argument never reaches it.
@@ -2752,7 +2753,7 @@ Section 2.5 promised a categorical form of Theorem 2.4.
 
 *Proof.* (1) Arrows A × 0 → C correspond to arrows 0 → (A ⇒ C) by the exponential property, and there is exactly one of those, so A × 0 has exactly one arrow to every object: it is initial, hence isomorphic to 0. (2) Given f : A → 0, the arrow ⟨id, f⟩ : A → A × 0 has the projection π₁ as a left inverse. In the other direction, ⟨id, f⟩ ∘ π₁ is an arrow out of A × 0, which is initial by (1), so it equals the identity. Hence A ≅ A × 0 ≅ 0. (3) An arrow 1 → 0 makes 1 ≅ 0 by (2). Then for any objects A and B, arrows A → B correspond to arrows A × 1 → B, hence to arrows A × 0 → B, and by (1) there is exactly one of those. ∎
 
-The expression `z: Nothing` of property (D) is exactly an arrow `Unit` → `Nothing`, so Proposition 14.3 is the categorical content of Theorem 2.4. A bicartesian closed category of programs cannot contain a program that does not terminate. That is why 𝒮 is bicartesian closed and 𝒫 is not: in 𝒫, `loop()` is an arrow `Unit` → `Nothing`. 𝒫 keeps its coproducts (`Partial.Coproduct`), but its pairs are not products. In 𝒫, π₁ ∘ ⟨f, g⟩ is f only where g terminates, because pairing runs both. Pairs in 𝒫 form a weaker structure, called a monoidal structure (section 14.5), and chapter 18 shows that they are still products of a precise kind, *restriction products*.
+The expression `z: Nothing` of property (D) is exactly an arrow `Unit` → `Nothing`, so Proposition 14.3 is the categorical content of Theorem 2.4. A bicartesian closed category of programs cannot contain a program that does not terminate. That is why 𝒮 is bicartesian closed and 𝒫 is not cartesian closed. In 𝒫 the type `Nothing` is initial and also terminal, a *zero object*: the program that never terminates is the only arrow into it and the only arrow out of it (section 14.8). So 𝒫 has an arrow 1 → 0, and by part (3) of Proposition 14.3 a cartesian closed structure would make all its objects isomorphic. 𝒫 keeps its coproducts (`Partial.Coproduct`), but its pairs are not products. In 𝒫, π₁ ∘ ⟨f, g⟩ is f only where g terminates, because pairing runs both. Pairs in 𝒫 form a weaker structure, called a monoidal structure (section 14.5), and chapter 18 shows that they are still products of a precise kind, *restriction products*.
 
 ### 14.4 Points and well-pointedness
 
@@ -3277,6 +3278,8 @@ Section 2.5 noted that pairs misbehave in the presence of divergence: `(1, loop(
 
 the first component of a pair is f, restricted to where g is defined. This is the defining equation of a **restriction product**, the form products take in a restriction category **[Standard: Cockett and Lack, Restriction categories III, from memory]**. Pairs in 𝒫 are not products (section 14.3), but they are restriction products, and with that weaker law, the reasoning about tuples that chapter 14 did in 𝒮 transfers to 𝒫 with explicit restrictions.
 
+**𝒫 has no products at all.** That pairs are not products leaves open whether some other type is. In the category of sets and partial functions, the product of A and B exists and is not the set of pairs: it is A + B + A × B, and ⟨f, g⟩(x) is the pair where both f and g are defined, the left value where only f is, and the right value where only g is. No type plays this role in 𝒫. Suppose P were a product of `Unit` with `Unit` in 𝒫, with projections π₁ and π₂, and let f, g : X → `Unit` be any two programs. Where f terminates, π₁ ∘ ⟨f, g⟩ = f terminates, so ⟨f, g⟩ terminates; likewise where g does. Where both diverge, ⟨f, g⟩ diverges too: otherwise P would have a point on which both projections diverge, and for X = `Unit` that point and the program that never terminates would be two different arrows into P with the same projections, against uniqueness. So ⟨f, g⟩ terminates exactly where f or g does. A program with that behavior must run f and g side by side, since whichever it runs first may be the one that diverges. Sequential programs cannot do that: this "parallel convergence" is the standard example of a function that is computable but not definable in a sequential language **[Proved, given that programs under the contract of section 2.3 are sequential; Standard for PCF: Plotkin 1977, from memory]**. Lazy pairs, pairs of unevaluated components, come close and fail on the same point: a pair of two diverging components is a value, and a program can tell it from divergence.
+
 The library does not state restriction products as a class; `Partial.Product` is the symmetric monoidal structure underneath them.
 
 ### 18.4 Decisions: classical restriction categories
@@ -3798,7 +3801,7 @@ With effects, more changes. Effectful arrows run side by side only in an order, 
 
 Subset types and quotient types are not available as type formers, so equalizers, pullbacks and coequalizers have no representing type in general, limits and colimits exist uniformly only by abstraction (sections 6.5 and 7.6), and categories whose homs are subsets or quotients, such as lawful lenses, monoid homomorphisms and Rel, are not Scala categories as they stand (chapters 6 and 7). Functors and other maps that exist only by non-constructive arguments have no Scala counterpart (chapter 5). Objects that are values need an encoding (chapter 8). Polymorphism over kinds is missing, so each kind of object needs its own class (chapter 10).
 
-General recursion is lost from 𝒮: a bicartesian closed category with fixed points for all arrows collapses (Proposition 14.3), so 𝒮 has only guarded fixed points, and unguarded ones live in 𝒫, which in turn has no products. In a strict language, fixed points over products are nearly useless, since computing one requires it first (section 19.4).
+General recursion is lost from 𝒮: a bicartesian closed category with fixed points for all arrows collapses (Proposition 14.3), so 𝒮 has only guarded fixed points, and unguarded ones live in 𝒫, which in turn has no products: its pairs are restriction products only, and no other type is a product either, since its pairing would have to run two programs side by side (section 18.3). In a strict language, fixed points over products are nearly useless, since computing one requires it first (section 19.4).
 
 ### 21.5 What is gained
 
@@ -3828,7 +3831,7 @@ Polymorphic types contain only uniform families, and their elements obey free th
 | Yoneda lemma for endofunctors on 𝒮 | yes | yes | yes | `toYoneda`, `fromYoneda` | [Proved, given A1, A2] | 13 |
 | Equivalence of categories | yes | yes | yes | examples | [Proved] for the examples | 13 |
 | Terminal, initial, products, coproducts, exponentials | yes | yes | yes | `Total.Products`, `Total.Coproducts`, `Total.Exponentials` | [Proved]; laws [Tested] | 14 |
-| Products in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Product` | [Proved] | 14, 18 |
+| Products in 𝒫 | — | — | no | pairs are only a symmetric monoidal structure, `Partial.Product` | [Proved] for pairs; for every other type, [Proved] given sequentiality (section 18.3) | 14, 18 |
 | Monoidal, symmetric, cartesian, cocartesian, closed structure | yes | yes | yes | `Monoidal` … `Closed` | [Tested] | 14 |
 | Joins; semilattices | yes | yes | yes | `Semilattice` | [Tested] | 14, 15 |
 | Equalizers, pullbacks, all limits | yes | by abstraction | yes | `Total.LimitOf`, for lawful cones | [Convention]; representing types [Open] | 6 |
