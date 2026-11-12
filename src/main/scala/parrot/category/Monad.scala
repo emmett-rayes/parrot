@@ -29,6 +29,12 @@ abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
 
   private given MIsObj: [A: Obj] => (M[A] is Obj) = objects[A]
 
+  /** The unit as a natural transformation *η*: *Id* ⇒ *M*. */
+  final lazy val unitIsNatural: Monad.UnitIsNatural.Of[this.type] = Monad.UnitIsNatural(this)
+
+  /** The multiplication as a natural transformation *μ*: *M* ∘ *M* ⇒ *M*. */
+  final lazy val flattenIsNatural: Monad.FlattenIsNatural.Of[this.type] = Monad.FlattenIsNatural(this)
+
   /** The extension *f*\* = *μ* ∘ *M*(*f*): *M*[*A*] → *M*[*B*] of *f*: *A* → *M*[*B*]. */
   def bind[A: Obj, B: Obj](f: A --> M[B]): M[A] --> M[B] = {
     map(f) >>> flatten[B]
@@ -36,7 +42,8 @@ abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
 
   /** Laws that any `Monad` must satisfy.
     *
-    * A monad is a monoid with unit and multiplication as natural transformations.
+    * A monad is a monoid with unit and multiplication as natural transformations. Their naturality is the law of
+    * [[unitIsNatural]] and [[flattenIsNatural]] ([[Natural.NaturalLaws]]).
     */
   object MonadLaws {
 
@@ -58,18 +65,6 @@ abstract class Monad(tracked val functor: Endofunctor) extends caps.Pure {
       (flatten[M[A]] >>> flatten[A]) =?= (map(flatten[A]) >>> flatten[A])
     }
 
-    /** *M*(*f*) ∘ *η* = *η* ∘ *f*
-      */
-    def unitNaturality[A: Obj, B: Obj](f: A --> B)(using (A --> M[B]) is Observable): Boolean = {
-      (unit[A] >>> map(f)) =?= (f >>> unit[B])
-    }
-
-    /** *M*(*f*) ∘ *μ* = *μ* ∘ *M*(*M*(*f*))
-      */
-    def flattenNaturality[A: Obj, B: Obj](f: A --> B)(using (M[M[A]] --> M[B]) is Observable): Boolean = {
-      (flatten[A] >>> map(f)) =?= (map(map(f)) >>> flatten[B])
-    }
-
     /** *f*\* = *μ* ∘ *M*(*f*)
       */
     def bindIsFlattenedMap[A: Obj, B: Obj](f: A --> M[B])(using (M[A] --> M[B]) is Observable): Boolean = {
@@ -82,6 +77,36 @@ object Monad {
 
   /** The monads on a category **C**: refines the endofunctor, so that the category of a monad *M* is known as **C**. */
   type On[C <: Category] = Monad { val functor: Endofunctor.On[C] }
+
+  /** The unit *η*: *Id* ⇒ *M* of a monad *M*, as a natural transformation. */
+  final class UnitIsNatural(tracked val monad: Monad)
+      extends Natural(Endofunctor.Identity(monad.functor.category), monad.functor) {
+
+    def component[A: monad.category.Obj]: monad.category.Hom[A, monad.M[A]] = {
+      monad.unit[A]
+    }
+  }
+
+  object UnitIsNatural {
+
+    /** The unit of a monad *M*, as a natural transformation. */
+    type Of[M <: Monad] = UnitIsNatural { val monad: M }
+  }
+
+  /** The multiplication *μ*: *M* ∘ *M* ⇒ *M* of a monad *M*, as a natural transformation. */
+  final class FlattenIsNatural(tracked val monad: Monad)
+      extends Natural(Functor.Composite(monad.functor, monad.functor), monad.functor) {
+
+    def component[A: monad.category.Obj]: monad.category.Hom[monad.M[monad.M[A]], monad.M[A]] = {
+      monad.flatten[A]
+    }
+  }
+
+  object FlattenIsNatural {
+
+    /** The multiplication of a monad *M*, as a natural transformation. */
+    type Of[M <: Monad] = FlattenIsNatural { val monad: M }
+  }
 
   /** The identity monad on 𝒮: computations without effects, where
     *   - *M*[*A*] = *A*

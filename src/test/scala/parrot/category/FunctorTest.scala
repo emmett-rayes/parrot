@@ -65,3 +65,5 @@ class StateIsFunctorTest             extends FunctorSpec("State[Boolean]", Boole
 class StateTIsFunctorTest            extends FunctorSpec("State[Boolean, Option]", FailingBooleanState.functor)
 class InclusionIsFunctorTest         extends FunctorSpec("Inclusion of Total in Partial", Partial.Inclusion)
 class OptionKleisliPureIsFunctorTest extends FunctorSpec("Pure arrows of Kleisli[Option]", Kleisli.OptionKleisli.pure)
+class CompositeIsFunctorTest         extends FunctorSpec("Option ∘ Option", OptionOption)
+class GenericIdentityIsFunctorTest   extends FunctorSpec("Identity on Total", TotalIdentity)

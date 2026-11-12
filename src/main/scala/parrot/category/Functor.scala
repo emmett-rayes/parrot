@@ -58,6 +58,25 @@ object Functor {
 
   /** The functors into a category **D**. */
   type Into[D <: Category] = Functor { val target: D }
+
+  /** The composite *G* ∘ *F*: **C** → **E** of *F*: **C** → **D** and *G*: **D** → **E**, where
+    *   - (*G* ∘ *F*)[*A*] = *G*[*F*[*A*]]
+    *   - (*G* ∘ *F*)(*f*) = *G*(*F*(*f*))
+    */
+  open class Composite(tracked val first: Functor, tracked val second: Functor { val source: first.target.type })
+      extends Functor(first.source, second.target) {
+    type Self[A] = second.F[first.F[A]]
+
+    def objects[A: first.source.Obj]: second.F[first.F[A]] is second.target.Obj = {
+      second.objects[first.F[A]](using first.objects[A])
+    }
+
+    def map[A: first.source.Obj, B: first.source.Obj](
+      f: first.source.Hom[A, B]
+    ): second.target.Hom[second.F[first.F[A]], second.F[first.F[B]]] = {
+      second.map[first.F[A], first.F[B]](first.map(f))(using first.objects[A], first.objects[B])
+    }
+  }
 }
 
 /** An endofunctor on a category **C**.
@@ -70,4 +89,20 @@ object Endofunctor {
 
   /** The endofunctors on a category **C**. */
   type On[C <: Category] = Endofunctor { val category: C }
+
+  /** The identity functor *Id* on a category **C**, where
+    *   - *Id*[*A*] = *A*
+    *   - *Id*(*f*) = *f*
+    */
+  open class Identity(tracked override val category: Category) extends Endofunctor(category) {
+    type Self[A] = A
+
+    def objects[A: category.Obj as obj]: A is category.Obj = {
+      obj
+    }
+
+    def map[A: category.Obj, B: category.Obj](f: category.Hom[A, B]): category.Hom[A, B] = {
+      f
+    }
+  }
 }

@@ -41,23 +41,27 @@ abstract class MonadSpec(name: String, tracked val monad: Monad.On[Total.type])(
     }
   }
 
-  law("unitNaturality") {
-    val observations = TotalFixture.observe[T1, M[T2]]
-    val fs           = TotalFixture.arrow[T1, T2]
+  also("Natural (unit)") {
+    law("naturality") {
+      val observations = TotalFixture.observe[T1, M[T2]]
+      val fs           = TotalFixture.arrow[T1, T2]
 
-    forAll(observations, fs) { (observe, f) =>
-      given ((T1 -> M[T2]) is Observable) = observe
-      unitNaturality(f)
+      forAll(observations, fs) { (observe, f) =>
+        given ((T1 -> M[T2]) is Observable) = observe
+        monad.unitIsNatural.NaturalLaws.naturality(f)
+      }
     }
   }
 
-  law("flattenNaturality") {
-    val observations = TotalFixture.observe[M[M[T1]], M[T2]]
-    val fs           = TotalFixture.arrow[T1, T2]
+  also("Natural (multiplication)") {
+    law("naturality") {
+      val observations = TotalFixture.observe[M[M[T1]], M[T2]]
+      val fs           = TotalFixture.arrow[T1, T2]
 
-    forAll(observations, fs) { (observe, f) =>
-      given ((M[M[T1]] -> M[T2]) is Observable) = observe
-      flattenNaturality(f)
+      forAll(observations, fs) { (observe, f) =>
+        given ((M[M[T1]] -> M[T2]) is Observable) = observe
+        monad.flattenIsNatural.NaturalLaws.naturality(f)
+      }
     }
   }
 

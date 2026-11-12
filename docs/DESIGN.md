@@ -117,9 +117,16 @@ Rejected:
   evidence speaks about `Fst[X]` and `Snd[X]` directly, so generic code never needs a match type to reduce. A bifunctor
   keeps its own two-parameter carrier and is a functor out of the product through the view `Bifunctor.functor`, whose
   functor laws are its laws.
+- **A natural transformation is structure on two functors,** `Natural(functor1, functor2)`, with a component at
+  every object and the law of naturality; the second functor is refined to the source and target of the first. It is
+  not an arrow of a functor category, which would need the natural transformations between two functors as one
+  type; that exists for the endofunctors of 𝒮, as a polymorphic function type, and not in general. Composites and
+  identities of functors are constructions (`Functor.Composite`, `Endofunctor.Identity`).
 - **A monad is structure on an endofunctor,** `Monad(functor)`, with `unit` and `flatten` primitive: the monoid
   presentation, so that `Monad` and `Monoid` have the same shape, with `bind` derived. Monads are refined through their
   functor (`Monad.On[Total.type]`), since only that keeps the chain of singleton types that path-dependent code needs.
+  The unit and the multiplication are natural transformations, as the views `unitIsNatural` and `flattenIsNatural`,
+  whose law replaces two laws of the monad.
   The structures on a monad whose laws are those of the Kleisli structures they induce (`Monad.Restriction`,
   `Monad.Classical`, `Monad.GuardedIteration`) live in its companion. Plain monads are transformers over the identity
   (`Monad.OptionIsMonad` is `OptionT(Monad.Identity)`), so that each effect is defined once.
@@ -542,7 +549,13 @@ Not attempted, each for its cost:
 - **right modules and bimodules,** whose only model here is the self-action of a symmetric monoidal category;
 - **module morphisms and mixed optics,** which need natural transformations between actions, and so a functor
   category;
-- **general iterated enrichment,** which needs a category of categories.
+- **general iterated enrichment,** which needs a category of categories;
+- **strong monads,** whose strength is a natural transformation between functors on a product category:
+  `Kleisli.ProductStrength` is stated on 𝒮, where every monad is strong, and the general notion waits for `Natural`
+  on functors out of `Category.Product`;
+- **adjunctions,** which need a unit and a counit as natural transformations between composites of two functors in
+  opposite directions, with the triangle laws: `Closed`, `ClosedFreyd` and the state monad are instances that the
+  library states separately.
 
 ## 8. Tooling
 

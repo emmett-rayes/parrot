@@ -32,6 +32,8 @@ Category (Op, Product, Iso, Object, Empty, Discrete2)                          �
    │                                         ├─ Kleisli (+ Cocartesian) ─ induces ─ Kleisli.CocartesianOf, a Cocartesian
    │                                         │  on its arrows (with InitialOf, CoproductsOf, CoproductOf)
    │                                         └─ Identity; over it, Option (OptionT), State (StateT), Writer (WriterT)
+   ├─ on ─ Natural (on two functors, with Functor.Composite and Endofunctor.Identity); views: the unit and the
+   │       multiplication of a Monad
    ├─ on ─ Cone ─ refines ─ Limit ⇄ Terminal (of the empty diagram), Product (of a pair)
    │                        └─ Limits.InCategory ─ refines ─ Limits.DiscreteInCategory ─ induces ─ Products (of shape 2)
    ├─ on ─ Cocone ─ refines ─ Colimit ⇄ Initial (of the empty diagram), Coproduct (of a pair)    duals
@@ -69,7 +71,7 @@ Each item needs only those before it:
 1. `Type`, `Eq`
 2. `Observable`
 3. `Category` (with `Op`, `Product`, `Iso`, `Object`, `Empty`, `Discrete2`), `Total`, `Partial`
-4. `Functor`, `Endofunctor`, then `Cone`, `Limit` (with `Limits`), `Terminal`, `Product`, and dually `Cocone`,
+4. `Functor`, `Endofunctor`, `Natural`, then `Cone`, `Limit` (with `Limits`), `Terminal`, `Product`, and dually `Cocone`,
    `Colimit` (with `Colimits`), `Initial`, `Coproduct`
 5. `BinoidalFunctor`, `Bifunctor`, `Endobifunctor`, then `Products`, `Coproducts`
 6. `Premonoidal`, `SymmetricPremonoidal`, `Monoidal`, `Symmetric`, `Module`

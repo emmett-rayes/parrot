@@ -194,6 +194,11 @@ object Sample {
     [X] => (_: Sample[X]) ?=> OptionSample[X]
   }
 
+  /** Optional optional samples, for all types: the samples of `Option` ∘ `Option`. */
+  given OptionOptionSamples: ([X] => Sample[X] ?-> Sample[Option[Option[X]]]) = {
+    [X] => (_: Sample[X]) ?=> OptionSample[Option[X]]
+  }
+
   /** Samples of pairs with a first component of type *A*, for all second components: the samples of a writer monad. */
   given WriterSamples: [A: Sample] => ([X] => Sample[X] ?-> Sample[(A, X)]) = {
     [X] => (_: Sample[X]) ?=> Tuple2Sample[A, X]
