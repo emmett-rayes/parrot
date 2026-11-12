@@ -221,6 +221,9 @@ object StrictParser {
 
   /** Static first-set and nullability summary of a parser: if it succeeds where the next character is `c` (or at the
     * end of the input), then `c` belongs to `first`, or it is `nullable` and consumed nothing.
+    *
+    * @note `nullable` is what choice dispatch needs, and it is not "may succeed without consuming": a lookahead has
+    *   the summary of its parser and never consumes. That property is [[Info.mayConsumeNothing]].
     */
   final case class Info(first: CharSet, nullable: Boolean) {
 
@@ -293,6 +296,50 @@ object StrictParser {
       }
     }
 
+    /** True if `node` may succeed without consuming input, solving recursive knots by Kleene iteration from `false`.
+      *
+      * It errs towards `true`, which only keeps the guard of a recursive knot.
+      */
+    def mayConsumeNothing(node: Node[?, ?]): Boolean = {
+      silent(node, mutable.Map.empty)
+    }
+
+    /** Computes [[mayConsumeNothing]] of `node` under current knot approximations `env`. */
+    private def silent(node: Node[?, ?], env: mutable.Map[Node.Rec[?, ?], Boolean]): Boolean = {
+      import Node.*
+      node match {
+        case Rule(_, p)                                      => silent(p, env)
+        case Literal(expected)                               => expected.isEmpty
+        case Scan(_, scanner, _)                             => scanner.first.nullable
+        case Pattern(_)                                      => true
+        case Pure(_) | _: Success[?] | Lookahead(_) | Not(_) => true
+        case _: Failure[?, ?]                                => false
+        case Seq(p, q)                                       => silent(p, env) && silent(q, env)
+        case Zip(p, q)                                       => silent(p, env) && silent(q, env)
+        case Pair(p, q)                                      => silent(p, env) && silent(q, env)
+        case SkipThen(p, q)                                  => silent(p, env) && silent(q, env)
+        case ThenSkip(p, q)                                  => silent(p, env) && silent(q, env)
+        case Loop(p)                                         => silent(p, env)
+        case Merge(p, q)                                     => silent(p, env) || silent(q, env)
+        case Choice(alternatives)                            => alternatives.exists(silent(_, env))
+        case Repeat(p, min, _, _)                            => min == 0 || silent(p, env)
+        case rec: Rec[?, ?]                                  =>
+          @tailrec
+          def fixpoint(current: Boolean): Boolean = {
+            env(rec) = current
+            val next = silent(rec.body, env)
+            if next == current then next else fixpoint(next)
+          }
+
+          env.get(rec).orElse(rec.silent).getOrElse {
+            val solved = fixpoint(false)
+            val _      = env.remove(rec)
+            if env.isEmpty then rec.silent = Some(solved)
+            solved
+          }
+      }
+    }
+
     /** True if `target` can be re-entered from its body without consuming input. */
     def mayLeftRecurse(target: Node.Rec[?, ?]): Boolean = {
       def reaches(node: Node[?, ?], visited: Set[Node.Rec[?, ?]]): Boolean = {
@@ -305,14 +352,14 @@ object StrictParser {
           case Not(p)                                            => reaches(p, visited)
           case Loop(p)                                           => reaches(p, visited)
           case Repeat(p, _, _, sep)                              =>
-            reaches(p, visited) || (of(p).nullable && sep.exists(reaches(_, visited)))
+            reaches(p, visited) || (mayConsumeNothing(p) && sep.exists(reaches(_, visited)))
           case Merge(p, q)          => reaches(p, visited) || reaches(q, visited)
           case Choice(alternatives) => alternatives.exists(reaches(_, visited))
-          case Seq(p, q)            => reaches(p, visited) || (of(p).nullable && reaches(q, visited))
-          case Zip(p, q)            => reaches(p, visited) || (of(p).nullable && reaches(q, visited))
-          case Pair(p, q)           => reaches(p, visited) || (of(p).nullable && reaches(q, visited))
-          case SkipThen(p, q)       => reaches(p, visited) || (of(p).nullable && reaches(q, visited))
-          case ThenSkip(p, q)       => reaches(p, visited) || (of(p).nullable && reaches(q, visited))
+          case Seq(p, q)            => reaches(p, visited) || (mayConsumeNothing(p) && reaches(q, visited))
+          case Zip(p, q)            => reaches(p, visited) || (mayConsumeNothing(p) && reaches(q, visited))
+          case Pair(p, q)           => reaches(p, visited) || (mayConsumeNothing(p) && reaches(q, visited))
+          case SkipThen(p, q)       => reaches(p, visited) || (mayConsumeNothing(p) && reaches(q, visited))
+          case ThenSkip(p, q)       => reaches(p, visited) || (mayConsumeNothing(p) && reaches(q, visited))
           case rec: Rec[?, ?]       =>
             (rec eq target) || (!visited.contains(rec) && reaches(rec.body, visited + rec))
         }
@@ -637,9 +684,10 @@ object StrictParser {
       * unless it has the same semantic input: then it is left recursion, which is solved by seed growing.
       */
     final class Rec[A, B](f: Node[A, B] -> Node[A, B]) extends Node[A, B] {
-      lazy val body: Node[A, B]                    = f(this)
-      private[StrictParser] var info: Option[Info] = scala.None
-      private lazy val mayLeftRecurse: Boolean     = Info.mayLeftRecurse(this)
+      lazy val body: Node[A, B]                         = f(this)
+      private[StrictParser] var info: Option[Info]      = scala.None
+      private[StrictParser] var silent: Option[Boolean] = scala.None
+      private lazy val mayLeftRecurse: Boolean          = Info.mayLeftRecurse(this)
 
       private given CanEqual[A, A] = CanEqual.derived
 
@@ -692,6 +740,8 @@ object StrictParser {
     *   - (*p* ⊳ *q*) ⨾ *f* becomes (*p* ⨾ *f*) ⊳ (*q* ⨾ *f*)
     */
   private def sequence[A, B, C](p: Node[A, B], q: Node[B, C]): Node[A, C] = {
+    // `Seq(Lookahead(p), p)` must not become `p`: with diagnostics R1 is an inequation, since the lookahead is silent
+    // where `p` fails ([[ParserAlgebra.ParserLaws.lookaheadIdentity]]).
     (p, q) match {
       case (_: Success[?], _)                                     => q
       case (_, _: Success[?])                                     => p

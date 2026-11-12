@@ -461,6 +461,9 @@ Rejected:
   grammar without left recursion and at every position, checked by random grammars, the law specifications and the JSON grammar.
   `StrictParser` supports left recursion by seed growing, an extension beyond the specification, where the reference
   fails the left-recursive call.
+- **Whether a recursive call may be left-recursive is its own analysis,** `Info.mayConsumeNothing`: a parser may
+  succeed without consuming input. The nullability of `Info` is not that property, since a lookahead has the first
+  set of its parser and never consumes. The analysis errs towards "may", which only keeps a guard.
 
 Rejected, until an interpreter needs other semantic types: abstract semantic types and mixin traits for the algebra.
 

@@ -307,14 +307,6 @@ class StrictParserLawTest extends ParserLawSpec("StrictParser", Interpreters.str
 class AgreementTest extends LawSuite("Agreement", "StrictParser") {
   import Interpreters.{reference, strict}
 
-  /** Registers a law that fails until the fix that enables it. */
-  private def awaited(name: String, note: String)(check: => org.scalacheck.Prop): Unit = {
-    test(s"StrictParser is Agreement: $name ($note)") {
-      val _ = check
-      pending
-    }
-  }
-
   law("results, offsets and diagnostics of ReferenceParser", "random grammars") {
     forAll(Grammars.terms, Grammars.inputs, Gen.choose(-5, 5)) { (term, in, n) =>
       val expected = reference.diagnose(Grammars.interpret(reference)(term))(n, in.source, in.offset)
@@ -332,7 +324,7 @@ class AgreementTest extends LawSuite("Agreement", "StrictParser") {
     }
   }
 
-  awaited("totality", "random grammars with unguarded recursion") {
+  law("totality", "random grammars with unguarded recursion") {
     forAll(Grammars.unguardedTerms, Grammars.inputs, Gen.choose(-5, 5)) { (term, in, n) =>
       AgreementTest.total(strict.Semantics)(term, in, n)
     }
@@ -363,12 +355,10 @@ class AgreementTest extends LawSuite("Agreement", "StrictParser") {
   }
 
   test("a recursive call after a lookahead is unguarded and fails, on both interpreters") {
-    pendingUntilFixed {
-      for semantics <- List[Semantics](reference.Semantics, strict.Semantics) do {
-        val rule = LookaheadRecursion(semantics.algebra).rule
+    for semantics <- List[Semantics](reference.Semantics, strict.Semantics) do {
+      val rule = LookaheadRecursion(semantics.algebra).rule
 
-        assert(AgreementTest.returned(semantics)(rule, "a") == Some(Some(("a", 1))))
-      }
+      assert(AgreementTest.returned(semantics)(rule, "a") == Some(Some(("a", 1))))
     }
   }
 }
