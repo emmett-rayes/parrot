@@ -9,12 +9,6 @@ final class JsonGrammar(tracked val algebra: ParserAlgebra) {
   import algebra.*
 
   extension [A, B](self: P[A, B])
-    /** Tries `self`, returning `Some` on success or `None` on failure. */
-    private def opt: P[A, Option[B]] = {
-      self.map(lift[B, Option[B]](Some(_))) |> pure(lift[A, Option[B]](_ => scala.None))
-    }
-
-  extension [A, B](self: P[A, B])
     /** Tries `self`, falling back to `other`, into the union of their results. */
     private def union[C](other: P[A, C]): P[A, B | C] = {
       self.map(lift[B, B | C](b => b)) |> other.map(lift[C, B | C](c => c))
@@ -57,12 +51,12 @@ final class JsonGrammar(tracked val algebra: ParserAlgebra) {
 
   /** A parser that consumes the exponent part of a JSON number. */
   val exponentPart: P[Unit, JsonExponentPart] = {
-    (regex("[eE]".r) *> regex("[-+]".r).opt) && regex("[0-9]+".r)
+    (regex("[eE]".r) *> regex("[-+]".r).option) && regex("[0-9]+".r)
   }
 
   /** A parser that consumes a JSON number. */
   val number: P[Unit, JsonNumber] = {
-    minus.opt && integralPart && fractionalPart.opt && exponentPart.opt
+    minus.option && integralPart && fractionalPart.option && exponentPart.option
   }
 
   /** A parser that consumes a four-digit hexadecimal Unicode escape sequence. */
@@ -80,19 +74,19 @@ final class JsonGrammar(tracked val algebra: ParserAlgebra) {
     val unescaped = regex("[^\"\\\\\\u0000-\\u001f]+".r)
     val character = unescaped.union(escape)
     val quoted    = character.repeated.between(literal("\""), literal("\""))
-    quoted.between(s.opt, s.opt)
+    quoted.between(s.option, s.option)
   }
 
   /** A parser that consumes a JSON object whose member values are parsed by `value`. */
   def makeObj(value: P[Unit, JsonJson]): P[Unit, JsonObj] = {
     val member = (string <* literal(":")) && value
-    val body   = member.separatedBy(literal(",")).union(s.opt)
+    val body   = member.separatedBy(literal(",")).union(s.option)
     body.between(literal("{"), literal("}"))
   }
 
   /** A parser that consumes a JSON array whose elements are parsed by `value`. */
   def makeArray(value: P[Unit, JsonJson]): P[Unit, JsonArray] = {
-    val body = value.separatedBy(literal(",")).union(s.opt)
+    val body = value.separatedBy(literal(",")).union(s.option)
     body.between(literal("["), literal("]"))
   }
 
@@ -102,7 +96,7 @@ final class JsonGrammar(tracked val algebra: ParserAlgebra) {
     val array = makeArray(recJson)
     val value =
       obj.union(array).union(string).union(jsonTrue |> jsonFalse |> jsonNull).union(number)
-    value.between(s.opt, s.opt).map(lift(JsonJson(_)))
+    value.between(s.option, s.option).map(lift(JsonJson(_)))
   }
 
   /** A parser that consumes a JSON object. */

@@ -167,6 +167,13 @@ abstract class ParserAlgebra(
     orElse(map(p, coproducts.inl[B, A]), pure(coproducts.inr[B, A]))
   }
 
+  /** The result of *p* if it succeeds, and none where it fails, in which case nothing is consumed:
+    * (*p* ⨾ *unit*(*Some*)) ⊳ *unit*(*None*).
+    */
+  def option[A, B](p: P[A, B]): P[A, Option[B]] = {
+    orElse(map(p, lift[B, Option[B]](b => Some(b))), pure(lift[A, Option[B]](_ => None)))
+  }
+
   /** Ordered choice that tags the alternative that succeeded: (*p* ⨾ *ι*₁) ⊳ (*q* ⨾ *ι*₂). */
   def or[A, B, C](p: P[A, B], q: P[A, C]): P[A, Either[B, C]] = {
     orElse(map(p, coproducts.inl[B, C]), map(q, coproducts.inr[B, C]))
@@ -372,6 +379,11 @@ abstract class ParserAlgebra(
     final def ? : P[A, Either[B, A]] = ParserAlgebra.this.optional(p)
 
   extension [A, B](p: P[A, B])
+    /** Postfix form of [[option]]. */
+    @targetName("optionExt")
+    final def option(using DummyImplicit): P[A, Option[B]] = ParserAlgebra.this.option(p)
+
+  extension [A, B](p: P[A, B])
     /** Postfix form of [[repeated]]. */
     @targetName("repeatedExt")
     final def repeated(using DummyImplicit): P[A, Vector[B]] = ParserAlgebra.this.repeated(p)
@@ -538,6 +550,12 @@ abstract class ParserAlgebra(
       */
     def attemptDefinition[A, B](p: P[A, B])(using P[A, Either[B, A]] is Observable): Boolean = {
       attempt(p) =?= (map(p, coproducts.inl[B, A]) |> pure(coproducts.inr[B, A]))
+    }
+
+    /** *option*(*p*) = (*p* ⨾ *unit*(*Some*)) ⊳ *unit*(*None*)
+      */
+    def optionDefinition[A, B](p: P[A, B])(using P[A, Option[B]] is Observable): Boolean = {
+      option(p) =?= orElse(map(p, lift[B, Option[B]](b => Some(b))), pure(lift[A, Option[B]](_ => None)))
     }
 
     /** *p* ⊳ *q* = *attempt*(*p*) ⨾ [*id*,*q*]: ordered choice is an attempt followed by a merge.

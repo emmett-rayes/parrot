@@ -215,6 +215,13 @@ abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) ext
     }
   }
 
+  law("optionDefinition") {
+    forAll(ParserGen.exact[Int, Option[Int]](semantics), parsers) { (o, p) =>
+      given (P[Int, Option[Int]] is Observable) = o
+      optionDefinition(p)
+    }
+  }
+
   law("choiceByAttempt") {
     forAll(observe, parsers, parsers) { (o, p, q) =>
       given (P[Int, Int] is Observable) = o

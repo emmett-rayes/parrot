@@ -3753,7 +3753,7 @@ A parser `P[A, B]` consumes a prefix of the input while turning a **semantic inp
 | `products`, `coproducts` | cartesian and cocartesian structure of `-->`, on `Tuple2` and `Either` | 14 | used by the derived combinators |
 | `zipping` | strength over products, which makes parsers a Freyd category, `zipped` | 17 | `**`, and derived from it `&&`, `*>`, `<*`, `between` |
 | `branching` | strength over coproducts, which makes parsers a Freyd category, `branched` | 17 | `++`, and derived from it `\|\|` |
-| `choice` | classical restriction structure | 18 | `failure`, `~` (lookahead), `!` (negation), `attempt`, `\|>`, `+>`, `?` (optional) |
+| `choice` | classical restriction structure | 18 | `failure`, `~` (lookahead), `!` (negation), `attempt`, `\|>`, `+>`, `?` (optional), `option` |
 | `loops` | guarded iteration | 19 | `iterate`, and derived from it `*` (repeated), `+` (atLeastOnce), `times`, `atLeast`, `separatedBy` |
 | `knots` | guarded recursion at the types of parsers | 19 | `recursive` |
 

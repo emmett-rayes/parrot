@@ -83,6 +83,7 @@ object Calculate {
 | Lookahead                       | `~p`                                             | `&e`       |
 | Negation                        | `!p`                                             | `!e`       |
 | Optional                        | `p.?`, `p.optional`                              | `e?`       |
+| Optional, as an `Option`        | `p.option`                                       | `e?`       |
 | Iteration                       | `p.iterate`                                      |            |
 | Repetition                      | `p.*`, `p.repeated`                              | `e*`       |
 | Repetition, at least once       | `p.+`, `p.atLeastOnce`                           | `e+`       |
