@@ -474,6 +474,8 @@ Rejected:
 - **The postfix operators are PEG's, written with a dot:** `p.?`, `p.*` and `p.+` forward to `optional`, `repeated` and
   `atLeastOnce`, beside the extensions of those names. With `~` for PEG's `&`, `!`, and `|>` for its `/`, they complete
   the notation of parsing expression grammars.
+- **A rule can be written label first,** `rule(label)(p)`, as a grammar writes *label* ← *p*, beside `p.rule(label)`:
+  both forward to the primitive `rule(p, label)`, from which they differ in their number of arguments.
 - **The reference interpreter builds nothing new:** it is the Kleisli category of
   `StateT[Input](OptionT(Writer(Expected.Furthest)))`, and every structure is a generic construction of the library.
   It is the specification, meant to be obviously right; it is slow and not stack-safe.

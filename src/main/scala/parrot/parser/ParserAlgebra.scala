@@ -305,6 +305,9 @@ abstract class ParserAlgebra(
     @targetName("ruleExt")
     final def rule(label: String): P[A, B] = ParserAlgebra.this.rule(p, label)
 
+  /** Prefix syntax for [[rule]], with the label first, as a grammar writes the rule *label* ← *p*. */
+  final def rule[A, B](label: String)(p: P[A, B]): P[A, B] = rule(p, label)
+
   extension [A, B](p: P[A, B])
     /** Infix extension for [[map]]. */
     @targetName("mapExt")

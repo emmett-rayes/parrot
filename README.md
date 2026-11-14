@@ -68,7 +68,7 @@ object Calculate {
 | ------------------------------- | ------------------------------------------------ | ---------- |
 | Literal                         | `literal("a")`                                   | `"a"`      |
 | Regular expression              | `regex("[a-z]".r)`                               | `[a-z]`    |
-| Name for error messages         | `p.rule(label)`                                  | `A ← e`    |
+| Name for error messages         | `p.rule(label)`, `rule(label)(p)`                | `A ← e`    |
 | Pure function, identity         | `pure(f)`, `success`                             | `ε`        |
 | Sequence into the next parser   | `p >> q`                                         | `e₁ e₂`    |
 | Map the result, or the input    | `p.map(f)`, `p.mapInput(f)`                      |            |
