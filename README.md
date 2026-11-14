@@ -13,19 +13,20 @@ final class Arithmetic(tracked val algebra: ParserAlgebra) {
   val multiply = lift[(BigInt, BigInt), BigInt](_ * _)
 
   def token(s: String): P[Unit, String] = literal(s) <* spaces
-
   val spaces: P[Unit, String] = regex("[ ]*".r)
   val number: P[Unit, BigInt] = {
     (regex("[0-9]+".r) <* spaces).map(lift[String, BigInt](BigInt(_))).rule("number")
   }
   val (expression, product, atom) = {
     recursive[(P[Unit, BigInt], P[Unit, BigInt], P[Unit, BigInt])] { (expression, product, atom) =>
+      val addition       = (expression <* token("+") && product).map(add)
+      val subtraction    = (expression <* token("-") && product).map(subtract)
+      val multiplication = (product <* token("*") && atom).map(multiply)
+      val parentheses    = expression.between(token("("), token(")"))
       (
-        ((expression <* token("+") && product).map(add)
-          |> (expression <* token("-") && product).map(subtract)
-          |> product).rule("expression"),
-        (product <* token("*") && atom).map(multiply) |> atom,
-        number |> expression.between(token("("), token(")")),
+        expression = addition |> subtraction |> product,
+        product    = multiplication |> atom,
+        atom       = number |> parentheses,
       )
     }
   }
