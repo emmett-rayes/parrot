@@ -54,6 +54,10 @@ object Calculate {
 - **Direct and mutual left recursion** by seed growing
 - Built from scratch with **no runtime dependencies**
 
+## Benchmarks
+
+Parrot is fast. See the [benchmarks](benchmarks/README.md) against parboiled2, fastparse, cats-parse and Parsley.
+
 ## Usage
 
 - Write the grammar using combinators from a `ParserAlgebra`. See [Combinators](#combinators).
