@@ -1,44 +1,29 @@
 # Benchmarks
 
-Parrot compared with [parboiled2](https://github.com/sirthias/parboiled2) 2.5.1, [fastparse](https://github.com/com-lihaoyi/fastparse) 3.1.1, [cats-parse](https://github.com/typelevel/cats-parse) 1.1.0 and [Parsley](https://github.com/j-mie6/parsley) 4.6.2 on JSON, with two grammars, each ported to every library:
+Parrot against [parboiled2](https://github.com/sirthias/parboiled2) 2.5.1, [fastparse](https://github.com/com-lihaoyi/fastparse) 3.1.1, [cats-parse](https://github.com/typelevel/cats-parse) 1.1.0 and [Parsley](https://github.com/j-mie6/parsley) 4.6.2, parsing JSON with two grammars ported to every library:
 
-- **`JsonGrammar`**, Parrot's JSON grammar ([`JsonGrammar.scala`](../src/main/scala/parrot/json/JsonGrammar.scala)), ported rule by rule in the files `*Json.scala`.
-  Every port builds Parrot's syntax tree, up to the types of its collections and tuples.
-- **fastparse's JSON grammar**, as [fastparse's documentation](https://com-lihaoyi.github.io/fastparse/) writes it in its section Json ([`FastparseJs.scala`](src/main/scala/parrot/benchmarks/FastparseJs.scala)), ported in the files `*Js.scala`.
-  Every port builds its syntax tree `Js`.
-  It is fastparse's example, not strict JSON: it takes no tab as whitespace, allows a leading `+` and control characters in strings, and keeps the escapes of a string undecoded.
+- **`JsonGrammar`**, Parrot's own ([`JsonGrammar.scala`](../src/main/scala/parrot/json/JsonGrammar.scala)), in `*Json.scala`.
+- **fastparse's example grammar** from [its documentation](https://com-lihaoyi.github.io/fastparse/), in `*Js.scala`. It is not strict JSON.
 
-Where a library's choice commits once an alternative has consumed input, as in cats-parse and Parsley, its ports `backtrack` or are `atomic` where the original grammar backtracks.
-fastparse's `.!`, which returns the input a parser consumed, is `capture` in Parrot and parboiled2, `string` in cats-parse and `span` in Parsley.
-
-## Correctness
-
-`Verify` checks that every port accepts what the grammar's reference accepts, Parrot for `JsonGrammar` and fastparse for its own grammar, and builds the same tree.
-It checks the 34 documents of nativejson-benchmark's Parse Validation and the 118 documents measured here, all of which both references accept.
-On the Parse Validation, Parrot is right on 34 documents and fastparse's grammar on 31.
+`Verify` checks that every port accepts the same documents as the original and builds the same tree.
 
 ## Method
 
-The documents are the valid ones of Parrot's JSON test sets, in [`src/test/resources/json`](../src/test/resources/json), measured by Parrot's own harness, [`JsonBenchmark`](../src/test/scala/parrot/json/JsonBenchmark.scala), with the methodology of each data set:
+The valid documents of Parrot's test sets, measured by Parrot's harness, [`JsonBenchmark`](../src/test/scala/parrot/json/JsonBenchmark.scala):
 
 | Data set | Documents | Measure |
 | --- | --- | --- |
-| [nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark) | its Parse documents, 0.6 to 2.3 MB | minimum of 10 trials, in MiB/s |
-| [json-benchmark](https://github.com/TkTech/json_benchmark) | 8 documents, 7 B to 66 MB | mean of 5 loads, in MB/s |
-| [json-dummy-data](https://microsoftedge.github.io/Demos/json-dummy-data/) | 12 documents, 43 kB to 5 MB, minified and indented | mean of 7 loads, in MB/s |
-| [JSONTestSuite](https://github.com/nst/JSONTestSuite) | its 95 valid documents (`y_`), 1.2 kB in all | median of 7 passes over them, in MB/s |
+| [nativejson-benchmark](https://github.com/miloyip/nativejson-benchmark) | 3, 0.6 to 2.3 MB | minimum of 10 trials, in MiB/s |
+| [json-benchmark](https://github.com/TkTech/json_benchmark) | 8, 7 B to 66 MB | mean of 5 loads, in MB/s |
+| [json-dummy-data](https://microsoftedge.github.io/Demos/json-dummy-data/) | 12, 43 kB to 5 MB | mean of 7 loads, in MB/s |
+| [JSONTestSuite](https://github.com/nst/JSONTestSuite) | 95, 1.2 kB in all | median of 7 passes, in MB/s |
 
-Each library runs each data set in its own JVM, after a warm-up of at least 2 s per document (of passes over the documents for JSONTestSuite), with trials that repeat a parse for at least 500 ms.
-The machine is an Apple M2 with Java 25.0.2 and a heap of 4 GB.
-The best throughput of each document is in bold, and so is every throughput within 5% of it: the runs of a measurement spread by 2% in the median, and by up to 4% in three quarters of the measurements.
-The last row of each table is the heap allocated per byte of input, with the least in bold.
-The total of nativejson-benchmark is the harness's, and that of json-benchmark and json-dummy-data is the size of all documents over the sum of their mean times.
+One JVM per library and data set, a warm-up of at least 2 s per document and trials of at least 500 ms, on an Apple M2 with Java 25.0.2.
+In bold: the best throughput and any within 5% of it, since runs spread by about 2%, and the least allocation, in the last row.
 
 ## Results: `JsonGrammar`
 
-### nativejson-benchmark
-
-Throughput in MiB/s.
+### nativejson-benchmark (MiB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -48,9 +33,7 @@ Throughput in MiB/s.
 | total | **128** | 114 | **128** | 54 | 25 |
 | allocated, B per byte | **11.0** | 15.8 | 18.9 | 61.1 | 90.2 |
 
-### json-benchmark
-
-Throughput in MB/s.
+### json-benchmark (MB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -65,9 +48,7 @@ Throughput in MB/s.
 | total | **55** | 53 | 45 | 21 | 12 |
 | allocated, B per byte | **21.4** | 48.9 | 44.1 | 164.1 | 219.4 |
 
-### json-dummy-data
-
-Throughput in MB/s.
+### json-dummy-data (MB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -86,9 +67,7 @@ Throughput in MB/s.
 | total | 133 | 135 | **142** | 63 | 29 |
 | allocated, B per byte | **7.9** | 18.0 | 20.2 | 57.0 | 76.0 |
 
-### json-test-suite
-
-Throughput in MB/s.
+### json-test-suite (MB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -97,9 +76,7 @@ Throughput in MB/s.
 
 ## Results: fastparse's grammar
 
-### nativejson-benchmark
-
-Throughput in MiB/s.
+### nativejson-benchmark (MiB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -109,9 +86,7 @@ Throughput in MiB/s.
 | total | 89 | **94** | **95** | 45 | 22 |
 | allocated, B per byte | 14.9 | **14.7** | 15.3 | 71.5 | 101.3 |
 
-### json-benchmark
-
-Throughput in MB/s.
+### json-benchmark (MB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -126,9 +101,7 @@ Throughput in MB/s.
 | total | 68 | **87** | 62 | 23 | 13 |
 | allocated, B per byte | **18.3** | 18.4 | 20.1 | 163.3 | 224.2 |
 
-### json-dummy-data
-
-Throughput in MB/s.
+### json-dummy-data (MB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -147,9 +120,7 @@ Throughput in MB/s.
 | total | 161 | 208 | **263** | 68 | 31 |
 | allocated, B per byte | **6.0** | **6.0** | 6.5 | 49.5 | 69.0 |
 
-### json-test-suite
-
-Throughput in MB/s.
+### json-test-suite (MB/s)
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -158,13 +129,9 @@ Throughput in MB/s.
 
 ## Running
 
-From this directory, with sbt:
-
 ```sh
 sbt "runMain parrot.benchmarks.Verify"
 sbt "runMain parrot.benchmarks.Compare [--grammar=fastparse] <library> [data set ...]"
 ```
 
-The library is one of `Parrot`, `parboiled2`, `fastparse`, `cats-parse` and `Parsley`, and the data sets are `json-test-suite`, `json-dummy-data`, `json-benchmark` and `nativejson-benchmark`, all by default.
-The measurements run in a JVM forked with the JDK that sbt runs on, which `sbt --java-home <JDK>` chooses.
-The build compiles Parrot and its harness from the sources of the parent directory, so that the libraries compared stay out of Parrot's build.
+`sbt --java-home <JDK>` chooses the JVM.
