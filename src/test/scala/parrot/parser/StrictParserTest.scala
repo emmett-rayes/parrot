@@ -67,6 +67,16 @@ class StrictParserTest extends AnyFunSuite {
     assert(regex("(ab)+".r).isInstanceOf[Pattern])
   }
 
+  test("a token captures as itself, and other parsers are captured without building their results") {
+    val digits = regex("[0-9]+".r)
+    val _      = assert(a.capture == Literal("a"))
+    val _      = assert(digits.capture == digits)
+    val _      = assert((a && b).capture == Capture(SkipThen(Literal("a"), Literal("b"))))
+    val _      = assert(a.repeated.capture == Capture(Skip(Literal("a"), 0, Int.MaxValue, scala.None)))
+    val _      = assert((~a.repeated) == Lookahead(Skip(Literal("a"), 0, Int.MaxValue, scala.None)))
+    assert(a.matched == Matched(Literal("a")))
+  }
+
   test("choices dispatch on the next character, and report every alternative that failed") {
     val keyword = literal("true") |> literal("false") |> literal("null") |> regex("[0-9]+".r)
     val _       = assert(result(keyword.parse("null")) == TrySuccess("null"))

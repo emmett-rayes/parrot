@@ -270,6 +270,12 @@ object StrictParser {
       analyze(node, mutable.Map.empty)
     }
 
+    /** The summary of an `item` repeated at least `min` times, separated by a `separator`. */
+    private def repetition(item: Info, min: Int, separator: Option[Info]): Info = {
+      val after = if item.nullable then separator.fold(CharSet.empty)(_.first) else CharSet.empty
+      Info(item.first.union(after), min == 0 || item.nullable)
+    }
+
     /** Computes the summary of `node` under current knot approximations `env`. */
     private def analyze[A, B](node: Node[A, B], env: mutable.Map[Node.Rec[?, ?], Info]): Info = {
       import Node.*
@@ -292,10 +298,8 @@ object StrictParser {
         case Loop(p)                          => analyze(p, env)
         case Merge(p, q)                      => analyze(p, env).orElse(analyze(q, env))
         case Choice(alternatives)             => alternatives.map(analyze(_, env)).reduce(_.orElse(_))
-        case Repeat(p, min, _, separator)     =>
-          val item  = analyze(p, env)
-          val after = if item.nullable then separator.fold(CharSet.empty)(analyze(_, env).first) else CharSet.empty
-          Info(item.first.union(after), min == 0 || item.nullable)
+        case Repeat(p, min, _, separator)     => repetition(analyze(p, env), min, separator.map(analyze(_, env)))
+        case Skip(p, min, _, separator)       => repetition(analyze(p, env), min, separator.map(analyze(_, env)))
         case rec: Rec[A, B] =>
           @tailrec
           def fixpoint(current: Info): Info = {
@@ -342,6 +346,7 @@ object StrictParser {
         case Merge(p, q)                                     => silent(p, env) || silent(q, env)
         case Choice(alternatives)                            => alternatives.exists(silent(_, env))
         case Repeat(p, min, _, _)                            => min == 0 || silent(p, env)
+        case Skip(p, min, _, _)                              => min == 0 || silent(p, env)
         case rec: Rec[?, ?]                                  =>
           @tailrec
           def fixpoint(current: Boolean): Boolean = {
@@ -373,6 +378,8 @@ object StrictParser {
           case Matched(p)                                        => reaches(p, visited)
           case Capture(p)                                        => reaches(p, visited)
           case Repeat(p, _, _, sep)                              =>
+            reaches(p, visited) || (mayConsumeNothing(p) && sep.exists(reaches(_, visited)))
+          case Skip(p, _, _, sep)                                =>
             reaches(p, visited) || (mayConsumeNothing(p) && sep.exists(reaches(_, visited)))
           case Merge(p, q)          => reaches(p, visited) || reaches(q, visited)
           case Choice(alternatives) => alternatives.exists(reaches(_, visited))
@@ -716,6 +723,28 @@ object StrictParser {
       }
     }
 
+    /** [[Repeat]] where the results are not needed: the same runs, guarded in the same way, without collecting them.
+      */
+    final case class Skip[A](p: Node[A, ?], min: Int, max: Int, separator: Option[Node[A, ?]]) extends Node[A, Unit] {
+      def run(a: A, s: State): Out[Unit] = {
+        @tailrec
+        def loop(count: Int): Out[Unit] = {
+          if count >= max then Out(())
+          else {
+            val start = s.offset
+            val sepOk = count == 0 || separator.forall(sep => !sep.run(a, s).isFailed)
+            if !sepOk || p.run(a, s).isFailed then {
+              s.offset = start
+              if count >= min then Out(()) else Out.failed
+            } else if count >= min && s.offset == start then Out.failed
+            else loop(count + 1)
+          }
+        }
+
+        loop(0)
+      }
+    }
+
     /** A recursive parser knot for [[ParserAlgebra.recursive]], tied lazily.
       *
       * A call that re-enters the knot at the position of its innermost active call fails, as guarded recursion does,
@@ -817,6 +846,7 @@ object StrictParser {
       case Rule(label, p)        => Rule(label, discard(p))
       case Matched(p)            => discard(p)
       case Capture(p)            => p
+      case r: Repeat[?, ?]       => Skip(discard(r.p), r.min, r.max, r.separator)
       case _                     => node
     }
   }
