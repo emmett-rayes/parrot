@@ -63,6 +63,19 @@ class StrictParser
     Scanner.compile(expected).fold(Pattern(expected))(Scan(expected, _))
   }
 
+  def matched[A, B](p: Node[A, B]): Node[A, (B, String)] = {
+    Matched(p)
+  }
+
+  /** Runs `p` without building its result: a literal or a regular expression already returns what it consumed. */
+  override def capture[A, B](p: Node[A, B]): Node[A, String] = {
+    p match {
+      case Literal(_) | Pattern(_)    => p.asInstanceOf[Node[A, String]]
+      case Scan(expected, scanner, _) => Scan(expected, scanner).asInstanceOf[Node[A, String]]
+      case _                          => Capture(discard(p))
+    }
+  }
+
   /** Running parsers: with diagnostics they mean what the reference says, and [[run]] skips the diagnostics. */
   object Semantics extends parser.Semantics(this) {
     import ReferenceParser.Input
@@ -274,6 +287,8 @@ object StrictParser {
         case SkipThen(p, q)                   => analyze(p, env).andThen(analyze(q, env))
         case ThenSkip(p, q)                   => analyze(p, env).andThen(analyze(q, env))
         case Lookahead(p)                     => analyze(p, env)
+        case Matched(p)                       => analyze(p, env)
+        case Capture(p)                       => analyze(p, env)
         case Loop(p)                          => analyze(p, env)
         case Merge(p, q)                      => analyze(p, env).orElse(analyze(q, env))
         case Choice(alternatives)             => alternatives.map(analyze(_, env)).reduce(_.orElse(_))
@@ -322,6 +337,8 @@ object StrictParser {
         case SkipThen(p, q)                                  => silent(p, env) && silent(q, env)
         case ThenSkip(p, q)                                  => silent(p, env) && silent(q, env)
         case Loop(p)                                         => silent(p, env)
+        case Matched(p)                                      => silent(p, env)
+        case Capture(p)                                      => silent(p, env)
         case Merge(p, q)                                     => silent(p, env) || silent(q, env)
         case Choice(alternatives)                            => alternatives.exists(silent(_, env))
         case Repeat(p, min, _, _)                            => min == 0 || silent(p, env)
@@ -353,6 +370,8 @@ object StrictParser {
           case Lookahead(p)                                      => reaches(p, visited)
           case Not(p)                                            => reaches(p, visited)
           case Loop(p)                                           => reaches(p, visited)
+          case Matched(p)                                        => reaches(p, visited)
+          case Capture(p)                                        => reaches(p, visited)
           case Repeat(p, _, _, sep)                              =>
             reaches(p, visited) || (mayConsumeNothing(p) && sep.exists(reaches(_, visited)))
           case Merge(p, q)          => reaches(p, visited) || reaches(q, visited)
@@ -439,6 +458,22 @@ object StrictParser {
           s.offset = end
           Out(s.source.substring(start, end).nn)
         }
+      }
+    }
+
+    /** Runs `p` and pairs its result with the input it consumed. */
+    final case class Matched[A, B](p: Node[A, B]) extends Node[A, (B, String)] {
+      def run(a: A, s: State): Out[(B, String)] = {
+        val start = s.offset
+        p.run(a, s).map(b => (b, s.source.slice(start, s.offset)))
+      }
+    }
+
+    /** Runs `p`, whose result is not needed, and returns the input it consumed. */
+    final case class Capture[A](p: Node[A, ?]) extends Node[A, String] {
+      def run(a: A, s: State): Out[String] = {
+        val start = s.offset
+        p.run(a, s).map(_ => s.source.slice(start, s.offset))
       }
     }
 
@@ -780,6 +815,8 @@ object StrictParser {
       case ThenSkip(p, q)        => ThenSkip(discard(p), q)
       case Choice(alternatives)  => choice(alternatives.map(a => discard(a).asInstanceOf[Node[A, Any]]))
       case Rule(label, p)        => Rule(label, discard(p))
+      case Matched(p)            => discard(p)
+      case Capture(p)            => p
       case _                     => node
     }
   }

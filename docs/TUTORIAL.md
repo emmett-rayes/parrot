@@ -3757,7 +3757,7 @@ A parser `P[A, B]` consumes a prefix of the input while turning a **semantic inp
 | `loops` | guarded iteration | 19 | `iterate`, and derived from it `*` (repeated), `+` (atLeastOnce), `times`, `atLeast`, `separatedBy` |
 | `knots` | guarded recursion at the types of parsers | 19 | `recursive` |
 
-An interpreter chooses the structures and implements four primitives: `lift`, which includes Scala functions among the pure functions `-->`; `literal` and `regex`, which read the input; and `rule`, which names a parser for error messages. Every other combinator is defined once, in `ParserAlgebra`, from the structures. Running a parser is not among them: an interpreter also has a `Semantics`, which gives each parser its meaning and runs it. For instance:
+An interpreter chooses the structures and implements five primitives: `lift`, which includes Scala functions among the pure functions `-->`; `literal` and `regex`, which read the input; `rule`, which names a parser for error messages; and `matched`, which returns the result of a parser with the input it consumed. Every other combinator is defined once, in `ParserAlgebra`, from the structures. Running a parser is not among them: an interpreter also has a `Semantics`, which gives each parser its meaning and runs it. For instance:
 
 - `p && q` = Δ ⨾ (p ** q): run both on the same semantic input, by duplicating it and running them side by side;
 - `p *> q` = (p && q) ⨾ π₂: keep the right result;
@@ -3843,7 +3843,7 @@ Reading the monad from the outside in: a parser reads and advances the input (st
 | loops | `Kleisli.GuardedIterationOf` of `StateT.Loops`, measured by the length of the remaining input |
 | recursion | `StateT.Knots`, measured the same way |
 
-The only parser-specific code is the four primitives and the silent tests of the classical structure on outcomes, about fifty lines. Backtracking, for instance, is not implemented anywhere: it is what `StateT.ClassicalOf` does with ordered choice, running the second alternative from the state the first one started with. The reference interpreter is slow and not stack-safe on deeply nested input, and that is acceptable, because its job is to be the specification.
+The only parser-specific code is the five primitives and the silent tests of the classical structure on outcomes, about fifty lines. Backtracking, for instance, is not implemented anywhere: it is what `StateT.ClassicalOf` does with ordered choice, running the second alternative from the state the first one started with. The reference interpreter is slow and not stack-safe on deeply nested input, and that is acceptable, because its job is to be the specification.
 
 ### 20.5 Semantics: what a parser means, and how it runs
 

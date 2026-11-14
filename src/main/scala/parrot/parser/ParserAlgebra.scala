@@ -77,6 +77,20 @@ abstract class ParserAlgebra(
     */
   def regex(expected: Regex): P[Unit, String]
 
+  /** Runs `p` and returns its result with the input it consumed.
+    *
+    * The consumed input is the text from where `p` starts to where it stops, which is empty where `p` consumes nothing,
+    * as a lookahead does. Diagnostics are those of `p`.
+    */
+  def matched[A, B](p: P[A, B]): P[A, (B, String)]
+
+  // ==== Consumed input ====
+
+  /** Runs *p* and returns only the input it consumed: *matched*(*p*) ⨾ *π*₂. */
+  def capture[A, B](p: P[A, B]): P[A, String] = {
+    map(matched(p), products.snd[B, String])
+  }
+
   // ==== Sequencing: the promonad ====
 
   /** Succeeds without consuming anything, returning its semantic input: the identity arrow *id*. */
@@ -307,6 +321,16 @@ abstract class ParserAlgebra(
 
   /** Prefix syntax for [[rule]], with the label first, as a grammar writes the rule *label* ← *p*. */
   final def rule[A, B](label: String)(p: P[A, B]): P[A, B] = rule(p, label)
+
+  extension [A, B](p: P[A, B])
+    /** Postfix form of [[matched]]. */
+    @targetName("matchedExt")
+    final def matched(using DummyImplicit): P[A, (B, String)] = ParserAlgebra.this.matched(p)
+
+  extension [A, B](p: P[A, B])
+    /** Postfix form of [[capture]]. */
+    @targetName("captureExt")
+    final def capture(using DummyImplicit): P[A, String] = ParserAlgebra.this.capture(p)
 
   extension [A, B](p: P[A, B])
     /** Infix extension for [[map]]. */
@@ -559,6 +583,49 @@ abstract class ParserAlgebra(
       */
     def optionDefinition[A, B](p: P[A, B])(using P[A, Option[B]] is Observable): Boolean = {
       option(p) =?= orElse(map(p, lift[B, Option[B]](b => Some(b))), pure(lift[A, Option[B]](_ => None)))
+    }
+
+    /** *matched*(*p*) ⨾ *unit*(*π*₁) = *p*
+      *
+      * Matching changes only the result: what *p* consumes and reports stays the same.
+      */
+    def matchedTransparent[A, B](p: P[A, B])(using P[A, B] is Observable): Boolean = {
+      map(matched(p), products.fst[B, String]) =?= p
+    }
+
+    /** *matched*(*p* ⨾ *q*) = *matched*(*p*) ⨾ (*matched*(*q*) ⋉ *id*) ⨾ *unit*(((*c*,*t*₂),*t*₁) ↦ (*c*,*t*₁*t*₂))
+      *
+      * A sequence consumes what its first parser consumes, followed by what its second one does.
+      */
+    def matchedSequence[A, B, C](p: P[A, B], q: P[B, C])(using P[A, (C, String)] is Observable): Boolean = {
+      val concatenate = lift[((C, String), String), (C, String)] { case ((c, second), first) => (c, first + second) }
+      matched(andThen(p, q)) =?= map(andThen(matched(p), zip(matched(q), success[String])), concatenate)
+    }
+
+    /** *matched*(*unit*(*f*)) = *unit*(⟨*f*,ε⟩): a pure function consumes nothing. */
+    def matchedPure[A, B](f: A --> B)(using P[A, (B, String)] is Observable): Boolean = {
+      matched(pure(f)) =?= pure(f >>> lift[B, (B, String)](b => (b, "")))
+    }
+
+    /** *matched*(*literal*(*s*)) = *literal*(*s*) ⨾ *unit*(Δ): a literal consumes its text. */
+    def matchedLiteral(s: String)(using P[Unit, (String, String)] is Observable): Boolean = {
+      matched(literal(s)) =?= map(literal(s), products.diagonal[String])
+    }
+
+    /** *matched*(*regex*(*r*)) = *regex*(*r*) ⨾ *unit*(Δ): a regular expression consumes its match. */
+    def matchedRegex(r: Regex)(using P[Unit, (String, String)] is Observable): Boolean = {
+      matched(regex(r)) =?= map(regex(r), products.diagonal[String])
+    }
+
+    /** *matched*(*p* ⊳ *q*) = *matched*(*p*) ⊳ *matched*(*q*): a choice consumes what its chosen alternative does. */
+    def matchedOrElse[A, B](p: P[A, B], q: P[A, B])(using P[A, (B, String)] is Observable): Boolean = {
+      matched(orElse(p, q)) =?= orElse(matched(p), matched(q))
+    }
+
+    /** *capture*(*p*) = *matched*(*p*) ⨾ *unit*(*π*₂)
+      */
+    def captureDefinition[A, B](p: P[A, B])(using P[A, String] is Observable): Boolean = {
+      capture(p) =?= map(matched(p), products.snd[B, String])
     }
 
     /** *p* ⊳ *q* = *attempt*(*p*) ⨾ [*id*,*q*]: ordered choice is an attempt followed by a merge.

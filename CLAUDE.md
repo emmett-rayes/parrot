@@ -164,8 +164,8 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   `ParserAlgebra(sequencing, products, coproducts, zipping, branching, choice, loops, knots)`: every combinator is an
   operation of one of these (`|>` is restriction override, i.e. PEG ordered choice). Loops and recursion are
   **guarded** (`loops: GuardedIteration.On[…]`, `knots: GuardedRecursion.On[…]`): a step or call that makes no
-  progress fails. Interpreters implement only `lift`, `literal`, `regex`
-  and `rule`, and `denote` in the `Semantics` they nest.
+  progress fails. Interpreters implement only `lift`, `literal`, `regex`,
+  `rule` and `matched`, and `denote` in the `Semantics` they nest.
 - **Core invariant:** `StrictParser` behaves exactly like `ReferenceParser` (results, offsets **and diagnostics**) on
   every grammar without left recursion, which `StrictParser` additionally solves by seed growing. `AgreementTest`
   checks it on random `Grammars.terms` at random positions (and that `StrictParser` returns on
@@ -184,7 +184,7 @@ aliases `OfDiagram` and `OfDiscreteDiagram`), the colimits in `Colimits` in `Col
   instances lose their `Bar` test classes.
 - **Combinator:** derive it in `ParserAlgebra` if possible, add a `Grammars.Term` case if it extends what grammars can
   express, add laws to `ParserLaws`, and test both interpreters.
-- **Interpreter:** extend `ParserAlgebra(…)` with structures of the types its parameters require, implement the four
+- **Interpreter:** extend `ParserAlgebra(…)` with structures of the types its parameters require, implement the five
   primitives, nest an `object Semantics extends parser.Semantics(this)` with `denote`, export its `diagnose`, `run`,
   `parse` and `parseAll`, and register it in `Interpreters` (in `Grammars.scala`), the law and structure specs, `AgreementTest` and
   `JsonGrammarTest`.

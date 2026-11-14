@@ -36,6 +36,8 @@ enum Term derives CanEqual {
   case Tagged(p: Term, q: Term)
   case Opt(p: Term, seed: Int)
   case Maybe(p: Term, seed: Int)
+  case Matched(p: Term)
+  case Captured(p: Term)
   case Many1(p: Term)
   case Between(p: Term, open: Term, close: Term)
   case Pre(p: Term, seed: Int)
@@ -89,6 +91,8 @@ object Grammars {
           case Tagged(p, q)           => (go(p) +> go(q)).map(lift(_.fold(x => x * 2, y => y * 2 + 1)))
           case Opt(p, k)              => go(p).optional.map(lift(_.fold(x => x + k, n => -n)))
           case Maybe(p, k)            => go(p).option.map(lift(_.fold(-k)(x => x + k)))
+          case Matched(p)             => go(p).matched.map(lift((x, text) => x * 7 + text.length))
+          case Captured(p)            => go(p).capture.map(lift(_.length))
           case Many1(p)               => go(p).atLeastOnce.map(lift(_.sum))
           case Between(p, open, close) => go(p).between(go(open), go(close))
           case Pre(p, k)              => go(p).mapInput(lift((n: Int) => n * 2 + k))
@@ -198,6 +202,8 @@ object Grammars {
           1 -> Gen.zip(sub, sub).map(Tagged(_, _)),
           1 -> Gen.zip(sub, Gen.choose(-3, 3)).map(Opt(_, _)),
           1 -> Gen.zip(sub, Gen.choose(-3, 3)).map(Maybe(_, _)),
+          1 -> sub.map(Matched(_)),
+          1 -> sub.map(Captured(_)),
           1 -> sub.map(Many1(_)),
           1 -> Gen.zip(sub, sub, sub).map(Between(_, _, _)),
           1 -> Gen.zip(sub, Gen.choose(-3, 3)).map(Pre(_, _)),

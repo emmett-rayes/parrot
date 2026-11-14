@@ -60,6 +60,14 @@ class ReferenceParser
       else (Expected.bottom, Some((in.source.substring(in.offset, end).nn, Input(in.source, end))))
   }
 
+  def matched[A, B](
+    p: A -> Input -> (Expected, Option[(B, Input)])
+  ): A -> Input -> (Expected, Option[((B, String), Input)]) = {
+    a => in =>
+      val (expected, result) = p(a)(in)
+      (expected, result.map((b, out) => ((b, in.source.substring(in.offset, out.offset).nn), out)))
+  }
+
   /** Running parsers: the reference is the specification, so a parser means itself. */
   object Semantics extends parser.Semantics(this) {
 

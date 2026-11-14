@@ -222,6 +222,55 @@ abstract class ParserLawSpec(name: String, tracked val semantics: Semantics) ext
     }
   }
 
+  law("matchedTransparent") {
+    forAll(observe, parsers) { (o, p) =>
+      given (P[Int, Int] is Observable) = o
+      matchedTransparent(p)
+    }
+  }
+
+  law("matchedSequence") {
+    forAll(ParserGen.exact[Int, (Int, String)](semantics), parsers, parsers) { (o, p, q) =>
+      given (P[Int, (Int, String)] is Observable) = o
+      matchedSequence(p, q)
+    }
+  }
+
+  law("matchedPure") {
+    forAll(ParserGen.exact[Int, (Int, String)](semantics), Sample.function[Int, Int]) { (o, f) =>
+      given (P[Int, (Int, String)] is Observable) = o
+      matchedPure(lift(f))
+    }
+  }
+
+  law("matchedLiteral") {
+    forAll(ParserGen.exact[Unit, (String, String)](semantics), Gen.oneOf("a", "ab", "(", "")) { (o, text) =>
+      given (P[Unit, (String, String)] is Observable) = o
+      matchedLiteral(text)
+    }
+  }
+
+  law("matchedRegex") {
+    forAll(ParserGen.exact[Unit, (String, String)](semantics), Gen.oneOf("a+", "[ab]", "b*", "(?<=a)b")) { (o, r) =>
+      given (P[Unit, (String, String)] is Observable) = o
+      matchedRegex(r.r)
+    }
+  }
+
+  law("matchedOrElse") {
+    forAll(ParserGen.exact[Int, (Int, String)](semantics), parsers, parsers) { (o, p, q) =>
+      given (P[Int, (Int, String)] is Observable) = o
+      matchedOrElse(p, q)
+    }
+  }
+
+  law("captureDefinition") {
+    forAll(ParserGen.exact[Int, String](semantics), parsers) { (o, p) =>
+      given (P[Int, String] is Observable) = o
+      captureDefinition(p)
+    }
+  }
+
   law("choiceByAttempt") {
     forAll(observe, parsers, parsers) { (o, p, q) =>
       given (P[Int, Int] is Observable) = o

@@ -449,8 +449,8 @@ Rejected:
 
 - **The algebra is a bundle:**
   `ParserAlgebra(sequencing, products, coproducts, zipping, branching, choice, loops, knots)`, every combinator an
-  operation of one of them. An interpreter chooses the structures and implements four primitives: `lift`, `literal`,
-  `regex` and `rule`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`, `Nothing`, `Vector`):
+  operation of one of them. An interpreter chooses the structures and implements five primitives: `lift`, `literal`,
+  `regex`, `rule` and `matched`. The semantic types are fixed (`Unit`, `Tuple2`, `Either`, `Nothing`, `Vector`):
   every interpreter made the same choice, and fixing them removes a layer of type members.
 - **Running is a map out of the algebra, not an operation of it:** `Semantics(algebra)` has one primitive, `denote`,
   which sends a parser to its meaning, a function of the semantic input and the state of a parse. That function is the
@@ -474,6 +474,11 @@ Rejected:
 - **The postfix operators are PEG's, written with a dot:** `p.?`, `p.*` and `p.+` forward to `optional`, `repeated` and
   `atLeastOnce`, beside the extensions of those names. With `~` for PEG's `&`, `!`, and `|>` for its `/`, they complete
   the notation of parsing expression grammars.
+- **The input a parser consumed is a primitive,** `matched(p)`, which returns the result of `p` with that text, as a
+  writer's `listen` returns its log: no combinator of the structures sees the input, and the laws say that it changes
+  only the result (`matchedTransparent`) and that a sequence consumes the text of its first parser followed by that of
+  its second (`matchedSequence`). `capture(p)`, the text alone, derives from it, and `StrictParser` overrides it to
+  run `p` without building its result.
 - **A rule can be written label first,** `rule(label)(p)`, as a grammar writes *label* ← *p*, beside `p.rule(label)`:
   both forward to the primitive `rule(p, label)`, from which they differ in their number of arguments.
 - **The reference interpreter builds nothing new:** it is the Kleisli category of
@@ -503,6 +508,9 @@ every structure of the bundle; and mixin traits for the algebra, since combinati
 Rejected for the postfix operators: the bare `p?`, which needs `scala.language.postfixOps` in every grammar and takes
 what follows as its argument, so `p? >> q` does not parse; and `p * n` for `times` beside `p.*`, since where `P` is a
 function, as in the reference, `a * 2` resolves to `a.*.apply(2)`.
+
+Rejected for the consumed input: `capture` as the primitive, which loses the result of `p`, so no law can say that
+capturing leaves what `p` consumes and reports unchanged; and `p.!` as its syntax, beside the negation `!p`.
 
 ### Diagnostics
 

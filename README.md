@@ -74,6 +74,7 @@ Parrot is fast. See the [benchmarks](benchmarks/README.md) against parboiled2, f
 | Literal                         | `literal("a")`                                   | `"a"`      |
 | Regular expression              | `regex("[a-z]".r)`                               | `[a-z]`    |
 | Name for error messages         | `p.rule(label)`, `rule(label)(p)`                | `A ← e`    |
+| Consumed input                  | `p.capture`, `p.matched`                         |            |
 | Pure function, identity         | `pure(f)`, `success`                             | `ε`        |
 | Sequence into the next parser   | `p >> q`                                         | `e₁ e₂`    |
 | Map the result, or the input    | `p.map(f)`, `p.mapInput(f)`                      |            |
