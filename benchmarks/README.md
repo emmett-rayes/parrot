@@ -9,7 +9,7 @@ Parrot compared with [parboiled2](https://github.com/sirthias/parboiled2) 2.5.1,
   It is fastparse's example, not strict JSON: it takes no tab as whitespace, allows a leading `+` and control characters in strings, and keeps the escapes of a string undecoded.
 
 Where a library's choice commits once an alternative has consumed input, as in cats-parse and Parsley, its ports `backtrack` or are `atomic` where the original grammar backtracks.
-Parrot has no combinator that returns the input a parser consumed, such as fastparse's `.!`, and its scanner compiles only regular expressions without groups or alternatives, so Parrot's port of fastparse's grammar joins the text of a number or a string from its parts.
+fastparse's `.!`, which returns the input a parser consumed, is `capture` in Parrot and parboiled2, `string` in cats-parse and `span` in Parsley.
 
 ## Correctness
 
@@ -103,11 +103,11 @@ Throughput in MiB/s.
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `canada.json` | 46 | **65** | **63** | 32 | 16 |
-| `citm_catalog.json` | **171** | **164** | **168** | 71 | 29 |
-| `twitter.json` | 136 | 177 | **202** | 80 | 35 |
-| total | 73 | **95** | **93** | 45 | 21 |
-| allocated, B per byte | 25.2 | **15.3** | 15.7 | 71.9 | 101.8 |
+| `canada.json` | 58 | **65** | **63** | 32 | 16 |
+| `citm_catalog.json` | **187** | 164 | 168 | 71 | 29 |
+| `twitter.json` | 186 | 177 | **202** | 80 | 35 |
+| total | 89 | **95** | **93** | 45 | 21 |
+| allocated, B per byte | 16.4 | **15.3** | 15.7 | 71.9 | 101.8 |
 
 ### json-benchmark
 
@@ -115,16 +115,16 @@ Throughput in MB/s.
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `canada.json` | 50 | **81** | 64 | 31 | 18 |
-| `citm_catalog.json` | 181 | **184** | **193** | 86 | 30 |
-| `twitter.json` | 155 | 222 | **250** | 94 | 37 |
-| `verysmall.json` | 19 | **32** | 12 | 9.9 | 5.6 |
-| `fgo.json` | 56 | **108** | 82 | 29 | 14 |
-| `otfcc.json` | 38 | **71** | 55 | 19 | 9.5 |
-| `poet.json` | 265 | 449 | **683** | 235 | 70 |
-| `gsoc-2018.json` | 212 | 310 | **775** | 219 | 57 |
-| total | 47 | **87** | 68 | 24 | 12 |
-| allocated, B per byte | 42.3 | **18.9** | **18.9** | 163.5 | 224.4 |
+| `canada.json` | 61 | **81** | 64 | 31 | 18 |
+| `citm_catalog.json` | **201** | 184 | **193** | 86 | 30 |
+| `twitter.json` | 190 | 222 | **250** | 94 | 37 |
+| `verysmall.json` | 23 | **32** | 12 | 9.9 | 5.6 |
+| `fgo.json` | 70 | **108** | 82 | 29 | 14 |
+| `otfcc.json` | 49 | **71** | 55 | 19 | 9.5 |
+| `poet.json` | 295 | 449 | **683** | 235 | 70 |
+| `gsoc-2018.json` | 240 | 310 | **775** | 219 | 57 |
+| total | 59 | **87** | 68 | 24 | 12 |
+| allocated, B per byte | 25.0 | **18.9** | **18.9** | 163.5 | 224.4 |
 
 ### json-dummy-data
 
@@ -132,20 +132,20 @@ Throughput in MB/s.
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `128KB-min.json` | 90 | 149 | **161** | 40 | 24 |
-| `128KB.json` | 161 | **253** | 218 | 126 | 43 |
-| `1MB-min.json` | 89 | **172** | 153 | 49 | 24 |
-| `1MB.json` | 162 | **261** | 222 | 125 | 43 |
-| `256KB-min.json` | 91 | **177** | 158 | 50 | 25 |
-| `256KB.json` | 164 | **262** | 227 | 130 | 43 |
-| `512KB-min.json` | 90 | **176** | 157 | 50 | 24 |
-| `512KB.json` | 164 | **262** | 225 | 127 | 43 |
-| `5MB-min.json` | 87 | **165** | 148 | 42 | 22 |
-| `5MB.json` | 154 | **253** | 215 | 110 | 38 |
-| `64KB-min.json` | 90 | **177** | 156 | 50 | 26 |
-| `64KB.json` | 164 | **261** | 223 | 130 | 43 |
-| total | 119 | **210** | 184 | 69 | 30 |
-| allocated, B per byte | 17.9 | **6.1** | 6.3 | 49.5 | 69.0 |
+| `128KB-min.json` | 108 | 149 | **161** | 40 | 24 |
+| `128KB.json` | 174 | **253** | 218 | 126 | 43 |
+| `1MB-min.json` | 103 | **172** | 153 | 49 | 24 |
+| `1MB.json` | 178 | **261** | 222 | 125 | 43 |
+| `256KB-min.json` | 103 | **177** | 158 | 50 | 25 |
+| `256KB.json` | 178 | **262** | 227 | 130 | 43 |
+| `512KB-min.json` | 104 | **176** | 157 | 50 | 24 |
+| `512KB.json` | 180 | **262** | 225 | 127 | 43 |
+| `5MB-min.json` | 99 | **165** | 148 | 42 | 22 |
+| `5MB.json` | 174 | **253** | 215 | 110 | 38 |
+| `64KB-min.json` | 103 | **177** | 156 | 50 | 26 |
+| `64KB.json` | 180 | **261** | 223 | 130 | 43 |
+| total | 134 | **210** | 184 | 69 | 30 |
+| allocated, B per byte | 10.4 | **6.1** | 6.3 | 49.5 | 69.0 |
 
 ### json-test-suite
 
@@ -153,8 +153,8 @@ Throughput in MB/s.
 
 | Document | Parrot | parboiled2 | fastparse | cats-parse | Parsley |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 95 valid documents (y_) | **20** | 14 | 9.6 | 7.7 | 5.6 |
-| allocated, B per byte | **50.4** | **50.4** | 58.8 | 184.9 | 268.9 |
+| 95 valid documents (y_) | **30** | 14 | 9.6 | 7.7 | 5.6 |
+| allocated, B per byte | **33.6** | 50.4 | 58.8 | 184.9 | 268.9 |
 
 ## Running
 
