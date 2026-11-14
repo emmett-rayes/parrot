@@ -105,20 +105,29 @@ object JsonBenchmark {
     loop(Long.MaxValue, 0)
   }
 
-  /** Measures `runs` runs of `work` after `warmup` runs. Each run repeats `work` until it takes at least `minRunMs`, so
-    * that small documents are timed reliably, and samples are reported per repetition.
+  /** Measures `runs` runs of `work` after a warm-up of at least `warmup` runs and at least `warmupMs`. Each run repeats
+    * `work` until it takes at least `minRunMs`, as estimated from the fastest warm-up run, so that small documents are
+    * timed reliably, and samples are reported per repetition.
     *
     * Garbage is collected before each run, outside of the measurement, so that the garbage collection time of a run
     * (counted in [[Measurement.gcMs]]) is only due to its own allocations.
     */
-  def measure(work: () => Int, warmup: Int, runs: Int, minRunMs: Double = 0): Measurement = {
-    val warmupRuns = (1 to warmup.max(1)).map { _ =>
-      val start = System.nanoTime()
-      val res   = work()
-      (res, (System.nanoTime() - start) / 1e6)
+  def measure(work: () => Int, warmup: Int, runs: Int, minRunMs: Double = 0, warmupMs: Double = 0): Measurement = {
+    val warmupStart = System.nanoTime()
+
+    /** The duration of the fastest warm-up run and the result of the last one. */
+    @tailrec
+    def warmUp(count: Int, fastest: Double, last: Int): (Double, Int) = {
+      if count >= warmup.max(1) && (System.nanoTime() - warmupStart) / 1e6 >= warmupMs then (fastest, last)
+      else {
+        val start = System.nanoTime()
+        val res   = work()
+        warmUp(count + 1, fastest.min((System.nanoTime() - start) / 1e6), res)
+      }
     }
-    val slowest     = warmupRuns.map(_._2).max
-    val repetitions = if slowest >= minRunMs then 1 else math.ceil(minRunMs / slowest.max(1e-3)).toInt
+
+    val (fastest, warmed) = warmUp(0, Double.MaxValue, 0)
+    val repetitions       = if fastest >= minRunMs then 1 else math.ceil(minRunMs / fastest.max(1e-3)).toInt
     val measured    = (1 to runs).map { _ =>
       collectGarbage()
       val gcBefore = gcMillis()
@@ -129,12 +138,17 @@ object JsonBenchmark {
       val gcDelta  = gcMillis() - gcBefore
       (Sample(ms / repetitions, (allocatedBytes() - bytes).toDouble / repetitions), gcDelta, accepted)
     }
-    Measurement(measured.map(_._1), measured.map(_._2).sum, measured.lastOption.fold(warmupRuns.last._1)(_._3))
+    Measurement(measured.map(_._1), measured.map(_._2).sum, measured.lastOption.fold(warmed)(_._3))
   }
 
   private def megabytes(bytes: Double): Double = bytes / 1e6
 
   private def heading(title: String): Unit = println(s"\n=== $title ===")
+
+  /** The warm-up of the runs, for the headings. */
+  private def warmups(warmup: Int, warmupMs: Double): String = {
+    if warmupMs > 0 then s"a warm-up of at least $warmup runs and ${warmupMs.toInt} ms" else s"$warmup warm-ups"
+  }
 
   /** A column of a [[Table]], `left`- or right-aligned. */
   final private case class Column(header: String, width: Int, left: Boolean = false)
@@ -225,13 +239,14 @@ object JsonBenchmark {
     warmup: Int = 3,
     runs: Int = 7,
     minRunMs: Double = 100,
+    warmupMs: Double = 0,
   ): Unit = {
     val suite = groups(JsonFixtures.jsonTestSuite)
     val bytes = suite.map(_.bytes).sum
     heading("json-test-suite (github.com/nst/JSONTestSuite@1ef36fa, test_parsing)")
     println(
       s"${suite.map(_.fixtures.size).sum} fixtures, ${size(bytes)}: " +
-        s"median of $runs runs after $warmup warm-ups, per pass over the fixtures " +
+        s"median of $runs runs after ${warmups(warmup, warmupMs)}, per pass over the fixtures " +
         s"(runs repeat passes to at least ${minRunMs.toInt} ms; alloc: heap bytes allocated per pass)"
     )
     groupTable.header()
@@ -239,7 +254,7 @@ object JsonBenchmark {
       for interpreter <- interpreters yield {
         val measurements = suite.map { group =>
           val pass = () => group.fixtures.count(fixture => interpreter.accepts(fixture.input))
-          val m    = measure(pass, warmup, runs, minRunMs)
+          val m    = measure(pass, warmup, runs, minRunMs, warmupMs)
           val size = group.fixtures.size
           reportGroup(interpreter, group.label, size, m.accepted, group.bytes, m.median, m.allocated, m.gcMs)
           m
@@ -284,16 +299,23 @@ object JsonBenchmark {
     val suite: String  = JsonFixtures.jsonBenchmarkSuite
     val source: String = "github.com/TkTech/json_benchmark@52d596b"
 
-    def run(interpreters: List[Interpreter], warmup: Int = 1, runs: Int = 5, minRunMs: Double = 100): Unit = {
+    def run(
+      interpreters: List[Interpreter],
+      warmup: Int = 1,
+      runs: Int = 5,
+      minRunMs: Double = 100,
+      warmupMs: Double = 0,
+    ): Unit = {
       heading(s"json-benchmark ($source)")
       println(
-        s"complete load of each document: min, max and mean of $runs runs after $warmup warm-up, per load " +
+        s"complete load of each document: min, max and mean of $runs runs after ${warmups(warmup, warmupMs)}, " +
+          "per load " +
           s"(runs repeat loads to at least ${minRunMs.toInt} ms; alloc: heap bytes allocated per load)"
       )
       val table = documentTable(samples)
       table.header()
       for path <- samples do {
-        loadEach(table, interpreters, path, loadFixture(suite, path), warmup, runs, minRunMs)
+        loadEach(table, interpreters, path, loadFixture(suite, path), warmup, runs, minRunMs, warmupMs)
       }
     }
   }
@@ -322,9 +344,10 @@ object JsonBenchmark {
     warmup: Int,
     runs: Int,
     minRunMs: Double,
+    warmupMs: Double,
   ): Unit = {
     for interpreter <- interpreters do {
-      val m = measure(() => if interpreter.accepts(document.input) then 1 else 0, warmup, runs, minRunMs)
+      val m = measure(() => if interpreter.accepts(document.input) then 1 else 0, warmup, runs, minRunMs, warmupMs)
       table.row(
         title,
         size(document.bytes.toLong),
@@ -349,10 +372,11 @@ object JsonBenchmark {
     warmup: Int = 3,
     runs: Int = 7,
     minRunMs: Double = 100,
+    warmupMs: Double = 0,
   ): Unit = {
     heading("json-dummy-data (microsoftedge.github.io/Demos/json-dummy-data)")
     println(
-      s"load of each document: min, max and mean of $runs runs after $warmup warm-ups, per load " +
+      s"load of each document: min, max and mean of $runs runs after ${warmups(warmup, warmupMs)}, per load " +
         s"(runs repeat loads to at least ${minRunMs.toInt} ms; alloc: heap bytes allocated per load)"
     )
     val names = JsonFixtures.jsonDummyData
@@ -360,7 +384,7 @@ object JsonBenchmark {
     table.header()
     for name <- names do {
       val document = loadFixture(JsonFixtures.jsonDummyDataSuite, name)
-      loadEach(table, interpreters, name, document, warmup, runs, minRunMs)
+      loadEach(table, interpreters, name, document, warmup, runs, minRunMs, warmupMs)
     }
   }
 
@@ -384,7 +408,7 @@ object JsonBenchmark {
 
     val trials = 10
 
-    def run(interpreters: List[Interpreter], warmup: Int = 3, minRunMs: Double = 100): Unit = {
+    def run(interpreters: List[Interpreter], warmup: Int = 3, minRunMs: Double = 100, warmupMs: Double = 0): Unit = {
       heading(s"nativejson-benchmark ($source)")
 
       println("Parse Validation (JSON_checker): pass*.json accepted, fail*.json rejected")
@@ -400,7 +424,7 @@ object JsonBenchmark {
       }
 
       println(
-        s"Parse: minimum of $trials trials per document after $warmup warm-ups for the JIT " +
+        s"Parse: minimum of $trials trials per document after ${warmups(warmup, warmupMs)} for the JIT " +
           s"(trials repeat parses to at least ${minRunMs.toInt} ms; alloc: heap bytes allocated per parse)"
       )
       val parse = documents.map(loadFixture(suite, _))
@@ -408,7 +432,8 @@ object JsonBenchmark {
       val totals =
         for interpreter <- interpreters yield {
           val measurements = parse.map { document =>
-            val m = measure(() => if interpreter.accepts(document.input) then 1 else 0, warmup, trials, minRunMs)
+            val parse = () => if interpreter.accepts(document.input) then 1 else 0
+            val m     = measure(parse, warmup, trials, minRunMs, warmupMs)
             report(interpreter, document.name, document.bytes.toLong, m.min, m.allocated, m.gcMs, m.accepted == 1)
             m
           }
