@@ -167,3 +167,9 @@ Such rewrites are based on categorical laws, so they don't change what a parser 
 - Recognize and precompile regular grammars
 - Recognize and optimize tail-recursive parsers
 - Implement a parsing machine interpreter
+
+## Credits
+
+Parrot is created with AI at the WRITE level of [0rwx](https://0rwx.com).
+
+<a href="https://0rwx.com"><picture><source media="(prefers-color-scheme: dark)" srcset="https://0rwx.com/static/AI-W-dark.svg"><img src="https://0rwx.com/static/AI-W-light.svg" alt="0RWX: WRITE, AI has read-write permissions" width="64"></picture></a>
